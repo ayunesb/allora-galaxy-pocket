@@ -218,6 +218,48 @@ export type Database = {
         }
         Relationships: []
       }
+      retry_queue: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          last_attempt_at: string | null
+          max_attempts: number
+          next_attempt_at: string | null
+          payload: Json
+          retry_count: number
+          status: string
+          task: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          last_attempt_at?: string | null
+          max_attempts?: number
+          next_attempt_at?: string | null
+          payload?: Json
+          retry_count?: number
+          status?: string
+          task: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          last_attempt_at?: string | null
+          max_attempts?: number
+          next_attempt_at?: string | null
+          payload?: Json
+          retry_count?: number
+          status?: string
+          task?: string
+          tenant_id?: string
+        }
+        Relationships: []
+      }
       strategy_feedback: {
         Row: {
           action: string
