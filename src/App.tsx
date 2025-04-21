@@ -10,6 +10,7 @@ import OnboardingWizard from "./app/onboarding/OnboardingWizard";
 import PocketLayout from "./app/pocket/PocketLayout";
 import PocketSwipe from "./app/pocket/PocketSwipe";
 import ExplorePage from "./app/galaxy/explore/ExplorePage";
+import AcademyFeed from "./app/academy/AcademyFeed";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
             }
           />
           <Route path="/galaxy/explore" element={<ExplorePage />} />
+          <Route path="/academy" element={<AcademyFeed />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
