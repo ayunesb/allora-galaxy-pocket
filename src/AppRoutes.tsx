@@ -31,12 +31,16 @@ import NotificationsPage from "@/app/notifications/page";
 import PluginsDashboard from "@/app/admin/plugins/PluginsDashboard";
 import PluginGallery from "@/app/plugins/gallery/PluginGallery";
 import PluginDetail from "@/app/plugins/detail/PluginDetail";
+import Docs from "@/pages/Docs";
+import Explore from "@/pages/Explore";
 
 export default function AppRoutes() {
   return (
     <Routes>
       {/* Public routes */}
       <Route path="/" element={<Index />} />
+      <Route path="/docs" element={<Docs />} />
+      <Route path="/explore" element={<Explore />} />
       <Route path="/auth/login" element={<Login />} />
       <Route path="/auth/signup" element={<Signup />} />
       <Route path="/onboarding" element={
