@@ -34,6 +34,7 @@ import PluginGallery from "@/app/plugins/gallery/PluginGallery";
 import PluginDetail from "@/app/plugins/detail/PluginDetail";
 import Docs from "@/pages/Docs";
 import Explore from "@/pages/Explore";
+import AnalyticsDashboard from "@/app/admin/analytics/AnalyticsDashboard";
 
 export default function AppRoutes() {
   return (
