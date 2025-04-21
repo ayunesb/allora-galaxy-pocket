@@ -5,8 +5,20 @@ import CampaignCard from "./CampaignCard";
 import CampaignRecap from "./CampaignRecap";
 
 const campaigns: Campaign[] = [
-  { name: "B2B Cold Outreach", status: "Active", summary: "Open rates hit 54%. Booked 22 calls in 5 days." },
-  { name: "Instagram Lead Magnet", status: "Paused", summary: "Cost per lead peaked at $9.24 before auto-optimization." }
+  { 
+    id: "1",
+    name: "B2B Cold Outreach", 
+    status: "active", 
+    created_at: new Date().toISOString(),
+    strategy_id: "strategy-1" 
+  },
+  { 
+    id: "2",
+    name: "Instagram Lead Magnet", 
+    status: "paused",
+    created_at: new Date().toISOString(),
+    strategy_id: "strategy-2"
+  }
 ];
 
 export default function CampaignPage() {
@@ -19,7 +31,7 @@ export default function CampaignPage() {
       <div className="grid md:grid-cols-2 gap-6 mb-8">
         {campaigns.map((c, i) => (
           <CampaignCard
-            key={c.name}
+            key={c.id}
             name={c.name}
             status={c.status}
             cta={() => setSelected(i)}
@@ -30,9 +42,10 @@ export default function CampaignPage() {
       {selected !== null && (
         <CampaignRecap
           name={campaigns[selected].name}
-          summary={campaigns[selected].summary}
+          strategy_id={campaigns[selected].strategy_id}
         />
       )}
     </div>
   );
 }
+
