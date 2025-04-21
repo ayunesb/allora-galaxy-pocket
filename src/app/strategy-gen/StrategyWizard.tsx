@@ -1,14 +1,22 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import StepIndustry from "./StepIndustry";
 import StepGoal from "./StepGoal";
 import StrategyResult from "./StrategyResult";
+import { useToast } from "@/hooks/use-toast";
 
 export default function StrategyWizard() {
+  const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [industry, setIndustry] = useState("");
   const [goal, setGoal] = useState("");
+
+  const handleLaunchStrategy = () => {
+    toast({
+      title: "Strategy launched",
+      description: "Your AI-powered strategy is now being generated",
+    });
+  };
 
   return (
     <div className="max-w-xl mx-auto space-y-8 p-6">
@@ -43,7 +51,11 @@ export default function StrategyWizard() {
             </Button>
           )}
           {step === 3 && (
-            <Button variant="default" className="bg-green-600 hover:bg-green-700">
+            <Button 
+              variant="default" 
+              className="bg-green-600 hover:bg-green-700"
+              onClick={handleLaunchStrategy}
+            >
               Launch Strategy
             </Button>
           )}

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Lead } from "@/types/lead";
+import { useToast } from "@/hooks/use-toast";
 
 interface LeadFormProps {
   onAdd: (lead: Omit<Lead, "id" | "createdAt">) => void;
@@ -12,14 +13,27 @@ interface LeadFormProps {
 export default function LeadForm({ onAdd }: LeadFormProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const { toast } = useToast();
 
   const handleSubmit = () => {
-    if (!name || !email) return;
+    if (!name || !email) {
+      toast({
+        title: "Validation error",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
     
     onAdd({
       name,
       email,
       status: "MQL"
+    });
+    
+    toast({
+      title: "Lead added",
+      description: "New lead has been successfully added",
     });
     
     setName("");

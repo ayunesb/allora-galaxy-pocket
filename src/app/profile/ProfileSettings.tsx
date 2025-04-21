@@ -49,10 +49,17 @@ export default function ProfileSettings() {
 
       if (error) throw error;
       
-      toast.success("Profile updated successfully");
+      toast({
+        title: "Profile updated",
+        description: "Your profile changes have been saved successfully",
+      });
     } catch (error) {
       console.error("Error updating profile:", error);
-      toast.error("Failed to update profile");
+      toast({
+        title: "Error",
+        description: "Failed to update profile",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }

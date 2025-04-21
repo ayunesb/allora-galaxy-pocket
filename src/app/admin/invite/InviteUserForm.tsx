@@ -30,11 +30,16 @@ export default function InviteUserForm() {
 
       if (error) throw error;
       
-      toast.success("Invite sent successfully!");
+      toast({
+        title: "Invite sent",
+        description: "Team member has been successfully invited"
+      });
       setEmail("");
     } catch (error: any) {
-      toast.error("Failed to send invite", {
-        description: error.message
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send invite",
+        variant: "destructive"
       });
     } finally {
       setIsLoading(false);

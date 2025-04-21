@@ -48,7 +48,7 @@ export default function CoachingFeed() {
     } else {
       toast({
         title: "Strategy saved",
-        description: "The strategy has been saved to your vault",
+        description: "The strategy has been added to your vault",
       });
     }
   };
