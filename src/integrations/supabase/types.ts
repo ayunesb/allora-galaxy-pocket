@@ -259,6 +259,41 @@ export type Database = {
           },
         ]
       }
+      tenant_plugins: {
+        Row: {
+          created_at: string | null
+          enabled: boolean
+          id: string
+          plugin_key: string
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          enabled?: boolean
+          id?: string
+          plugin_key: string
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          enabled?: boolean
+          id?: string
+          plugin_key?: string
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_plugins_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_profiles: {
         Row: {
           created_at: string | null
