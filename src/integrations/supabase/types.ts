@@ -44,6 +44,42 @@ export type Database = {
           },
         ]
       }
+      export_logs: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          delivery_method: string
+          error_message: string | null
+          export_type: string
+          id: string
+          status: string
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          delivery_method: string
+          error_message?: string | null
+          export_type: string
+          id?: string
+          status?: string
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          delivery_method?: string
+          error_message?: string | null
+          export_type?: string
+          id?: string
+          status?: string
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       kpi_metrics: {
         Row: {
           created_at: string | null

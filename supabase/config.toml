@@ -1,8 +1,5 @@
 
 project_id = "lxsuqqlfuftnvuvtctsx"
 
-[functions.sendMilestoneAlerts]
+[functions.export-data]
 verify_jwt = true
-
-[functions.decrementCredits] 
-verify_jwt = false
