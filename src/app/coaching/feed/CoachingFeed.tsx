@@ -1,10 +1,11 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { scoreSuggestions } from "./scoreSuggestions";
+import { useTenant } from "@/hooks/useTenant";
 
 const suggestions = [
   {
@@ -25,18 +26,46 @@ const suggestions = [
 ];
 
 export default function CoachingFeed() {
-  const [activeSuggestions, setActiveSuggestions] = useState(suggestions);
+  const [feedbackLogs, setFeedbackLogs] = useState<any[]>([]);
+  const [rankedSuggestions, setRankedSuggestions] = useState(suggestions);
   const { toast } = useToast();
   const { user } = useAuth();
+  const { tenant } = useTenant();
+
+  useEffect(() => {
+    async function fetchFeedback() {
+      const { data } = await supabase
+        .from('strategy_feedback')
+        .select('strategy_title, action')
+        .eq('tenant_id', tenant?.id);
+        
+      if (data) {
+        setFeedbackLogs(data);
+        const ranked = scoreSuggestions(suggestions, data);
+        setRankedSuggestions(ranked);
+      }
+    }
+    
+    fetchFeedback();
+  }, [tenant?.id]);
 
   const handleUseSuggestion = async (index: number) => {
-    const suggestion = activeSuggestions[index];
+    const suggestion = rankedSuggestions[index];
 
     const { data, error } = await supabase
       .from('vault_strategies')
       .insert({
         title: suggestion.title,
-        description: suggestion.description
+        description: suggestion.description,
+        tenant_id: tenant?.id
+      });
+
+    await supabase
+      .from('strategy_feedback')
+      .insert({
+        strategy_title: suggestion.title,
+        action: 'used',
+        tenant_id: tenant?.id
       });
 
     if (error) {
@@ -53,9 +82,19 @@ export default function CoachingFeed() {
     }
   };
 
-  const handleDismissSuggestion = (index: number) => {
-    const updatedSuggestions = activeSuggestions.filter((_, i) => i !== index);
-    setActiveSuggestions(updatedSuggestions);
+  const handleDismissSuggestion = async (index: number) => {
+    const suggestion = rankedSuggestions[index];
+    
+    await supabase
+      .from('strategy_feedback')
+      .insert({
+        strategy_title: suggestion.title,
+        action: 'dismissed',
+        tenant_id: tenant?.id
+      });
+    
+    const updatedSuggestions = rankedSuggestions.filter((_, i) => i !== index);
+    setRankedSuggestions(updatedSuggestions);
   };
 
   return (
@@ -63,12 +102,12 @@ export default function CoachingFeed() {
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-dark-purple">🧠 AI Strategy Coach</h2>
       </div>
-      {activeSuggestions.length === 0 ? (
+      {rankedSuggestions.length === 0 ? (
         <div className="text-center text-gray-500 py-8">
           No new suggestions at the moment. Check back later!
         </div>
       ) : (
-        activeSuggestions.map((suggestion, index) => (
+        rankedSuggestions.map((suggestion, index) => (
           <div 
             key={index} 
             className="bg-white p-5 rounded-lg shadow-md space-y-3 border-l-4 border-primary"
