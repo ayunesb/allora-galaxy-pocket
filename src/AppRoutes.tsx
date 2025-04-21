@@ -1,3 +1,4 @@
+import React from 'react';
 import { Routes, Route } from "react-router-dom";
 import AuthenticatedLayout from "@/app/layouts/AuthenticatedLayout";
 import AdminOnly from "@/guards/AdminOnly";
@@ -23,6 +24,7 @@ import SeedToolsPanel from "@/app/admin/seed-tools/SeedToolsPanel";
 import StrategyWizard from "@/app/strategy-gen/StrategyWizard";
 import LeadPipeline from "@/app/leads/LeadPipeline";
 import InviteUserForm from "@/app/admin/invite/InviteUserForm";
+import CoachingFeed from "@/app/coaching/feed/CoachingFeed";
 
 export default function AppRoutes() {
   return (
@@ -74,6 +76,7 @@ export default function AppRoutes() {
             </AdminOnly>
           } 
         />
+        <Route path="/coaching/feed" element={<CoachingFeed />} />
       </Route>
       
       <Route path="*" element={<NotFound />} />
