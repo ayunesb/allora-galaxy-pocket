@@ -14,6 +14,7 @@ import AcademyFeed from "./app/academy/AcademyFeed";
 import VaultItemsList from "./app/vault/VaultItemsList";
 import StartupDashboard from "./app/startup/StartupDashboard";
 import LaunchPage from "./app/launch/LaunchPage";
+import CampaignPage from "./app/campaign/CampaignPage";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ const App = () => (
           <Route path="/vault" element={<VaultItemsList />} />
           <Route path="/startup" element={<StartupDashboard />} />
           <Route path="/launch" element={<LaunchPage />} />
+          <Route path="/campaign" element={<CampaignPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
