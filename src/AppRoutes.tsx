@@ -29,6 +29,8 @@ import InsightsPanel from "@/app/dashboard/insights/InsightsPanel";
 import StrategyDetail from "@/app/vault/strategy-detail/[id]";
 import NotificationsPage from "@/app/notifications/page";
 import PluginsDashboard from "@/app/admin/plugins/PluginsDashboard";
+import PluginGallery from "@/app/plugins/gallery/PluginGallery";
+import PluginDetail from "@/app/plugins/detail/PluginDetail";
 
 export default function AppRoutes() {
   return (
@@ -92,6 +94,8 @@ export default function AppRoutes() {
         <Route path="/coaching/feed" element={<CoachingFeed />} />
         <Route path="/dashboard/insights" element={<InsightsPanel />} />
         <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/admin/plugins/gallery" element={<PluginGallery />} />
+        <Route path="/admin/plugins/:pluginKey" element={<PluginDetail />} />
       </Route>
       
       <Route path="*" element={<NotFound />} />

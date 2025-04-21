@@ -1,3 +1,4 @@
+
 import { NavLink } from "react-router-dom";
 import { 
   Home, 
@@ -6,7 +7,8 @@ import {
   BarChart2, 
   Settings,
   UserPlus,
-  Lightbulb
+  Lightbulb,
+  Plus
 } from "lucide-react";
 import {
   Sidebar,
@@ -27,6 +29,7 @@ const items = [
   { icon: BriefcaseBusiness, label: "Strategy", path: "/strategy" },
   { icon: BarChart2, label: "Campaigns", path: "/campaign" },
   { icon: Lightbulb, label: "AI Coach", path: "/coaching/feed" },
+  { icon: Plus, label: "Add Plugin", path: "/admin/plugins/gallery" },
   { icon: UserPlus, label: "Invite Users", path: "/admin/invite" },
   { icon: Settings, label: "Settings", path: "/admin/settings" }
 ];
