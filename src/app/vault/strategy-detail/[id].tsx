@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Strategy } from "@/types/strategy";
@@ -6,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import FeedbackTimeline from "./FeedbackTimeline";
 
 export default function StrategyDetail() {
   const { id } = useParams();
@@ -16,10 +16,7 @@ export default function StrategyDetail() {
   useEffect(() => {
     async function fetchStrategy() {
       setIsLoading(true);
-      // In a real app, this would fetch from Supabase
-      // For now, we'll use mock data
       try {
-        // Simulating an API call
         setTimeout(() => {
           const mockStrategy: Strategy = {
             id: id || "1",
@@ -109,6 +106,8 @@ export default function StrategyDetail() {
           </Button>
         </CardFooter>
       </Card>
+      
+      <FeedbackTimeline strategyTitle={strategy.title} />
     </div>
   );
 }
