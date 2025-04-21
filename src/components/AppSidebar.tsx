@@ -1,6 +1,12 @@
-
 import { NavLink } from "react-router-dom";
-import { Home, Rocket, BriefcaseBusiness, BarChart2, Settings } from "lucide-react";
+import { 
+  Home, 
+  Rocket, 
+  BriefcaseBusiness, 
+  BarChart2, 
+  Settings,
+  UserPlus 
+} from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -18,6 +24,7 @@ const items = [
   { icon: Rocket, label: "Launch", path: "/launch" },
   { icon: BriefcaseBusiness, label: "Strategy", path: "/strategy" },
   { icon: BarChart2, label: "Campaigns", path: "/campaign" },
+  { icon: UserPlus, label: "Invite Users", path: "/admin/invite" },
   { icon: Settings, label: "Settings", path: "/admin/settings" }
 ];
 
