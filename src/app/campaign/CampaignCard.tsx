@@ -5,7 +5,7 @@ import { TrendingUp, Pause } from "lucide-react";
 
 interface CampaignCardProps {
   name: string;
-  status: "Active" | "Paused";
+  status: "active" | "paused" | "draft";
   cta: () => void;
 }
 
@@ -14,14 +14,14 @@ export default function CampaignCard({ name, status, cta }: CampaignCardProps) {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-lg font-semibold">{name}</CardTitle>
-        {status === "Active" ? (
+        {status === "active" ? (
           <TrendingUp className="h-4 w-4 text-green-500" />
         ) : (
           <Pause className="h-4 w-4 text-yellow-500" />
         )}
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-muted-foreground">Status: {status}</p>
+        <p className="text-sm text-muted-foreground">Status: {status.charAt(0).toUpperCase() + status.slice(1)}</p>
         <Button 
           variant="link" 
           onClick={cta}
