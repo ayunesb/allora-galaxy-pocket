@@ -259,6 +259,44 @@ export type Database = {
           },
         ]
       }
+      tenant_analytics: {
+        Row: {
+          active_users: number | null
+          created_at: string | null
+          id: string
+          mrr: number | null
+          tenant_id: string
+          total_strategies: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          active_users?: number | null
+          created_at?: string | null
+          id?: string
+          mrr?: number | null
+          tenant_id: string
+          total_strategies?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          active_users?: number | null
+          created_at?: string | null
+          id?: string
+          mrr?: number | null
+          tenant_id?: string
+          total_strategies?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_analytics_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_plugin_configs: {
         Row: {
           config: Json

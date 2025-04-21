@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Routes, Route } from "react-router-dom";
 import AuthenticatedLayout from "@/app/layouts/AuthenticatedLayout";
@@ -107,6 +106,14 @@ export default function AppRoutes() {
           element={
             <AdminOnly>
               <BillingPanel />
+            </AdminOnly>
+          } 
+        />
+        <Route 
+          path="/admin/analytics" 
+          element={
+            <AdminOnly>
+              <AnalyticsDashboard />
             </AdminOnly>
           } 
         />
