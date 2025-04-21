@@ -1,8 +1,10 @@
+
 import React from 'react';
 import { Routes, Route } from "react-router-dom";
 import AuthenticatedLayout from "@/app/layouts/AuthenticatedLayout";
 import AdminOnly from "@/guards/AdminOnly";
 import ProfileSettings from "@/app/profile/ProfileSettings";
+import BillingPanel from "@/app/admin/billing/BillingPanel";
 
 // Pages
 import Index from "@/pages/Index";
