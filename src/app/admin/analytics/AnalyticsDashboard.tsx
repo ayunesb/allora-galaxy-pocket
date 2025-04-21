@@ -1,9 +1,9 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MetricsCard } from "./MetricsCard";
 import { Tables } from "@/integrations/supabase/types";
+import { PluginUsageChart } from "./PluginUsageChart";
 
 type TenantAnalytics = Tables<"tenant_analytics">;
 
@@ -62,7 +62,6 @@ export default function AnalyticsDashboard() {
       </div>
 
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Tenant Breakdown</h3>
         <div className="grid gap-4 md:grid-cols-2">
           {analytics?.map((tenant) => (
             <Card key={tenant.id}>
@@ -85,6 +84,10 @@ export default function AnalyticsDashboard() {
             </Card>
           ))}
         </div>
+      </div>
+
+      <div className="mt-8">
+        <PluginUsageChart />
       </div>
     </div>
   );
