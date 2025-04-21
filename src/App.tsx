@@ -8,6 +8,8 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import OnboardingLayout from "./app/onboarding/OnboardingLayout";
 import OnboardingWizard from "./app/onboarding/OnboardingWizard";
+import PocketLayout from "./app/pocket/PocketLayout";
+import PocketSwipe from "./app/pocket/PocketSwipe";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +28,14 @@ const App = () => (
                 <OnboardingWizard />
               </OnboardingLayout>
             } 
+          />
+          <Route
+            path="/pocket"
+            element={
+              <PocketLayout>
+                <PocketSwipe />
+              </PocketLayout>
+            }
           />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
