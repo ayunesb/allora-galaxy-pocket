@@ -1,8 +1,11 @@
 
+import { useState } from "react";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useState } from "react";
+import { useTenant } from "@/hooks/useTenant";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface BillingStats {
   usage: number;
@@ -11,13 +14,29 @@ interface BillingStats {
 }
 
 export default function BillingPanel() {
-  const [stats] = useState<BillingStats>({
-    usage: 42,
-    limit: 100,
-    plan: "Free"
+  const { tenant } = useTenant();
+  const { data: stats } = useQuery({
+    queryKey: ["billing", tenant?.id],
+    queryFn: async (): Promise<BillingStats> => {
+      if (!tenant?.id) {
+        return { usage: 0, limit: 100, plan: "Free" };
+      }
+
+      const { data } = await supabase
+        .from("tenant_profiles")
+        .select("usage_credits")
+        .eq("id", tenant.id)
+        .maybeSingle();
+
+      return {
+        usage: 100 - (data?.usage_credits || 0),
+        limit: 100,
+        plan: "Free"
+      };
+    }
   });
 
-  const usagePercent = (stats.usage / stats.limit) * 100;
+  const usagePercent = ((stats?.usage || 0) / (stats?.limit || 1)) * 100;
 
   return (
     <Card className="max-w-md mx-auto">
@@ -27,13 +46,13 @@ export default function BillingPanel() {
       <CardContent className="space-y-4">
         <div className="flex justify-between text-sm">
           <span>Current Plan:</span>
-          <span className="font-medium">{stats.plan}</span>
+          <span className="font-medium">{stats?.plan || "Loading..."}</span>
         </div>
         
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span>Strategy Credits Used:</span>
-            <span className="font-medium">{stats.usage} / {stats.limit}</span>
+            <span className="font-medium">{stats?.usage || 0} / {stats?.limit || 0}</span>
           </div>
           <Progress value={usagePercent} className="h-2" />
         </div>
