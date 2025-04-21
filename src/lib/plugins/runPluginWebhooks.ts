@@ -2,6 +2,18 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Strategy } from "@/types/strategy";
 
+interface PluginConfig {
+  config: {
+    webhook_url?: string;
+  };
+}
+
+interface TenantPluginData {
+  enabled: boolean;
+  tenant_id: string;
+  tenant_plugin_configs: PluginConfig | PluginConfig[];
+}
+
 export async function runPluginWebhooks(pluginKey: string, strategy: Strategy) {
   try {
     // Check if the plugin is enabled for the tenant
@@ -25,13 +37,11 @@ export async function runPluginWebhooks(pluginKey: string, strategy: Strategy) {
     let webhookUrl;
     
     if (pluginData.tenant_plugin_configs) {
-      if (Array.isArray(pluginData.tenant_plugin_configs)) {
-        // If it's an array, try to get the config from the first item
-        webhookUrl = pluginData.tenant_plugin_configs[0]?.config?.webhook_url;
-      } else {
-        // If it's an object with a config property
-        webhookUrl = pluginData.tenant_plugin_configs.config?.webhook_url;
-      }
+      const config = Array.isArray(pluginData.tenant_plugin_configs)
+        ? pluginData.tenant_plugin_configs[0]
+        : pluginData.tenant_plugin_configs;
+      
+      webhookUrl = config?.config?.webhook_url;
     }
       
     if (!webhookUrl) {
