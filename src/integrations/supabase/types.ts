@@ -153,6 +153,41 @@ export type Database = {
           },
         ]
       }
+      plugin_usage_logs: {
+        Row: {
+          count: number
+          created_at: string
+          event: string
+          id: string
+          plugin_key: string
+          tenant_id: string
+        }
+        Insert: {
+          count?: number
+          created_at?: string
+          event: string
+          id?: string
+          plugin_key: string
+          tenant_id: string
+        }
+        Update: {
+          count?: number
+          created_at?: string
+          event?: string
+          id?: string
+          plugin_key?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plugin_usage_logs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
