@@ -1,6 +1,8 @@
 
 export interface Campaign {
+  id: string;
   name: string;
-  status: "Active" | "Paused";
-  summary: string;
+  status: "active" | "paused" | "draft";
+  strategy_id?: string;
+  created_at: string;
 }
