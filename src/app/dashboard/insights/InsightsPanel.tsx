@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenant } from "@/hooks/useTenant";
 
 type FeedbackData = {
   strategy_title: string;
@@ -18,12 +19,14 @@ type GroupedFeedback = {
 export default function InsightsPanel() {
   const [logs, setLogs] = useState<FeedbackData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { tenant } = useTenant();
 
   useEffect(() => {
     async function fetchFeedback() {
       const { data, error } = await supabase
         .from('strategy_feedback')
         .select('strategy_title, action, created_at')
+        .eq('tenant_id', tenant?.id)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -36,7 +39,7 @@ export default function InsightsPanel() {
     }
 
     fetchFeedback();
-  }, []);
+  }, [tenant?.id]);
 
   const grouped: GroupedFeedback = logs.reduce((acc, curr) => {
     if (!acc[curr.strategy_title]) {
