@@ -22,6 +22,7 @@ import CampaignPage from "./app/campaign/CampaignPage";
 import SettingsPanel from "./app/admin/settings/SettingsPanel";
 import RequireAuth from "./guards/RequireAuth";
 import KpiDashboard from "./app/insights/kpis/KpiDashboard";
+import AdminOnly from "./guards/AdminOnly";
 
 const queryClient = new QueryClient();
 
@@ -59,9 +60,9 @@ const App = () => (
               <Route 
                 path="/admin/settings" 
                 element={
-                  <RequireAuth>
+                  <AdminOnly>
                     <SettingsPanel />
-                  </RequireAuth>
+                  </AdminOnly>
                 } 
               />
               <Route path="/insights/kpis" element={<KpiDashboard />} />

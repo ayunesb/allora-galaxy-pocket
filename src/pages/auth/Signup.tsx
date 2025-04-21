@@ -18,7 +18,7 @@ export default function Signup() {
       toast.success("Signup successful!", {
         description: "Please check your email to confirm your account"
       });
-      navigate("/auth/login");
+      navigate("/startup");
     } catch (err: any) {
       toast.error("Signup failed", {
         description: err.message

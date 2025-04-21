@@ -16,7 +16,7 @@ export default function Login() {
     try {
       await login(email, password);
       toast.success("Logged in successfully!");
-      navigate("/");
+      navigate("/startup");
     } catch (err: any) {
       toast.error("Login failed", {
         description: err.message
