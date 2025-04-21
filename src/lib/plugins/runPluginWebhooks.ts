@@ -22,7 +22,11 @@ export async function runPluginWebhooks(pluginKey: string, strategy: Strategy) {
     }
 
     // Get webhook URL from plugin config
-    const webhookUrl = pluginData.tenant_plugin_configs?.config?.webhook_url;
+    // Access the first element if it's an array, or handle it as an object if it's not
+    const webhookUrl = Array.isArray(pluginData.tenant_plugin_configs) 
+      ? pluginData.tenant_plugin_configs[0]?.config?.webhook_url
+      : pluginData.tenant_plugin_configs?.config?.webhook_url;
+      
     if (!webhookUrl) {
       console.log(`[Webhook] No webhook URL configured for plugin ${pluginKey}`);
       return;
