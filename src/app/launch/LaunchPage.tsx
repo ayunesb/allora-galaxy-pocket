@@ -1,9 +1,9 @@
-
 import React from "react";
 import { useToast } from "@/hooks/use-toast";
 import StrategyPreview from "./StrategyPreview";
 import LaunchControls from "./LaunchControls";
 import { getPluginHooks } from "@/lib/plugins/pluginRegistry";
+import type { Strategy } from "@/types/strategy";
 
 // Import plugins to register them
 import "@/lib/plugins/stripePlugin";
@@ -13,9 +13,13 @@ import "@/lib/plugins/twilioPlugin";
 export default function LaunchPage() {
   const { toast } = useToast();
   
-  const strategy = {
+  const strategy: Strategy = {
+    id: crypto.randomUUID(),
     title: "Automate Lead Follow-Up",
-    summary: "Use AI agents to follow up with MQLs within 3 minutes using Twilio + ChatGPT + CRM sync."
+    description: "Use AI agents to follow up with MQLs within 3 minutes using Twilio + ChatGPT + CRM sync.",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    tenant_id: null
   };
 
   const handleApprove = async () => {
