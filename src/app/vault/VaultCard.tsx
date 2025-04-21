@@ -2,17 +2,21 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowUp } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface VaultCardProps {
+  id: string;
   title: string;
   description: string;
   onRemix: () => void;
 }
 
-const VaultCard = ({ title, description, onRemix }: VaultCardProps) => {
+const VaultCard = ({ id, title, description, onRemix }: VaultCardProps) => {
+  const navigate = useNavigate();
+
   return (
     <Card className="h-full flex flex-col">
-      <CardHeader>
+      <CardHeader className="cursor-pointer" onClick={() => navigate(`/vault/strategy-detail/${id}`)}>
         <CardTitle className="text-lg">{title}</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col flex-1">

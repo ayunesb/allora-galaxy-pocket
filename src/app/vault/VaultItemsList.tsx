@@ -3,9 +3,9 @@ import { useToast } from "@/hooks/use-toast";
 import VaultCard from "./VaultCard";
 
 const strategies = [
-  { title: "Double Activation in 30 Days", description: "Based on user behavior tagging." },
-  { title: "Lower Churn w/ Smart Nudges", description: "Combines time-based prompts + support." },
-  { title: "Scale CAC-Positive Ads", description: "Based on Lookalike AI personas." }
+  { id: "1", title: "Double Activation in 30 Days", description: "Based on user behavior tagging." },
+  { id: "2", title: "Lower Churn w/ Smart Nudges", description: "Combines time-based prompts + support." },
+  { id: "3", title: "Scale CAC-Positive Ads", description: "Based on Lookalike AI personas." }
 ];
 
 const VaultItemsList = () => {
@@ -24,7 +24,8 @@ const VaultItemsList = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {strategies.map((strategy) => (
           <VaultCard
-            key={strategy.title}
+            key={strategy.id}
+            id={strategy.id}
             title={strategy.title}
             description={strategy.description}
             onRemix={() => handleRemix(strategy.title)}

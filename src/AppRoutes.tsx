@@ -26,6 +26,7 @@ import LeadPipeline from "@/app/leads/LeadPipeline";
 import InviteUserForm from "@/app/admin/invite/InviteUserForm";
 import CoachingFeed from "@/app/coaching/feed/CoachingFeed";
 import InsightsPanel from "@/app/dashboard/insights/InsightsPanel";
+import StrategyDetail from "@/app/vault/StrategyDetail";
 
 export default function AppRoutes() {
   return (
@@ -45,6 +46,7 @@ export default function AppRoutes() {
         <Route path="/startup" element={<StartupDashboard />} />
         <Route path="/campaign" element={<CampaignPage />} />
         <Route path="/vault" element={<VaultItemsList />} />
+        <Route path="/vault/strategy-detail/:id" element={<StrategyDetail />} />
         <Route path="/launch" element={<LaunchPage />} />
         <Route path="/pocket" element={<PocketSwipe />} />
         <Route path="/academy" element={<AcademyFeed />} />
