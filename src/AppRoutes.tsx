@@ -21,6 +21,7 @@ import SettingsPanel from "@/app/admin/settings/SettingsPanel";
 import KpiDashboard from "@/app/insights/kpis/KpiDashboard";
 import SeedToolsPanel from "@/app/admin/seed-tools/SeedToolsPanel";
 import StrategyWizard from "@/app/strategy-gen/StrategyWizard";
+import LeadPipeline from "@/app/leads/LeadPipeline";
 
 export default function AppRoutes() {
   return (
@@ -63,6 +64,7 @@ export default function AppRoutes() {
         />
         <Route path="/profile/settings" element={<ProfileSettings />} />
         <Route path="/strategy" element={<StrategyWizard />} />
+        <Route path="/leads" element={<LeadPipeline />} />
       </Route>
       
       <Route path="*" element={<NotFound />} />
