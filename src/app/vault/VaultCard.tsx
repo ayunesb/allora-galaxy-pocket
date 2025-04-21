@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { remix } from "lucide-react";
+import { ArrowUp } from "lucide-react";
 
 interface VaultCardProps {
   title: string;
@@ -22,7 +22,7 @@ const VaultCard = ({ title, description, onRemix }: VaultCardProps) => {
           className="w-full mt-4"
           variant="outline"
         >
-          <remix className="mr-2 h-4 w-4" />
+          <ArrowUp className="mr-2 h-4 w-4" />
           Remix Strategy
         </Button>
       </CardContent>

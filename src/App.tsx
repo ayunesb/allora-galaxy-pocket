@@ -12,6 +12,7 @@ import PocketSwipe from "./app/pocket/PocketSwipe";
 import ExplorePage from "./app/galaxy/explore/ExplorePage";
 import AcademyFeed from "./app/academy/AcademyFeed";
 import VaultItemsList from "./app/vault/VaultItemsList";
+import StartupDashboard from "./app/startup/StartupDashboard";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ const App = () => (
           <Route path="/galaxy/explore" element={<ExplorePage />} />
           <Route path="/academy" element={<AcademyFeed />} />
           <Route path="/vault" element={<VaultItemsList />} />
+          <Route path="/startup" element={<StartupDashboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
