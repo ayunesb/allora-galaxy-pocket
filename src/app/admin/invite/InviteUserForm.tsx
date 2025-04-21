@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTenant } from "@/hooks/useTenant";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/sonner";
+import { useToast } from "@/hooks/use-toast";
 import { UserRole } from "@/types/invite";
 
 export default function InviteUserForm() {
@@ -14,6 +14,7 @@ export default function InviteUserForm() {
   const [role, setRole] = useState<UserRole>("editor");
   const [isLoading, setIsLoading] = useState(false);
   const { tenant } = useTenant();
+  const { toast } = useToast();
 
   const handleInvite = async () => {
     if (!email || !role || !tenant) return;
