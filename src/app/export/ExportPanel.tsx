@@ -7,7 +7,7 @@ export default function ExportPanel() {
   return (
     <div className="p-6 max-w-xl space-y-4">
       <h2 className="text-xl font-bold">📤 Export Center</h2>
-      {["strategies", "leads", "kpis"].map((type) => (
+      {(["strategies", "leads", "kpis"] as const).map((type) => (
         <div 
           key={type} 
           className="bg-white p-4 rounded shadow flex justify-between items-center"
