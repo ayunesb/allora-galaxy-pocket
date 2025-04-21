@@ -27,6 +27,7 @@ import InviteUserForm from "@/app/admin/invite/InviteUserForm";
 import CoachingFeed from "@/app/coaching/feed/CoachingFeed";
 import InsightsPanel from "@/app/dashboard/insights/InsightsPanel";
 import StrategyDetail from "@/app/vault/strategy-detail/[id]";
+import NotificationsPage from "@/app/notifications/page";
 
 export default function AppRoutes() {
   return (
@@ -81,6 +82,7 @@ export default function AppRoutes() {
         />
         <Route path="/coaching/feed" element={<CoachingFeed />} />
         <Route path="/dashboard/insights" element={<InsightsPanel />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
       </Route>
       
       <Route path="*" element={<NotFound />} />
