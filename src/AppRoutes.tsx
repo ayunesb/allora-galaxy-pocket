@@ -26,7 +26,7 @@ import LeadPipeline from "@/app/leads/LeadPipeline";
 import InviteUserForm from "@/app/admin/invite/InviteUserForm";
 import CoachingFeed from "@/app/coaching/feed/CoachingFeed";
 import InsightsPanel from "@/app/dashboard/insights/InsightsPanel";
-import StrategyDetail from "@/app/vault/StrategyDetail";
+import StrategyDetail from "@/app/vault/strategy-detail/[id]";
 
 export default function AppRoutes() {
   return (

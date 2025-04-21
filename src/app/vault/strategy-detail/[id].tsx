@@ -2,45 +2,49 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Strategy } from "@/types/strategy";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
-import { format } from "date-fns";
-import { useTenant } from "@/hooks/useTenant";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
 export default function StrategyDetail() {
   const { id } = useParams();
   const [strategy, setStrategy] = useState<Strategy | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { tenant } = useTenant();
   const { toast } = useToast();
 
   useEffect(() => {
     async function fetchStrategy() {
-      if (!id) return;
-      
-      const { data, error } = await supabase
-        .from("vault_strategies")
-        .select("*")
-        .eq("id", id)
-        .eq("tenant_id", tenant?.id)
-        .maybeSingle();
-
-      if (error) {
+      setIsLoading(true);
+      // In a real app, this would fetch from Supabase
+      // For now, we'll use mock data
+      try {
+        // Simulating an API call
+        setTimeout(() => {
+          const mockStrategy: Strategy = {
+            id: id || "1",
+            title: "Double Activation in 30 Days",
+            description: "This strategy focuses on increasing user activation through targeted engagement campaigns and personalized onboarding flows, leading to higher retention rates.",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            tenant_id: "tenant-001"
+          };
+          
+          setStrategy(mockStrategy);
+          setIsLoading(false);
+        }, 500);
+      } catch (error) {
         toast({
           title: "Error loading strategy",
-          description: error.message,
+          description: "Could not load strategy details",
           variant: "destructive"
         });
-      } else {
-        setStrategy(data);
+        setIsLoading(false);
       }
-      setIsLoading(false);
     }
     
     fetchStrategy();
-  }, [id, tenant?.id, toast]);
+  }, [id, toast]);
 
   const handleRemix = () => {
     toast({
@@ -58,25 +62,23 @@ export default function StrategyDetail() {
 
   if (isLoading) {
     return (
-      <div className="p-6">
-        <div className="max-w-2xl mx-auto">
-          <Card>
-            <CardContent className="p-6">
-              <div className="space-y-4 animate-pulse">
-                <div className="h-8 bg-gray-200 rounded-md w-3/4" />
-                <div className="h-4 bg-gray-200 rounded-md w-1/4" />
-                <div className="h-24 bg-gray-200 rounded-md w-full" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      <div className="container mx-auto py-8 px-4">
+        <Card className="max-w-2xl mx-auto">
+          <CardContent className="p-6">
+            <div className="space-y-4 animate-pulse">
+              <div className="h-8 bg-gray-200 rounded-md w-3/4" />
+              <div className="h-4 bg-gray-200 rounded-md w-1/4" />
+              <div className="h-24 bg-gray-200 rounded-md w-full" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   if (!strategy) {
     return (
-      <div className="p-6">
+      <div className="container mx-auto py-8 px-4">
         <Card className="max-w-2xl mx-auto">
           <CardContent className="p-6 text-center">
             <p className="text-muted-foreground">Strategy not found</p>
@@ -87,7 +89,7 @@ export default function StrategyDetail() {
   }
 
   return (
-    <div className="p-6">
+    <div className="container mx-auto py-8 px-4">
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
           <h2 className="text-2xl font-bold">{strategy.title}</h2>
@@ -96,10 +98,10 @@ export default function StrategyDetail() {
           </p>
         </CardHeader>
         <CardContent>
-          <p className="text-gray-800">{strategy.description}</p>
+          <p>{strategy.description}</p>
         </CardContent>
         <CardFooter className="flex gap-2">
-          <Button onClick={handleLaunch} className="bg-primary">
+          <Button onClick={handleLaunch} variant="default">
             Launch Again
           </Button>
           <Button onClick={handleRemix} variant="secondary">

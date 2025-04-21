@@ -14,15 +14,25 @@ interface VaultCardProps {
 const VaultCard = ({ id, title, description, onRemix }: VaultCardProps) => {
   const navigate = useNavigate();
 
+  const handleCardClick = () => {
+    navigate(`/vault/strategy-detail/${id}`);
+  };
+
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader className="cursor-pointer" onClick={() => navigate(`/vault/strategy-detail/${id}`)}>
+    <Card className="h-full flex flex-col hover:shadow-md transition-shadow">
+      <CardHeader 
+        className="cursor-pointer" 
+        onClick={handleCardClick}
+      >
         <CardTitle className="text-lg">{title}</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col flex-1">
         <p className="text-sm text-muted-foreground flex-1">{description}</p>
         <Button 
-          onClick={onRemix} 
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemix();
+          }} 
           className="w-full mt-4"
           variant="outline"
         >
