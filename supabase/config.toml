@@ -1,5 +1,5 @@
 
 project_id = "lxsuqqlfuftnvuvtctsx"
 
-[functions.export-data]
+[functions.send-email]
 verify_jwt = true
