@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import AuthenticatedLayout from "@/app/layouts/AuthenticatedLayout";
 import AdminOnly from "@/guards/AdminOnly";
+import ProfileSettings from "@/app/profile/ProfileSettings";
 
 // Pages
 import Index from "@/pages/Index";
@@ -59,6 +60,7 @@ export default function AppRoutes() {
             </AdminOnly>
           } 
         />
+        <Route path="/profile/settings" element={<ProfileSettings />} />
       </Route>
       
       <Route path="*" element={<NotFound />} />
