@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -5,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { TenantProvider } from "@/hooks/useTenant";
+import AuthenticatedLayout from "@/app/layouts/AuthenticatedLayout";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/auth/Login";
@@ -20,7 +22,6 @@ import StartupDashboard from "./app/startup/StartupDashboard";
 import LaunchPage from "./app/launch/LaunchPage";
 import CampaignPage from "./app/campaign/CampaignPage";
 import SettingsPanel from "./app/admin/settings/SettingsPanel";
-import RequireAuth from "./guards/RequireAuth";
 import KpiDashboard from "./app/insights/kpis/KpiDashboard";
 import AdminOnly from "./guards/AdminOnly";
 
@@ -35,6 +36,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
+              {/* Public routes */}
               <Route path="/" element={<Index />} />
               <Route path="/auth/login" element={<Login />} />
               <Route path="/auth/signup" element={<Signup />} />
@@ -43,29 +45,27 @@ const App = () => (
                   <OnboardingWizard />
                 </OnboardingLayout>
               } />
-              <Route
-                path="/pocket"
-                element={
-                  <PocketLayout>
-                    <PocketSwipe />
-                  </PocketLayout>
-                }
-              />
-              <Route path="/galaxy/explore" element={<ExplorePage />} />
-              <Route path="/academy" element={<AcademyFeed />} />
-              <Route path="/vault" element={<VaultItemsList />} />
-              <Route path="/startup" element={<StartupDashboard />} />
-              <Route path="/launch" element={<LaunchPage />} />
-              <Route path="/campaign" element={<CampaignPage />} />
-              <Route 
-                path="/admin/settings" 
-                element={
-                  <AdminOnly>
-                    <SettingsPanel />
-                  </AdminOnly>
-                } 
-              />
-              <Route path="/insights/kpis" element={<KpiDashboard />} />
+              
+              {/* Protected routes */}
+              <Route element={<AuthenticatedLayout />}>
+                <Route path="/pocket" element={<PocketSwipe />} />
+                <Route path="/galaxy/explore" element={<ExplorePage />} />
+                <Route path="/academy" element={<AcademyFeed />} />
+                <Route path="/vault" element={<VaultItemsList />} />
+                <Route path="/startup" element={<StartupDashboard />} />
+                <Route path="/launch" element={<LaunchPage />} />
+                <Route path="/campaign" element={<CampaignPage />} />
+                <Route path="/insights/kpis" element={<KpiDashboard />} />
+                <Route 
+                  path="/admin/settings" 
+                  element={
+                    <AdminOnly>
+                      <SettingsPanel />
+                    </AdminOnly>
+                  } 
+                />
+              </Route>
+              
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
