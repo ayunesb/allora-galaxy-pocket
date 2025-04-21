@@ -1,4 +1,3 @@
-
 import { NavLink } from "react-router-dom";
 import { 
   Home, 
@@ -7,7 +6,7 @@ import {
   BarChart2, 
   Settings,
   UserPlus,
-  Lightbulb  // Add this import
+  Lightbulb
 } from "lucide-react";
 import {
   Sidebar,
@@ -20,13 +19,14 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import WorkspaceSwitcher from "@/app/workspace/WorkspaceSwitcher";
 
 const items = [
   { icon: Home, label: "Dashboard", path: "/startup" },
   { icon: Rocket, label: "Launch", path: "/launch" },
   { icon: BriefcaseBusiness, label: "Strategy", path: "/strategy" },
   { icon: BarChart2, label: "Campaigns", path: "/campaign" },
-  { icon: Lightbulb, label: "AI Coach", path: "/coaching/feed" },  // Add this line
+  { icon: Lightbulb, label: "AI Coach", path: "/coaching/feed" },
   { icon: UserPlus, label: "Invite Users", path: "/admin/invite" },
   { icon: Settings, label: "Settings", path: "/admin/settings" }
 ];
@@ -38,6 +38,9 @@ export function AppSidebar() {
         <span className="font-semibold text-lg">Allora OS</span>
       </SidebarHeader>
       <SidebarContent>
+        <SidebarGroup>
+          <WorkspaceSwitcher />
+        </SidebarGroup>
         <SidebarGroup>
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
