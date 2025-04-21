@@ -13,6 +13,7 @@ import ExplorePage from "./app/galaxy/explore/ExplorePage";
 import AcademyFeed from "./app/academy/AcademyFeed";
 import VaultItemsList from "./app/vault/VaultItemsList";
 import StartupDashboard from "./app/startup/StartupDashboard";
+import LaunchPage from "./app/launch/LaunchPage";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,7 @@ const App = () => (
           <Route path="/academy" element={<AcademyFeed />} />
           <Route path="/vault" element={<VaultItemsList />} />
           <Route path="/startup" element={<StartupDashboard />} />
+          <Route path="/launch" element={<LaunchPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
