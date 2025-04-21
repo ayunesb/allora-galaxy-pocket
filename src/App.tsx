@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,6 +9,7 @@ import OnboardingLayout from "./app/onboarding/OnboardingLayout";
 import OnboardingWizard from "./app/onboarding/OnboardingWizard";
 import PocketLayout from "./app/pocket/PocketLayout";
 import PocketSwipe from "./app/pocket/PocketSwipe";
+import ExplorePage from "./app/galaxy/explore/ExplorePage";
 
 const queryClient = new QueryClient();
 
@@ -37,7 +37,7 @@ const App = () => (
               </PocketLayout>
             }
           />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/galaxy/explore" element={<ExplorePage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
