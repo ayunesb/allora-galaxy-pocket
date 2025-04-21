@@ -2,6 +2,7 @@
 import React from "react";
 import KpiCard from "./KpiCard";
 import MilestoneItem from "./MilestoneItem";
+import CoachingFeed from "@/app/coaching/feed/CoachingFeed";
 
 const kpis = [
   { label: "Monthly Recurring Revenue", value: "$3,200", trend: "up" as const },
@@ -40,7 +41,12 @@ export default function StartupDashboard() {
             ))}
           </div>
         </section>
+
+        <section>
+          <CoachingFeed />
+        </section>
       </div>
     </div>
   );
 }
+
