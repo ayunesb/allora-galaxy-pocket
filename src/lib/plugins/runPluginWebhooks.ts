@@ -7,13 +7,13 @@ export async function runPluginWebhooks(pluginKey: string, strategy: Strategy) {
     // Check if the plugin is enabled for the tenant
     const { data: pluginData, error: pluginError } = await supabase
       .from('tenant_plugins')
-      .select('enabled, tenant_plugins.tenant_id, tenant_plugin_configs.config')
+      .select(`
+        enabled,
+        tenant_id,
+        tenant_plugin_configs!inner(config)
+      `)
       .eq('plugin_key', pluginKey)
       .eq('enabled', true)
-      .join('tenant_plugin_configs', { 
-        foreignKey: ['tenant_id', 'plugin_key'],
-        type: 'left'
-      })
       .single();
 
     if (pluginError || !pluginData?.enabled) {
@@ -22,7 +22,7 @@ export async function runPluginWebhooks(pluginKey: string, strategy: Strategy) {
     }
 
     // Get webhook URL from plugin config
-    const webhookUrl = pluginData.config?.webhook_url;
+    const webhookUrl = pluginData.tenant_plugin_configs?.config?.webhook_url;
     if (!webhookUrl) {
       console.log(`[Webhook] No webhook URL configured for plugin ${pluginKey}`);
       return;
