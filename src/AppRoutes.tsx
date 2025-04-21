@@ -28,7 +28,7 @@ import CoachingFeed from "@/app/coaching/feed/CoachingFeed";
 import InsightsPanel from "@/app/dashboard/insights/InsightsPanel";
 import StrategyDetail from "@/app/vault/strategy-detail/[id]";
 import NotificationsPage from "@/app/notifications/page";
-import PluginsDashboard from "@/app/plugins/PluginsDashboard";
+import PluginsDashboard from "@/app/admin/plugins/PluginsDashboard";
 
 export default function AppRoutes() {
   return (
