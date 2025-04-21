@@ -1,4 +1,3 @@
-
 import { Routes, Route } from "react-router-dom";
 import AuthenticatedLayout from "@/app/layouts/AuthenticatedLayout";
 import AdminOnly from "@/guards/AdminOnly";
@@ -19,6 +18,7 @@ import AcademyFeed from "@/app/academy/AcademyFeed";
 import ExplorePage from "@/app/galaxy/explore/ExplorePage";
 import SettingsPanel from "@/app/admin/settings/SettingsPanel";
 import KpiDashboard from "@/app/insights/kpis/KpiDashboard";
+import SeedToolsPanel from "@/app/admin/seed-tools/SeedToolsPanel";
 
 export default function AppRoutes() {
   return (
@@ -48,6 +48,14 @@ export default function AppRoutes() {
           element={
             <AdminOnly>
               <SettingsPanel />
+            </AdminOnly>
+          } 
+        />
+        <Route 
+          path="/admin/seed-tools" 
+          element={
+            <AdminOnly>
+              <SeedToolsPanel />
             </AdminOnly>
           } 
         />
