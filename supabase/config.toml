@@ -1,0 +1,8 @@
+
+project_id = "lxsuqqlfuftnvuvtctsx"
+
+[functions.sendMilestoneAlerts]
+verify_jwt = true
+
+[functions.decrementCredits] 
+verify_jwt = true
