@@ -7,6 +7,8 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { TenantProvider } from "@/hooks/useTenant";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import Login from "./pages/auth/Login";
+import Signup from "./pages/auth/Signup";
 import OnboardingLayout from "./app/onboarding/OnboardingLayout";
 import OnboardingWizard from "./app/onboarding/OnboardingWizard";
 import PocketLayout from "./app/pocket/PocketLayout";
@@ -33,14 +35,13 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route 
-                path="/onboarding" 
-                element={
-                  <OnboardingLayout>
-                    <OnboardingWizard />
-                  </OnboardingLayout>
-                } 
-              />
+              <Route path="/auth/login" element={<Login />} />
+              <Route path="/auth/signup" element={<Signup />} />
+              <Route path="/onboarding" element={
+                <OnboardingLayout>
+                  <OnboardingWizard />
+                </OnboardingLayout>
+              } />
               <Route
                 path="/pocket"
                 element={
