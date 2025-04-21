@@ -17,8 +17,9 @@ const allPlugins: Plugin[] = [
 
 export default function PluginsDashboard() {
   const { tenant } = useTenant();
-  const [enabled, setEnabled] = useState<Plugin['key'][]>([]);
+  const { refreshPlugins } = usePlugins();
   const [isLoading, setIsLoading] = useState(true);
+  const [enabled, setEnabled] = useState<Plugin['key'][]>([]);
 
   useEffect(() => {
     async function loadPlugins() {
@@ -34,7 +35,7 @@ export default function PluginsDashboard() {
         return;
       }
 
-      setEnabled(data?.filter(p => p.enabled).map(p => p.plugin_key) || []);
+      setEnabled(data?.filter(p => p.enabled).map(p => p.plugin_key as Plugin['key']) || []);
       setIsLoading(false);
     }
 
@@ -43,27 +44,32 @@ export default function PluginsDashboard() {
 
   const toggle = async (key: Plugin['key']) => {
     if (!tenant?.id) return;
-
-    const newEnabled = enabled.includes(key);
     
-    const { error } = await supabase
-      .from('tenant_plugins')
-      .upsert({
-        tenant_id: tenant.id,
-        plugin_key: key,
-        enabled: !newEnabled
-      });
+    try {
+      const newEnabled = enabled.includes(key);
+      
+      const { error } = await supabase
+        .from('tenant_plugins')
+        .upsert({
+          tenant_id: tenant.id,
+          plugin_key: key,
+          enabled: !newEnabled
+        });
 
-    if (error) {
+      if (error) throw error;
+
+      setEnabled(prev => 
+        newEnabled 
+          ? prev.filter(k => k !== key)
+          : [...prev, key]
+      );
+      
+      await refreshPlugins();
+      toast.success(`${key} plugin ${newEnabled ? 'disabled' : 'enabled'}`);
+    } catch (error) {
+      console.error('Error toggling plugin:', error);
       toast.error("Failed to update plugin status");
-      return;
     }
-
-    setEnabled(prev =>
-      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
-    );
-    
-    toast.success(`${key} plugin ${newEnabled ? 'disabled' : 'enabled'}`);
   };
 
   if (!tenant?.id) {
@@ -76,25 +82,35 @@ export default function PluginsDashboard() {
         🧩 Plugins for {tenant?.name || 'Loading...'}
       </h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {allPlugins.map((plugin) => (
-          <Card key={plugin.key}>
-            <CardHeader className="pb-2">
-              <CardTitle className="flex justify-between items-center text-lg">
-                <span>{plugin.label}</span>
-                <Switch
-                  disabled={isLoading}
-                  checked={enabled.includes(plugin.key)}
-                  onCheckedChange={() => toggle(plugin.key)}
-                />
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">{plugin.description}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[1,2,3,4].map(i => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader className="h-20 bg-muted" />
+              <CardContent className="h-16 bg-muted mt-2" />
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {allPlugins.map((plugin) => (
+            <Card key={plugin.key}>
+              <CardHeader>
+                <CardTitle className="flex justify-between items-center text-lg">
+                  <span>{plugin.label}</span>
+                  <Switch
+                    checked={enabled.includes(plugin.key)}
+                    onCheckedChange={() => toggle(plugin.key)}
+                  />
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">{plugin.description}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
