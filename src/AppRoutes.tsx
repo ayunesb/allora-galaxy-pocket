@@ -25,6 +25,7 @@ import StrategyWizard from "@/app/strategy-gen/StrategyWizard";
 import LeadPipeline from "@/app/leads/LeadPipeline";
 import InviteUserForm from "@/app/admin/invite/InviteUserForm";
 import CoachingFeed from "@/app/coaching/feed/CoachingFeed";
+import InsightsPanel from "@/app/dashboard/insights/InsightsPanel";
 
 export default function AppRoutes() {
   return (
@@ -77,6 +78,7 @@ export default function AppRoutes() {
           } 
         />
         <Route path="/coaching/feed" element={<CoachingFeed />} />
+        <Route path="/dashboard/insights" element={<InsightsPanel />} />
       </Route>
       
       <Route path="*" element={<NotFound />} />
