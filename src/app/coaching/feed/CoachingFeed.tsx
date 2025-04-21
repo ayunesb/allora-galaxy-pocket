@@ -1,7 +1,10 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Check, X } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Check, X } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const suggestions = [
   {
@@ -23,11 +26,31 @@ const suggestions = [
 
 export default function CoachingFeed() {
   const [activeSuggestions, setActiveSuggestions] = useState(suggestions);
+  const { toast } = useToast();
+  const { user } = useAuth();
 
-  const handleUseSuggestion = (index: number) => {
-    // Placeholder for future implementation of using a suggestion
-    console.log(`Using suggestion: ${activeSuggestions[index].title}`);
-    // You might want to trigger some action or open a modal here
+  const handleUseSuggestion = async (index: number) => {
+    const suggestion = activeSuggestions[index];
+
+    const { data, error } = await supabase
+      .from('vault_strategies')
+      .insert({
+        title: suggestion.title,
+        description: suggestion.description
+      });
+
+    if (error) {
+      toast({
+        title: "Error saving strategy",
+        description: error.message,
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Strategy saved",
+        description: "The strategy has been saved to your vault",
+      });
+    }
   };
 
   const handleDismissSuggestion = (index: number) => {
