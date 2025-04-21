@@ -259,6 +259,33 @@ export type Database = {
           },
         ]
       }
+      tenant_plugin_configs: {
+        Row: {
+          config: Json
+          created_at: string | null
+          id: string
+          plugin_key: string
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          config?: Json
+          created_at?: string | null
+          id?: string
+          plugin_key: string
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          config?: Json
+          created_at?: string | null
+          id?: string
+          plugin_key?: string
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       tenant_plugins: {
         Row: {
           created_at: string | null

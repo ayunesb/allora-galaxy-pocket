@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useTenant } from "@/hooks/useTenant";
+import { usePlugins } from "@/hooks/usePlugins";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
