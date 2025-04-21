@@ -253,6 +253,36 @@ export type Database = {
           },
         ]
       }
+      system_logs: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          message: string
+          meta: Json | null
+          tenant_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          message: string
+          meta?: Json | null
+          tenant_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          message?: string
+          meta?: Json | null
+          tenant_id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       team_invites: {
         Row: {
           accepted_at: string | null
