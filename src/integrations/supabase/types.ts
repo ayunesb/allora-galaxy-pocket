@@ -39,6 +39,30 @@ export type Database = {
         }
         Relationships: []
       }
+      tenant_profiles: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string | null
+          updated_at: string | null
+          usage_credits: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name?: string | null
+          updated_at?: string | null
+          usage_credits?: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string | null
+          updated_at?: string | null
+          usage_credits?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

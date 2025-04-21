@@ -5,4 +5,4 @@ project_id = "lxsuqqlfuftnvuvtctsx"
 verify_jwt = true
 
 [functions.decrementCredits] 
-verify_jwt = true
+verify_jwt = false
