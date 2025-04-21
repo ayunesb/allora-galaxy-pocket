@@ -16,7 +16,7 @@ import {
 const items = [
   { icon: Home, label: "Dashboard", path: "/startup" },
   { icon: Rocket, label: "Launch", path: "/launch" },
-  { icon: BriefcaseBusiness, label: "Vault", path: "/vault" },
+  { icon: BriefcaseBusiness, label: "Strategy", path: "/strategy" },
   { icon: BarChart2, label: "Campaigns", path: "/campaign" },
   { icon: Settings, label: "Settings", path: "/admin/settings" }
 ];
