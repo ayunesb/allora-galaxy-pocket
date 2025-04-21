@@ -19,6 +19,7 @@ import LaunchPage from "./app/launch/LaunchPage";
 import CampaignPage from "./app/campaign/CampaignPage";
 import SettingsPanel from "./app/admin/settings/SettingsPanel";
 import RequireAuth from "./guards/RequireAuth";
+import KpiDashboard from "./app/insights/kpis/KpiDashboard";
 
 const queryClient = new QueryClient();
 
@@ -62,6 +63,7 @@ const App = () => (
                   </RequireAuth>
                 } 
               />
+              <Route path="/insights/kpis" element={<KpiDashboard />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
