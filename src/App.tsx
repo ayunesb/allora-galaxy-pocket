@@ -3,6 +3,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/hooks/useAuth";
+import { TenantProvider } from "@/hooks/useTenant";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import OnboardingLayout from "./app/onboarding/OnboardingLayout";
@@ -21,39 +23,43 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route 
-            path="/onboarding" 
-            element={
-              <OnboardingLayout>
-                <OnboardingWizard />
-              </OnboardingLayout>
-            } 
-          />
-          <Route
-            path="/pocket"
-            element={
-              <PocketLayout>
-                <PocketSwipe />
-              </PocketLayout>
-            }
-          />
-          <Route path="/galaxy/explore" element={<ExplorePage />} />
-          <Route path="/academy" element={<AcademyFeed />} />
-          <Route path="/vault" element={<VaultItemsList />} />
-          <Route path="/startup" element={<StartupDashboard />} />
-          <Route path="/launch" element={<LaunchPage />} />
-          <Route path="/campaign" element={<CampaignPage />} />
-          <Route path="/admin/settings" element={<SettingsPanel />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TenantProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route 
+                path="/onboarding" 
+                element={
+                  <OnboardingLayout>
+                    <OnboardingWizard />
+                  </OnboardingLayout>
+                } 
+              />
+              <Route
+                path="/pocket"
+                element={
+                  <PocketLayout>
+                    <PocketSwipe />
+                  </PocketLayout>
+                }
+              />
+              <Route path="/galaxy/explore" element={<ExplorePage />} />
+              <Route path="/academy" element={<AcademyFeed />} />
+              <Route path="/vault" element={<VaultItemsList />} />
+              <Route path="/startup" element={<StartupDashboard />} />
+              <Route path="/launch" element={<LaunchPage />} />
+              <Route path="/campaign" element={<CampaignPage />} />
+              <Route path="/admin/settings" element={<SettingsPanel />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </TenantProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
