@@ -18,6 +18,7 @@ import StartupDashboard from "./app/startup/StartupDashboard";
 import LaunchPage from "./app/launch/LaunchPage";
 import CampaignPage from "./app/campaign/CampaignPage";
 import SettingsPanel from "./app/admin/settings/SettingsPanel";
+import RequireAuth from "./guards/RequireAuth";
 
 const queryClient = new QueryClient();
 
@@ -53,7 +54,14 @@ const App = () => (
               <Route path="/startup" element={<StartupDashboard />} />
               <Route path="/launch" element={<LaunchPage />} />
               <Route path="/campaign" element={<CampaignPage />} />
-              <Route path="/admin/settings" element={<SettingsPanel />} />
+              <Route 
+                path="/admin/settings" 
+                element={
+                  <RequireAuth>
+                    <SettingsPanel />
+                  </RequireAuth>
+                } 
+              />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
