@@ -100,6 +100,14 @@ export default function AppRoutes() {
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/admin/plugins/gallery" element={<PluginGallery />} />
         <Route path="/admin/plugins/:pluginKey" element={<PluginDetail />} />
+        <Route 
+          path="/admin/billing" 
+          element={
+            <AdminOnly>
+              <BillingPanel />
+            </AdminOnly>
+          } 
+        />
       </Route>
       
       <Route path="*" element={<NotFound />} />
