@@ -15,6 +15,7 @@ import VaultItemsList from "./app/vault/VaultItemsList";
 import StartupDashboard from "./app/startup/StartupDashboard";
 import LaunchPage from "./app/launch/LaunchPage";
 import CampaignPage from "./app/campaign/CampaignPage";
+import SettingsPanel from "./app/admin/settings/SettingsPanel";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +49,7 @@ const App = () => (
           <Route path="/startup" element={<StartupDashboard />} />
           <Route path="/launch" element={<LaunchPage />} />
           <Route path="/campaign" element={<CampaignPage />} />
+          <Route path="/admin/settings" element={<SettingsPanel />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
