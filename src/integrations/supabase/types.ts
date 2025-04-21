@@ -218,6 +218,33 @@ export type Database = {
         }
         Relationships: []
       }
+      referrals: {
+        Row: {
+          claimed_at: string | null
+          created_at: string
+          id: string
+          referred_user_email: string
+          referred_user_id: string | null
+          referrer_user_id: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          created_at?: string
+          id?: string
+          referred_user_email: string
+          referred_user_id?: string | null
+          referrer_user_id: string
+        }
+        Update: {
+          claimed_at?: string | null
+          created_at?: string
+          id?: string
+          referred_user_email?: string
+          referred_user_id?: string | null
+          referrer_user_id?: string
+        }
+        Relationships: []
+      }
       retry_queue: {
         Row: {
           created_at: string
