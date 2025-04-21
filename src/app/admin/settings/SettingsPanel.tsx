@@ -1,21 +1,23 @@
 
-import { toast } from "@/components/ui/sonner";
+import { useToast } from "@/hooks/use-toast";
 import ApiKeyForm from "./ApiKeyForm";
 import AutonomyToggle from "./AutonomyToggle";
 
 export default function SettingsPanel() {
+  const { toast } = useToast();
+
   const handleStripeKeySave = (value: string) => {
     if (!value) return;
-    // Here we would typically save to Supabase secrets
-    toast("Stripe API key updated", {
+    toast({
+      title: "Stripe API Updated",
       description: "Your Stripe API key has been securely saved"
     });
   };
 
   const handleHubSpotKeySave = (value: string) => {
     if (!value) return;
-    // Here we would typically save to Supabase secrets
-    toast("HubSpot API key updated", {
+    toast({
+      title: "HubSpot API Updated",
       description: "Your HubSpot API key has been securely saved"
     });
   };

@@ -15,7 +15,7 @@ export default function LaunchPage() {
   const handleApprove = () => {
     toast({
       title: "Strategy Launched",
-      description: "Your strategy has been approved and is now live",
+      description: "Your strategy has been approved and is now live"
     });
   };
 
@@ -23,7 +23,7 @@ export default function LaunchPage() {
     toast({
       title: "Changes Requested",
       description: "AI will revise the strategy based on your feedback",
-      variant: "destructive",
+      variant: "destructive"
     });
   };
 

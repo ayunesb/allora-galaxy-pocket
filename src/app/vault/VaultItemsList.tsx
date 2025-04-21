@@ -14,7 +14,7 @@ const VaultItemsList = () => {
   const handleRemix = (title: string) => {
     toast({
       title: "Starting Remix",
-      description: `Creating a new version of "${title}"`,
+      description: `Creating a new version of "${title}"`
     });
   };
 

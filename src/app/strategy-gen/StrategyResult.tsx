@@ -19,14 +19,14 @@ export default function StrategyResult({ industry, goal }: {
       toast({
         title: "Error saving strategy",
         description: error.message,
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
 
     toast({
       title: "Success",
-      description: "Strategy saved successfully",
+      description: "Strategy saved successfully"
     });
   };
 
