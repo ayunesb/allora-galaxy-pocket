@@ -3,6 +3,12 @@ import React from "react";
 import { useToast } from "@/hooks/use-toast";
 import StrategyPreview from "./StrategyPreview";
 import LaunchControls from "./LaunchControls";
+import { getPluginHooks } from "@/lib/plugins/pluginRegistry";
+
+// Import plugins to register them
+import "@/lib/plugins/stripePlugin";
+import "@/lib/plugins/shopifyPlugin";
+import "@/lib/plugins/twilioPlugin";
 
 export default function LaunchPage() {
   const { toast } = useToast();
@@ -12,11 +18,30 @@ export default function LaunchPage() {
     summary: "Use AI agents to follow up with MQLs within 3 minutes using Twilio + ChatGPT + CRM sync."
   };
 
-  const handleApprove = () => {
-    toast({
-      title: "Strategy Launched",
-      description: "Your strategy has been approved and is now live"
-    });
+  const handleApprove = async () => {
+    // Get all registered plugin hooks
+    const hooks = getPluginHooks();
+
+    // Execute onStrategyLaunch for each active plugin
+    try {
+      await Promise.all(
+        Object.entries(hooks).map(([key, hook]) => 
+          hook.onStrategyLaunch?.(strategy)
+        )
+      );
+
+      toast({
+        title: "Strategy Launched",
+        description: "Your strategy has been approved and is now live"
+      });
+    } catch (error) {
+      console.error("Error in plugin execution:", error);
+      toast({
+        title: "Launch Failed",
+        description: "There was an error launching the strategy",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleRequestChanges = () => {
