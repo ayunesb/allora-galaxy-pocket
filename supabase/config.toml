@@ -1,5 +1,8 @@
 
 project_id = "lxsuqqlfuftnvuvtctsx"
 
+[functions.strategy-init]
+verify_jwt = true
+
 [functions.plugin-config]
 verify_jwt = true
