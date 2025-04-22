@@ -1,9 +1,9 @@
 
 import React from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { OnboardingProfile } from "@/types/onboarding";
+import StepTemplate from "./StepTemplate";
 
 type Props = {
   next: (data: Partial<OnboardingProfile>) => void;
@@ -25,12 +25,13 @@ export default function Step1Company({ next, profile }: Props) {
   const showError = touched && !companyName.trim();
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-medium">Tell us about your company</h2>
-        <p className="text-sm text-muted-foreground">Let's start with the basics</p>
-      </div>
-
+    <StepTemplate
+      title="Tell us about your company"
+      description="Let's start with the basics"
+      showBack={false}
+      onNext={handleNext}
+      nextDisabled={!companyName.trim()}
+    >
       <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="companyName">Company Name</Label>
@@ -59,10 +60,6 @@ export default function Step1Company({ next, profile }: Props) {
           />
         </div>
       </div>
-
-      <div className="flex justify-end">
-        <Button onClick={handleNext} disabled={!companyName.trim()}>Next</Button>
-      </div>
-    </div>
+    </StepTemplate>
   );
 }

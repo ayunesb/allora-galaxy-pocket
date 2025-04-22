@@ -1,9 +1,9 @@
 
 import React from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { OnboardingProfile } from "@/types/onboarding";
+import StepTemplate from "./StepTemplate";
 
 type Props = {
   next: (data: Partial<OnboardingProfile>) => void;
@@ -29,12 +29,14 @@ export default function StepChallenges({ next, back, profile }: Props) {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-medium">What challenges is your business facing?</h2>
-        <p className="text-sm text-muted-foreground">Add the key challenges you want to overcome</p>
-      </div>
-
+    <StepTemplate
+      title="What challenges is your business facing?"
+      description="Add the key challenges you want to overcome"
+      showBack
+      onBack={back}
+      onNext={handleNext}
+      nextDisabled={challenges.length === 0}
+    >
       <div className="space-y-4">
         <div className="flex gap-2">
           <Input
@@ -43,7 +45,13 @@ export default function StepChallenges({ next, back, profile }: Props) {
             placeholder="Enter a challenge"
             onKeyDown={(e) => e.key === 'Enter' && addChallenge()}
           />
-          <Button onClick={addChallenge}>Add</Button>
+          <button
+            type="button"
+            className="bg-primary text-white px-4 py-2 rounded"
+            onClick={addChallenge}
+          >
+            Add
+          </button>
         </div>
 
         <div className="space-y-2">
@@ -54,11 +62,6 @@ export default function StepChallenges({ next, back, profile }: Props) {
           ))}
         </div>
       </div>
-
-      <div className="flex justify-between">
-        <Button variant="outline" onClick={back}>Back</Button>
-        <Button onClick={handleNext} disabled={challenges.length === 0}>Next</Button>
-      </div>
-    </div>
+    </StepTemplate>
   );
 }

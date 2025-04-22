@@ -1,9 +1,9 @@
 
 import React from "react";
-import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import type { TeamSize, OnboardingProfile } from "@/types/onboarding";
+import StepTemplate from "./StepTemplate";
 
 type Props = {
   next: (data: Partial<OnboardingProfile>) => void;
@@ -28,12 +28,14 @@ export default function StepTeamSize({ next, back, profile }: Props) {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-medium">What is your team size?</h2>
-        <p className="text-sm text-muted-foreground">This helps us tailor our recommendations to your capacity</p>
-      </div>
-
+    <StepTemplate
+      title="What is your team size?"
+      description="This helps us tailor our recommendations to your capacity"
+      showBack
+      onBack={back}
+      onNext={handleNext}
+      nextDisabled={!selected}
+    >
       <RadioGroup value={selected} onValueChange={(value) => setSelected(value as TeamSize)}>
         <div className="space-y-3">
           {teamSizes.map((size) => (
@@ -44,11 +46,6 @@ export default function StepTeamSize({ next, back, profile }: Props) {
           ))}
         </div>
       </RadioGroup>
-
-      <div className="flex justify-between">
-        <Button variant="outline" onClick={back}>Back</Button>
-        <Button onClick={handleNext} disabled={!selected}>Next</Button>
-      </div>
-    </div>
+    </StepTemplate>
   );
 }

@@ -1,9 +1,9 @@
 
 import React from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { OnboardingProfile } from "@/types/onboarding";
+import StepTemplate from "./StepTemplate";
 
 type Props = {
   next: (data: Partial<OnboardingProfile>) => void;
@@ -29,12 +29,14 @@ export default function Step3Goals({ next, back, profile }: Props) {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-medium">What are your main business goals?</h2>
-        <p className="text-sm text-muted-foreground">Add your key business objectives</p>
-      </div>
-
+    <StepTemplate
+      title="What are your main business goals?"
+      description="Add your key business objectives"
+      showBack
+      onBack={back}
+      onNext={handleNext}
+      nextDisabled={goals.length === 0}
+    >
       <div className="space-y-4">
         <div className="flex gap-2">
           <Input
@@ -43,7 +45,13 @@ export default function Step3Goals({ next, back, profile }: Props) {
             placeholder="Enter a goal"
             onKeyDown={(e) => e.key === 'Enter' && addGoal()}
           />
-          <Button onClick={addGoal}>Add</Button>
+          <button
+            type="button"
+            className="bg-primary text-white px-4 py-2 rounded"
+            onClick={addGoal}
+          >
+            Add
+          </button>
         </div>
 
         <div className="space-y-2">
@@ -54,11 +62,6 @@ export default function Step3Goals({ next, back, profile }: Props) {
           ))}
         </div>
       </div>
-
-      <div className="flex justify-between">
-        <Button variant="outline" onClick={back}>Back</Button>
-        <Button onClick={handleNext} disabled={goals.length === 0}>Next</Button>
-      </div>
-    </div>
+    </StepTemplate>
   );
 }

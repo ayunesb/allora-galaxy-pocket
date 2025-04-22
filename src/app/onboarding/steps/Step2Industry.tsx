@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { OnboardingProfile, Industry } from "@/types/onboarding";
+import StepTemplate from "./StepTemplate";
 
 const industries: { value: Industry; label: string }[] = [
   { value: "tech", label: "Technology" },
@@ -39,34 +40,28 @@ export default function Step2Industry({ next, back, profile }: Props) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-4">
-        <h2 className="text-lg font-medium">Select your industry</h2>
-        <Select
-          value={selected}
-          onValueChange={(value) => setSelected(value as Industry)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Choose an industry" />
-          </SelectTrigger>
-          <SelectContent>
-            {industries.map((industry) => (
-              <SelectItem key={industry.value} value={industry.value}>
-                {industry.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="flex justify-between">
-        <Button variant="outline" onClick={back}>
-          Back
-        </Button>
-        <Button onClick={handleNext} disabled={!selected}>
-          Next
-        </Button>
-      </div>
-    </div>
+    <StepTemplate
+      title="Select your industry"
+      showBack
+      onBack={back}
+      onNext={handleNext}
+      nextDisabled={!selected}
+    >
+      <Select
+        value={selected}
+        onValueChange={(value) => setSelected(value as Industry)}
+      >
+        <SelectTrigger>
+          <SelectValue placeholder="Choose an industry" />
+        </SelectTrigger>
+        <SelectContent>
+          {industries.map((industry) => (
+            <SelectItem key={industry.value} value={industry.value}>
+              {industry.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </StepTemplate>
   );
 }

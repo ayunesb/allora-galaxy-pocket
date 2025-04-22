@@ -1,14 +1,13 @@
-
 import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { OnboardingProfile } from "@/types/onboarding";
 import Step1Company from "./steps/Step1Company";
 import Step2Industry from "./steps/Step2Industry";
-import StepTone from "./steps/StepTone";
 import StepTeamSize from "./steps/StepTeamSize";
-import StepSellType from "./steps/StepSellType";
 import StepRevenue from "./steps/StepRevenue";
+import StepSellType from "./steps/StepSellType";
+import StepTone from "./steps/StepTone";
 import StepChallenges from "./steps/StepChallenges";
 import StepChannels from "./steps/StepChannels";
 import StepTools from "./steps/StepTools";

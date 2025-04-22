@@ -1,9 +1,9 @@
 
 import React from "react";
-import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import type { ToneType, OnboardingProfile } from "@/types/onboarding";
+import StepTemplate from "./StepTemplate";
 
 type Props = {
   next: (data: Partial<OnboardingProfile>) => void;
@@ -28,12 +28,14 @@ export default function StepTone({ next, back, profile }: Props) {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-medium">What tone best represents your brand?</h2>
-        <p className="text-sm text-muted-foreground">Select the communication style that fits your business</p>
-      </div>
-
+    <StepTemplate
+      title="What tone best represents your brand?"
+      description="Select the communication style that fits your business"
+      showBack
+      onBack={back}
+      onNext={handleNext}
+      nextDisabled={!selected}
+    >
       <RadioGroup value={selected} onValueChange={(value) => setSelected(value as ToneType)}>
         <div className="space-y-3">
           {tones.map((tone) => (
@@ -47,11 +49,6 @@ export default function StepTone({ next, back, profile }: Props) {
           ))}
         </div>
       </RadioGroup>
-
-      <div className="flex justify-between">
-        <Button variant="outline" onClick={back}>Back</Button>
-        <Button onClick={handleNext} disabled={!selected}>Next</Button>
-      </div>
-    </div>
+    </StepTemplate>
   );
 }

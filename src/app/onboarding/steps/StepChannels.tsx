@@ -1,9 +1,9 @@
 
 import React from "react";
-import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import type { Channel, OnboardingProfile } from "@/types/onboarding";
+import StepTemplate from "./StepTemplate";
 
 type Props = {
   next: (data: Partial<OnboardingProfile>) => void;
@@ -38,12 +38,14 @@ export default function StepChannels({ next, back, profile }: Props) {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-medium">Which marketing channels do you use?</h2>
-        <p className="text-sm text-muted-foreground">Select all that apply</p>
-      </div>
-
+    <StepTemplate
+      title="Which marketing channels do you use?"
+      description="Select all that apply"
+      showBack
+      onBack={back}
+      onNext={handleNext}
+      nextDisabled={selected.length === 0}
+    >
       <div className="grid grid-cols-2 gap-4">
         {channels.map((channel) => (
           <div key={channel.value} className="flex items-center space-x-2">
@@ -56,11 +58,6 @@ export default function StepChannels({ next, back, profile }: Props) {
           </div>
         ))}
       </div>
-
-      <div className="flex justify-between">
-        <Button variant="outline" onClick={back}>Back</Button>
-        <Button onClick={handleNext} disabled={selected.length === 0}>Next</Button>
-      </div>
-    </div>
+    </StepTemplate>
   );
 }

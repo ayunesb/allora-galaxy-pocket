@@ -1,9 +1,9 @@
 
 import React from "react";
-import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import type { SellType, OnboardingProfile } from "@/types/onboarding";
+import StepTemplate from "./StepTemplate";
 
 type Props = {
   next: (data: Partial<OnboardingProfile>) => void;
@@ -39,12 +39,14 @@ export default function StepSellType({ next, back, profile }: Props) {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-medium">What do you sell?</h2>
-        <p className="text-sm text-muted-foreground">Select what best describes your business offering</p>
-      </div>
-
+    <StepTemplate
+      title="What do you sell?"
+      description="Select what best describes your business offering"
+      showBack
+      onBack={back}
+      onNext={handleNext}
+      nextDisabled={!selected}
+    >
       <RadioGroup value={selected} onValueChange={(value) => setSelected(value as SellType)}>
         <div className="space-y-3">
           {sellTypes.map((type) => (
@@ -58,11 +60,6 @@ export default function StepSellType({ next, back, profile }: Props) {
           ))}
         </div>
       </RadioGroup>
-
-      <div className="flex justify-between">
-        <Button variant="outline" onClick={back}>Back</Button>
-        <Button onClick={handleNext} disabled={!selected}>Next</Button>
-      </div>
-    </div>
+    </StepTemplate>
   );
 }

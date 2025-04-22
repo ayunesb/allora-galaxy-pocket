@@ -1,6 +1,5 @@
 
 import React from "react";
-import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { 
@@ -10,6 +9,7 @@ import {
   Code 
 } from "lucide-react";
 import type { LaunchMode, OnboardingProfile } from "@/types/onboarding";
+import StepTemplate from "./StepTemplate";
 
 type Props = {
   next: (data: Partial<OnboardingProfile>) => void;
@@ -56,14 +56,15 @@ export default function StepLaunchMode({ next, back, profile }: Props) {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-medium">Choose your launch mode</h2>
-        <p className="text-sm text-muted-foreground">
-          This will customize your growth strategy
-        </p>
-      </div>
-
+    <StepTemplate
+      title="Choose your launch mode"
+      description="This will customize your growth strategy"
+      showBack
+      onBack={back}
+      onNext={handleNext}
+      nextDisabled={!selected}
+      nextLabel="Finish"
+    >
       <RadioGroup
         value={selected}
         onValueChange={(value) => setSelected(value as LaunchMode)}
@@ -99,15 +100,6 @@ export default function StepLaunchMode({ next, back, profile }: Props) {
           ))}
         </div>
       </RadioGroup>
-
-      <div className="flex justify-between pt-4">
-        <Button variant="outline" onClick={back}>
-          Back
-        </Button>
-        <Button onClick={handleNext} disabled={!selected}>
-          Next
-        </Button>
-      </div>
-    </div>
+    </StepTemplate>
   );
 }
