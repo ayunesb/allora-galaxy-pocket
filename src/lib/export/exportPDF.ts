@@ -41,33 +41,31 @@ export async function exportToPDF(
     }
     
     // Fetch data based on export type
-    let data = [];
-    
     switch (filters.type) {
       case 'strategy':
-        data = await fetchStrategyData(filters);
-        await addStrategyReport(pdf, data, filters);
+        const strategyData = await fetchStrategyData(filters);
+        await addStrategyReport(pdf, strategyData, filters);
         break;
         
       case 'campaign':
-        data = await fetchCampaignData(filters);
-        await addCampaignReport(pdf, data, filters);
+        const campaignData = await fetchCampaignData(filters);
+        await addCampaignReport(pdf, campaignData, filters);
         break;
         
       case 'kpi':
-        data = await fetchKpiData(filters);
-        await addKpiReport(pdf, data, filters);
+        const kpiData = await fetchKpiData(filters);
+        await addKpiReport(pdf, kpiData, filters);
         break;
         
       case 'system':
-        data = await fetchSystemLogsData(filters);
-        await addSystemLogsReport(pdf, data, filters);
+        const systemLogsData = await fetchSystemLogsData(filters);
+        await addSystemLogsReport(pdf, systemLogsData, filters);
         break;
         
       default:
         // Default to system logs if no type specified
-        data = await fetchSystemLogsData(filters);
-        await addSystemLogsReport(pdf, data, filters);
+        const defaultData = await fetchSystemLogsData(filters);
+        await addSystemLogsReport(pdf, defaultData, filters);
     }
     
     // Add footer with page numbers
@@ -330,7 +328,7 @@ async function addCampaignReport(pdf: jsPDF, data: any[], filters: ExportFilters
 /**
  * Fetch KPI data
  */
-async function fetchKpiData(filters: ExportFilters): Promise<any[]> {
+async function fetchKpiData(filters: ExportFilters): Promise<{ current: any[], history: any[] }> {
   // Calculate start date based on dateRange
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - (filters.dateRange || 7));
@@ -362,18 +360,16 @@ async function fetchKpiData(filters: ExportFilters): Promise<any[]> {
   }
   
   // Combine current data with history
-  const combinedData = {
+  return {
     current: data || [],
     history: historyData || []
   };
-  
-  return combinedData;
 }
 
 /**
  * Add KPI report to PDF
  */
-async function addKpiReport(pdf: jsPDF, data: any, filters: ExportFilters): Promise<void> {
+async function addKpiReport(pdf: jsPDF, data: { current: any[], history: any[] }, filters: ExportFilters): Promise<void> {
   const current = Array.isArray(data.current) ? data.current : [];
   const history = Array.isArray(data.history) ? data.history : [];
   
