@@ -1,4 +1,3 @@
-
 import { NavLink } from "react-router-dom";
 import { 
   Home, 
@@ -8,7 +7,8 @@ import {
   Settings,
   UserPlus,
   Lightbulb,
-  Plus
+  Plus,
+  Palette
 } from "lucide-react";
 import {
   Sidebar,
@@ -31,7 +31,8 @@ const items = [
   { icon: Lightbulb, label: "AI Coach", path: "/coaching/feed" },
   { icon: Plus, label: "Add Plugin", path: "/admin/plugins/gallery" },
   { icon: UserPlus, label: "Invite Users", path: "/admin/invite" },
-  { icon: Settings, label: "Settings", path: "/admin/settings" }
+  { icon: Settings, label: "Settings", path: "/admin/settings" },
+  { icon: Palette, label: "Creative Suite", path: "/creative/suite" }
 ];
 
 export function AppSidebar() {

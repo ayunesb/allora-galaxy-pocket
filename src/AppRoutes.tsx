@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Routes, Route } from "react-router-dom";
 import AuthenticatedLayout from "@/app/layouts/AuthenticatedLayout";
@@ -7,6 +6,7 @@ import ProfileSettings from "@/app/profile/ProfileSettings";
 import BillingPanel from "@/app/admin/billing/BillingPanel";
 import CampaignCenter from "@/app/campaigns/CampaignCenter";
 import AutopilotPanel from "@/app/shopify/AutopilotPanel";
+import CreativeSuite from "@/app/creative/SuitePanel";
 
 // Pages
 import Index from "@/pages/Index";
@@ -125,6 +125,7 @@ export default function AppRoutes() {
         <Route path="/campaigns/center" element={<CampaignCenter />} />
         <Route path="/dashboard/performance" element={<PerformanceDashboard />} />
         <Route path="/shopify/autopilot" element={<AutopilotPanel />} />
+        <Route path="/creative/suite" element={<CreativeSuite />} />
       </Route>
       
       <Route path="*" element={<NotFound />} />
