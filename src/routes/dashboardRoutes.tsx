@@ -1,6 +1,8 @@
+
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
-import DashboardHome from "@/app/dashboard";
+// DASHBOARD MAIN
+import DashboardHome from "@/app/dashboard"; // Main dashboard page
 import DashboardInsights from "@/app/dashboard/insights/DashboardInsights";
 import TeamActivityDashboard from "@/app/dashboard/team-activity/TeamActivityDashboard";
 import PerformanceDashboard from "@/app/dashboard/performance";
@@ -8,11 +10,14 @@ import InsightsPanel from "@/app/dashboard/insights/InsightsPanel";
 import KpiAlertsPage from "@/app/dashboard/kpi-alerts/page";
 import IncidentTimeline from "@/app/dashboard/incidents/page";
 import AlertsDashboard from "@/app/dashboard/alerts/page";
-import KPIAlertRules from "@/app/dashboard/kpi-alerts/KpiAlertRules";  // Correct import
-import RecoveryDashboard from "@/app/recovery/page";
+import KPIAlertRules from "@/app/dashboard/kpi-alerts/KpiAlertRules";
+// FALLBACK/MINIMAL "PAGE" ROUTES
+import RecoveryPage from "@/pages/recovery/page";
 import PluginLeaderboard from "@/pages/plugins/leaderboard";
-import DashboardPage from "@/pages/dashboard/page";
-import InsightsPage from "@/pages/insights/kpis/page";
+// REMOVE this, replaced by full-featured dashboard
+// import DashboardPage from "@/pages/dashboard/page";
+// REMOVE this, replaced by KpiDashboard in appRoutes
+// import InsightsPage from "@/pages/insights/kpis/page";
 
 export const dashboardRoutes: RouteObject[] = [
   { path: "/dashboard", element: <DashboardHome /> },
@@ -24,8 +29,8 @@ export const dashboardRoutes: RouteObject[] = [
   { path: "/dashboard/incidents", element: <IncidentTimeline /> },
   { path: "/dashboard/alerts", element: <AlertsDashboard /> },
   { path: "/dashboard/kpi-alert-rules", element: <KPIAlertRules /> },
-  { path: "/recovery", element: <RecoveryDashboard /> },
-  { path: "/galaxy/plugins", element: <PluginLeaderboard /> },
-  { path: "/dashboard", element: <DashboardPage /> },
-  { path: "/insights/kpis", element: <InsightsPage /> },
+  { path: "/recovery", element: <RecoveryPage /> },
+  { path: "/galaxy/plugins", element: <PluginLeaderboard /> }
+  // Removed duplicate/unused "/dashboard" and "/insights/kpis" minimal pages
 ];
+
