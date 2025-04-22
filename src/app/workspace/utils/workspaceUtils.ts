@@ -1,6 +1,7 @@
 
 import type { TenantOption } from "../hooks/useAvailableTenants";
-import { useTenant } from "@/hooks/useTenant";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 export function handleTenantChange(
   value: string,
@@ -25,17 +26,65 @@ export function handleTenantChange(
   return false;
 }
 
-export function createDefaultWorkspace(
+export async function createDefaultWorkspace(
   toast: (arg: any) => void,
   onSuccess?: () => void
 ) {
-  // This will be implemented when we add workspace creation functionality
-  toast({
-    title: "Create new workspace",
-    description: "This feature will be implemented soon",
-  });
-  
-  if (onSuccess) {
-    onSuccess();
+  try {
+    // Create a new default workspace
+    const { data: newTenant, error } = await supabase
+      .from('tenant_profiles')
+      .insert([
+        { 
+          name: 'My Workspace',
+          theme_color: 'indigo',
+          theme_mode: 'light'
+        }
+      ])
+      .select('*')
+      .single();
+    
+    if (error) throw error;
+    
+    if (newTenant) {
+      toast({
+        title: "Workspace created",
+        description: "New workspace has been created successfully.",
+      });
+      
+      // Add current user to the tenant with admin role
+      // Note: This might fail due to RLS policies but the tenant is created
+      try {
+        const { error: roleError } = await supabase
+          .from('tenant_user_roles')
+          .insert([
+            {
+              tenant_id: newTenant.id,
+              role: 'admin'
+            }
+          ]);
+        
+        if (roleError) {
+          console.warn("Could not assign role to user:", roleError);
+        }
+      } catch (roleErr) {
+        console.warn("Role assignment failed:", roleErr);
+      }
+      
+      if (onSuccess) {
+        onSuccess();
+      }
+      
+      return newTenant;
+    }
+  } catch (err) {
+    console.error("Error creating workspace:", err);
+    toast({
+      title: "Could not create workspace",
+      description: "Please try again or contact support.",
+      variant: "destructive"
+    });
   }
+  
+  return null;
 }

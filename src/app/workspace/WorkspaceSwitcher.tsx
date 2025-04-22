@@ -27,11 +27,19 @@ export default function WorkspaceSwitcher({ highlight = false }) {
   };
 
   const handleCreateWorkspace = () => {
-    createDefaultWorkspace(toast);
+    createDefaultWorkspace(toast, () => {
+      // After workspace creation, refresh the list
+      retryFetch();
+    });
   };
 
   const handleRetry = () => {
     retryFetch();
+  };
+
+  // Add window reload handler for last resort refresh
+  const handleFullRefresh = () => {
+    window.location.reload();
   };
 
   if (loading) {
@@ -53,17 +61,25 @@ export default function WorkspaceSwitcher({ highlight = false }) {
         <Button
           size="sm"
           variant="outline"
-          className="w-full"
+          className="w-full mb-2"
           onClick={handleRetry}
         >
           <RefreshCw className="h-4 w-4 mr-2" />
           Retry
         </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          className="w-full"
+          onClick={handleFullRefresh}
+        >
+          Refresh Page
+        </Button>
       </div>
     );
   }
 
-  if (!availableTenants.length) {
+  if (!availableTenants || availableTenants.length === 0) {
     return (
       <div className="space-y-3 px-2">
         <div className="px-2 text-muted-foreground text-sm">

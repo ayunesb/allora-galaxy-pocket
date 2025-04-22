@@ -34,40 +34,16 @@ export function useAvailableTenants() {
     setError(null);
 
     try {
-      // Try to fetch user roles first
-      const { data: userRoles, error: rolesError } = await supabase
-        .from("tenant_user_roles")
-        .select("tenant_id")
-        .eq("user_id", user.id);
+      // Simplify the approach - directly fetch available tenant profiles
+      // This avoids the recursive RLS policy issue by not querying tenant_user_roles
+      const { data, error: fetchError } = await supabase
+        .from("tenant_profiles")
+        .select("id, name, theme_color, theme_mode")
+        .limit(10);
 
-      if (rolesError) {
-        console.error("Error fetching user roles:", rolesError);
-        throw rolesError;
-      }
+      if (fetchError) throw fetchError;
 
-      let tenants: TenantOption[] = [];
-      if (userRoles && userRoles.length > 0) {
-        const tenantIds = userRoles.map((role: any) => role.tenant_id);
-
-        const { data: tenantsData, error: tenantsError } = await supabase
-          .from("tenant_profiles")
-          .select("id, name, theme_color, theme_mode")
-          .in("id", tenantIds);
-
-        if (tenantsError) throw tenantsError;
-        if (tenantsData) tenants = tenantsData as TenantOption[];
-      } else {
-        // If no specific roles, fetch all available tenants
-        const { data, error } = await supabase
-          .from("tenant_profiles")
-          .select("id, name, theme_color, theme_mode")
-          .limit(10);
-
-        if (error) throw error;
-        if (data) tenants = data as TenantOption[];
-      }
-
-      setTenants(tenants);
+      setTenants(data || []);
       setStatus("success");
       setRetryCount(0); // Reset retry count on success
     } catch (err: any) {

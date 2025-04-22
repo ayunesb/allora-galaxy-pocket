@@ -122,7 +122,7 @@ export default function OnboardingWizard() {
           <Alert variant="destructive">
             <AlertTitle>No workspace selected</AlertTitle>
             <AlertDescription>
-              Please select a workspace before continuing with onboarding.
+              Please select or create a workspace before continuing with onboarding.
             </AlertDescription>
           </Alert>
           
@@ -144,7 +144,7 @@ export default function OnboardingWizard() {
                     setWorkspaceError(true);
                     toast({
                       title: "Workspace required",
-                      description: "Please select a workspace from the dropdown above.",
+                      description: "Please select or create a workspace above.",
                       variant: "destructive"
                     });
                   }
