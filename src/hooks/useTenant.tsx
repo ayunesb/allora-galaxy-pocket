@@ -16,12 +16,7 @@ interface TenantContextType {
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
 
 export function TenantProvider({ children }: { children: ReactNode }) {
-  const [tenant, setTenant] = useState<Tenant | null>({
-    id: "demo-tenant",
-    name: "Demo Tenant",
-    theme_color: "indigo",
-    theme_mode: "light"
-  });
+  const [tenant, setTenant] = useState<Tenant | null>(null);
 
   return (
     <TenantContext.Provider value={{ tenant, setTenant }}>
@@ -37,3 +32,4 @@ export function useTenant() {
   }
   return context;
 }
+
