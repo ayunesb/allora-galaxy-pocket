@@ -13,7 +13,7 @@ export class StripeAgent {
     this.sessionId = crypto.randomUUID();
     this.tenantId = tenantId;
     this.stripe = new Stripe(import.meta.env.VITE_STRIPE_SECRET_KEY, {
-      apiVersion: '2023-10-16'
+      apiVersion: '2024-04-10'  // Updated to the latest API version
     });
   }
 
