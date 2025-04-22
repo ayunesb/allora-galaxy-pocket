@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Navigate, Outlet } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import RequireAuth from "@/guards/RequireAuth";
 
@@ -27,7 +27,9 @@ const router = createBrowserRouter([
       <AuthProvider>
         <TenantProvider>
           <RequireAuth>
-            <Layout />
+            <Layout>
+              <Outlet />
+            </Layout>
           </RequireAuth>
         </TenantProvider>
       </AuthProvider>

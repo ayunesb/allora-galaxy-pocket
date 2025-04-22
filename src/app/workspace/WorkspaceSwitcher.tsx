@@ -9,8 +9,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, PlusCircle } from "lucide-react";
 import { useLocation } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 interface TenantOption {
   id: string;
@@ -21,6 +24,8 @@ interface TenantOption {
 
 export default function WorkspaceSwitcher({ highlight = false }) {
   const { tenant, setTenant } = useTenant();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [availableTenants, setAvailableTenants] = useState<TenantOption[]>([]);
   const [selected, setSelected] = useState<string | undefined>(tenant?.id);
   const [loading, setLoading] = useState(true);
@@ -33,40 +38,85 @@ export default function WorkspaceSwitcher({ highlight = false }) {
     setLoading(true);
     setError(null);
 
-    // Get user-tenants from tenant_profiles via tenant_user_roles mapping (if available)
-    // For now, fetch all tenant_profiles as fallback
     async function fetchTenants() {
-      try {
-        // Feel free to improve with RLS by user once available
-        const { data, error } = await supabase
-          .from("tenant_profiles")
-          .select("id, name, theme_color, theme_mode")
-          .order("created_at", { ascending: true });
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
-        if (error) throw error;
-        setAvailableTenants(data || []);
+      try {
+        // First try to get tenants the user has access to via user roles
+        const { data: userRoles, error: rolesError } = await supabase
+          .from("tenant_user_roles")
+          .select("tenant_id")
+          .eq("user_id", user.id);
+
+        if (rolesError) throw rolesError;
+
+        // If user has roles, fetch those specific tenants
+        if (userRoles && userRoles.length > 0) {
+          const tenantIds = userRoles.map(role => role.tenant_id);
+          
+          const { data: tenantsData, error: tenantsError } = await supabase
+            .from("tenant_profiles")
+            .select("id, name, theme_color, theme_mode")
+            .in("id", tenantIds)
+            .order("name", { ascending: true });
+
+          if (tenantsError) throw tenantsError;
+          setAvailableTenants(tenantsData || []);
+        } else {
+          // Fallback: if no specific roles found, check if any tenants exist
+          // This is useful for initial setup where roles might not be set yet
+          const { data, error } = await supabase
+            .from("tenant_profiles")
+            .select("id, name, theme_color, theme_mode")
+            .limit(10)
+            .order("created_at", { ascending: true });
+
+          if (error) throw error;
+          setAvailableTenants(data || []);
+        }
 
         // Determine selected tenant from localStorage (if any), else default to first
         const stored = localStorage.getItem("tenant_id");
-        let initialTenantId = stored || (data && data[0]?.id) || "";
-        let initialTenant = (data || []).find(t => t.id === initialTenantId) || data?.[0];
+        let initialTenantId = stored || '';
 
-        if (initialTenant) {
-          setTenant(initialTenant);
-          setSelected(initialTenant.id);
-          localStorage.setItem("tenant_id", initialTenant.id);
+        // If there's a stored tenant, check if it's in the available list
+        if (initialTenantId) {
+          const foundTenant = availableTenants.find(t => t.id === initialTenantId);
+          
+          if (foundTenant) {
+            setTenant(foundTenant);
+            setSelected(initialTenantId);
+          } else if (availableTenants.length > 0) {
+            // If stored tenant not found but we have tenants, use first one
+            setTenant(availableTenants[0]);
+            setSelected(availableTenants[0].id);
+            localStorage.setItem("tenant_id", availableTenants[0].id);
+          } else {
+            // No tenants at all
+            setTenant(null);
+            setSelected(undefined);
+            localStorage.removeItem("tenant_id");
+          }
+        } else if (availableTenants.length > 0) {
+          // No stored tenant but we have tenants, use first one
+          setTenant(availableTenants[0]);
+          setSelected(availableTenants[0].id);
+          localStorage.setItem("tenant_id", availableTenants[0].id);
         }
 
         setLoading(false);
       } catch (err: any) {
+        console.error("Error fetching workspaces:", err);
         setError("Could not fetch workspaces. Please refresh.");
         setLoading(false);
       }
     }
 
     fetchTenants();
-    // eslint-disable-next-line
-  }, []);
+  }, [user]);
 
   const handleTenantChange = (value: string) => {
     const selectedTenant = availableTenants.find(t => t.id === value);
@@ -74,7 +124,21 @@ export default function WorkspaceSwitcher({ highlight = false }) {
       setSelected(value);
       setTenant(selectedTenant);
       localStorage.setItem("tenant_id", value);
+      
+      // Notify user of workspace change
+      toast({
+        title: "Workspace changed",
+        description: `Now working in "${selectedTenant.name}"`,
+      });
     }
+  };
+
+  const handleCreateWorkspace = () => {
+    // This would be implemented later with a modal to create a new workspace
+    toast({
+      title: "Create new workspace",
+      description: "This feature will be implemented soon",
+    });
   };
 
   const selectClasses = highlight || isOnboarding 
@@ -101,10 +165,20 @@ export default function WorkspaceSwitcher({ highlight = false }) {
 
   if (!availableTenants.length) {
     return (
-      <div className="px-2 text-muted-foreground text-sm">
-        No workspaces found. Ask an admin to invite you.
+      <div className="space-y-3 px-2">
+        <div className="px-2 text-muted-foreground text-sm">
+          No workspaces found. Create your first workspace.
+        </div>
+        <Button 
+          size="sm" 
+          className="w-full"
+          onClick={handleCreateWorkspace}
+        >
+          <PlusCircle className="h-4 w-4 mr-2" />
+          Create Workspace
+        </Button>
       </div>
-    )
+    );
   }
 
   return (
@@ -112,18 +186,29 @@ export default function WorkspaceSwitcher({ highlight = false }) {
       <label className={`text-sm font-medium ${isOnboarding ? "text-primary font-bold" : "text-muted-foreground"}`}>
         Workspace {isOnboarding && <span className="text-red-500">*</span>}
       </label>
-      <Select value={selected} onValueChange={handleTenantChange}>
-        <SelectTrigger className={`w-full ${selectClasses}`}>
-          <SelectValue placeholder="Select workspace" />
-        </SelectTrigger>
-        <SelectContent>
-          {availableTenants.map((t) => (
-            <SelectItem key={t.id} value={t.id}>
-              {t.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="flex items-center gap-2">
+        <Select value={selected} onValueChange={handleTenantChange}>
+          <SelectTrigger className={`w-full ${selectClasses}`}>
+            <SelectValue placeholder="Select workspace" />
+          </SelectTrigger>
+          <SelectContent>
+            {availableTenants.map((t) => (
+              <SelectItem key={t.id} value={t.id}>
+                {t.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button 
+          variant="outline" 
+          size="icon" 
+          className="flex-shrink-0"
+          onClick={handleCreateWorkspace}
+          title="Create new workspace"
+        >
+          <PlusCircle className="h-4 w-4" />
+        </Button>
+      </div>
       {isOnboarding && !tenant && (
         <p className="text-sm mt-1 text-red-500">
           Please select a workspace to continue with onboarding
