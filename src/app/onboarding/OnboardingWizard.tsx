@@ -17,6 +17,7 @@ import StepChannels from "./steps/StepChannels";
 import StepTools from "./steps/StepTools";
 import Step3Goals from "./steps/Step3Goals";
 import StepLaunchMode from "./steps/StepLaunchMode";
+import { BillingPreview } from "@/components/billing/BillingPreview";
 
 const steps = [
   Step1Company,
@@ -151,6 +152,7 @@ export default function OnboardingWizard() {
             Step {step + 1} of {steps.length}
           </span>
         </div>
+        <BillingPreview />
         <CurrentStep {...getStepProps()} />
       </Card>
     </div>
