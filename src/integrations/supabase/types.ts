@@ -323,6 +323,38 @@ export type Database = {
           },
         ]
       }
+      milestone_alert_logs: {
+        Row: {
+          id: string
+          sent_at: string | null
+          status: string | null
+          strategy_id: string | null
+          title: string | null
+        }
+        Insert: {
+          id?: string
+          sent_at?: string | null
+          status?: string | null
+          strategy_id?: string | null
+          title?: string | null
+        }
+        Update: {
+          id?: string
+          sent_at?: string | null
+          status?: string | null
+          strategy_id?: string | null
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "milestone_alert_logs_strategy_id_fkey"
+            columns: ["strategy_id"]
+            isOneToOne: false
+            referencedRelation: "strategies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string | null

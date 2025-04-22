@@ -30,36 +30,48 @@ async function getNewMilestones() {
   return data;
 }
 
-async function sendEmailAlert(milestones: any[]) {
+async function sendSlackAlert(milestones: any[]) {
   if (!milestones.length) return;
 
-  const htmlContent = `
-    <h1>Weekly Milestone Report</h1>
-    <p>Here are the strategies that were approved in the last 7 days:</p>
-    <ul>
-      ${milestones.map(m => `
-        <li>
-          <strong>${m.title}</strong>
-          ${m.company_profiles?.name ? ` - ${m.company_profiles.name}` : ''}
-          <br>
-          <em>${m.description || 'No description provided'}</em>
-        </li>
-      `).join('')}
-    </ul>
-  `;
+  const slackWebhookUrl = Deno.env.get('SLACK_WEBHOOK_URL');
+  if (!slackWebhookUrl) {
+    console.error('Slack webhook URL not configured');
+    return;
+  }
+
+  const milestoneText = milestones.map(m => 
+    `🚀 *${m.title}* ${m.company_profiles?.name ? `- ${m.company_profiles.name}` : ''}`
+  ).join('\n');
 
   try {
-    await resend.emails.send({
-      from: 'Allora OS <onboarding@resend.dev>',
-      to: ['admin@allora.dev'],
-      subject: `🎯 ${milestones.length} New Milestone${milestones.length > 1 ? 's' : ''} Achieved!`,
-      html: htmlContent,
+    const response = await fetch(slackWebhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: `🎉 *New Milestone Achievements* 🎉\n\n${milestoneText}`
+      })
     });
-    
-    console.log(`Successfully sent email for ${milestones.length} milestones`);
+
+    if (!response.ok) {
+      throw new Error(`Slack alert failed: ${response.statusText}`);
+    }
+
+    // Log each milestone in the milestone_alert_logs table
+    const logEntries = milestones.map(m => ({
+      strategy_id: m.id,
+      title: m.title,
+      status: 'sent'
+    }));
+
+    const { error: logError } = await supabase
+      .from('milestone_alert_logs')
+      .insert(logEntries);
+
+    if (logError) {
+      console.error('Error logging milestones:', logError);
+    }
   } catch (error) {
-    console.error('Error sending email:', error);
-    throw error;
+    console.error('Error sending Slack alert:', error);
   }
 }
 
@@ -75,7 +87,7 @@ serve(async (req) => {
     console.log(`Found ${milestones.length} new milestones`);
 
     if (milestones.length > 0) {
-      await sendEmailAlert(milestones);
+      await sendSlackAlert(milestones);
     }
 
     return new Response(
