@@ -8,9 +8,17 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import AppRoutes from "./AppRoutes";
 import { AgentProvider } from "./contexts/AgentContext";
+import { PluginProvider } from "./hooks/usePlugins";
 
 function App() {
-  const queryClient = new QueryClient();
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        refetchOnWindowFocus: false,
+        retry: 1,
+      },
+    },
+  });
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -19,8 +27,10 @@ function App() {
           <TenantProvider>
             <ThemeProvider defaultTheme="light">
               <AgentProvider>
-                <AppRoutes />
-                <Toaster position="top-right" />
+                <PluginProvider>
+                  <AppRoutes />
+                  <Toaster position="top-right" />
+                </PluginProvider>
               </AgentProvider>
             </ThemeProvider>
           </TenantProvider>

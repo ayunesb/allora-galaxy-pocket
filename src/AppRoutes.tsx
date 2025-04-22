@@ -8,6 +8,8 @@ import { publicRoutes } from './routes/publicRoutes';
 import { dashboardRoutes } from './routes/dashboardRoutes';
 import { adminRoutes } from './routes/adminRoutes';
 import { appRoutes } from './routes/appRoutes';
+import { pluginRoutes } from './routes/pluginRoutes';
+import { DebugErrorBoundary } from '@/components/DebugErrorBoundary';
 
 const AppRoutes = () => {
   return (
@@ -37,6 +39,15 @@ const AppRoutes = () => {
             <ErrorBoundary>
               {route.element}
             </ErrorBoundary>
+          } />
+        ))}
+
+        {/* Plugin routes with Debug Error Boundary */}
+        {pluginRoutes.map((route) => (
+          <Route key={route.path} path={route.path} element={
+            <DebugErrorBoundary>
+              {route.element}
+            </DebugErrorBoundary>
           } />
         ))}
       </Route>
