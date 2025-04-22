@@ -37,7 +37,7 @@ export default function MyPluginsPage() {
         return;
       }
 
-      setInstalled(data || []);
+      setInstalled(data as InstalledPlugin[] || []);
     };
 
     fetchInstalledPlugins();

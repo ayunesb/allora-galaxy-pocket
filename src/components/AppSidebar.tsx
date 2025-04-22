@@ -1,3 +1,4 @@
+
 import { NavLink } from "react-router-dom";
 import { 
   Home, 
@@ -12,7 +13,7 @@ import {
   MessageSquare,
   Bell,
   Bot,
-  PlugCircle,
+  PlusCircle,
   Send,
   List
 } from "lucide-react";
@@ -43,7 +44,7 @@ const items = [
   { icon: UserPlus, label: "Invite Users", path: "/admin/invite" },
   { icon: Settings, label: "Plugin Settings", path: "/plugins/settings" },
   { 
-    icon: PlugCircle, 
+    icon: PlusCircle, 
     label: "Plugin Marketplace", 
     path: "/plugins/explore" 
   },
