@@ -13,10 +13,12 @@ import PrivacyPolicy from "@/pages/legal/privacy";
 import CookiePolicy from "@/pages/legal/cookie";
 import AIDisclosure from "@/pages/legal/ai-disclosure";
 import DataProcessingAddendum from "@/pages/legal/dpa";
+import PluginExplorePage from "@/pages/plugins/explore";
 
 export const publicRoutes: RouteObject[] = [
   { path: "/docs", element: <Docs /> },
   { path: "/explore", element: <Explore /> },
+  { path: "/plugins/explore", element: <PluginExplorePage /> },
   { path: "/auth/login", element: <Login /> },
   { path: "/auth/signup", element: <Signup /> },
   { 

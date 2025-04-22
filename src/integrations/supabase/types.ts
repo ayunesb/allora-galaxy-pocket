@@ -505,6 +505,45 @@ export type Database = {
         }
         Relationships: []
       }
+      plugin_installs: {
+        Row: {
+          enabled: boolean | null
+          id: string
+          installed_at: string | null
+          plugin_id: string | null
+          tenant_id: string
+        }
+        Insert: {
+          enabled?: boolean | null
+          id?: string
+          installed_at?: string | null
+          plugin_id?: string | null
+          tenant_id: string
+        }
+        Update: {
+          enabled?: boolean | null
+          id?: string
+          installed_at?: string | null
+          plugin_id?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plugin_installs_plugin_id_fkey"
+            columns: ["plugin_id"]
+            isOneToOne: false
+            referencedRelation: "plugins"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plugin_installs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plugin_manifests: {
         Row: {
           created_at: string | null
@@ -608,6 +647,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      plugins: {
+        Row: {
+          author: string | null
+          badge: string | null
+          changelog: Json | null
+          created_at: string | null
+          description: string | null
+          icon_url: string | null
+          id: string
+          install_url: string | null
+          name: string
+          version: string | null
+        }
+        Insert: {
+          author?: string | null
+          badge?: string | null
+          changelog?: Json | null
+          created_at?: string | null
+          description?: string | null
+          icon_url?: string | null
+          id?: string
+          install_url?: string | null
+          name: string
+          version?: string | null
+        }
+        Update: {
+          author?: string | null
+          badge?: string | null
+          changelog?: Json | null
+          created_at?: string | null
+          description?: string | null
+          icon_url?: string | null
+          id?: string
+          install_url?: string | null
+          name?: string
+          version?: string | null
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
