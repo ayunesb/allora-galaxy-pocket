@@ -30,11 +30,13 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Download, Filter, Users, Loader2 } from "lucide-react";
+import { Download, Filter, Users, Loader2, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { exportActivityLogToPDF } from "@/lib/export/exportActivityLogToPDF";
+import { toast } from "sonner";
 
 export default function TeamActivityDashboard() {
   const { tenant } = useTenant();
@@ -44,6 +46,7 @@ export default function TeamActivityDashboard() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [exportingPDF, setExportingPDF] = useState(false);
   const [filters, setFilters] = useState({
     user: "all",
     actionType: "all",
@@ -174,8 +177,32 @@ export default function TeamActivityDashboard() {
       document.body.removeChild(link);
     } catch (error) {
       console.error("Error exporting CSV:", error);
+      toast.error("Failed to export CSV");
     } finally {
       setExporting(false);
+    }
+  };
+
+  // Export logs as PDF
+  const exportPDF = async () => {
+    if (!logs.length || !tenant?.id) return;
+    
+    setExportingPDF(true);
+    
+    try {
+      await exportActivityLogToPDF({
+        tenantId: tenant.id,
+        dateRange: parseInt(filters.dateRange),
+        actionType: filters.actionType !== "all" ? filters.actionType : undefined,
+        userId: filters.user !== "all" ? filters.user : undefined,
+        search: filters.search || undefined
+      });
+      toast.success("PDF report generated successfully");
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+      toast.error("Failed to generate PDF report");
+    } finally {
+      setExportingPDF(false);
     }
   };
   
@@ -213,19 +240,35 @@ export default function TeamActivityDashboard() {
             Monitor team actions across your workspace
           </p>
         </div>
-        <Button 
-          variant="outline" 
-          className="flex items-center gap-2"
-          onClick={exportCSV}
-          disabled={exporting || logs.length === 0}
-        >
-          {exporting ? (
-            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-          ) : (
-            <Download className="h-4 w-4 mr-2" />
-          )}
-          Export CSV
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={exportCSV}
+            disabled={exporting || logs.length === 0}
+          >
+            {exporting ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            ) : (
+              <Download className="h-4 w-4 mr-2" />
+            )}
+            Export CSV
+          </Button>
+
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={exportPDF}
+            disabled={exportingPDF || logs.length === 0}
+          >
+            {exportingPDF ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            ) : (
+              <FileText className="h-4 w-4 mr-2" />
+            )}
+            Download PDF
+          </Button>
+        </div>
       </div>
 
       <Card className="mb-6">
