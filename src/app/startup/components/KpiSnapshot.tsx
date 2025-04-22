@@ -5,13 +5,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { Loader2 } from "lucide-react";
 import KpiCard from "../KpiCard";
+import type { KpiMetric } from "@/types/kpi";
 
 export function KpiSnapshot() {
   const { tenant } = useTenant();
 
   const { data: kpiMetrics, isLoading } = useQuery({
     queryKey: ['kpi-snapshot', tenant?.id],
-    queryFn: async () => {
+    queryFn: async (): Promise<KpiMetric[]> => {
       if (!tenant?.id) return [];
 
       const { data, error } = await supabase
@@ -22,16 +23,12 @@ export function KpiSnapshot() {
 
       if (error) throw error;
       
-      return data.map(metric => {
-        // Ensure trend is always "up" or "down"
-        const trendValue: "up" | "down" = Math.random() > 0.5 ? "up" : "down";
-        
-        return {
-          label: metric.metric,
-          value: metric.value,
-          trend: trendValue // Now properly typed as "up" | "down"
-        };
-      });
+      return data.map(metric => ({
+        label: metric.metric,
+        value: metric.value,
+        trend: metric.value >= 0 ? "up" : "down",
+        changePercent: 0
+      }));
     },
     enabled: !!tenant?.id
   });
@@ -54,6 +51,7 @@ export function KpiSnapshot() {
                 label={metric.label}
                 value={metric.value}
                 trend={metric.trend}
+                changePercent={metric.changePercent}
               />
             ))}
           </div>

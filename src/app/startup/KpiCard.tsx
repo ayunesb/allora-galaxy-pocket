@@ -1,14 +1,9 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, TrendingDown } from "lucide-react";
+import type { KpiMetric } from "@/types/kpi";
 
-interface KpiCardProps {
-  label: string;
-  value: string | number;
-  trend?: "up" | "down";
-}
-
-export default function KpiCard({ label, value, trend }: KpiCardProps) {
+export default function KpiCard({ label, value, trend, changePercent }: KpiMetric) {
   return (
     <Card>
       <CardContent className="pt-6">
@@ -17,6 +12,7 @@ export default function KpiCard({ label, value, trend }: KpiCardProps) {
           {trend && (
             <span className={trend === "up" ? "text-green-500" : "text-red-500"}>
               {trend === "up" ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+              {changePercent !== undefined && <span className="ml-1 text-xs">{changePercent}%</span>}
             </span>
           )}
         </div>

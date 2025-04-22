@@ -22,10 +22,17 @@ export function useKpiMetrics() {
       return data.map(metric => ({
         label: metric.metric,
         value: metric.value,
-        trend: metric.value > 0 ? "up" : "down", // Simple trend indication
+        trend: calculateTrend(metric.value), // Helper function to determine trend
         changePercent: 0 // We'll implement historical comparison later
       }));
     },
     enabled: !!tenant?.id
   });
+}
+
+// Simple helper to determine trend
+function calculateTrend(value: number): "up" | "down" {
+  // For now using a simple logic: positive values = up, negative = down
+  // This can be enhanced later with historical data comparison
+  return value >= 0 ? "up" : "down";
 }
