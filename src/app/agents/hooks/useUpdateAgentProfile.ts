@@ -18,7 +18,7 @@ export function useUpdateAgentProfile() {
       if (error) throw error;
 
       // Log to system logs
-      await logActivity.mutate({
+      await logActivity({
         event_type: "agent_profile_updated",
         message: `Agent profile updated for ${data.agent_name}`,
         meta: { agent_name: data.agent_name }
