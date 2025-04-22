@@ -4,6 +4,8 @@ import { createContext, useContext, useState, ReactNode } from "react";
 interface Tenant {
   id: string;
   name: string;
+  theme_color?: string;
+  theme_mode?: string;
 }
 
 interface TenantContextType {
@@ -16,7 +18,9 @@ const TenantContext = createContext<TenantContextType | undefined>(undefined);
 export function TenantProvider({ children }: { children: ReactNode }) {
   const [tenant, setTenant] = useState<Tenant | null>({
     id: "demo-tenant",
-    name: "Demo Tenant"
+    name: "Demo Tenant",
+    theme_color: "indigo",
+    theme_mode: "light"
   });
 
   return (
