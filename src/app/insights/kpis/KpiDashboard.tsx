@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery } from '@tanstack/react-query';
@@ -9,7 +8,8 @@ import KpiMetricCard from '@/app/dashboard/insights/components/KpiMetricCard';
 import { KPITrackerWithData } from '@/components/KPITracker';
 import InsightsDateFilter from '@/app/dashboard/insights/components/InsightsDateFilter';
 import { AlertTriangle, Loader2, AlertCircle } from 'lucide-react';
-import { useKpiAlerts, KpiAlert } from '@/hooks/useKpiAlerts';
+import { useKpiAlerts } from '@/hooks/useKpiAlerts';
+import type { KpiAlert } from '@/types/kpi';
 
 interface KpiMetric {
   id: string;
@@ -53,7 +53,6 @@ export default function KpiDashboard() {
   const isLoading = isLoadingMetrics || isLoadingAlerts;
   const error = metricsError || alertsError;
 
-  // Group metrics by type
   const metricsByType = metrics.reduce((acc, metric) => {
     if (!acc[metric.metric]) {
       acc[metric.metric] = [];
@@ -62,25 +61,19 @@ export default function KpiDashboard() {
     return acc;
   }, {} as Record<string, KpiMetric[]>);
 
-  // Calculate trend for each metric type with proper error handling
   const metricSummaries = Object.entries(metricsByType).map(([metricName, values]) => {
     try {
-      // Sort by recorded_at in ascending order
       const sortedValues = [...values].sort((a, b) => 
         new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime()
       );
       
-      // Get current and previous values
       const current = sortedValues[sortedValues.length - 1]?.value || 0;
       const previous = sortedValues[0]?.value || 0;
       
-      // Calculate change
       const change = previous === 0 ? 0 : ((current - previous) / previous) * 100;
       
-      // Determine trend
       const trend = change > 0 ? 'up' : change < 0 ? 'down' : 'neutral';
       
-      // Find any alerts for this metric
       const metricAlerts = alerts.filter(alert => alert.metric === metricName);
       
       return {
