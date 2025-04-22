@@ -1,6 +1,6 @@
 
 import { Info } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
 interface MemoryScoreIndicatorProps {
   score: number;
@@ -16,15 +16,17 @@ export function MemoryScoreIndicator({ score, lastUpdate, className }: MemorySco
       <div className="flex items-center">
         <div className="text-sm font-medium">Memory Score:</div>
         <div className="ml-2 text-lg font-bold">{score}</div>
-        <Tooltip>
-          <TooltipTrigger>
-            <Info className="h-4 w-4 ml-1 text-muted-foreground" />
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Memory Score: how well this agent adapts to your business</p>
-            <p className="text-xs text-muted-foreground mt-1">Last updated: {formattedDate}</p>
-          </TooltipContent>
-        </Tooltip>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger>
+              <Info className="h-4 w-4 ml-1 text-muted-foreground" />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Memory Score: how well this agent adapts to your business</p>
+              <p className="text-xs text-muted-foreground mt-1">Last updated: {formattedDate}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
       <div 
         className="w-24 h-2 bg-secondary rounded-full overflow-hidden"

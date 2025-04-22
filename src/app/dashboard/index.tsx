@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { useAuth } from "@/hooks/useAuth";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { CurrentStrategyCard } from "./components/CurrentStrategyCard";
 import { CampaignsCard } from "./components/CampaignsCard";
 import { PerformanceSnapshotCard } from "./components/PerformanceSnapshotCard";
@@ -87,22 +88,24 @@ export default function DashboardHome() {
   });
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <h1 className="text-2xl font-bold flex items-center gap-2">
-        <Zap className="h-6 w-6 text-primary" />
-        Welcome to Allora OS
-      </h1>
-      <div className="grid md:grid-cols-2 gap-4">
-        <CurrentStrategyCard title={strategyData?.title} />
-        <CampaignsCard campaignsCount={campaignsCount ?? 0} />
-        <PerformanceSnapshotCard
-          roi={kpiSummary?.roi}
-          leads={kpiSummary?.leads}
-        />
-        <NotificationsCard notificationsCount={notificationsCount ?? 0} />
+    <TooltipProvider>
+      <div className="container mx-auto p-6 space-y-6">
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <Zap className="h-6 w-6 text-primary" />
+          Welcome to Allora OS
+        </h1>
+        <div className="grid md:grid-cols-2 gap-4">
+          <CurrentStrategyCard title={strategyData?.title} />
+          <CampaignsCard campaignsCount={campaignsCount ?? 0} />
+          <PerformanceSnapshotCard
+            roi={kpiSummary?.roi}
+            leads={kpiSummary?.leads}
+          />
+          <NotificationsCard notificationsCount={notificationsCount ?? 0} />
+        </div>
+        <AssistantCard />
+        <KpiAnalyticsCard />
       </div>
-      <AssistantCard />
-      <KpiAnalyticsCard />
-    </div>
+    </TooltipProvider>
   );
 }
