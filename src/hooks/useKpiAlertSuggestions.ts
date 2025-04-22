@@ -10,6 +10,19 @@ export type AlertRuleSuggestion = {
   compare_period: string;
 };
 
+// Define proper interfaces for our data structures
+interface MetricData {
+  current: number;
+  previous?: number;
+}
+
+interface MetricComparison {
+  kpi_name: string;
+  current_value: number;
+  previous_value: number;
+  percent_change: number;
+}
+
 export function useKpiAlertSuggestions() {
   const { tenant } = useTenant();
 
@@ -59,28 +72,32 @@ function formatDataForSuggestions(
   currentMetrics: any[],
   historicalMetrics: any[]
 ) {
-  // Group metrics by name
-  const metricsByName = currentMetrics.reduce((acc, metric) => {
-    acc[metric.metric] = { current: metric.value };
+  // Group metrics by name with properly typed Record
+  const metricsByName: Record<string, MetricData> = currentMetrics.reduce((acc, metric) => {
+    acc[metric.metric] = { current: Number(metric.value) };
     return acc;
-  }, {} as Record<string, { current: number, previous?: number }>);
+  }, {} as Record<string, MetricData>);
   
   // Add historical data
   historicalMetrics.forEach(metric => {
     if (metricsByName[metric.metric]) {
       if (!metricsByName[metric.metric].previous) {
-        metricsByName[metric.metric].previous = metric.value;
+        metricsByName[metric.metric].previous = Number(metric.value);
       }
     }
   });
   
-  // Convert to array format for AI processing
-  return Object.entries(metricsByName).map(([name, values]) => ({
-    kpi_name: name,
-    current_value: values.current,
-    previous_value: values.previous || values.current,
-    percent_change: values.previous 
-      ? ((values.current - values.previous) / values.previous) * 100
-      : 0
-  }));
+  // Convert to array format for AI processing with proper typing
+  return Object.entries(metricsByName).map(([name, values]): MetricComparison => {
+    const current = values.current;
+    const previous = values.previous || values.current;
+    return {
+      kpi_name: name,
+      current_value: current,
+      previous_value: previous,
+      percent_change: previous 
+        ? ((current - previous) / previous) * 100
+        : 0
+    };
+  });
 }
