@@ -7,9 +7,10 @@ interface MetricSummary {
   title: string;
   value: string;
   trend: "up" | "down" | "neutral";
-  change: number;
+  change: string | number;
   alerts: KpiAlert[];
 }
+
 interface KpiMetricSummaryGridProps {
   metricSummaries: MetricSummary[];
 }

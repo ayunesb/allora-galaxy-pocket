@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,7 +8,6 @@ import { useTenant } from '@/hooks/useTenant';
 import KpiMetricCard from '@/app/dashboard/insights/components/KpiMetricCard';
 import { KPITrackerWithData } from '@/components/KPITracker';
 import InsightsDateFilter from '@/app/dashboard/insights/components/InsightsDateFilter';
-import { AlertTriangle, Loader2, AlertCircle } from 'lucide-react';
 import { useKpiAlerts } from '@/hooks/useKpiAlerts';
 import type { KpiAlert } from '@/types/kpi';
 import KpiLoadingState from "./components/KpiLoadingState";
@@ -76,14 +76,16 @@ export default function KpiDashboard() {
       
       const change = previous === 0 ? 0 : ((current - previous) / previous) * 100;
       
-      const trend = change > 0 ? 'up' : change < 0 ? 'down' : 'neutral';
+      // Explicitly type the trend value as one of the allowed values
+      const trendValue: "up" | "down" | "neutral" = 
+        change > 0 ? "up" : change < 0 ? "down" : "neutral";
       
       const metricAlerts = alerts.filter(alert => alert.metric === metricName);
       
       return {
         title: metricName,
         value: current.toFixed(1),
-        trend,
+        trend: trendValue, // Use the explicitly typed value
         change: Math.abs(change).toFixed(1),
         alerts: metricAlerts
       };
@@ -92,7 +94,7 @@ export default function KpiDashboard() {
       return {
         title: metricName,
         value: "Error",
-        trend: "neutral",
+        trend: "neutral" as const, // Use const assertion to ensure it's the correct type
         change: "0",
         alerts: []
       };
