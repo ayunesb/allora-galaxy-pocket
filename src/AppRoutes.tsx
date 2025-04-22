@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Routes, Route } from "react-router-dom";
 import AuthenticatedLayout from "@/app/layouts/AuthenticatedLayout";
@@ -12,6 +13,49 @@ import AssistantPanel from "@/app/assistant/AssistantPanel";
 import GrowthPanel from "@/app/notifications/GrowthPanel";
 import ExportPanel from "@/app/export/ExportPanel";
 import PricingPage from "@/pages/Pricing";
+
+// Import startup dashboard and other public pages
+import StartupDashboard from "@/app/startup/StartupDashboard";
+import Docs from "@/pages/Docs";
+import Explore from "@/pages/Explore";
+import Login from "@/pages/auth/Login";
+import Signup from "@/pages/auth/Signup";
+
+// Import legal pages
+import TermsOfUse from "@/pages/legal/terms";
+import PrivacyPolicy from "@/pages/legal/privacy";
+import CookiePolicy from "@/pages/legal/cookie";
+import AIDisclosure from "@/pages/legal/ai-disclosure";
+import DataProcessingAddendum from "@/pages/legal/dpa";
+
+// Import onboarding components
+import OnboardingLayout from "@/app/onboarding/OnboardingLayout";
+import OnboardingWizard from "@/app/onboarding/OnboardingWizard";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+
+// Import authenticated route components
+import VaultItemsList from "@/app/vault/VaultItemsList";
+import StrategyDetail from "@/app/vault/strategy-detail/[id]";
+import LaunchPage from "@/app/launch/LaunchPage";
+import PocketSwipe from "@/app/pocket/PocketSwipe";
+import AcademyFeed from "@/app/academy/AcademyFeed";
+import ExplorePage from "@/app/galaxy/explore/ExplorePage";
+import KpiDashboard from "@/app/insights/kpis/KpiDashboard";
+import SettingsPanel from "@/app/admin/settings/SettingsPanel";
+import SeedToolsPanel from "@/app/admin/seed-tools/SeedToolsPanel";
+import PluginsDashboard from "@/app/admin/plugins/PluginsDashboard";
+import StrategyWizard from "@/app/strategy-gen/StrategyWizard";
+import LeadPipeline from "@/app/leads/LeadPipeline";
+import InviteUserForm from "@/app/admin/invite/InviteUserForm";
+import CoachingFeed from "@/app/coaching/feed/CoachingFeed";
+import InsightsPanel from "@/app/dashboard/insights/InsightsPanel";
+import NotificationsPage from "@/app/notifications/page";
+import PluginGallery from "@/app/plugins/gallery/PluginGallery";
+import PluginDetail from "@/app/plugins/detail/PluginDetail";
+import AnalyticsDashboard from "@/app/admin/analytics/AnalyticsDashboard";
+import PerformanceDashboard from "@/app/dashboard/performance";
+import CampaignPage from "@/app/campaign/CampaignPage";
+import NotFound from "@/pages/NotFound";
 
 export default function AppRoutes() {
   return (
