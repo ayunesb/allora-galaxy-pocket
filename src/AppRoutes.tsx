@@ -12,16 +12,24 @@ import { pluginRoutes } from './routes/pluginRoutes';
 import { DebugErrorBoundary } from '@/components/DebugErrorBoundary';
 
 const AppRoutes = () => {
+  // Log when routes are being rendered
+  console.log("Rendering AppRoutes");
+  
   return (
     <Routes>
       {/* Public routes */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       {publicRoutes.map((route) => (
-        <Route key={route.path} path={route.path} element={route.element} />
+        <Route key={route.path} path={route.path} element={
+          <ErrorBoundary>
+            {route.element}
+          </ErrorBoundary>
+        } />
       ))}
       
       {/* Protected routes */}
       <Route element={<AuthenticatedLayout />}>
+        {/* Dashboard routes */}
         {dashboardRoutes.map((route) => (
           <Route key={route.path} path={route.path} element={
             <ErrorBoundary>
@@ -30,10 +38,16 @@ const AppRoutes = () => {
           } />
         ))}
         
+        {/* Admin routes with Debug Error Boundary */}
         {adminRoutes.map((route) => (
-          <Route key={route.path} path={route.path} element={route.element} />
+          <Route key={route.path} path={route.path} element={
+            <DebugErrorBoundary>
+              {route.element}
+            </DebugErrorBoundary>
+          } />
         ))}
         
+        {/* App routes */}
         {appRoutes.map((route) => (
           <Route key={route.path} path={route.path} element={
             <ErrorBoundary>
