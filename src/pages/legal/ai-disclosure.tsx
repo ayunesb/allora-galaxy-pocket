@@ -1,19 +1,25 @@
 
-import { Info } from "lucide-react";
+import LegalLayout from "@/components/layouts/LegalLayout";
 
 export default function AIDisclosure() {
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-4 text-sm">
-      <div className="flex items-center gap-2 mb-6">
-        <Info className="h-6 w-6" />
-        <h1 className="text-2xl font-bold">🤖 AI Disclosure</h1>
-      </div>
+    <LegalLayout title="AI Usage Terms">
+      <p className="text-sm text-muted-foreground mb-4">
+        Effective Date: August 14, 2023
+      </p>
       
-      <div className="prose prose-sm max-w-none">
-        <p>ALLORA APP uses AI-generated content to suggest strategies, campaigns, and coaching feedback.</p>
-        <p>All AI decisions are based on inputs provided by users and system analysis. These are suggestions only and should be reviewed before execution.</p>
-        <p>All executions are subject to user approval. The AI does not replace legal, financial, or medical advisors.</p>
+      <div className="space-y-4">
+        <p>
+          Allora OS uses advanced AI models to generate strategies, content, and recommendations. 
+          These terms explain how AI input/output is handled, your rights to the data, and 
+          restrictions on AI misuse.
+        </p>
+
+        <p className="text-sm text-muted-foreground mt-8">
+          Outputs may contain inaccuracies. AI use is governed by OpenAI and other provider guidelines. 
+          Outputs should be reviewed before public distribution.
+        </p>
       </div>
-    </div>
+    </LegalLayout>
   );
 }

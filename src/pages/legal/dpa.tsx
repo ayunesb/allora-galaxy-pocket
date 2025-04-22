@@ -1,19 +1,24 @@
 
-import { Shield } from "lucide-react";
+import LegalLayout from "@/components/layouts/LegalLayout";
 
 export default function DataProcessingAddendum() {
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-4 text-sm">
-      <div className="flex items-center gap-2 mb-6">
-        <Shield className="h-6 w-6" />
-        <h1 className="text-2xl font-bold">📄 Data Processing Addendum (DPA)</h1>
-      </div>
+    <LegalLayout title="Data Processing Addendum">
+      <p className="text-sm text-muted-foreground mb-4">
+        Last Updated: March 11, 2025
+      </p>
       
-      <div className="prose prose-sm max-w-none">
-        <p>This DPA applies when ALLORA APP processes Personal Data on behalf of a customer as part of delivering its services.</p>
-        <p>The data controller remains the user or entity creating the account. ALLORA APP is the processor acting on your instructions, including for campaign personalization, CRM syncing, and analytics.</p>
-        <p>ALLORA APP ensures access control, encryption, backups, and audit logging. For questions about compliance, please contact <a className="text-blue-600" href="mailto:support@all-or-a.com">support@all-or-a.com</a>.</p>
+      <div className="space-y-4">
+        <p>
+          This DPA applies to Allora OS customers subject to GDPR, PIPEDA, or other data 
+          protection laws. It outlines our role as a data processor, our responsibilities, 
+          and your data rights.
+        </p>
+
+        <p className="text-sm text-muted-foreground mt-8">
+          Reach out to support@all-or-a.com to request a signed DPA or additional compliance documents.
+        </p>
       </div>
-    </div>
+    </LegalLayout>
   );
 }

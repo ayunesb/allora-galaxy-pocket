@@ -1,21 +1,24 @@
 
-import { Cookie } from "lucide-react";
+import LegalLayout from "@/components/layouts/LegalLayout";
 
 export default function CookiePolicy() {
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-4">
-      <div className="flex items-center gap-2 mb-6">
-        <Cookie className="h-6 w-6" />
-        <h1 className="text-2xl font-bold">Cookie Policy</h1>
-      </div>
+    <LegalLayout title="Cookie Policy">
+      <p className="text-sm text-muted-foreground mb-4">
+        Last Updated: March 10, 2025
+      </p>
       
-      <div className="prose prose-sm max-w-none">
-        <p className="text-muted-foreground">We use cookies to improve your experience, analyze traffic, and personalize strategy recommendations.</p>
-        
-        <p className="text-muted-foreground">Some cookies are essential for authentication, while others help us understand user behavior to improve onboarding and execution quality.</p>
-        
-        <p className="text-muted-foreground">By using this platform, you consent to the use of cookies. You can manage cookie preferences through your browser settings.</p>
+      <div className="space-y-4">
+        <p>
+          This Cookie Policy explains how Allora OS uses cookies and similar technologies 
+          to enhance your experience on our platform. Some cookies are strictly necessary, 
+          others help us improve performance and personalize your experience.
+        </p>
+
+        <p className="text-sm text-muted-foreground mt-8">
+          You can manage your preferences at any time using the cookie settings panel or browser controls.
+        </p>
       </div>
-    </div>
+    </LegalLayout>
   );
 }
