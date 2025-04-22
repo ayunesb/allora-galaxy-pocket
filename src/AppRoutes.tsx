@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Routes, Route } from "react-router-dom";
 import AuthenticatedLayout from "@/app/layouts/AuthenticatedLayout";
@@ -37,7 +38,7 @@ import PluginDetail from "@/app/plugins/detail/PluginDetail";
 import Docs from "@/pages/Docs";
 import Explore from "@/pages/Explore";
 import AnalyticsDashboard from "@/app/admin/analytics/AnalyticsDashboard";
-import PerformanceDashboard from "@/app/dashboard/performance";
+import PerformanceDashboard from "@/app/dashboard/performance/PerformanceDashboard";
 
 export default function AppRoutes() {
   return (
