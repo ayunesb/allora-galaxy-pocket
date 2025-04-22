@@ -1,14 +1,5 @@
 
-import { useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
-import { toast } from "@/components/ui/sonner";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Loader2 } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Link } from "react-router-dom";
+import { isValidEmail, isValidPassword } from "@/lib/validation";
 
 export default function Signup() {
   const { signup } = useAuth();
@@ -23,6 +14,21 @@ export default function Signup() {
     if (!agreedToTerms) {
       toast.error("Please agree to the terms", {
         description: "You must accept the terms to create an account"
+      });
+      return;
+    }
+
+    // Validate form inputs
+    if (!isValidEmail(email)) {
+      toast.error("Invalid email", {
+        description: "Please enter a valid email address"
+      });
+      return;
+    }
+
+    if (!isValidPassword(password)) {
+      toast.error("Invalid password", {
+        description: "Password must be at least 8 characters long"
       });
       return;
     }

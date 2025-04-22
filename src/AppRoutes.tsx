@@ -48,6 +48,7 @@ import PrivacyPolicy from "@/pages/legal/privacy";
 import CookiePolicy from "@/pages/legal/cookie";
 import AIDisclosure from "@/pages/legal/ai-disclosure";
 import DataProcessingAddendum from "@/pages/legal/dpa";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export default function AppRoutes() {
   return (
@@ -60,9 +61,11 @@ export default function AppRoutes() {
       <Route path="/auth/login" element={<Login />} />
       <Route path="/auth/signup" element={<Signup />} />
       <Route path="/onboarding" element={
-        <OnboardingLayout>
-          <OnboardingWizard />
-        </OnboardingLayout>
+        <ErrorBoundary>
+          <OnboardingLayout>
+            <OnboardingWizard />
+          </OnboardingLayout>
+        </ErrorBoundary>
       } />
       
       {/* Legal routes - publicly accessible */}
@@ -74,9 +77,21 @@ export default function AppRoutes() {
       
       {/* Protected routes */}
       <Route element={<AuthenticatedLayout />}>
-        <Route path="/dashboard" element={<DashboardHome />} />
-        <Route path="/startup" element={<StartupDashboard />} />
-        <Route path="/campaign" element={<CampaignPage />} />
+        <Route path="/dashboard" element={
+          <ErrorBoundary>
+            <DashboardHome />
+          </ErrorBoundary>
+        } />
+        <Route path="/startup" element={
+          <ErrorBoundary>
+            <StartupDashboard />
+          </ErrorBoundary>
+        } />
+        <Route path="/campaign" element={
+          <ErrorBoundary>
+            <CampaignPage />
+          </ErrorBoundary>
+        } />
         <Route path="/vault" element={<VaultItemsList />} />
         <Route path="/vault/strategy-detail/:id" element={<StrategyDetail />} />
         <Route path="/launch" element={<LaunchPage />} />
