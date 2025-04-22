@@ -284,7 +284,7 @@ export default function DashboardInsights() {
                   {Object.entries(pluginStats).map(([plugin, count]) => (
                     <div key={plugin} className="flex justify-between items-center border-b pb-2">
                       <div className="capitalize">{String(plugin).replace('_', ' ')}</div>
-                      <div className="font-medium">{count} uses</div>
+                      <div className="font-medium">{String(count)} uses</div>
                     </div>
                   ))}
                 </div>
