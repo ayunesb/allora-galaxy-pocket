@@ -71,16 +71,19 @@ export default function OnboardingWizard() {
     setIsSubmitting(true);
 
     try {
-      // Direct Supabase call to save the company profile
+      // Save company profile with additional fields
       const { error: companyError } = await supabase
         .from('company_profiles')
-        .insert({
+        .upsert({
           tenant_id: tenant.id,
           name: finalProfile.companyName || 'My Company',
           industry: finalProfile.industry || 'Other',
           team_size: finalProfile.teamSize || 'small',
           revenue_tier: finalProfile.revenue || 'pre-revenue',
-          launch_mode: finalProfile.launch_mode || 'guided'
+          launch_mode: finalProfile.launch_mode || 'guided',
+          // New fields added
+          product_stage: finalProfile.productStage,
+          target_market: finalProfile.targetMarket
         });
 
       if (companyError) throw companyError;
@@ -88,10 +91,10 @@ export default function OnboardingWizard() {
       // Save the persona profile
       const { error: personaError } = await supabase
         .from('persona_profiles')
-        .insert({
+        .upsert({
           tenant_id: tenant.id,
           user_id: user.id,
-          goal: finalProfile.goals?.[0] || 'growth', // Use first goal instead of deprecated 'goal'
+          goal: finalProfile.goals?.[0] || 'growth',
           pain_points: finalProfile.challenges || [],
           tone: finalProfile.tone || 'professional',
           channels: finalProfile.channels || [],
