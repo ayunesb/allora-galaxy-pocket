@@ -9,6 +9,54 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      agent_profiles: {
+        Row: {
+          agent_name: string
+          avatar_url: string | null
+          channels: string[] | null
+          created_at: string | null
+          created_by: string | null
+          enabled_tools: string[] | null
+          id: string
+          language: string
+          memory_scope: string[] | null
+          role: string
+          tenant_id: string
+          tone: string
+          updated_at: string | null
+        }
+        Insert: {
+          agent_name: string
+          avatar_url?: string | null
+          channels?: string[] | null
+          created_at?: string | null
+          created_by?: string | null
+          enabled_tools?: string[] | null
+          id?: string
+          language?: string
+          memory_scope?: string[] | null
+          role: string
+          tenant_id: string
+          tone: string
+          updated_at?: string | null
+        }
+        Update: {
+          agent_name?: string
+          avatar_url?: string | null
+          channels?: string[] | null
+          created_at?: string | null
+          created_by?: string | null
+          enabled_tools?: string[] | null
+          id?: string
+          language?: string
+          memory_scope?: string[] | null
+          role?: string
+          tenant_id?: string
+          tone?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       ai_memory: {
         Row: {
           content: string

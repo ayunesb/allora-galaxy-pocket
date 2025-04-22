@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Routes, Route, Navigate } from "react-router-dom";
 import AuthenticatedLayout from "@/app/layouts/AuthenticatedLayout";
@@ -57,6 +56,7 @@ import AnalyticsDashboard from "@/app/admin/analytics/AnalyticsDashboard";
 import PerformanceDashboard from "@/app/dashboard/performance";
 import CampaignPage from "@/app/campaign/CampaignPage";
 import NotFound from "@/pages/NotFound";
+import AgentSpacePage from "@/app/agents/AgentSpacePage";
 
 // Import new dynamic route components
 import SingleStrategyDetail from "@/app/strategy/[id]";
@@ -186,6 +186,14 @@ export default function AppRoutes() {
         <Route path="/assistant" element={<AssistantPanel />} />
         <Route path="/export" element={<ExportPanel />} />
         <Route path="/pricing" element={<PricingPage />} />
+        <Route 
+          path="/agents" 
+          element={
+            <AdminOnly>
+              <AgentSpacePage />
+            </AdminOnly>
+          } 
+        />
       </Route>
       
       <Route path="*" element={<NotFound />} />

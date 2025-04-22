@@ -1,4 +1,3 @@
-
 import { NavLink } from "react-router-dom";
 import { 
   Home, 
@@ -11,7 +10,8 @@ import {
   Plus,
   Palette,
   MessageSquare,
-  Bell
+  Bell,
+  Bot
 } from "lucide-react";
 import {
   Sidebar,
@@ -34,6 +34,7 @@ const items = [
   { icon: MessageSquare, label: "Assistant", path: "/assistant" },
   { icon: Bell, label: "Notifications", path: "/notifications" },
   { icon: Lightbulb, label: "AI Coach", path: "/coaching/feed" },
+  { icon: Bot, label: "Agents", path: "/agents" },
   { icon: Palette, label: "Creative Suite", path: "/creative/suite" },
   { icon: Plus, label: "Add Plugin", path: "/admin/plugins/gallery" },
   { icon: UserPlus, label: "Invite Users", path: "/admin/invite" },
