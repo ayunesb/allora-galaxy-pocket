@@ -71,12 +71,12 @@ export default function OnboardingWizard() {
     setIsSubmitting(true);
 
     try {
-      // Save the complete profile to Supabase
-      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/save-onboarding`, {
+      // Get the Supabase URL from the client config
+      const response = await fetch(`https://lxsuqqlfuftnvuvtctsx.supabase.co/functions/v1/save-onboarding`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabase.supabaseKey}`
+          'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx4c3VxcWxmdWZ0bnZ1dnRjdHN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxMzA5OTgsImV4cCI6MjA1OTcwNjk5OH0.umJfetR46M11PJZtIN9CCURPkp3JK6tn_17KMMjC3ks'}`
         },
         body: JSON.stringify({
           profile: finalProfile,
@@ -108,6 +108,25 @@ export default function OnboardingWizard() {
     }
   };
 
+  // Determine which props to pass based on the current step
+  const getStepProps = () => {
+    const commonProps = {
+      next,
+      profile
+    };
+
+    // First step doesn't need back button
+    if (step === 0) {
+      return commonProps;
+    }
+
+    // All other steps need both next and back
+    return {
+      ...commonProps,
+      back
+    };
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
       <Card className="w-full max-w-2xl p-6 space-y-6">
@@ -117,11 +136,7 @@ export default function OnboardingWizard() {
             Step {step + 1} of {steps.length}
           </span>
         </div>
-        <CurrentStep 
-          next={next} 
-          back={step > 0 ? back : undefined} 
-          profile={profile} 
-        />
+        <CurrentStep {...getStepProps()} />
       </Card>
     </div>
   );
