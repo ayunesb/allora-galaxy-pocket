@@ -14,11 +14,15 @@ export function useRole() {
       try {
         if (!tenant?.id) return;
 
+        // Get the current user ID properly by awaiting the getUser() Promise
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user?.id) return;
+
         const { data, error } = await supabase
           .from('tenant_user_roles')
           .select('role')
           .eq('tenant_id', tenant.id)
-          .eq('user_id', supabase.auth.getUser()?.data.user?.id)
+          .eq('user_id', user.id)
           .single();
 
         if (error) throw error;
