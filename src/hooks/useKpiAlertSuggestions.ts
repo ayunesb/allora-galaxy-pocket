@@ -1,4 +1,3 @@
-
 import { useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "./useTenant";
@@ -88,7 +87,7 @@ function formatDataForSuggestions(
   });
   
   // Convert to array format for AI processing with proper typing
-  return Object.entries(metricsByName).map(([name, values]): MetricComparison => {
+  return Object.entries(metricsByName).map(([name, values]: [string, MetricData]): MetricComparison => {
     const current = values.current;
     const previous = values.previous || values.current;
     return {
