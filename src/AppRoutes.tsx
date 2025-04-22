@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Routes, Route } from "react-router-dom";
 import AuthenticatedLayout from "@/app/layouts/AuthenticatedLayout";
@@ -9,6 +8,7 @@ import CampaignCenter from "@/app/campaigns/CampaignCenter";
 import AutopilotPanel from "@/app/shopify/AutopilotPanel";
 import CreativeSuite from "@/app/creative/SuitePanel";
 import AssistantPanel from "@/app/assistant/AssistantPanel";
+import GrowthPanel from "@/app/notifications/GrowthPanel";
 
 // Pages
 import Index from "@/pages/Index";
@@ -106,6 +106,7 @@ export default function AppRoutes() {
         <Route path="/coaching/feed" element={<CoachingFeed />} />
         <Route path="/dashboard/insights" element={<InsightsPanel />} />
         <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/notifications/growth" element={<GrowthPanel />} />
         <Route path="/admin/plugins/gallery" element={<PluginGallery />} />
         <Route path="/admin/plugins/:pluginKey" element={<PluginDetail />} />
         <Route 
