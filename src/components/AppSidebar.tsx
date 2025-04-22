@@ -1,4 +1,3 @@
-
 import { NavLink } from "react-router-dom";
 import { 
   Home, 
@@ -42,6 +41,7 @@ const items = [
   { icon: Bot, label: "Agents", path: "/agents" },
   { icon: Palette, label: "Creative Suite", path: "/creative/suite" },
   { icon: Shield, label: "Admin Review", path: "/admin/plugins/review" },
+  { icon: Plus, label: "Plugin Earnings", path: "/admin/plugins/earnings" },
   { icon: Plus, label: "Add Plugin", path: "/admin/plugins/gallery" },
   { icon: UserPlus, label: "Invite Users", path: "/admin/invite" },
   { icon: Settings, label: "Plugin Settings", path: "/plugins/settings" },
