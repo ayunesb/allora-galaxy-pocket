@@ -13,7 +13,6 @@ import { pluginRoutes } from '@/routes/pluginRoutes';
 
 // Auth Context Provider
 import { AuthProvider } from '@/hooks/useAuth';
-import { TenantProvider } from '@/hooks/useTenant';
 import { Toaster } from "@/components/ui/sonner";
 
 // Create a browser router with all routes
@@ -25,13 +24,11 @@ const router = createBrowserRouter([
   {
     element: (
       <AuthProvider>
-        <TenantProvider>
-          <RequireAuth>
-            <Layout>
-              <Outlet />
-            </Layout>
-          </RequireAuth>
-        </TenantProvider>
+        <RequireAuth>
+          <Layout>
+            <Outlet />
+          </Layout>
+        </RequireAuth>
       </AuthProvider>
     ),
     children: [
