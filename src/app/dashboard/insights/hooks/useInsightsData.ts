@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
@@ -13,7 +12,6 @@ export function useInsightsData(dateRange: string) {
   const [aiRegenerationVolume, setAiRegenerationVolume] = useState({ current: 0, trend: 'neutral' as const, change: 0 });
   const [feedbackPositivityRatio, setFeedbackPositivityRatio] = useState({ current: 0, trend: 'neutral' as const, change: 0 });
 
-  // Fetch KPI metrics
   const { data: kpiData, isLoading: isLoadingKpi } = useQuery({
     queryKey: ['kpi-metrics-insights', tenant?.id, dateRange],
     queryFn: async () => {
@@ -29,7 +27,6 @@ export function useInsightsData(dateRange: string) {
     enabled: !!tenant?.id
   });
 
-  // Fetch KPI history for trends
   const { data: kpiHistory, isLoading: isLoadingKpiHistory } = useQuery({
     queryKey: ['kpi-metrics-history', tenant?.id, dateRange],
     queryFn: async () => {
@@ -47,7 +44,6 @@ export function useInsightsData(dateRange: string) {
     enabled: !!tenant?.id
   });
 
-  // Fetch strategy feedback data
   const { data: feedbackData, isLoading: isLoadingFeedback } = useQuery({
     queryKey: ['strategy-feedback', tenant?.id, dateRange],
     queryFn: async () => {
@@ -64,7 +60,6 @@ export function useInsightsData(dateRange: string) {
     enabled: !!tenant?.id
   });
 
-  // Fetch plugin usage logs
   const { data: pluginData, isLoading: isLoadingPlugins } = useQuery({
     queryKey: ['plugin-usage', tenant?.id, dateRange],
     queryFn: async () => {
@@ -81,7 +76,6 @@ export function useInsightsData(dateRange: string) {
     enabled: !!tenant?.id
   });
 
-  // Fetch top campaigns
   const { data: topCampaigns, isLoading: isLoadingCampaigns } = useQuery({
     queryKey: ['top-campaigns', tenant?.id, dateRange],
     queryFn: async () => {
@@ -100,7 +94,6 @@ export function useInsightsData(dateRange: string) {
     enabled: !!tenant?.id
   });
 
-  // Fetch system logs for AI regeneration volume
   const { data: systemLogs, isLoading: isLoadingSystemLogs } = useQuery({
     queryKey: ['system-logs', tenant?.id, dateRange],
     queryFn: async () => {
@@ -117,11 +110,9 @@ export function useInsightsData(dateRange: string) {
     enabled: !!tenant?.id
   });
 
-  // Calculate ROI and other metrics
   useEffect(() => {
     if (!tenant?.id || !kpiData || !kpiHistory) return;
 
-    // Extract revenue and cost data
     const revenueMetric = kpiData?.find(m => m.metric.toLowerCase() === 'revenue');
     const costMetric = kpiData?.find(m => m.metric.toLowerCase() === 'cost_spent');
     
@@ -130,7 +121,6 @@ export function useInsightsData(dateRange: string) {
       const cost = parseFloat(costMetric.value);
       const currentRoi = (revenue - cost) / cost;
       
-      // Calculate ROI history for trend line
       const roiHistory = kpiHistory
         .filter(h => h.metric === 'roi')
         .map(h => ({
@@ -139,7 +129,6 @@ export function useInsightsData(dateRange: string) {
         }))
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-      // Calculate trend (comparing current to previous period)
       let trend: 'up' | 'down' | 'neutral' = 'neutral';
       let change = 0;
       
@@ -159,9 +148,7 @@ export function useInsightsData(dateRange: string) {
       });
     }
     
-    // Calculate Conversion Rate
     if (feedbackData && systemLogs) {
-      // Current period
       const currentFeedbackApprovals = feedbackData.filter((item: any) => 
         item.action === 'used'
       ).length;
@@ -171,12 +158,10 @@ export function useInsightsData(dateRange: string) {
         ? Math.round((currentFeedbackApprovals / currentTotalFeedback) * 100) 
         : 0;
       
-      // Previous period
       const previousPeriodStart = new Date();
       previousPeriodStart.setDate(previousPeriodStart.getDate() - parseInt(dateRange) * 2);
       const previousPeriodStartFormatted = previousPeriodStart.toISOString();
       
-      // Get previous period data
       const getPreviousPeriodData = async () => {
         if (!tenant?.id) return;
         
@@ -192,14 +177,15 @@ export function useInsightsData(dateRange: string) {
           const previousTotal = previousFeedback.length;
           const previousRate = previousTotal > 0 ? (previousApprovals / previousTotal) * 100 : 0;
           
-          // Calculate change
           const conversionRateChange = previousRate > 0 
             ? Math.round(((currentConversionRate - previousRate) / previousRate) * 100) 
             : 0;
             
+          const trend: 'up' | 'down' | 'neutral' = conversionRateChange > 0 ? 'up' : conversionRateChange < 0 ? 'down' : 'neutral';
+          
           setConversionRate({
             current: currentConversionRate,
-            trend: conversionRateChange > 0 ? 'up' : conversionRateChange < 0 ? 'down' : 'neutral',
+            trend,
             change: conversionRateChange
           });
         }
@@ -208,7 +194,6 @@ export function useInsightsData(dateRange: string) {
       getPreviousPeriodData();
     }
     
-    // Calculate Campaign Approval Rate
     if (topCampaigns) {
       const approvedCampaigns = topCampaigns.filter(c => c.status === 'active' || c.status === 'delivered').length;
       const totalCampaigns = topCampaigns.length;
@@ -221,7 +206,6 @@ export function useInsightsData(dateRange: string) {
       });
     }
     
-    // Calculate AI Regeneration Volume
     if (systemLogs) {
       const regenerationEvents = systemLogs.filter((log: any) => 
         log.event_type === 'strategy_regenerated'
@@ -234,7 +218,6 @@ export function useInsightsData(dateRange: string) {
       });
     }
     
-    // Calculate Feedback Positivity Ratio
     if (feedbackData) {
       const positiveItems = feedbackData.filter((item: any) => item.action === 'used').length;
       const negativeItems = feedbackData.filter((item: any) => item.action === 'dismissed').length;
@@ -250,22 +233,18 @@ export function useInsightsData(dateRange: string) {
         change: 0
       });
     }
-    
   }, [tenant?.id, kpiData, kpiHistory, dateRange, feedbackData, systemLogs, topCampaigns, formattedStartDate]);
 
-  // Process feedback data for the chart
   const feedbackStats = feedbackData ? {
     used: feedbackData.filter((item: any) => item.action === 'used').length,
     dismissed: feedbackData.filter((item: any) => item.action === 'dismissed').length
   } : { used: 0, dismissed: 0 };
 
-  // Process plugin data
   const pluginStats = pluginData ? pluginData.reduce((acc: Record<string, number>, item: any) => {
     acc[item.plugin_key] = (acc[item.plugin_key] || 0) + 1;
     return acc;
   }, {}) : {};
 
-  // Process feedback data for grouping
   const grouped = feedbackData ? feedbackData.reduce((acc: Record<string, {used: number, dismissed: number}>, curr: any) => {
     if (!acc[curr.strategy_title]) {
       acc[curr.strategy_title] = { used: 0, dismissed: 0 };
@@ -276,11 +255,9 @@ export function useInsightsData(dateRange: string) {
     return acc;
   }, {}) : {};
 
-  // Subscribe to real-time updates for feedback, logs, and plugin usage
   useEffect(() => {
     if (!tenant?.id) return;
     
-    // Create a channel for feedback updates
     const feedbackChannel = supabase
       .channel('realtime_feedback')
       .on('postgres_changes', {
@@ -290,11 +267,9 @@ export function useInsightsData(dateRange: string) {
         filter: `tenant_id=eq.${tenant.id}`
       }, () => {
         // Invalidate the query to refetch data
-        // Since we're using React Query, this will trigger a refetch
       })
       .subscribe();
     
-    // Create a channel for plugin usage logs
     const pluginChannel = supabase
       .channel('realtime_plugins')
       .on('postgres_changes', {
@@ -307,7 +282,6 @@ export function useInsightsData(dateRange: string) {
       })
       .subscribe();
     
-    // Create a channel for system logs
     const logsChannel = supabase
       .channel('realtime_logs')
       .on('postgres_changes', {
@@ -320,7 +294,6 @@ export function useInsightsData(dateRange: string) {
       })
       .subscribe();
     
-    // Cleanup function
     return () => {
       supabase.removeChannel(feedbackChannel);
       supabase.removeChannel(pluginChannel);

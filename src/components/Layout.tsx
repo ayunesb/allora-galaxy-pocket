@@ -1,6 +1,6 @@
 
 import { SidebarProvider } from "@/components/ui/sidebar"
-import { Topbar } from "./Topbar"
+import Topbar from "./Topbar" // Fixed: Changed from named import to default import
 import { AppSidebar } from "./AppSidebar"
 
 export default function Layout({ children }: { children: React.ReactNode }) {

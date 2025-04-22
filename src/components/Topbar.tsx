@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { DarkModeToggle } from "@/components/ui/DarkModeToggle";
+import DarkModeToggle from "@/components/ui/DarkModeToggle"; // Fixed: Changed from named import to default import
 import { useTenant } from "@/hooks/useTenant";
 import { NotificationBell } from "@/components/NotificationBell";
 
