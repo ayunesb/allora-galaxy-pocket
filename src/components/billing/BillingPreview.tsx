@@ -3,11 +3,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, CreditCard, AlertCircle } from "lucide-react";
 import { useBillingProfile } from "@/hooks/useBillingProfile";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useAuth } from "@/hooks/useAuth";
 
 export function BillingPreview() {
-  const { data: profile, isLoading, error } = useBillingProfile();
+  const { user } = useAuth();
+  const { profile, isLoading, error } = useBillingProfile();
 
-  console.log("BillingPreview data:", { profile, isLoading, error });
+  console.log("BillingPreview data:", { profile, isLoading, error, user });
+
+  if (!user) {
+    return null; // Don't show billing preview if not logged in
+  }
 
   if (isLoading) {
     return (

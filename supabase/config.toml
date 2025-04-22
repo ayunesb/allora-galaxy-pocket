@@ -1,24 +1,42 @@
 
 project_id = "lxsuqqlfuftnvuvtctsx"
 
-[functions.execute-agent-task]
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+
+[db]
+port = 54322
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://localhost:54321"
+
+[inbucket]
+enabled = true
+port = 54324
+
+[auth]
+enabled = true
+
+[storage]
+enabled = true
+
+[realtime]
+enabled = true
+
+[analytics]
+enabled = false
+
+[vector]
+enabled = true
+
+# Edge Functions Configuration
+[functions]
+[functions.manage-billing]
 verify_jwt = true
 
-[functions.retry-agent-tasks]
-verify_jwt = true
-
-[functions.check-kpi-alerts]
-verify_jwt = true
-
-[functions.twilio-send-sms]
-verify_jwt = true
-
-[functions.generate-alert-suggestions]
-verify_jwt = true
-
-[functions.auto-recover]
-verify_jwt = true
-
-[functions.recovery-learn]
-verify_jwt = true
-
+[functions.billing-database-setup]
+verify_jwt = false

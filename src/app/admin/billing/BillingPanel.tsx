@@ -7,8 +7,12 @@ import { useTenant } from "@/hooks/useTenant";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, Plus, Sparkles } from "lucide-react";
 import { BillingPreview } from "@/components/billing/BillingPreview";
+import { useBillingProfile } from "@/hooks/useBillingProfile";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 interface BillingStats {
   usage: number;
@@ -18,7 +22,16 @@ interface BillingStats {
 
 export default function BillingPanel() {
   const { tenant } = useTenant();
+  const { user } = useAuth();
   const [showDetails, setShowDetails] = useState(false);
+  const [creditAmount, setCreditAmount] = useState<number>(100);
+  
+  const { 
+    profile, 
+    isLoading: profileLoading, 
+    addCredits, 
+    updatePlan 
+  } = useBillingProfile();
 
   const { data: stats, isLoading, error } = useQuery({
     queryKey: ["billing", tenant?.id],
@@ -57,6 +70,21 @@ export default function BillingPanel() {
 
   // Calculate usage percentage safely
   const usagePercent = stats ? ((stats.usage || 0) / (stats.limit || 1)) * 100 : 0;
+  
+  // Handler for adding credits
+  const handleAddCredits = () => {
+    if (!creditAmount || creditAmount <= 0) {
+      toast.error("Please enter a valid credit amount");
+      return;
+    }
+    
+    addCredits.mutate(creditAmount);
+  };
+  
+  // Handler for updating plan
+  const handlePlanChange = (plan: 'standard' | 'growth' | 'pro') => {
+    updatePlan.mutate(plan);
+  };
 
   // If there's no tenant loaded yet, show a loading state
   if (!tenant && !error) {
@@ -108,13 +136,13 @@ export default function BillingPanel() {
           <div className="flex justify-between text-sm">
             <span>Current Plan:</span>
             <span className="font-medium">
-              {isLoading ? (
+              {profileLoading ? (
                 <span className="flex items-center">
                   <Loader2 className="h-3 w-3 mr-2 animate-spin" />
                   Loading...
                 </span>
               ) : (
-                stats?.plan || "Free"
+                profile?.plan ? profile.plan.charAt(0).toUpperCase() + profile.plan.slice(1) : "Standard"
               )}
             </span>
           </div>
@@ -133,9 +161,62 @@ export default function BillingPanel() {
             <Progress value={isLoading ? 0 : usagePercent} className="h-2" />
           </div>
 
-          <Button className="w-full bg-green-600 hover:bg-green-700">
-            Upgrade Plan
-          </Button>
+          {/* Plans selection */}
+          <div className="grid grid-cols-3 gap-2 mt-4">
+            <Button 
+              variant={profile?.plan === 'standard' ? "default" : "outline"} 
+              size="sm"
+              onClick={() => handlePlanChange('standard')}
+              disabled={addCredits.isPending || updatePlan.isPending}
+            >
+              Standard
+            </Button>
+            <Button 
+              variant={profile?.plan === 'growth' ? "default" : "outline"} 
+              size="sm"
+              onClick={() => handlePlanChange('growth')}
+              disabled={addCredits.isPending || updatePlan.isPending}
+            >
+              Growth
+            </Button>
+            <Button 
+              variant={profile?.plan === 'pro' ? "default" : "outline"} 
+              size="sm"
+              onClick={() => handlePlanChange('pro')}
+              disabled={addCredits.isPending || updatePlan.isPending}
+            >
+              Pro
+            </Button>
+          </div>
+
+          <div className="pt-4">
+            <Button className="w-full bg-green-600 hover:bg-green-700">
+              <Sparkles className="h-4 w-4 mr-2" /> Upgrade Plan
+            </Button>
+          </div>
+
+          {/* Add credits input */}
+          <div className="flex gap-2 mt-4">
+            <Input
+              type="number"
+              value={creditAmount}
+              onChange={(e) => setCreditAmount(Number(e.target.value))}
+              placeholder="Credit amount"
+              min="1"
+              disabled={addCredits.isPending}
+            />
+            <Button 
+              onClick={handleAddCredits}
+              disabled={addCredits.isPending}
+            >
+              {addCredits.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Plus className="h-4 w-4" />
+              )}
+              Add Credits
+            </Button>
+          </div>
 
           {showDetails && <BillingPreview />}
         </CardContent>

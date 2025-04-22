@@ -1,18 +1,21 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { BillingProfile } from "@/types/billing";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 export function useBillingProfile() {
-  return useQuery({
-    queryKey: ['billing-profile'],
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  
+  const { data: profile, isLoading, error } = useQuery({
+    queryKey: ['billing-profile', user?.id],
     queryFn: async (): Promise<BillingProfile | null> => {
-      console.log("Fetching billing profile");
+      console.log("Fetching billing profile for user:", user?.id);
       try {
         // First check if we're authenticated
-        const { data: session } = await supabase.auth.getSession();
-        if (!session?.session?.user) {
+        if (!user?.id) {
           console.log("No authenticated user found");
           return null;
         }
@@ -20,52 +23,127 @@ export function useBillingProfile() {
         const { data, error } = await supabase
           .from('billing_profiles')
           .select('*')
-          .maybeSingle(); // Changed from single() to maybeSingle() to prevent errors
+          .eq('user_id', user.id)
+          .maybeSingle();
 
         if (error) {
           console.error('Error fetching billing profile:', error);
-          // Only show toast for non-404 errors (404s are expected if no profile exists)
-          if (error.code !== 'PGRST116') {
-            toast.error('Failed to load billing data');
-          }
           
-          // Return a default profile to prevent blank screens
-          return {
-            id: 'default',
-            user_id: session.session.user.id,
-            plan: 'standard',
-            credits: 0,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          };
+          // Try to create a billing profile if one doesn't exist
+          if (error.code === 'PGRST116' || error.message.includes('does not exist')) {
+            await createDefaultProfile();
+            // Re-fetch after creation
+            const { data: newData, error: newError } = await supabase
+              .from('billing_profiles')
+              .select('*')
+              .eq('user_id', user.id)
+              .maybeSingle();
+              
+            if (newError) {
+              throw newError;
+            }
+            
+            return newData;
+          } 
+          
+          throw error;
+        }
+
+        // If no profile exists yet, create a default one
+        if (!data) {
+          console.log("No billing profile found, creating default");
+          return await createDefaultProfile();
         }
 
         console.log('Billing profile data retrieved:', data);
         return data;
       } catch (err) {
         console.error('Unexpected error in useBillingProfile:', err);
-        // Return a default profile to prevent blank screens
-        return {
-          id: 'default',
-          user_id: 'unknown',
-          plan: 'standard',
-          credits: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
+        toast.error("Failed to load billing information");
+        throw err;
       }
     },
-    retry: 1, // Only retry once to avoid excessive requests
-    // Add stale time to reduce refetches
+    enabled: !!user?.id,
+    retry: 1,
     staleTime: 1000 * 60 * 5, // 5 minutes
-    // Add fallback for when query is disabled
-    placeholderData: {
-      id: 'default',
-      user_id: 'unknown',
-      plan: 'standard',
-      credits: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+  });
+
+  // Create a default billing profile if one doesn't exist
+  const createDefaultProfile = async (): Promise<BillingProfile> => {
+    try {
+      // Call the edge function to create a profile
+      const { error, data } = await supabase.functions.invoke('manage-billing', {
+        body: { 
+          action: 'create_profile', 
+          user_id: user?.id,
+          plan: 'standard'
+        }
+      });
+      
+      if (error) {
+        console.error('Error creating default billing profile:', error);
+        throw error;
+      }
+      
+      toast.success("Billing profile created");
+      return data.data;
+    } catch (err) {
+      console.error('Error in createDefaultProfile:', err);
+      throw err;
+    }
+  };
+
+  // Mutation to add credits
+  const addCredits = useMutation({
+    mutationFn: async (amount: number) => {
+      const { data, error } = await supabase.functions.invoke('manage-billing', {
+        body: { 
+          action: 'add_credits', 
+          user_id: user?.id, 
+          amount 
+        }
+      });
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['billing-profile', user?.id] });
+      toast.success(`Credits added successfully!`);
+    },
+    onError: (error) => {
+      toast.error(`Failed to add credits: ${error.message}`);
     }
   });
+
+  // Mutation to update the plan
+  const updatePlan = useMutation({
+    mutationFn: async (plan: 'standard' | 'growth' | 'pro') => {
+      const { data, error } = await supabase.functions.invoke('manage-billing', {
+        body: { 
+          action: 'update_plan', 
+          user_id: user?.id, 
+          plan 
+        }
+      });
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['billing-profile', user?.id] });
+      toast.success(`Plan updated successfully!`);
+    },
+    onError: (error) => {
+      toast.error(`Failed to update plan: ${error.message}`);
+    }
+  });
+
+  return {
+    profile,
+    isLoading,
+    error,
+    addCredits,
+    updatePlan
+  };
 }
