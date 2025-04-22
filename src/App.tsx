@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -9,6 +8,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { TenantProvider } from "@/hooks/useTenant";
 import { PluginProvider } from "@/hooks/usePlugins";
 import AppRoutes from "./AppRoutes";
+import { ThemeProvider } from "@/components/ui/theme";
 
 // Create a client
 const queryClient = new QueryClient();
@@ -19,15 +19,17 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <TenantProvider>
-            <PluginProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
-                  <AppRoutes />
-                </BrowserRouter>
-              </TooltipProvider>
-            </PluginProvider>
+            <ThemeProvider>
+              <PluginProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <Sonner />
+                  <BrowserRouter>
+                    <AppRoutes />
+                  </BrowserRouter>
+                </TooltipProvider>
+              </PluginProvider>
+            </ThemeProvider>
           </TenantProvider>
         </AuthProvider>
       </QueryClientProvider>

@@ -606,6 +606,8 @@ export type Database = {
           created_at: string | null
           id: string
           name: string | null
+          theme_color: string | null
+          theme_mode: string | null
           updated_at: string | null
           usage_credits: number
         }
@@ -613,6 +615,8 @@ export type Database = {
           created_at?: string | null
           id?: string
           name?: string | null
+          theme_color?: string | null
+          theme_mode?: string | null
           updated_at?: string | null
           usage_credits?: number
         }
@@ -620,6 +624,8 @@ export type Database = {
           created_at?: string | null
           id?: string
           name?: string | null
+          theme_color?: string | null
+          theme_mode?: string | null
           updated_at?: string | null
           usage_credits?: number
         }
