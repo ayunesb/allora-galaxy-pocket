@@ -1,5 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { WhatsappIcon } from "lucide-react";
 
 interface ScriptCardProps {
   channel: string;
@@ -21,14 +22,14 @@ export function ScriptCard({ channel, script }: ScriptCardProps) {
   };
 
   return (
-    <Card>
+    <Card className="h-full flex flex-col">
       <CardHeader>
         <CardTitle className="text-md capitalize flex items-center gap-2">
           {getChannelIcon(channel)} {channel.replace("_", " ")}
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{script}</p>
+      <CardContent className="flex-grow">
+        <p className="text-sm text-foreground whitespace-pre-wrap break-words">{script}</p>
       </CardContent>
     </Card>
   );
