@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
@@ -16,6 +15,8 @@ export interface AgentProfile {
   avatar_url?: string;
   model_provider?: 'openai' | 'gemini' | 'anthropic';
   created_by?: string;
+  memory_score?: number;
+  last_memory_update?: string;
 }
 
 export function useAgentProfile() {

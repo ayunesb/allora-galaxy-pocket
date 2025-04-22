@@ -2,6 +2,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { type AgentProfile } from "../hooks/useAgentProfile";
+import { MemoryScoreIndicator } from "./MemoryScoreIndicator";
 
 interface AgentPreviewProps {
   agent: AgentProfile;
@@ -28,6 +29,14 @@ export default function AgentPreview({ agent }: AgentPreviewProps) {
         <h3 className="text-xl font-semibold">{agent.agent_name}</h3>
         <p className="text-sm text-muted-foreground">{agent.role}</p>
       </div>
+
+      {agent.memory_score !== undefined && (
+        <MemoryScoreIndicator 
+          score={agent.memory_score}
+          lastUpdate={agent.last_memory_update}
+          className="mt-4"
+        />
+      )}
 
       <div className="w-full space-y-2">
         <div className="flex justify-between">

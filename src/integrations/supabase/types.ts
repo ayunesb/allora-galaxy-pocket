@@ -19,7 +19,9 @@ export type Database = {
           enabled_tools: string[] | null
           id: string
           language: string
+          last_memory_update: string | null
           memory_scope: string[] | null
+          memory_score: number | null
           role: string
           tenant_id: string
           tone: string
@@ -34,7 +36,9 @@ export type Database = {
           enabled_tools?: string[] | null
           id?: string
           language?: string
+          last_memory_update?: string | null
           memory_scope?: string[] | null
+          memory_score?: number | null
           role: string
           tenant_id: string
           tone: string
@@ -49,7 +53,9 @@ export type Database = {
           enabled_tools?: string[] | null
           id?: string
           language?: string
+          last_memory_update?: string | null
           memory_scope?: string[] | null
+          memory_score?: number | null
           role?: string
           tenant_id?: string
           tone?: string
@@ -917,6 +923,10 @@ export type Database = {
       }
       sparsevec_typmod_in: {
         Args: { "": unknown[] }
+        Returns: number
+      }
+      update_agent_memory_score: {
+        Args: { p_agent_id: string }
         Returns: number
       }
       vector_avg: {
