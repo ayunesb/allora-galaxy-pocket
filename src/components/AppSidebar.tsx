@@ -1,3 +1,4 @@
+
 import { NavLink } from "react-router-dom";
 import { 
   Home, 
@@ -19,7 +20,8 @@ import {
   DollarSign,
   Star,
   Database,
-  Search
+  Search,
+  AlertTriangle
 } from "lucide-react";
 import {
   Sidebar,
@@ -41,6 +43,7 @@ const items = [
   { icon: BarChart2, label: "Campaigns", path: "/campaigns/center" },
   { icon: MessageSquare, label: "Assistant", path: "/assistant" },
   { icon: Bell, label: "Notifications", path: "/notifications" },
+  { icon: AlertTriangle, label: "Incidents", path: "/dashboard/incidents" },
   { icon: Lightbulb, label: "AI Coach", path: "/coaching/feed" },
   { icon: Bot, label: "Agents", path: "/agents" },
   { icon: Palette, label: "Creative Suite", path: "/creative/suite" },
