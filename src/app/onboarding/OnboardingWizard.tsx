@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
@@ -115,17 +116,17 @@ export default function OnboardingWizard() {
           setFormError("Please select a launch mode.");
           return;
         }
-        break;
+        // For the final step, proceed directly to onboarding completion
+        await completeOnboarding({ ...profile, ...data });
+        return;
       default:
         break;
     }
 
-    if (step === steps.length - 1) {
-      await completeOnboarding({ ...profile, ...data });
-      return;
+    // For non-final steps, move to the next step
+    if (step < steps.length - 1) {
+      setStep((prev) => prev + 1);
     }
-
-    setStep((prev) => Math.min(prev + 1, steps.length - 1));
   };
 
   const back = () => setStep((prev) => Math.max(prev - 1, 0));
