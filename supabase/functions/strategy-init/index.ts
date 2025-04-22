@@ -11,6 +11,7 @@ const corsHeaders = {
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -104,6 +105,8 @@ serve(async (req) => {
         meta: { strategy_id: strategyRow.id }
       });
 
+    console.log(`Strategy generated for tenant ${tenant_id}`);
+
     return new Response(
       JSON.stringify({
         strategy_id: strategyRow.id,
@@ -114,7 +117,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error:', error.message);
+    console.error('Error in strategy-init:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
