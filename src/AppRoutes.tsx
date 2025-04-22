@@ -63,6 +63,9 @@ import SingleStrategyDetail from "@/app/strategy/[id]";
 import SingleCampaignDetail from "@/app/campaigns/[id]";
 import DashboardInsights from "@/app/dashboard/insights/DashboardInsights";
 
+// Import new team activity dashboard
+import TeamActivityDashboard from "@/app/dashboard/team-activity/TeamActivityDashboard";
+
 export default function AppRoutes() {
   return (
     <Routes>
@@ -137,6 +140,14 @@ export default function AppRoutes() {
         <Route path="/strategy/:id" element={<SingleStrategyDetail />} />
         <Route path="/campaigns/:id" element={<SingleCampaignDetail />} />
         <Route path="/dashboard/insights" element={<DashboardInsights />} />
+        <Route 
+          path="/dashboard/team-activity" 
+          element={
+            <AdminOnly>
+              <TeamActivityDashboard />
+            </AdminOnly>
+          } 
+        />
         <Route path="/leads" element={<LeadPipeline />} />
         <Route 
           path="/admin/invite" 

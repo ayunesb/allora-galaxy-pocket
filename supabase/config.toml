@@ -1,8 +1,53 @@
 
 project_id = "lxsuqqlfuftnvuvtctsx"
 
-[functions.strategy-init]
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+
+[db]
+port = 54322
+
+[realtime]
+enabled = true
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://localhost"
+
+[inbucket]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+
+[auth]
+enabled = true
+port = 54325
+
+[auth.email]
+enable_confirmations = false
+
+[auth.external.github]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.external.google]
+enabled = false
+client_id = ""
+secret = ""
+
+[functions]
+enabled = true
+serve_port = 54326
+
+[functions.send-webhook-notification]
 verify_jwt = true
 
-[functions.plugin-config]
+# Add the new edge function to the config
+[functions.send-webhook-alert]
 verify_jwt = true
