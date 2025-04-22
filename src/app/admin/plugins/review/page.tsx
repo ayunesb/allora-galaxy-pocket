@@ -18,12 +18,14 @@ type PluginSubmission = {
   status: string;
   submitted_at: string;
   tenant_id: string;
+  ai_review?: string;
 };
 
 export default function PluginReviewPanel() {
   const { isAdmin } = useRolePermissions();
   const [submissions, setSubmissions] = useState<PluginSubmission[]>([]);
   const [activeTab, setActiveTab] = useState<string>("pending");
+  const [isLoading, setIsLoading] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -67,6 +69,39 @@ export default function PluginReviewPanel() {
       toast.error("Failed to update status", {
         description: (error as Error).message,
       });
+    }
+  };
+
+  const generateAIReview = async (id: string) => {
+    try {
+      setIsLoading(prev => ({ ...prev, [id]: true }));
+      
+      const { data, error } = await supabase.functions.invoke("plugin-review-feedback", {
+        body: {
+          pluginId: id
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast.success("AI Review Generated", {
+          description: "The AI review has been generated and saved."
+        });
+        
+        // Update the submission in state with the new AI review
+        setSubmissions(prev => 
+          prev.map(s => s.id === id ? { ...s, ai_review: data.feedback } : s)
+        );
+      } else {
+        throw new Error(data.error || "Failed to generate AI review");
+      }
+    } catch (error) {
+      toast.error("Failed to generate AI review", {
+        description: (error as Error).message,
+      });
+    } finally {
+      setIsLoading(prev => ({ ...prev, [id]: false }));
     }
   };
 
@@ -145,20 +180,40 @@ export default function PluginReviewPanel() {
                     </div>
                   )}
                   
-                  {submission.status === "pending" && (
-                    <div className="flex gap-2 mt-4">
-                      <Button 
-                        onClick={() => updateSubmissionStatus(submission.id, "approved")}
-                        className="bg-green-600 hover:bg-green-700">
-                        Approve
-                      </Button>
-                      <Button 
-                        onClick={() => updateSubmissionStatus(submission.id, "rejected")}
-                        variant="destructive">
-                        Reject
-                      </Button>
+                  {submission.ai_review && (
+                    <div>
+                      <h3 className="text-sm font-medium mb-1">AI Review</h3>
+                      <div className="text-sm bg-muted p-3 rounded-md max-h-80 overflow-y-auto whitespace-pre-wrap">
+                        {submission.ai_review}
+                      </div>
                     </div>
                   )}
+                  
+                  <div className="flex flex-wrap gap-2 mt-4">
+                    <Button
+                      onClick={() => generateAIReview(submission.id)}
+                      variant="outline"
+                      disabled={isLoading[submission.id]}
+                      className="bg-blue-50 text-blue-600 hover:bg-blue-100"
+                    >
+                      {isLoading[submission.id] ? 'Generating...' : 'AI Review'}
+                    </Button>
+
+                    {submission.status === "pending" && (
+                      <>
+                        <Button 
+                          onClick={() => updateSubmissionStatus(submission.id, "approved")}
+                          className="bg-green-600 hover:bg-green-700">
+                          Approve
+                        </Button>
+                        <Button 
+                          onClick={() => updateSubmissionStatus(submission.id, "rejected")}
+                          variant="destructive">
+                          Reject
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             ))

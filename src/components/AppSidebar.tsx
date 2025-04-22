@@ -1,3 +1,4 @@
+
 import { NavLink } from "react-router-dom";
 import { 
   Home, 
@@ -15,7 +16,9 @@ import {
   PlusCircle,
   Send,
   List,
-  Shield
+  Shield,
+  DollarSign,
+  Star
 } from "lucide-react";
 import {
   Sidebar,
@@ -59,6 +62,21 @@ const items = [
     icon: Send, 
     label: "Submit Plugin", 
     path: "/plugins/submit" 
+  },
+  {
+    icon: DollarSign,
+    label: "Revenue Share Apply",
+    path: "/plugins/revenue/apply"
+  },
+  {
+    icon: Star,
+    label: "Plugin Builder",
+    path: "/plugins/builder"
+  },
+  {
+    icon: Star,
+    label: "Publish to Galaxy",
+    path: "/galaxy/create"
   }
 ];
 
