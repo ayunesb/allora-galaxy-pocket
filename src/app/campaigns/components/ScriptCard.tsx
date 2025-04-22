@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { WhatsappIcon } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 
 interface ScriptCardProps {
   channel: string;
@@ -10,7 +10,7 @@ interface ScriptCardProps {
 export function ScriptCard({ channel, script }: ScriptCardProps) {
   const getChannelIcon = (channel: string) => {
     switch (channel) {
-      case "whatsapp": return "📲";
+      case "whatsapp": return <MessageSquare size={16} />;
       case "email": return "📧";
       case "tiktok": return "🎥";
       case "meta": return "📱";
