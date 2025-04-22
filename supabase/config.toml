@@ -1,25 +1,6 @@
 
-# project configuration
-project_id = "lxsuqqlfuftnvuvtctsx"
-
-[api]
-enabled = true
-# Schemas that do not require authentication to access
-port = 54321
-schemas = ["public"]
-extra_search_path = ["public", "extensions"]
-max_rows = 1000
-
-[db]
-port = 54322
-shadow_port = 54320
-major_version = 15
-
-[studio]
-enabled = true
-port = 54323
-api_url = "http://localhost"
-
-# Enable JWT verification for this function
-[functions.strategy-init]
+[functions]
+[functions.sendMilestoneAlerts]
 verify_jwt = true
+[functions.sendMilestoneAlerts.cron]
+schedule = "0 9 * * 1" # Every Monday at 9am UTC
