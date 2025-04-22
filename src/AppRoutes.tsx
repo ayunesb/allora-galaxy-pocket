@@ -9,6 +9,7 @@ import AutopilotPanel from "@/app/shopify/AutopilotPanel";
 import CreativeSuite from "@/app/creative/SuitePanel";
 import AssistantPanel from "@/app/assistant/AssistantPanel";
 import GrowthPanel from "@/app/notifications/GrowthPanel";
+import ExportPanel from "@/app/export/ExportPanel";
 
 // Pages
 import Index from "@/pages/Index";
@@ -130,6 +131,7 @@ export default function AppRoutes() {
         <Route path="/shopify/autopilot" element={<AutopilotPanel />} />
         <Route path="/creative/suite" element={<CreativeSuite />} />
         <Route path="/assistant" element={<AssistantPanel />} />
+        <Route path="/export" element={<ExportPanel />} />
       </Route>
       
       <Route path="*" element={<NotFound />} />
