@@ -1,62 +1,67 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { Loader2 } from "lucide-react";
 import KpiCard from "../KpiCard";
-import type { KpiMetric } from "@/types/kpi";
+import { KpiMetricDialog } from "@/app/dashboard/components/KpiMetricDialog";
 
 export function KpiSnapshot() {
   const { tenant } = useTenant();
+  const queryClient = useQueryClient();
 
-  const { data: kpiMetrics, isLoading } = useQuery({
-    queryKey: ['kpi-snapshot', tenant?.id],
-    queryFn: async (): Promise<KpiMetric[]> => {
+  const { data: metrics, isLoading } = useQuery({
+    queryKey: ['kpi-metrics', tenant?.id],
+    queryFn: async () => {
       if (!tenant?.id) return [];
-
+      
       const { data, error } = await supabase
         .from('kpi_metrics')
         .select('*')
-        .eq('tenant_id', tenant.id)
-        .limit(4);
+        .eq('tenant_id', tenant.id);
 
       if (error) throw error;
       
-      return data.map(metric => ({
-        label: metric.metric,
-        value: metric.value,
-        trend: metric.value >= 0 ? "up" : "down",
+      return data.map(m => ({
+        label: m.metric,
+        value: m.value,
+        trend: m.value > 0 ? "up" : "down",
         changePercent: 0
       }));
     },
     enabled: !!tenant?.id
   });
 
+  const handleMetricUpdate = () => {
+    queryClient.invalidateQueries({ queryKey: ['kpi-metrics'] });
+  };
+
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>📊 KPI Snapshot</CardTitle>
+        <KpiMetricDialog onSuccess={handleMetricUpdate} />
       </CardHeader>
       <CardContent>
         {isLoading ? (
           <div className="flex justify-center py-4">
             <Loader2 className="animate-spin h-6 w-6" />
           </div>
-        ) : kpiMetrics && kpiMetrics.length > 0 ? (
+        ) : metrics && metrics.length > 0 ? (
           <div className="grid grid-cols-2 gap-3">
-            {kpiMetrics.map((metric, index) => (
+            {metrics.map((metric, index) => (
               <KpiCard
                 key={index}
-                label={metric.label}
-                value={metric.value}
-                trend={metric.trend}
-                changePercent={metric.changePercent}
+                {...metric}
+                onUpdate={handleMetricUpdate}
               />
             ))}
           </div>
         ) : (
-          <p className="text-muted-foreground">No metrics available yet</p>
+          <p className="text-muted-foreground text-center py-4">
+            No KPIs configured yet. Add your first KPI metric to get started.
+          </p>
         )}
       </CardContent>
     </Card>
