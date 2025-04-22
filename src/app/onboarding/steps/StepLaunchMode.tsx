@@ -1,86 +1,113 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import type { OnboardingProfile, LaunchMode } from "@/types/onboarding";
+  ShoppingCart, 
+  BookOpen, 
+  Briefcase, 
+  Code 
+} from "lucide-react";
+import type { LaunchMode, OnboardingProfile } from "@/types/onboarding";
 
-interface StepLaunchModeProps {
+type Props = {
   next: (data: Partial<OnboardingProfile>) => void;
-  back?: () => void;
+  back: () => void;
   profile: OnboardingProfile;
-}
+};
 
-const LAUNCH_MODES: { key: LaunchMode; label: string; desc: string }[] = [
-  { 
-    key: "ecom", 
-    label: "📦 E-Commerce Brand", 
-    desc: "Sell products, manage inventory, run ads" 
-  },
-  { 
-    key: "course", 
-    label: "🎓 Course Creator", 
-    desc: "Sell knowledge with content + email funnels" 
-  },
-  { 
-    key: "agency", 
-    label: "💼 Agency or Freelancer", 
-    desc: "Deliver services with automations + outreach" 
-  },
-  { 
-    key: "saas", 
-    label: "🧠 SaaS Product", 
-    desc: "Drive signups, product adoption, MRR growth" 
-  }
-];
+export default function StepLaunchMode({ next, back, profile }: Props) {
+  const [selected, setSelected] = React.useState<LaunchMode | undefined>(
+    profile.launch_mode
+  );
 
-export default function StepLaunchMode({ 
-  next, 
-  back, 
-  profile 
-}: StepLaunchModeProps) {
+  const launchModes = [
+    {
+      value: "ecom" as LaunchMode,
+      label: "E-commerce",
+      description: "Selling physical or digital products online",
+      icon: ShoppingCart,
+    },
+    {
+      value: "course" as LaunchMode,
+      label: "Online Course",
+      description: "Knowledge products, coaching, and education",
+      icon: BookOpen,
+    },
+    {
+      value: "agency" as LaunchMode,
+      label: "Agency",
+      description: "Client services, consulting, and project work",
+      icon: Briefcase,
+    },
+    {
+      value: "saas" as LaunchMode,
+      label: "SaaS",
+      description: "Software as a service with recurring revenue",
+      icon: Code,
+    },
+  ];
+
+  const handleNext = () => {
+    if (selected) {
+      next({ launch_mode: selected });
+    }
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>🚀 What Are You Launching?</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-lg font-medium">Choose your launch mode</h2>
         <p className="text-sm text-muted-foreground">
-          We'll customize your AI strategy based on your launch mode.
+          This will customize your growth strategy
         </p>
+      </div>
 
-        <div className="space-y-3">
-          {LAUNCH_MODES.map((mode) => (
-            <Button 
-              key={mode.key}
-              variant="outline" 
-              className="w-full flex flex-col items-start h-auto p-4 space-y-1"
-              onClick={() => next({ launch_mode: mode.key })}
+      <RadioGroup
+        value={selected}
+        onValueChange={(value) => setSelected(value as LaunchMode)}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {launchModes.map((mode) => (
+            <div
+              key={mode.value}
+              className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                selected === mode.value
+                  ? "border-primary bg-primary/5"
+                  : "hover:border-primary/50"
+              }`}
+              onClick={() => setSelected(mode.value)}
             >
-              <span className="font-semibold">{mode.label}</span>
-              <span className="text-xs text-muted-foreground">
-                {mode.desc}
-              </span>
-            </Button>
+              <RadioGroupItem
+                value={mode.value}
+                id={mode.value}
+                className="sr-only"
+              />
+              <div className="flex flex-col items-center text-center gap-2">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                  <mode.icon className="h-6 w-6" />
+                </div>
+                <Label htmlFor={mode.value} className="font-medium">
+                  {mode.label}
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  {mode.description}
+                </p>
+              </div>
+            </div>
           ))}
         </div>
+      </RadioGroup>
 
-        {back && (
-          <div className="mt-4">
-            <Button 
-              variant="ghost" 
-              onClick={back}
-              className="w-full"
-            >
-              Back
-            </Button>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      <div className="flex justify-between pt-4">
+        <Button variant="outline" onClick={back}>
+          Back
+        </Button>
+        <Button onClick={handleNext} disabled={!selected}>
+          Next
+        </Button>
+      </div>
+    </div>
   );
 }

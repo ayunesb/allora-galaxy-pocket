@@ -1,79 +1,58 @@
 
 import React from "react";
-import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { Label } from "@/components/ui/label";
 import type { OnboardingProfile } from "@/types/onboarding";
-
-const formSchema = z.object({
-  companyName: z.string().min(2, "Company name must be at least 2 characters"),
-  website: z.string().url("Please enter a valid URL").or(z.string().length(0)),
-});
 
 type Props = {
   next: (data: Partial<OnboardingProfile>) => void;
-  back: () => void;
   profile: OnboardingProfile;
 };
 
 export default function Step1Company({ next, profile }: Props) {
-  const form = useForm({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      companyName: profile.companyName || "",
-      website: profile.website || "",
-    },
-  });
+  const [companyName, setCompanyName] = React.useState(profile.companyName || "");
+  const [website, setWebsite] = React.useState(profile.website || "");
 
-  const onSubmit = (data: z.infer<typeof formSchema>) => {
-    next(data);
+  const handleNext = () => {
+    if (companyName.trim()) {
+      next({ companyName, website });
+    }
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="companyName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Company Name</FormLabel>
-              <FormControl>
-                <Input placeholder="Acme Inc." {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-lg font-medium">Tell us about your company</h2>
+        <p className="text-sm text-muted-foreground">Let's start with the basics</p>
+      </div>
 
-        <FormField
-          control={form.control}
-          name="website"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Website (Optional)</FormLabel>
-              <FormControl>
-                <Input placeholder="https://example.com" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="flex justify-end">
-          <Button type="submit">Next</Button>
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="companyName">Company Name</Label>
+          <Input
+            id="companyName"
+            value={companyName}
+            onChange={(e) => setCompanyName(e.target.value)}
+            placeholder="Your company name"
+            required
+          />
         </div>
-      </form>
-    </Form>
+
+        <div className="space-y-2">
+          <Label htmlFor="website">Website (optional)</Label>
+          <Input
+            id="website"
+            value={website}
+            onChange={(e) => setWebsite(e.target.value)}
+            placeholder="https://yourcompany.com"
+          />
+        </div>
+      </div>
+
+      <div className="flex justify-end">
+        <Button onClick={handleNext} disabled={!companyName.trim()}>Next</Button>
+      </div>
+    </div>
   );
 }

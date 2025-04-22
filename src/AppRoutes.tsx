@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import AuthenticatedLayout from "@/app/layouts/AuthenticatedLayout";
 import DashboardHome from "@/app/dashboard";
 import AdminOnly from "@/guards/AdminOnly";
@@ -13,6 +13,7 @@ import AssistantPanel from "@/app/assistant/AssistantPanel";
 import GrowthPanel from "@/app/notifications/GrowthPanel";
 import ExportPanel from "@/app/export/ExportPanel";
 import PricingPage from "@/pages/Pricing";
+import SettingsPage from "@/app/settings/SettingsPage";
 
 // Import startup dashboard and other public pages
 import StartupDashboard from "@/app/startup/StartupDashboard";
@@ -61,8 +62,8 @@ export default function AppRoutes() {
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/" element={<StartupDashboard />} />
-      <Route path="/startup" element={<StartupDashboard />} />
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/startup" element={<Navigate to="/dashboard" replace />} />
       <Route path="/docs" element={<Docs />} />
       <Route path="/explore" element={<Explore />} />
       <Route path="/auth/login" element={<Login />} />
@@ -89,11 +90,6 @@ export default function AppRoutes() {
             <DashboardHome />
           </ErrorBoundary>
         } />
-        <Route path="/startup" element={
-          <ErrorBoundary>
-            <StartupDashboard />
-          </ErrorBoundary>
-        } />
         <Route path="/campaign" element={
           <ErrorBoundary>
             <CampaignPage />
@@ -106,6 +102,7 @@ export default function AppRoutes() {
         <Route path="/academy" element={<AcademyFeed />} />
         <Route path="/galaxy/explore" element={<ExplorePage />} />
         <Route path="/insights/kpis" element={<KpiDashboard />} />
+        <Route path="/settings" element={<SettingsPage />} />
         <Route 
           path="/admin/settings" 
           element={

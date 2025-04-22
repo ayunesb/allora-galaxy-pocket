@@ -1,6 +1,14 @@
 
 import { useNavigate } from "react-router-dom";
-import { ChartBar, Bell, MessageSquare, Zap } from "lucide-react";
+import { 
+  ChartBar, 
+  Bell, 
+  MessageSquare, 
+  Zap, 
+  Rocket, 
+  Target,
+  BarChart2
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -17,14 +25,17 @@ export default function DashboardHome() {
       <div className="grid md:grid-cols-2 gap-4">
         <Card>
           <CardContent className="pt-6">
-            <h2 className="font-semibold mb-2">🎯 Current Strategy</h2>
+            <h2 className="font-semibold mb-2 flex items-center gap-2">
+              <Target className="h-4 w-4 text-primary" />
+              Current Strategy
+            </h2>
             <p className="text-sm text-muted-foreground">
               Kickstart Growth via TikTok + WhatsApp Funnel
             </p>
             <Button 
               variant="link" 
               className="mt-2 h-auto p-0" 
-              onClick={() => navigate("/startup")}
+              onClick={() => navigate("/strategy")}
             >
               View Full Strategy →
             </Button>
@@ -33,7 +44,10 @@ export default function DashboardHome() {
 
         <Card>
           <CardContent className="pt-6">
-            <h2 className="font-semibold mb-2">💥 Campaigns</h2>
+            <h2 className="font-semibold mb-2 flex items-center gap-2">
+              <Rocket className="h-4 w-4 text-primary" />
+              Campaigns
+            </h2>
             <p className="text-sm text-muted-foreground">
               3 campaigns awaiting approval
             </p>
@@ -50,7 +64,7 @@ export default function DashboardHome() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-2 mb-2">
-              <ChartBar className="h-4 w-4" />
+              <ChartBar className="h-4 w-4 text-primary" />
               <h2 className="font-semibold">Performance Snapshot</h2>
             </div>
             <p className="text-sm text-muted-foreground">
@@ -69,7 +83,7 @@ export default function DashboardHome() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-2 mb-2">
-              <Bell className="h-4 w-4" />
+              <Bell className="h-4 w-4 text-primary" />
               <h2 className="font-semibold">Notifications</h2>
             </div>
             <p className="text-sm text-muted-foreground">
@@ -89,7 +103,7 @@ export default function DashboardHome() {
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-center gap-2 mb-2">
-            <MessageSquare className="h-4 w-4" />
+            <MessageSquare className="h-4 w-4 text-primary" />
             <h2 className="font-semibold">Assistant</h2>
           </div>
           <p className="text-sm text-muted-foreground">
@@ -101,6 +115,25 @@ export default function DashboardHome() {
             onClick={() => navigate("/assistant")}
           >
             Open AI Assistant →
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-center gap-2 mb-2">
+            <BarChart2 className="h-4 w-4 text-primary" />
+            <h2 className="font-semibold">KPI Analytics</h2>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Track your business metrics and performance indicators
+          </p>
+          <Button 
+            variant="link"
+            className="mt-2 h-auto p-0"
+            onClick={() => navigate("/insights/kpis")}
+          >
+            View KPI Dashboard →
           </Button>
         </CardContent>
       </Card>

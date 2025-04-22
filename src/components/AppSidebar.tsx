@@ -1,3 +1,4 @@
+
 import { NavLink } from "react-router-dom";
 import { 
   Home, 
@@ -8,7 +9,9 @@ import {
   UserPlus,
   Lightbulb,
   Plus,
-  Palette
+  Palette,
+  MessageSquare,
+  Bell
 } from "lucide-react";
 import {
   Sidebar,
@@ -24,15 +27,17 @@ import {
 import WorkspaceSwitcher from "@/app/workspace/WorkspaceSwitcher";
 
 const items = [
-  { icon: Home, label: "Dashboard", path: "/startup" },
+  { icon: Home, label: "Dashboard", path: "/dashboard" },
   { icon: Rocket, label: "Launch", path: "/launch" },
   { icon: BriefcaseBusiness, label: "Strategy", path: "/strategy" },
-  { icon: BarChart2, label: "Campaigns", path: "/campaign" },
+  { icon: BarChart2, label: "Campaigns", path: "/campaigns/center" },
+  { icon: MessageSquare, label: "Assistant", path: "/assistant" },
+  { icon: Bell, label: "Notifications", path: "/notifications" },
   { icon: Lightbulb, label: "AI Coach", path: "/coaching/feed" },
+  { icon: Palette, label: "Creative Suite", path: "/creative/suite" },
   { icon: Plus, label: "Add Plugin", path: "/admin/plugins/gallery" },
   { icon: UserPlus, label: "Invite Users", path: "/admin/invite" },
-  { icon: Settings, label: "Settings", path: "/admin/settings" },
-  { icon: Palette, label: "Creative Suite", path: "/creative/suite" }
+  { icon: Settings, label: "Settings", path: "/settings" }
 ];
 
 export function AppSidebar() {

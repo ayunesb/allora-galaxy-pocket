@@ -1,30 +1,30 @@
 
 import { useState } from "react";
-import { useTheme } from "@/contexts/ThemeContext";
+import { useTheme } from "@/components/ui/theme-provider";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Paintbrush } from "lucide-react";
+import { Paintbrush, Moon, Sun } from "lucide-react";
 
-const COLORS = ["indigo", "emerald", "rose", "gray", "yellow", "cyan"];
-const MODES = ["light", "dark"];
+const COLORS = ["indigo", "emerald", "rose", "slate", "violet", "amber"];
 
 export default function ThemeCustomizer() {
-  const { themeColor, themeMode, updateTheme } = useTheme();
+  const { theme, themeColor, setTheme, updateThemeColor } = useTheme();
   const { toast } = useToast();
   const [color, setColor] = useState(themeColor);
-  const [mode, setMode] = useState(themeMode);
+  const [mode, setMode] = useState(theme);
   
   const handleSave = async () => {
     try {
-      await updateTheme(color, mode);
+      setTheme(mode);
+      await updateThemeColor(color);
+      
       toast({
         title: "Theme updated",
-        description: "Your changes will take effect immediately"
+        description: "Your changes have been applied successfully"
       });
-      window.location.reload();
     } catch (error) {
       toast({
         title: "Error",
@@ -59,23 +59,29 @@ export default function ThemeCustomizer() {
         </div>
 
         <div className="space-y-2">
-          <Label>Default Mode</Label>
-          <Select value={mode} onValueChange={setMode}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {MODES.map((m) => (
-                <SelectItem key={m} value={m} className="capitalize">
-                  {m}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label>Theme Mode</Label>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant={mode === "light" ? "default" : "outline"}
+              onClick={() => setMode("light")}
+              className="flex items-center justify-center gap-2"
+            >
+              <Sun className="h-4 w-4" />
+              Light
+            </Button>
+            <Button
+              variant={mode === "dark" ? "default" : "outline"}
+              onClick={() => setMode("dark")}
+              className="flex items-center justify-center gap-2"
+            >
+              <Moon className="h-4 w-4" />
+              Dark
+            </Button>
+          </div>
         </div>
 
         <Button onClick={handleSave} className="w-full">
-          Save Theme
+          Apply Theme
         </Button>
       </CardContent>
     </Card>

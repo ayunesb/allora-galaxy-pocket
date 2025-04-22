@@ -9,7 +9,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { TenantProvider } from "@/hooks/useTenant";
 import { PluginProvider } from "@/hooks/usePlugins";
 import AppRoutes from "./AppRoutes";
-import { ThemeProvider } from "@/contexts/ThemeContext";
+import { ThemeProvider } from "@/components/ui/theme-provider";
 
 // Create a client
 const queryClient = new QueryClient();
@@ -20,7 +20,7 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <TenantProvider>
-            <ThemeProvider>
+            <ThemeProvider defaultTheme="dark" storageKey="allora-theme">
               <PluginProvider>
                 <TooltipProvider>
                   <Toaster />
