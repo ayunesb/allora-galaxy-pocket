@@ -16,9 +16,9 @@ export default function Signup() {
     try {
       await signup(email, password);
       toast.success("Signup successful!", {
-        description: "Please check your email to confirm your account"
+        description: "Please complete your profile setup"
       });
-      navigate("/startup");
+      navigate("/onboarding");
     } catch (err: any) {
       toast.error("Signup failed", {
         description: err.message

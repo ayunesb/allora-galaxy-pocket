@@ -1,5 +1,5 @@
-
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { WelcomeMessage } from "./components/WelcomeMessage";
 import { StrategyPreview } from "./components/StrategyPreview";
 import { CampaignSuggestions } from "./components/CampaignSuggestions";
@@ -13,6 +13,7 @@ import { useTenant } from "@/hooks/useTenant";
 export default function StartupDashboard() {
   const { user } = useAuth();
   const { tenant } = useTenant();
+  const navigate = useNavigate();
   const [welcome, setWelcome] = useState("Welcome back to Allora OS.");
   const [strategy, setStrategy] = useState<Strategy | null>(null);
   const [campaigns] = useState([
@@ -22,6 +23,11 @@ export default function StartupDashboard() {
   ]);
 
   useEffect(() => {
+    if (!user) {
+      navigate("/auth/signup");
+      return;
+    }
+
     async function fetchLatestStrategy() {
       if (!tenant?.id) return;
       
@@ -53,7 +59,9 @@ export default function StartupDashboard() {
     }
 
     fetchLatestStrategy();
-  }, [tenant?.id]);
+  }, [tenant?.id, user, navigate]);
+
+  if (!user) return null;
 
   return (
     <div className="container mx-auto p-6 space-y-6">

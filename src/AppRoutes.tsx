@@ -47,7 +47,8 @@ export default function AppRoutes() {
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/" element={<Index />} />
+      <Route path="/" element={<StartupDashboard />} />
+      <Route path="/startup" element={<StartupDashboard />} />
       <Route path="/docs" element={<Docs />} />
       <Route path="/explore" element={<Explore />} />
       <Route path="/auth/login" element={<Login />} />
