@@ -1193,6 +1193,9 @@ export type Database = {
         Row: {
           created_at: string | null
           description: string | null
+          diagnosis: Json | null
+          failure_reason: string | null
+          health_score: number | null
           id: string
           status: string | null
           tags: string[] | null
@@ -1202,6 +1205,9 @@ export type Database = {
         Insert: {
           created_at?: string | null
           description?: string | null
+          diagnosis?: Json | null
+          failure_reason?: string | null
+          health_score?: number | null
           id?: string
           status?: string | null
           tags?: string[] | null
@@ -1211,6 +1217,9 @@ export type Database = {
         Update: {
           created_at?: string | null
           description?: string | null
+          diagnosis?: Json | null
+          failure_reason?: string | null
+          health_score?: number | null
           id?: string
           status?: string | null
           tags?: string[] | null
