@@ -6,10 +6,12 @@ import type { OnboardingProfile } from "@/types/onboarding";
 import Step1Company from "./steps/Step1Company";
 import Step2Industry from "./steps/Step2Industry";
 import Step3Goals from "./steps/Step3Goals";
+import StepLaunchMode from "./steps/StepLaunchMode";
 
 const steps = [
   Step1Company,
   Step2Industry,
+  StepLaunchMode,
   Step3Goals,
 ];
 
@@ -43,7 +45,11 @@ export default function OnboardingWizard() {
             Step {step + 1} of {steps.length}
           </span>
         </div>
-        <CurrentStep next={next} back={back} profile={profile} />
+        <CurrentStep 
+          next={next} 
+          back={step > 0 ? back : undefined} 
+          profile={profile} 
+        />
       </Card>
     </div>
   );

@@ -79,6 +79,7 @@ export type Database = {
           created_at: string | null
           id: string
           industry: string
+          launch_mode: string | null
           name: string
           revenue_tier: string | null
           team_size: string
@@ -89,6 +90,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           industry: string
+          launch_mode?: string | null
           name: string
           revenue_tier?: string | null
           team_size: string
@@ -99,6 +101,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           industry?: string
+          launch_mode?: string | null
           name?: string
           revenue_tier?: string | null
           team_size?: string
