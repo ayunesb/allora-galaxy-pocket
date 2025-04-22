@@ -1,4 +1,3 @@
-
 import { useTenant } from "@/hooks/useTenant";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,88 +34,95 @@ export default function WorkspaceSwitcher({ highlight = false }) {
 
   // Fetch tenants the user has access to
   useEffect(() => {
-    setLoading(true);
-    setError(null);
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
 
-    async function fetchTenants() {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-
+    const fetchTenants = async () => {
+      setLoading(true);
+      setError(null);
+      
       try {
-        // First try to get tenants the user has access to via user roles
+        // Get tenant IDs the user has access to from tenant_user_roles
         const { data: userRoles, error: rolesError } = await supabase
           .from("tenant_user_roles")
           .select("tenant_id")
           .eq("user_id", user.id);
 
-        if (rolesError) throw rolesError;
+        if (rolesError) {
+          console.error("Error fetching roles:", rolesError);
+          throw rolesError;
+        }
 
-        // If user has roles, fetch those specific tenants
+        let tenants: TenantOption[] = [];
+        
         if (userRoles && userRoles.length > 0) {
+          // Get tenant details for the available tenant IDs
           const tenantIds = userRoles.map(role => role.tenant_id);
           
           const { data: tenantsData, error: tenantsError } = await supabase
             .from("tenant_profiles")
             .select("id, name, theme_color, theme_mode")
-            .in("id", tenantIds)
-            .order("name", { ascending: true });
+            .in("id", tenantIds);
 
           if (tenantsError) throw tenantsError;
-          setAvailableTenants(tenantsData || []);
+          
+          if (tenantsData) {
+            tenants = tenantsData;
+          }
         } else {
-          // Fallback: if no specific roles found, check if any tenants exist
-          // This is useful for initial setup where roles might not be set yet
+          // Fallback: Check for any available tenants
           const { data, error } = await supabase
             .from("tenant_profiles")
             .select("id, name, theme_color, theme_mode")
-            .limit(10)
-            .order("created_at", { ascending: true });
+            .limit(10);
 
           if (error) throw error;
-          setAvailableTenants(data || []);
-        }
-
-        // Determine selected tenant from localStorage (if any), else default to first
-        const stored = localStorage.getItem("tenant_id");
-        let initialTenantId = stored || '';
-
-        // If there's a stored tenant, check if it's in the available list
-        if (initialTenantId) {
-          const foundTenant = availableTenants.find(t => t.id === initialTenantId);
           
-          if (foundTenant) {
-            setTenant(foundTenant);
-            setSelected(initialTenantId);
-          } else if (availableTenants.length > 0) {
-            // If stored tenant not found but we have tenants, use first one
-            setTenant(availableTenants[0]);
-            setSelected(availableTenants[0].id);
-            localStorage.setItem("tenant_id", availableTenants[0].id);
-          } else {
-            // No tenants at all
-            setTenant(null);
-            setSelected(undefined);
-            localStorage.removeItem("tenant_id");
+          if (data) {
+            tenants = data;
           }
-        } else if (availableTenants.length > 0) {
-          // No stored tenant but we have tenants, use first one
-          setTenant(availableTenants[0]);
-          setSelected(availableTenants[0].id);
-          localStorage.setItem("tenant_id", availableTenants[0].id);
         }
-
-        setLoading(false);
+        
+        setAvailableTenants(tenants);
+        
+        // Initialize tenant selection
+        initializeSelectedTenant(tenants);
       } catch (err: any) {
         console.error("Error fetching workspaces:", err);
         setError("Could not fetch workspaces. Please refresh.");
+      } finally {
         setLoading(false);
       }
-    }
+    };
 
     fetchTenants();
-  }, [user]);
+  }, [user?.id]);
+
+  // Initialize tenant selection based on localStorage or first available tenant
+  const initializeSelectedTenant = (tenants: TenantOption[]) => {
+    const storedId = localStorage.getItem("tenant_id");
+    
+    if (storedId && tenants.some(t => t.id === storedId)) {
+      // Use stored tenant if it exists in the available list
+      const foundTenant = tenants.find(t => t.id === storedId);
+      if (foundTenant) {
+        setTenant(foundTenant);
+        setSelected(storedId);
+      }
+    } else if (tenants.length > 0) {
+      // Otherwise use the first available tenant
+      setTenant(tenants[0]);
+      setSelected(tenants[0].id);
+      localStorage.setItem("tenant_id", tenants[0].id);
+    } else {
+      // No tenants available
+      setTenant(null);
+      setSelected(undefined);
+      localStorage.removeItem("tenant_id");
+    }
+  };
 
   const handleTenantChange = (value: string) => {
     const selectedTenant = availableTenants.find(t => t.id === value);

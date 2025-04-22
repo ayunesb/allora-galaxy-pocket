@@ -1601,6 +1601,10 @@ export type Database = {
           sales_count: number
         }[]
       }
+      get_user_role_for_tenant: {
+        Args: { user_uuid: string; tenant_uuid: string }
+        Returns: string
+      }
       halfvec_avg: {
         Args: { "": number[] }
         Returns: unknown
