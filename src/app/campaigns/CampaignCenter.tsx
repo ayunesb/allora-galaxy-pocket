@@ -136,7 +136,11 @@ export default function CampaignCenter() {
       
       <div className="grid gap-4 md:grid-cols-2">
         {Object.entries(campaignData.scripts).map(([channel, script]) => (
-          <ScriptCard key={channel} channel={channel} script={script} />
+          <ScriptCard 
+            key={channel} 
+            channel={channel} 
+            script={String(script)} // Ensure script is always treated as a string
+          />
         ))}
       </div>
 
