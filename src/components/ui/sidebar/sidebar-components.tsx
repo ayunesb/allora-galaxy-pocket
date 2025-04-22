@@ -1,15 +1,31 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import { useSidebar } from "./sidebar-context"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
-import { Skeleton } from "@/components/ui/skeleton"
-import { PanelLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
+import { PanelLeft } from "lucide-react"
+import { useSidebar } from "./sidebar-context"
 
 const SIDEBAR_WIDTH = "16rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
+
+/**
+ * Props shared by all sidebar components
+ */
+interface SidebarBaseProps extends React.HTMLAttributes<HTMLElement> {
+  className?: string
+  children?: React.ReactNode
+}
+
+/**
+ * Props specific to the main Sidebar component
+ */
+interface SidebarProps extends SidebarBaseProps {
+  side?: "left" | "right"
+  variant?: "sidebar" | "floating" | "inset"
+  collapsible?: "offcanvas" | "icon" | "none"
+}
 
 export const Sidebar = React.forwardRef<
   HTMLDivElement,
@@ -92,7 +108,6 @@ export const Sidebar = React.forwardRef<
             side === "left"
               ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
               : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
-            // Adjust the padding for floating and inset variants.
             variant === "floating" || variant === "inset"
               ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)]"
               : "group-data-[collapsible=icon]:w-[--sidebar-width-icon] group-data-[side=left]:border-r group-data-[side=right]:border-l",
@@ -113,17 +128,19 @@ export const Sidebar = React.forwardRef<
 )
 Sidebar.displayName = "Sidebar"
 
-export const SidebarHeader = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentProps<"div">
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    data-sidebar="header"
-    className={cn("flex flex-col gap-2 p-2", className)}
-    {...props}
-  />
-))
+/**
+ * Header section of the sidebar
+ */
+export const SidebarHeader = React.forwardRef<HTMLDivElement, SidebarBaseProps>(
+  ({ className, ...props }, ref) => (
+    <div
+      ref={ref}
+      data-sidebar="header"
+      className={cn("flex flex-col gap-2 p-2", className)}
+      {...props}
+    />
+  )
+)
 SidebarHeader.displayName = "SidebarHeader"
 
 export const SidebarFooter = React.forwardRef<
@@ -247,12 +264,16 @@ const SidebarInset = React.forwardRef<
 })
 SidebarInset.displayName = "SidebarInset"
 
-const SidebarInput = React.forwardRef<
+/**
+ * Input field styled for use within the sidebar
+ */
+export const SidebarInput = React.forwardRef<
   React.ElementRef<typeof import("@/components/ui/input").Input>,
-  React.ComponentProps<typeof import("@/components/ui/input").Input>
+  React.ComponentPropsWithoutRef<typeof import("@/components/ui/input").Input>
 >(({ className, ...props }, ref) => {
+  const Input = import("@/components/ui/input").Input
   return (
-    <import("@/components/ui/input").Input
+    <Input
       ref={ref}
       data-sidebar="input"
       className={cn(

@@ -6,18 +6,50 @@ const SIDEBAR_COOKIE_NAME = "sidebar:state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
 
-type SidebarContext = {
+/**
+ * The state and functionality of the sidebar component.
+ */
+export interface SidebarContext {
+  /** Current expansion state of the sidebar */
   state: "expanded" | "collapsed"
+  /** Whether the sidebar is open in desktop mode */
   open: boolean
+  /** Function to set the open state */
   setOpen: (open: boolean) => void
+  /** Whether the sidebar is open in mobile mode */
   openMobile: boolean
+  /** Function to set the mobile open state */
   setOpenMobile: (open: boolean) => void
+  /** Whether the current view is mobile */
   isMobile: boolean
+  /** Function to toggle the sidebar open/closed state */
   toggleSidebar: () => void
+}
+
+/**
+ * Props for the SidebarProvider component.
+ */
+interface SidebarProviderProps {
+  /** Child elements to render within the sidebar context */
+  children: React.ReactNode
+  /** Whether the sidebar should be open by default */
+  defaultOpen?: boolean
+  /** Controlled open state */
+  open?: boolean
+  /** Callback when open state changes */
+  onOpenChange?: (open: boolean) => void
+  /** Optional className for styling */
+  className?: string
+  /** Optional inline styles */
+  style?: React.CSSProperties
 }
 
 const SidebarContext = React.createContext<SidebarContext | null>(null)
 
+/**
+ * Hook to access the sidebar context.
+ * Must be used within a SidebarProvider.
+ */
 export function useSidebar() {
   const context = React.useContext(SidebarContext)
   if (!context) {

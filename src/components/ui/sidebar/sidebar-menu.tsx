@@ -10,6 +10,9 @@ import {
 } from "@/components/ui/tooltip"
 import { useSidebar } from "./sidebar-context"
 
+/**
+ * Style variants for the sidebar menu button
+ */
 export const sidebarMenuButtonVariants = cva(
   "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none ring-sidebar-ring transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 group-has-[[data-sidebar=menu-action]]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:!size-8 group-data-[collapsible=icon]:!p-2 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
   {
@@ -32,17 +35,35 @@ export const sidebarMenuButtonVariants = cva(
   }
 )
 
-export const SidebarMenu = React.forwardRef<
-  HTMLUListElement,
-  React.ComponentProps<"ul">
->(({ className, ...props }, ref) => (
-  <ul
-    ref={ref}
-    data-sidebar="menu"
-    className={cn("flex w-full min-w-0 flex-col gap-1", className)}
-    {...props}
-  />
-))
+/**
+ * Props for menu items that can be rendered as different elements
+ */
+interface AsChildProps {
+  /** Whether to render as a different element via Radix Slot */
+  asChild?: boolean
+}
+
+/**
+ * Props for menu items that can display tooltips
+ */
+interface TooltipProps {
+  /** Content or props for the tooltip */
+  tooltip?: string | React.ComponentProps<typeof TooltipContent>
+}
+
+/**
+ * Container for sidebar menu items
+ */
+export const SidebarMenu = React.forwardRef<HTMLUListElement, SidebarBaseProps>(
+  ({ className, ...props }, ref) => (
+    <ul
+      ref={ref}
+      data-sidebar="menu"
+      className={cn("flex w-full min-w-0 flex-col gap-1", className)}
+      {...props}
+    />
+  )
+)
 SidebarMenu.displayName = "SidebarMenu"
 
 export const SidebarMenuItem = React.forwardRef<
@@ -60,11 +81,12 @@ SidebarMenuItem.displayName = "SidebarMenuItem"
 
 export const SidebarMenuButton = React.forwardRef<
   HTMLButtonElement,
-  React.ComponentProps<"button"> & {
-    asChild?: boolean
-    isActive?: boolean
-    tooltip?: string | React.ComponentProps<typeof TooltipContent>
-  } & VariantProps<typeof sidebarMenuButtonVariants>
+  React.ComponentProps<"button"> &
+    AsChildProps &
+    TooltipProps & { 
+      /** Whether the menu item is currently active */
+      isActive?: boolean 
+    } & VariantProps<typeof sidebarMenuButtonVariants>
 >(
   (
     {

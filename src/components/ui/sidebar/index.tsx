@@ -1,6 +1,12 @@
 
+/**
+ * @module sidebar
+ * A comprehensive sidebar component with collapsible sections, 
+ * mobile responsiveness, and keyboard shortcuts.
+ */
+
 export { useSidebar, SidebarProvider } from "./sidebar-context"
-export { 
+export {
   Sidebar,
   SidebarHeader,
   SidebarContent,
@@ -22,7 +28,6 @@ export {
   SidebarMenuSubItem,
   SidebarMenuSubButton
 } from "./sidebar-menu"
-
 export {
   SidebarGroup,
   SidebarGroupLabel,
