@@ -9,7 +9,7 @@ import { useAgentProfile } from "./hooks/useAgentProfile";
 export default function AgentSpacePage() {
   const { isAdmin } = useRolePermissions();
   const { tenant } = useTenant();
-  const { agent, isLoading } = useAgentProfile();
+  const { data: agent, isLoading } = useAgentProfile();
 
   if (isLoading) {
     return <div>Loading...</div>;
