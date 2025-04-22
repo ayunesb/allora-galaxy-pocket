@@ -40,7 +40,7 @@ export default function CampaignDetail() {
     enabled: !!id && !!tenant?.id
   });
 
-  const { mutate: updateCampaign, isLoading: isUpdating } = useMutation({
+  const { mutate: updateCampaign, isPending } = useMutation({
     mutationFn: async (updates: any) => {
       if (!id) throw new Error("Campaign ID is required");
       
@@ -136,7 +136,7 @@ export default function CampaignDetail() {
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem isCurrentPage>
-          {campaign.name}
+          {campaign?.name}
         </BreadcrumbItem>
       </Breadcrumb>
 
@@ -235,12 +235,12 @@ export default function CampaignDetail() {
           Back to Campaigns
         </Button>
         
-        {campaign.status === 'active' && !delivered && (
+        {campaign?.status === 'active' && !delivered && (
           <Button 
             onClick={handleMarkDelivered}
-            disabled={isUpdating}
+            disabled={isPending}
           >
-            {isUpdating ? (
+            {isPending ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
               <CheckCircle className="mr-2 h-4 w-4" />

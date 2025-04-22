@@ -7,9 +7,19 @@ import { Loader2, Filter } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import FeedbackChart from "./FeedbackChart";
 import { format, subDays } from "date-fns";
+
+// Type for campaigns from the database
+type Campaign = {
+  id: string;
+  name: string;
+  description: string | null;
+  status: string;
+  created_at: string | null;
+};
 
 export default function DashboardInsights() {
   const { tenant } = useTenant();
@@ -115,7 +125,7 @@ export default function DashboardInsights() {
   const processPluginData = () => {
     if (!pluginData) return {};
     
-    return pluginData.reduce((acc: Record<string, number>, item) => {
+    return pluginData.reduce((acc: Record<string, number>, item: any) => {
       acc[item.plugin_key] = (acc[item.plugin_key] || 0) + 1;
       return acc;
     }, {});
@@ -124,7 +134,7 @@ export default function DashboardInsights() {
   const pluginStats = processPluginData();
 
   const grouped: Record<string, {used: number, dismissed: number}> = 
-    feedbackData?.reduce((acc, curr) => {
+    feedbackData?.reduce((acc, curr: any) => {
       if (!acc[curr.strategy_title]) {
         acc[curr.strategy_title] = { used: 0, dismissed: 0 };
       }
@@ -244,7 +254,7 @@ export default function DashboardInsights() {
             <CardContent>
               {topCampaigns && topCampaigns.length > 0 ? (
                 <div className="space-y-4">
-                  {topCampaigns.map((campaign) => (
+                  {topCampaigns.map((campaign: Campaign) => (
                     <div key={campaign.id} className="flex justify-between items-center border-b pb-2">
                       <div>
                         <h3 className="font-medium">{campaign.name}</h3>
@@ -273,7 +283,7 @@ export default function DashboardInsights() {
                 <div className="space-y-4">
                   {Object.entries(pluginStats).map(([plugin, count]) => (
                     <div key={plugin} className="flex justify-between items-center border-b pb-2">
-                      <div className="capitalize">{plugin.replace('_', ' ')}</div>
+                      <div className="capitalize">{String(plugin).replace('_', ' ')}</div>
                       <div className="font-medium">{count} uses</div>
                     </div>
                   ))}
