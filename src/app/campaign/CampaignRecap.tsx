@@ -4,14 +4,14 @@ import { TrendingUp } from "lucide-react";
 
 interface CampaignRecapProps {
   name: string;
-  strategy_id?: string;
+  description?: string;
   summary?: string;
 }
 
-export default function CampaignRecap({ name, strategy_id, summary }: CampaignRecapProps) {
+export default function CampaignRecap({ name, description, summary }: CampaignRecapProps) {
   // Generate a default summary if one isn't provided
-  const displaySummary = summary || 
-    `Campaign based on strategy ${strategy_id || 'unknown'}. Performance metrics and analytics will appear here once the campaign has collected enough data.`;
+  const displaySummary = summary || description || 
+    "Performance metrics and analytics will appear here once the campaign has collected enough data.";
 
   return (
     <Card className="bg-slate-50">

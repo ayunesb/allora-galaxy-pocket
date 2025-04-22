@@ -10,14 +10,14 @@ const campaigns: Campaign[] = [
     name: "B2B Cold Outreach", 
     status: "active", 
     created_at: new Date().toISOString(),
-    strategy_id: "strategy-1" 
+    description: "A strategy for reaching out to B2B prospects"
   },
   { 
     id: "2",
     name: "Instagram Lead Magnet", 
     status: "paused",
     created_at: new Date().toISOString(),
-    strategy_id: "strategy-2"
+    description: "Content strategy to attract leads via Instagram"
   }
 ];
 
@@ -42,10 +42,9 @@ export default function CampaignPage() {
       {selected !== null && (
         <CampaignRecap
           name={campaigns[selected].name}
-          strategy_id={campaigns[selected].strategy_id}
+          description={campaigns[selected].description}
         />
       )}
     </div>
   );
 }
-
