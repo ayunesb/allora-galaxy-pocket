@@ -1,25 +1,16 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { Loader2, Filter } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import FeedbackChart from "./FeedbackChart";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, subDays } from "date-fns";
-
-// Type for campaigns from the database
-type Campaign = {
-  id: string;
-  name: string;
-  description: string | null;
-  status: string;
-  created_at: string | null;
-};
+import { MetricsOverview } from "./components/MetricsOverview";
+import { FeedbackAnalytics } from "./components/FeedbackAnalytics";
+import { CampaignsList } from "./components/CampaignsList";
+import { PluginUsageList } from "./components/PluginUsageList";
 
 export default function DashboardInsights() {
   const { tenant } = useTenant();
@@ -174,53 +165,11 @@ export default function DashboardInsights() {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6 mb-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-md">Strategy Success Rate</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
-              {feedbackStats.used + feedbackStats.dismissed > 0 
-                ? Math.round((feedbackStats.used / (feedbackStats.used + feedbackStats.dismissed)) * 100)
-                : 0}%
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {feedbackStats.used} approved, {feedbackStats.dismissed} declined
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-md">Active Plugins</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
-              {Object.keys(pluginStats).length}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {Object.entries(pluginStats).map(([key, value], index, arr) => (
-                <span key={key}>{key}{index < arr.length - 1 ? ', ' : ''}</span>
-              ))}
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-md">ROI Trend</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
-              {kpiData?.find(m => m.metric.toLowerCase() === 'roi')?.value || '0'}x
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Based on current campaign performance
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <MetricsOverview
+        feedbackStats={feedbackStats}
+        pluginStats={pluginStats}
+        kpiData={kpiData}
+      />
 
       <Tabs defaultValue="feedback">
         <TabsList className="mb-4">
@@ -230,69 +179,15 @@ export default function DashboardInsights() {
         </TabsList>
         
         <TabsContent value="feedback">
-          <Card>
-            <CardHeader>
-              <CardTitle>Strategy Feedback Analysis</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {Object.keys(grouped).length > 0 ? (
-                <div className="h-[400px]">
-                  <FeedbackChart grouped={grouped} />
-                </div>
-              ) : (
-                <p className="text-center py-4 text-muted-foreground">No feedback data available for the selected period.</p>
-              )}
-            </CardContent>
-          </Card>
+          <FeedbackAnalytics grouped={grouped} />
         </TabsContent>
         
         <TabsContent value="campaigns">
-          <Card>
-            <CardHeader>
-              <CardTitle>Top 5 Performing Campaigns</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {topCampaigns && topCampaigns.length > 0 ? (
-                <div className="space-y-4">
-                  {topCampaigns.map((campaign: Campaign) => (
-                    <div key={campaign.id} className="flex justify-between items-center border-b pb-2">
-                      <div>
-                        <h3 className="font-medium">{campaign.name}</h3>
-                        <p className="text-sm text-muted-foreground">{campaign.description || "No description"}</p>
-                      </div>
-                      <Badge variant={campaign.status === 'active' ? 'default' : 'outline'}>
-                        {campaign.status}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-center py-4 text-muted-foreground">No campaigns found for the selected period.</p>
-              )}
-            </CardContent>
-          </Card>
+          <CampaignsList campaigns={topCampaigns || []} />
         </TabsContent>
         
         <TabsContent value="plugins">
-          <Card>
-            <CardHeader>
-              <CardTitle>Plugin Usage</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {Object.keys(pluginStats).length > 0 ? (
-                <div className="space-y-4">
-                  {Object.entries(pluginStats).map(([plugin, count]) => (
-                    <div key={plugin} className="flex justify-between items-center border-b pb-2">
-                      <div className="capitalize">{String(plugin).replace('_', ' ')}</div>
-                      <div className="font-medium">{String(count)} uses</div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-center py-4 text-muted-foreground">No plugin usage data available for the selected period.</p>
-              )}
-            </CardContent>
-          </Card>
+          <PluginUsageList pluginStats={pluginStats} />
         </TabsContent>
       </Tabs>
     </div>
