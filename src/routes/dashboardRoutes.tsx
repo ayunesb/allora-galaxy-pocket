@@ -11,13 +11,13 @@ import KpiAlertsPage from "@/app/dashboard/kpi-alerts/page";
 import IncidentTimeline from "@/app/dashboard/incidents/page";
 import AlertsDashboard from "@/app/dashboard/alerts/page";
 import KPIAlertRules from "@/app/dashboard/kpi-alerts/KpiAlertRules";
+// Campaign Routes
+import CampaignCenterPage from "@/app/campaigns/center/page";
+// Notifications Route
+import NotificationsPage from "@/app/notifications/page";
 // FALLBACK/MINIMAL "PAGE" ROUTES
 import RecoveryPage from "@/pages/recovery/page";
 import PluginLeaderboard from "@/pages/plugins/leaderboard";
-// REMOVE this, replaced by full-featured dashboard
-// import DashboardPage from "@/pages/dashboard/page";
-// REMOVE this, replaced by KpiDashboard in appRoutes
-// import InsightsPage from "@/pages/insights/kpis/page";
 
 export const dashboardRoutes: RouteObject[] = [
   { path: "/dashboard", element: <DashboardHome /> },
@@ -29,8 +29,8 @@ export const dashboardRoutes: RouteObject[] = [
   { path: "/dashboard/incidents", element: <IncidentTimeline /> },
   { path: "/dashboard/alerts", element: <AlertsDashboard /> },
   { path: "/dashboard/kpi-alert-rules", element: <KPIAlertRules /> },
+  { path: "/campaigns/center", element: <CampaignCenterPage /> },
+  { path: "/notifications", element: <NotificationsPage /> },
   { path: "/recovery", element: <RecoveryPage /> },
   { path: "/galaxy/plugins", element: <PluginLeaderboard /> }
-  // Removed duplicate/unused "/dashboard" and "/insights/kpis" minimal pages
 ];
-

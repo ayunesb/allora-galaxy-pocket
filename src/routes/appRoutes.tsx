@@ -5,11 +5,20 @@ import StartupPage from "@/app/startup/page";
 import RecoveryPage from "@/pages/recovery/page";
 import CreateGalaxyPage from "@/app/galaxy/create/page";
 import CoachingFeed from "@/app/coaching/feed/CoachingFeed";
+import LaunchPageWrapper from "@/app/launch/page";
+import StrategyPage from "@/app/strategy/page";
+import AssistantPage from "@/app/assistant/page";
+import AgentsPage from "@/app/agents/page";
+import CreativeSuitePage from "@/app/creative/SuitePanel";
 
 export const appRoutes: RouteObject[] = [
   { path: "/startup", element: <StartupPage /> },
   { path: "/recovery", element: <RecoveryPage /> },
   { path: "/galaxy/create", element: <CreateGalaxyPage /> },
   { path: "/coaching/feed", element: <CoachingFeed /> },
-  { path: "/creative/suite", element: <div>Creative Suite</div> }
+  { path: "/launch", element: <LaunchPageWrapper /> },
+  { path: "/strategy", element: <StrategyPage /> },
+  { path: "/assistant", element: <AssistantPage /> },
+  { path: "/agents", element: <AgentsPage /> },
+  { path: "/creative/suite", element: <CreativeSuitePage /> }
 ];
