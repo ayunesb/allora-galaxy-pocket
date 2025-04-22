@@ -256,3 +256,6 @@ export function KpiAlertRules() {
     </div>
   )
 }
+
+// Add default export
+export default KpiAlertRules;

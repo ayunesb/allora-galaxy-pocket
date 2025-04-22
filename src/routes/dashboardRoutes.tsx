@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import DashboardHome from "@/app/dashboard";
@@ -9,7 +8,7 @@ import InsightsPanel from "@/app/dashboard/insights/InsightsPanel";
 import KpiAlertsPage from "@/app/dashboard/kpi-alerts/page";
 import IncidentTimeline from "@/app/dashboard/incidents/page";
 import AlertsDashboard from "@/app/dashboard/alerts/page";
-import KPIAlertRules from "@/app/dashboard/kpi-alerts/KpiAlertRules";
+import KPIAlertRules from "@/app/dashboard/kpi-alerts/KpiAlertRules";  // Correct import
 import RecoveryDashboard from "@/app/recovery/page";
 import PluginLeaderboard from "@/pages/plugins/leaderboard";
 
