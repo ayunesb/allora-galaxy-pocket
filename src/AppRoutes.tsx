@@ -5,6 +5,7 @@ import AdminOnly from "@/guards/AdminOnly";
 import ProfileSettings from "@/app/profile/ProfileSettings";
 import BillingPanel from "@/app/admin/billing/BillingPanel";
 import CampaignCenter from "@/app/campaigns/CampaignCenter";
+import AutopilotPanel from "@/app/shopify/AutopilotPanel";
 
 // Pages
 import Index from "@/pages/Index";
@@ -122,6 +123,7 @@ export default function AppRoutes() {
         />
         <Route path="/campaigns/center" element={<CampaignCenter />} />
         <Route path="/dashboard/performance" element={<PerformanceDashboard />} />
+        <Route path="/shopify/autopilot" element={<AutopilotPanel />} />
       </Route>
       
       <Route path="*" element={<NotFound />} />
