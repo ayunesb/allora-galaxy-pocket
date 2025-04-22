@@ -151,6 +151,7 @@ export type Database = {
           created_at: string | null
           id: string
           metric: string
+          recorded_at: string
           tenant_id: string | null
           updated_at: string | null
           value: number
@@ -159,6 +160,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           metric: string
+          recorded_at?: string
           tenant_id?: string | null
           updated_at?: string | null
           value: number
@@ -167,6 +169,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           metric?: string
+          recorded_at?: string
           tenant_id?: string | null
           updated_at?: string | null
           value?: number
@@ -174,6 +177,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "kpi_metrics_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kpi_metrics_history: {
+        Row: {
+          created_at: string | null
+          id: string
+          metric: string
+          recorded_at: string
+          tenant_id: string
+          value: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          metric: string
+          recorded_at?: string
+          tenant_id: string
+          value: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          metric?: string
+          recorded_at?: string
+          tenant_id?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kpi_metrics_history_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenant_profiles"

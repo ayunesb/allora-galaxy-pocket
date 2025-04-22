@@ -4,6 +4,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "./useTenant";
 import type { KpiMetric } from "@/types/kpi";
 
+// Helper to calculate week-over-week change
+function calculateWeekOverWeekChange(current: number, previousWeek: number): number {
+  if (previousWeek === 0) return 0;
+  return ((current - previousWeek) / previousWeek) * 100;
+}
+
+// Helper to determine trend based on historical data
+function calculateTrend(current: number, previousWeek: number): "up" | "down" {
+  return current >= previousWeek ? "up" : "down";
+}
+
 export function useKpiMetrics() {
   const { tenant } = useTenant();
 
@@ -12,27 +23,50 @@ export function useKpiMetrics() {
     queryFn: async (): Promise<KpiMetric[]> => {
       if (!tenant?.id) return [];
       
-      const { data, error } = await supabase
+      // Fetch current metrics
+      const { data: currentData, error: currentError } = await supabase
         .from("kpi_metrics")
         .select("*")
         .eq("tenant_id", tenant?.id);
 
-      if (error) throw error;
-      
-      return data.map(metric => ({
-        label: metric.metric,
-        value: metric.value,
-        trend: calculateTrend(metric.value), // Helper function to determine trend
-        changePercent: 0 // We'll implement historical comparison later
-      }));
+      if (currentError) throw currentError;
+
+      // Fetch historical data for the past 2 weeks
+      const twoWeeksAgo = new Date();
+      twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+
+      const { data: historyData, error: historyError } = await supabase
+        .from("kpi_metrics_history")
+        .select("*")
+        .eq("tenant_id", tenant?.id)
+        .gte("recorded_at", twoWeeksAgo.toISOString())
+        .order("recorded_at", { ascending: false });
+
+      if (historyError) throw historyError;
+
+      return currentData.map(metric => {
+        // Get historical data for this metric
+        const metricHistory = historyData
+          .filter(h => h.metric === metric.metric)
+          .map(h => ({
+            value: Number(h.value),
+            recorded_at: h.recorded_at
+          }));
+
+        // Calculate week-over-week change
+        const currentValue = Number(metric.value);
+        const lastWeekValue = metricHistory[0]?.value ?? currentValue;
+        const changePercent = calculateWeekOverWeekChange(currentValue, lastWeekValue);
+
+        return {
+          label: metric.metric,
+          value: metric.value,
+          trend: calculateTrend(currentValue, lastWeekValue),
+          changePercent: Math.round(changePercent * 10) / 10,
+          historicalData: metricHistory
+        };
+      });
     },
     enabled: !!tenant?.id
   });
-}
-
-// Simple helper to determine trend
-function calculateTrend(value: number): "up" | "down" {
-  // For now using a simple logic: positive values = up, negative = down
-  // This can be enhanced later with historical data comparison
-  return value >= 0 ? "up" : "down";
 }
