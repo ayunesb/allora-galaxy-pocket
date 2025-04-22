@@ -43,6 +43,11 @@ import Docs from "@/pages/Docs";
 import Explore from "@/pages/Explore";
 import AnalyticsDashboard from "@/app/admin/analytics/AnalyticsDashboard";
 import PerformanceDashboard from "@/app/dashboard/performance/PerformanceDashboard";
+import TermsOfUse from "@/pages/legal/terms";
+import PrivacyPolicy from "@/pages/legal/privacy";
+import CookiePolicy from "@/pages/legal/cookie";
+import AIDisclosure from "@/pages/legal/ai-disclosure";
+import DataProcessingAddendum from "@/pages/legal/dpa";
 
 export default function AppRoutes() {
   return (
@@ -59,6 +64,13 @@ export default function AppRoutes() {
           <OnboardingWizard />
         </OnboardingLayout>
       } />
+      
+      {/* Legal routes - publicly accessible */}
+      <Route path="/legal/terms" element={<TermsOfUse />} />
+      <Route path="/legal/privacy" element={<PrivacyPolicy />} />
+      <Route path="/legal/cookie" element={<CookiePolicy />} />
+      <Route path="/legal/ai-disclosure" element={<AIDisclosure />} />
+      <Route path="/legal/dpa" element={<DataProcessingAddendum />} />
       
       {/* Protected routes */}
       <Route element={<AuthenticatedLayout />}>
