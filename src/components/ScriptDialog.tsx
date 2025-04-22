@@ -10,6 +10,8 @@ interface ScriptDialogProps {
   testConversation?: React.ReactNode;
   variant?: "ghost" | "default" | "secondary";
   buttonSize?: "sm" | "default" | "lg";
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function ScriptDialog({
@@ -17,18 +19,26 @@ export function ScriptDialog({
   script,
   testConversation,
   variant = "ghost",
-  buttonSize = "sm"
+  buttonSize = "sm",
+  open,
+  onOpenChange
 }: ScriptDialogProps) {
-  const [open, setOpen] = useState(false);
+  // Use local state when open and onOpenChange are not provided
+  const [localOpen, setLocalOpen] = useState(false);
+  
+  // Determine if we use controlled (props) or uncontrolled (local) state
+  const isControlled = open !== undefined && onOpenChange !== undefined;
+  const isDialogOpen = isControlled ? open : localOpen;
+  const setDialogOpen = isControlled ? onOpenChange : setLocalOpen;
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
         <Button 
           variant={variant} 
           size={buttonSize}
           className="ml-2 gap-1"
-          onClick={() => setOpen(true)}
+          onClick={() => setDialogOpen(true)}
         >
           <MessageSquare size={16} />
           {label}
@@ -56,7 +66,7 @@ export function ScriptDialog({
           )}
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => setOpen(false)}>
+          <Button variant="ghost" onClick={() => setDialogOpen(false)}>
             Close
           </Button>
         </DialogFooter>
