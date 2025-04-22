@@ -16,28 +16,28 @@ const NotFound = () => {
   }, [location.pathname]);
 
   const goToStartup = () => {
-    navigate("/startup");
+    navigate("/dashboard");
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center p-8 bg-white rounded-lg shadow-md max-w-md">
-        <h1 className="text-4xl font-bold mb-4">404</h1>
-        <p className="text-xl text-gray-600 mb-6">Oops! Page not found</p>
-        <p className="text-gray-500 mb-8">
+    <div className="min-h-screen flex items-center justify-center bg-background dark:bg-gray-900">
+      <div className="text-center p-8 bg-card dark:bg-gray-800 rounded-lg shadow-lg max-w-md border border-border">
+        <h1 className="text-6xl font-bold mb-4 text-primary">404</h1>
+        <p className="text-xl text-foreground dark:text-white mb-6">Page not found</p>
+        <p className="text-muted-foreground dark:text-gray-300 mb-8">
           The page you're looking for doesn't exist or has been moved.
         </p>
         <div className="space-y-4">
           <Button 
             onClick={goToStartup} 
-            className="w-full"
+            className="w-full bg-primary hover:bg-primary/90"
           >
             Go to Dashboard
           </Button>
           <Button 
             variant="outline" 
             onClick={() => navigate("/")} 
-            className="w-full"
+            className="w-full border-primary/20 text-foreground dark:text-white"
           >
             Return to Home
           </Button>

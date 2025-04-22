@@ -104,19 +104,19 @@ export default function CoachingFeed() {
         <h2 className="text-2xl font-bold text-foreground dark:text-white">🧠 AI Strategy Coach</h2>
       </div>
       {rankedSuggestions.length === 0 ? (
-        <div className="text-center text-muted-foreground dark:text-gray-500 py-8">
+        <div className="text-center text-muted-foreground dark:text-gray-400 py-8">
           No new suggestions at the moment. Check back later!
         </div>
       ) : (
         rankedSuggestions.map((suggestion, index) => (
           <div 
             key={index} 
-            className="bg-card dark:bg-gray-800 p-5 rounded-lg shadow-md space-y-3 border-l-4 border-primary"
+            className="bg-card dark:bg-gray-800/90 p-5 rounded-lg shadow-md space-y-3 border-l-4 border-primary"
           >
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="text-lg font-semibold text-foreground dark:text-white">{suggestion.title}</h3>
-                <p className="text-sm text-muted-foreground dark:text-gray-400 mt-1">{suggestion.description}</p>
+                <p className="text-sm text-muted-foreground dark:text-gray-300 mt-1">{suggestion.description}</p>
                 <span className="inline-block mt-2 text-xs bg-accent dark:bg-gray-700 text-accent-foreground dark:text-white px-2 py-1 rounded">
                   Impact: {suggestion.impact}
                 </span>
@@ -133,7 +133,7 @@ export default function CoachingFeed() {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700/50"
+                  className="text-gray-500 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700/50"
                   onClick={() => handleDismissSuggestion(index)}
                 >
                   <X className="mr-2 h-4 w-4" /> Dismiss
@@ -146,4 +146,3 @@ export default function CoachingFeed() {
     </div>
   );
 }
-

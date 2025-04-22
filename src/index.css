@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -72,6 +73,15 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Improved text contrast for error pages */
+  .error-page-text {
+    @apply text-foreground dark:text-white;
+  }
+  
+  .error-page-card {
+    @apply bg-card dark:bg-gray-800;
   }
 }
 
