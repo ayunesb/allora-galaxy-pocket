@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { toast } from "sonner";
+import { Star } from "lucide-react";
 
 type Plugin = {
   id: string;
@@ -20,6 +21,10 @@ type Plugin = {
 export default function PluginExplorePage() {
   const [plugins, setPlugins] = useState<Plugin[]>([]);
   const { tenant } = useTenant();
+  const [selectedPlugin, setSelectedPlugin] = useState<Plugin | null>(null);
+  const [rating, setRating] = useState(5);
+  const [review, setReview] = useState("");
+  const [pluginReviews, setPluginReviews] = useState<{[key: string]: {avgRating: number, count: number}}>({});
 
   useEffect(() => {
     const fetchPlugins = async () => {
@@ -30,6 +35,29 @@ export default function PluginExplorePage() {
         });
       } else if (data) {
         setPlugins(data);
+        
+        // Fetch average ratings for each plugin
+        const ratingPromises = data.map(async (plugin) => {
+          const { data: reviews } = await supabase
+            .from("plugin_reviews")
+            .select("rating")
+            .eq("plugin_id", plugin.id);
+          
+          const avgRating = reviews?.length 
+            ? Number((reviews.reduce((a, b) => a + b.rating, 0) / reviews.length).toFixed(1)) 
+            : 0;
+          
+          return {
+            [plugin.id]: {
+              avgRating,
+              count: reviews?.length || 0
+            }
+          };
+        });
+
+        const ratingResults = await Promise.all(ratingPromises);
+        const ratingsMap = ratingResults.reduce((acc, curr) => ({...acc, ...curr}), {});
+        setPluginReviews(ratingsMap);
       }
     };
 
@@ -45,7 +73,8 @@ export default function PluginExplorePage() {
     const { error } = await supabase.from("plugin_installs").insert({
       tenant_id: tenant.id,
       plugin_id: pluginId,
-      enabled: true
+      enabled: true,
+      last_checked_version: null // Reset last checked version on new install
     });
 
     if (error) {
@@ -54,6 +83,30 @@ export default function PluginExplorePage() {
       });
     } else {
       toast.success("Plugin installed successfully");
+    }
+  };
+
+  const submitReview = async () => {
+    if (!tenant?.id || !selectedPlugin) return;
+
+    try {
+      const { error } = await supabase.from("plugin_reviews").upsert({
+        plugin_id: selectedPlugin.id,
+        tenant_id: tenant.id,
+        rating,
+        review
+      });
+
+      if (error) throw error;
+
+      toast.success("Review submitted successfully");
+      setSelectedPlugin(null);
+      setRating(5);
+      setReview("");
+    } catch (error) {
+      toast.error("Failed to submit review", {
+        description: (error as Error).message
+      });
     }
   };
 
@@ -97,17 +150,80 @@ export default function PluginExplorePage() {
                 {plugin.description}
               </p>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  By {plugin.author}
+                <div className="flex items-center space-x-2">
+                  {[...Array(5)].map((_, i) => (
+                    <Star 
+                      key={i} 
+                      className={`w-4 h-4 ${
+                        i < Math.floor(pluginReviews[plugin.id]?.avgRating || 0) 
+                          ? "text-yellow-500" 
+                          : "text-gray-300"
+                      }`} 
+                    />
+                  ))}
+                  <span className="text-sm text-muted-foreground">
+                    {pluginReviews[plugin.id]?.avgRating || 'No'} 
+                    {` (${pluginReviews[plugin.id]?.count || 0} reviews)`}
                 </span>
+                </div>
                 <Button onClick={() => installPlugin(plugin.id)}>
                   Install
                 </Button>
               </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="mt-2 w-full"
+                onClick={() => setSelectedPlugin(plugin)}
+              >
+                Write a Review
+              </Button>
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {selectedPlugin && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md p-6">
+            <CardHeader>
+              <CardTitle>Review {selectedPlugin.name}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center space-x-2 mb-4">
+                {[1,2,3,4,5].map((num) => (
+                  <Star 
+                    key={num} 
+                    className={`w-6 h-6 cursor-pointer ${
+                      num <= rating ? "text-yellow-500" : "text-gray-300"
+                    }`}
+                    onClick={() => setRating(num)}
+                  />
+                ))}
+                <span className="text-sm">{rating} / 5</span>
+              </div>
+              <textarea 
+                placeholder="Write your review..." 
+                value={review}
+                onChange={(e) => setReview(e.target.value)}
+                className="w-full border rounded p-2 mb-4"
+                rows={4}
+              />
+              <div className="flex justify-end space-x-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setSelectedPlugin(null)}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={submitReview}>
+                  Submit Review
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

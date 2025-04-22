@@ -510,6 +510,7 @@ export type Database = {
           enabled: boolean | null
           id: string
           installed_at: string | null
+          last_checked_version: string | null
           plugin_id: string | null
           tenant_id: string
         }
@@ -517,6 +518,7 @@ export type Database = {
           enabled?: boolean | null
           id?: string
           installed_at?: string | null
+          last_checked_version?: string | null
           plugin_id?: string | null
           tenant_id: string
         }
@@ -524,6 +526,7 @@ export type Database = {
           enabled?: boolean | null
           id?: string
           installed_at?: string | null
+          last_checked_version?: string | null
           plugin_id?: string | null
           tenant_id?: string
         }
@@ -612,6 +615,48 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      plugin_reviews: {
+        Row: {
+          created_at: string | null
+          id: string
+          plugin_id: string | null
+          rating: number | null
+          review: string | null
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          plugin_id?: string | null
+          rating?: number | null
+          review?: string | null
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          plugin_id?: string | null
+          rating?: number | null
+          review?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plugin_reviews_plugin_id_fkey"
+            columns: ["plugin_id"]
+            isOneToOne: false
+            referencedRelation: "plugins"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plugin_reviews_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       plugin_usage_logs: {
         Row: {
