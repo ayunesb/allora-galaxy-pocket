@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -7,11 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Alert,
-  AlertCircle,
   AlertDescription 
 } from "@/components/ui/alert";
 import { toast } from "@/components/ui/sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 import { isValidEmail, isValidPassword } from "@/lib/validation";
 
 export default function Signup() {
