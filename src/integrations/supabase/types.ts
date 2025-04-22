@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      agent_alerts: {
+        Row: {
+          agent: string
+          alert_type: string
+          id: string
+          message: string
+          status: string | null
+          tenant_id: string
+          triggered_at: string | null
+        }
+        Insert: {
+          agent: string
+          alert_type: string
+          id?: string
+          message: string
+          status?: string | null
+          tenant_id: string
+          triggered_at?: string | null
+        }
+        Update: {
+          agent?: string
+          alert_type?: string
+          id?: string
+          message?: string
+          status?: string | null
+          tenant_id?: string
+          triggered_at?: string | null
+        }
+        Relationships: []
+      }
       agent_collaboration: {
         Row: {
           agent: string
@@ -1036,6 +1066,59 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      recovery_strategies: {
+        Row: {
+          actions: Json | null
+          alert_id: string | null
+          assigned_agent: string | null
+          created_at: string | null
+          executed_at: string | null
+          feedback_notes: string | null
+          id: string
+          learned: boolean | null
+          status: string | null
+          strategy_title: string
+          summary: string | null
+          tenant_id: string
+        }
+        Insert: {
+          actions?: Json | null
+          alert_id?: string | null
+          assigned_agent?: string | null
+          created_at?: string | null
+          executed_at?: string | null
+          feedback_notes?: string | null
+          id?: string
+          learned?: boolean | null
+          status?: string | null
+          strategy_title: string
+          summary?: string | null
+          tenant_id: string
+        }
+        Update: {
+          actions?: Json | null
+          alert_id?: string | null
+          assigned_agent?: string | null
+          created_at?: string | null
+          executed_at?: string | null
+          feedback_notes?: string | null
+          id?: string
+          learned?: boolean | null
+          status?: string | null
+          strategy_title?: string
+          summary?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recovery_strategies_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "agent_alerts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       referrals: {
         Row: {
