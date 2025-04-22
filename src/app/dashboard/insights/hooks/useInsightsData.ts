@@ -6,11 +6,31 @@ import { useEffect, useState } from "react";
 export function useInsightsData(dateRange: string) {
   const { tenant } = useTenant();
   const formattedStartDate = new Date(Date.now() - parseInt(dateRange) * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+  // Define a more explicit type for trend
+  type TrendType = 'up' | 'down' | 'neutral';
+
   const [roiData, setRoiData] = useState<any>(null);
-  const [conversionRate, setConversionRate] = useState({ current: 0, trend: 'neutral' as const, change: 0 });
-  const [campaignApprovalRate, setCampaignApprovalRate] = useState({ current: 0, trend: 'neutral' as const, change: 0 });
-  const [aiRegenerationVolume, setAiRegenerationVolume] = useState({ current: 0, trend: 'neutral' as const, change: 0 });
-  const [feedbackPositivityRatio, setFeedbackPositivityRatio] = useState({ current: 0, trend: 'neutral' as const, change: 0 });
+  const [conversionRate, setConversionRate] = useState({ 
+    current: 0, 
+    trend: 'neutral' as TrendType, 
+    change: 0 
+  });
+  const [campaignApprovalRate, setCampaignApprovalRate] = useState({ 
+    current: 0, 
+    trend: 'neutral' as TrendType, 
+    change: 0 
+  });
+  const [aiRegenerationVolume, setAiRegenerationVolume] = useState({ 
+    current: 0, 
+    trend: 'neutral' as TrendType, 
+    change: 0 
+  });
+  const [feedbackPositivityRatio, setFeedbackPositivityRatio] = useState({ 
+    current: 0, 
+    trend: 'neutral' as TrendType, 
+    change: 0 
+  });
 
   const { data: kpiData, isLoading: isLoadingKpi } = useQuery({
     queryKey: ['kpi-metrics-insights', tenant?.id, dateRange],
@@ -199,9 +219,12 @@ export function useInsightsData(dateRange: string) {
       const totalCampaigns = topCampaigns.length;
       const approvalRate = totalCampaigns > 0 ? Math.round((approvedCampaigns / totalCampaigns) * 100) : 0;
       
+      // Explicitly type the trend
+      const trend: TrendType = 'neutral';
+      
       setCampaignApprovalRate({
         current: approvalRate,
-        trend: 'neutral',
+        trend,
         change: 0
       });
     }
