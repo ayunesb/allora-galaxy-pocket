@@ -16,43 +16,58 @@ const AppRoutes = () => {
   // Log when routes are being rendered
   console.log("Rendering AppRoutes");
   
-  // Helper function to wrap routes with appropriate error boundary
-  const wrapWithErrorBoundary = (element: React.ReactNode, isDebug = false) => {
-    const ErrorWrapper = isDebug ? DebugErrorBoundary : ErrorBoundary;
-    return (
-      <ErrorWrapper key={Math.random().toString(36).substring(7)}>
-        {element}
-      </ErrorWrapper>
-    );
-  };
-  
   return (
     <ErrorBoundary>
       <RouteDebugger />
       <Routes>
         {/* Public routes */}
-        <Route path="/" element={wrapWithErrorBoundary(<Navigate to="/dashboard" replace />)} />
+        <Route path="/" element={
+          <DebugErrorBoundary>
+            <Navigate to="/dashboard" replace />
+          </DebugErrorBoundary>
+        } />
+        
         {publicRoutes.map((route) => (
-          <Route key={route.path} path={route.path} element={wrapWithErrorBoundary(route.element)} />
+          <Route 
+            key={route.path} 
+            path={route.path} 
+            element={
+              <DebugErrorBoundary>
+                {route.element}
+              </DebugErrorBoundary>
+            } 
+          />
         ))}
         
         {/* Protected routes */}
-        <Route element={wrapWithErrorBoundary(<AuthenticatedLayout />)}>
+        <Route element={
+          <DebugErrorBoundary>
+            <AuthenticatedLayout />
+          </DebugErrorBoundary>
+        }>
           {/* Dashboard routes */}
           {dashboardRoutes.map((route) => (
             <Route 
               key={route.path} 
               path={route.path} 
-              element={wrapWithErrorBoundary(route.element, true)} 
+              element={
+                <DebugErrorBoundary>
+                  {route.element}
+                </DebugErrorBoundary>
+              } 
             />
           ))}
           
-          {/* Admin routes with Debug Error Boundary */}
+          {/* Admin routes */}
           {adminRoutes.map((route) => (
             <Route 
               key={route.path} 
               path={route.path} 
-              element={wrapWithErrorBoundary(route.element, true)} 
+              element={
+                <DebugErrorBoundary>
+                  {route.element}
+                </DebugErrorBoundary>
+              } 
             />
           ))}
           
@@ -61,21 +76,33 @@ const AppRoutes = () => {
             <Route 
               key={route.path} 
               path={route.path} 
-              element={wrapWithErrorBoundary(route.element, true)} 
+              element={
+                <DebugErrorBoundary>
+                  {route.element}
+                </DebugErrorBoundary>
+              } 
             />
           ))}
 
-          {/* Plugin routes with Debug Error Boundary */}
+          {/* Plugin routes */}
           {pluginRoutes.map((route) => (
             <Route 
               key={route.path} 
               path={route.path} 
-              element={wrapWithErrorBoundary(route.element, true)} 
+              element={
+                <DebugErrorBoundary>
+                  {route.element}
+                </DebugErrorBoundary>
+              } 
             />
           ))}
         </Route>
         
-        <Route path="*" element={wrapWithErrorBoundary(<NotFound />)} />
+        <Route path="*" element={
+          <DebugErrorBoundary>
+            <NotFound />
+          </DebugErrorBoundary>
+        } />
       </Routes>
     </ErrorBoundary>
   );

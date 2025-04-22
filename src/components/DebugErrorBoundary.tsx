@@ -90,29 +90,6 @@ export class DebugErrorBoundary extends React.Component<DebugErrorBoundaryProps,
       );
     }
 
-    try {
-      // Add an extra try/catch to prevent blank pages
-      return this.props.children;
-    } catch (error) {
-      console.error("Error rendering children in DebugErrorBoundary:", error);
-      return (
-        <Card className="border-amber-500 shadow-lg m-4">
-          <CardHeader className="bg-amber-50 dark:bg-amber-900/20">
-            <CardTitle className="text-amber-600 dark:text-amber-400">Render Error</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>An error occurred while rendering this component.</p>
-            <pre className="mt-2 p-2 bg-gray-100 dark:bg-gray-800 rounded overflow-auto">
-              {error instanceof Error ? error.message : 'Unknown error'}
-            </pre>
-          </CardContent>
-          <CardFooter>
-            <Button onClick={this.handleRetry} variant="outline" className="mt-4">
-              Try Again
-            </Button>
-          </CardFooter>
-        </Card>
-      );
-    }
+    return this.props.children;
   }
 }
