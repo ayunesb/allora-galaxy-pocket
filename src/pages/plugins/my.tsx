@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { toast } from "sonner";
 
+// Update the type definition to match the actual structure from Supabase
 type InstalledPlugin = {
   id: string;
   enabled: boolean;
@@ -37,7 +38,8 @@ export default function MyPluginsPage() {
         return;
       }
 
-      setInstalled(data as InstalledPlugin[] || []);
+      // Type assertion to handle the nested object structure correctly
+      setInstalled(data as unknown as InstalledPlugin[]);
     };
 
     fetchInstalledPlugins();
