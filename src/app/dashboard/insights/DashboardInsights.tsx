@@ -1,139 +1,28 @@
+
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useTenant } from "@/hooks/useTenant";
-import { Loader2, Filter } from "lucide-react";
+import { Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { format, subDays } from "date-fns";
+import { Loader2 } from "lucide-react";
 import { MetricsOverview } from "./components/MetricsOverview";
 import { FeedbackAnalytics } from "./components/FeedbackAnalytics";
 import { CampaignsList } from "./components/CampaignsList";
 import { PluginUsageList } from "./components/PluginUsageList";
+import { useInsightsData } from "./hooks/useInsightsData";
 
 export default function DashboardInsights() {
-  const { tenant } = useTenant();
   const [dateRange, setDateRange] = useState("30");
   const [campaignType, setCampaignType] = useState("all");
 
-  // Calculate date range
-  const startDate = subDays(new Date(), parseInt(dateRange));
-  const formattedStartDate = format(startDate, "yyyy-MM-dd");
-
-  // Fetch KPI metrics
-  const { data: kpiData, isLoading: isLoadingKpi } = useQuery({
-    queryKey: ['kpi-metrics-insights', tenant?.id],
-    queryFn: async () => {
-      if (!tenant?.id) return [];
-      
-      const { data, error } = await supabase
-        .from('kpi_metrics')
-        .select('*')
-        .eq('tenant_id', tenant.id);
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!tenant?.id
-  });
-
-  // Fetch strategy feedback data
-  const { data: feedbackData, isLoading: isLoadingFeedback } = useQuery({
-    queryKey: ['strategy-feedback', tenant?.id, dateRange],
-    queryFn: async () => {
-      if (!tenant?.id) return [];
-      
-      const { data, error } = await supabase
-        .from('strategy_feedback')
-        .select('*')
-        .eq('tenant_id', tenant.id)
-        .gte('created_at', formattedStartDate);
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!tenant?.id
-  });
-
-  // Fetch plugin usage logs
-  const { data: pluginData, isLoading: isLoadingPlugins } = useQuery({
-    queryKey: ['plugin-usage', tenant?.id, dateRange],
-    queryFn: async () => {
-      if (!tenant?.id) return [];
-      
-      const { data, error } = await supabase
-        .from('plugin_usage_logs')
-        .select('*')
-        .eq('tenant_id', tenant.id)
-        .gte('created_at', formattedStartDate);
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!tenant?.id
-  });
-
-  // Fetch top campaigns
-  const { data: topCampaigns, isLoading: isLoadingCampaigns } = useQuery({
-    queryKey: ['top-campaigns', tenant?.id, dateRange, campaignType],
-    queryFn: async () => {
-      if (!tenant?.id) return [];
-      
-      let query = supabase
-        .from('campaigns')
-        .select('*')
-        .eq('tenant_id', tenant.id)
-        .gte('created_at', formattedStartDate)
-        .order('created_at', { ascending: false })
-        .limit(5);
-      
-      if (campaignType !== "all") {
-        // In a real app, we would filter by campaign type here
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!tenant?.id
-  });
-
-  // Process feedback data for the chart
-  const processFeedbackData = () => {
-    if (!feedbackData) return { used: 0, dismissed: 0 };
-    
-    const used = feedbackData.filter(item => item.action === 'used').length;
-    const dismissed = feedbackData.filter(item => item.action === 'dismissed').length;
-    
-    return { used, dismissed };
-  };
-
-  const feedbackStats = processFeedbackData();
-  const isLoading = isLoadingKpi || isLoadingFeedback || isLoadingPlugins || isLoadingCampaigns;
-
-  // Process plugin data
-  const processPluginData = () => {
-    if (!pluginData) return {};
-    
-    return pluginData.reduce((acc: Record<string, number>, item: any) => {
-      acc[item.plugin_key] = (acc[item.plugin_key] || 0) + 1;
-      return acc;
-    }, {});
-  };
-
-  const pluginStats = processPluginData();
-
-  const grouped: Record<string, {used: number, dismissed: number}> = 
-    feedbackData?.reduce((acc, curr: any) => {
-      if (!acc[curr.strategy_title]) {
-        acc[curr.strategy_title] = { used: 0, dismissed: 0 };
-      }
-      if (curr.action === 'used' || curr.action === 'dismissed') {
-        acc[curr.strategy_title][curr.action]++;
-      }
-      return acc;
-    }, {} as Record<string, {used: number, dismissed: number}>) || {};
+  const {
+    kpiData,
+    feedbackStats,
+    pluginStats,
+    topCampaigns,
+    grouped,
+    isLoading
+  } = useInsightsData(dateRange);
 
   if (isLoading) {
     return (
