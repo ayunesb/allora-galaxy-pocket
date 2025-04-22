@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { PanelLeft } from "lucide-react"
 import { useSidebar } from "./sidebar-context"
+import { Input } from "@/components/ui/input"
+import { SidebarBaseProps, SidebarProps } from "./sidebar-types"
 
 const SIDEBAR_WIDTH = "16rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
@@ -29,11 +31,7 @@ interface SidebarProps extends SidebarBaseProps {
 
 export const Sidebar = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<"div"> & {
-    side?: "left" | "right"
-    variant?: "sidebar" | "floating" | "inset"
-    collapsible?: "offcanvas" | "icon" | "none"
-  }
+  React.ComponentProps<"div"> & SidebarProps
 >(
   (
     {
@@ -268,10 +266,9 @@ SidebarInset.displayName = "SidebarInset"
  * Input field styled for use within the sidebar
  */
 export const SidebarInput = React.forwardRef<
-  React.ElementRef<typeof import("@/components/ui/input").Input>,
-  React.ComponentPropsWithoutRef<typeof import("@/components/ui/input").Input>
+  React.ElementRef<typeof Input>,
+  React.ComponentPropsWithoutRef<typeof Input>
 >(({ className, ...props }, ref) => {
-  const Input = import("@/components/ui/input").Input
   return (
     <Input
       ref={ref}

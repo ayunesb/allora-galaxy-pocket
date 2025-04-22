@@ -13,7 +13,6 @@ export {
   SidebarFooter,
   SidebarSeparator,
   SidebarInput,
-  SidebarInset,
   SidebarTrigger,
   SidebarRail
 } from "./sidebar-components"
@@ -34,3 +33,6 @@ export {
   SidebarGroupAction,
   SidebarGroupContent
 } from "./sidebar-group"
+
+// Export types for public API
+export * from "./sidebar-types"

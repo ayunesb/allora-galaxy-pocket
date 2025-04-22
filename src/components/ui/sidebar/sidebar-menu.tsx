@@ -8,7 +8,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useSidebar } from "./sidebar-context"
+import { SidebarBaseProps, AsChildProps, TooltipProps } from "./sidebar-types"
 
 /**
  * Style variants for the sidebar menu button
@@ -34,22 +36,6 @@ export const sidebarMenuButtonVariants = cva(
     },
   }
 )
-
-/**
- * Props for menu items that can be rendered as different elements
- */
-interface AsChildProps {
-  /** Whether to render as a different element via Radix Slot */
-  asChild?: boolean
-}
-
-/**
- * Props for menu items that can display tooltips
- */
-interface TooltipProps {
-  /** Content or props for the tooltip */
-  tooltip?: string | React.ComponentProps<typeof TooltipContent>
-}
 
 /**
  * Container for sidebar menu items

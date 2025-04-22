@@ -2,6 +2,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Slot } from "@radix-ui/react-slot"
+import { SidebarBaseProps, AsChildProps } from "./sidebar-types"
 
 /**
  * Container for a group of related sidebar items
