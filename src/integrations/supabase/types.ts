@@ -699,6 +699,44 @@ export type Database = {
           },
         ]
       }
+      plugin_sales: {
+        Row: {
+          buyer_tenant_id: string | null
+          currency: string | null
+          id: string
+          license_key: string | null
+          plugin_id: string | null
+          price: number | null
+          purchased_at: string | null
+        }
+        Insert: {
+          buyer_tenant_id?: string | null
+          currency?: string | null
+          id?: string
+          license_key?: string | null
+          plugin_id?: string | null
+          price?: number | null
+          purchased_at?: string | null
+        }
+        Update: {
+          buyer_tenant_id?: string | null
+          currency?: string | null
+          id?: string
+          license_key?: string | null
+          plugin_id?: string | null
+          price?: number | null
+          purchased_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plugin_sales_plugin_id_fkey"
+            columns: ["plugin_id"]
+            isOneToOne: false
+            referencedRelation: "plugins"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plugin_sandbox_installs: {
         Row: {
           id: string
@@ -737,6 +775,7 @@ export type Database = {
       plugin_submissions: {
         Row: {
           description: string | null
+          github_repo_url: string | null
           id: string
           install_script: string | null
           plugin_name: string
@@ -744,10 +783,12 @@ export type Database = {
           status: string | null
           submitted_at: string | null
           tenant_id: string
+          webhook_secret: string | null
           zip_url: string | null
         }
         Insert: {
           description?: string | null
+          github_repo_url?: string | null
           id?: string
           install_script?: string | null
           plugin_name: string
@@ -755,10 +796,12 @@ export type Database = {
           status?: string | null
           submitted_at?: string | null
           tenant_id: string
+          webhook_secret?: string | null
           zip_url?: string | null
         }
         Update: {
           description?: string | null
+          github_repo_url?: string | null
           id?: string
           install_script?: string | null
           plugin_name?: string
@@ -766,6 +809,7 @@ export type Database = {
           status?: string | null
           submitted_at?: string | null
           tenant_id?: string
+          webhook_secret?: string | null
           zip_url?: string | null
         }
         Relationships: [
@@ -809,6 +853,41 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plugin_versions: {
+        Row: {
+          changelog: string | null
+          created_at: string | null
+          id: string
+          plugin_id: string | null
+          version_tag: string | null
+          zip_url: string | null
+        }
+        Insert: {
+          changelog?: string | null
+          created_at?: string | null
+          id?: string
+          plugin_id?: string | null
+          version_tag?: string | null
+          zip_url?: string | null
+        }
+        Update: {
+          changelog?: string | null
+          created_at?: string | null
+          id?: string
+          plugin_id?: string | null
+          version_tag?: string | null
+          zip_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plugin_versions_plugin_id_fkey"
+            columns: ["plugin_id"]
+            isOneToOne: false
+            referencedRelation: "plugins"
             referencedColumns: ["id"]
           },
         ]
@@ -1320,6 +1399,15 @@ export type Database = {
       execute_sql: {
         Args: { sql_query: string }
         Returns: undefined
+      }
+      get_plugin_earnings: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          plugin_id: string
+          plugin_name: string
+          total_earned: number
+          sales_count: number
+        }[]
       }
       halfvec_avg: {
         Args: { "": number[] }
