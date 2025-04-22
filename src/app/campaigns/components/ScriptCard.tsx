@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Check, X } from "lucide-react";
 
 interface ScriptCardProps {
   channel: string;
@@ -16,14 +16,22 @@ export function ScriptCard({ channel, script }: ScriptCardProps) {
 
   const getChannelIcon = (channel: string) => {
     switch (channel) {
-      case "whatsapp": return <MessageSquare size={16} />;
-      case "email": return "📧";
-      case "tiktok": return "🎥";
-      case "meta": return "📱";
-      case "cold_call": return "📞";
-      case "warm_call": return "☎️";
-      case "zoom": return "📅";
-      default: return "📝";
+      case "whatsapp":
+        return <MessageSquare size={16} color="#25d366" title="WhatsApp" />;
+      case "email":
+        return "📧";
+      case "tiktok":
+        return "🎥";
+      case "meta":
+        return "📱";
+      case "cold_call":
+        return "📞";
+      case "warm_call":
+        return "☎️";
+      case "zoom":
+        return "📅";
+      default:
+        return "📝";
     }
   };
 
@@ -46,7 +54,7 @@ export function ScriptCard({ channel, script }: ScriptCardProps) {
           <div className="space-y-2">
             <div>
               <span className="font-bold text-primary">To: Taylor</span>
-              <pre className="bg-muted rounded p-2 mt-1">{script}</pre>
+              <pre className="bg-muted rounded p-2 mt-1 whitespace-pre-wrap">{script}</pre>
             </div>
             <div>
               <span className="font-bold text-gray-600">Taylor:</span> "Thanks for reaching out! Can you send more details?"
@@ -57,14 +65,14 @@ export function ScriptCard({ channel, script }: ScriptCardProps) {
         return (
           <div>
             <span className="font-bold text-purple-700">Video Script:</span>
-            <pre className="bg-muted rounded p-2 mt-1">{script}</pre>
+            <pre className="bg-muted rounded p-2 mt-1 whitespace-pre-wrap">{script}</pre>
           </div>
         );
       case "meta":
         return (
           <div>
             <span className="font-bold text-blue-700">Meta Ad Carousel:</span>
-            <pre className="bg-muted rounded p-2 mt-1">{script}</pre>
+            <pre className="bg-muted rounded p-2 mt-1 whitespace-pre-wrap">{script}</pre>
           </div>
         );
       case "cold_call":
@@ -93,12 +101,12 @@ export function ScriptCard({ channel, script }: ScriptCardProps) {
         return (
           <div>
             <span className="font-bold text-blue-600">Zoom Training:</span>
-            <pre className="bg-muted rounded p-2 mt-1">{script}</pre>
+            <pre className="bg-muted rounded p-2 mt-1 whitespace-pre-wrap">{script}</pre>
           </div>
         );
       default:
         return (
-          <pre className="bg-muted rounded p-2 mt-1">{script}</pre>
+          <pre className="bg-muted rounded p-2 mt-1 whitespace-pre-wrap">{script}</pre>
         );
     }
   };
@@ -112,6 +120,7 @@ export function ScriptCard({ channel, script }: ScriptCardProps) {
               className="text-md capitalize flex items-center gap-2 cursor-pointer hover:underline"
               title="View full strategy and test conversation"
               onClick={() => setDialogOpen(true)}
+              style={{ wordBreak: "break-word" }}
             >
               {getChannelIcon(channel)} {channel.replace("_", " ")}
             </CardTitle>
@@ -127,7 +136,7 @@ export function ScriptCard({ channel, script }: ScriptCardProps) {
             </DialogHeader>
             <div>
               <h4 className="font-semibold mb-1">Copy-able Script</h4>
-              <div className="bg-muted text-foreground p-3 rounded mb-4 whitespace-pre-wrap break-words">
+              <div className="bg-muted text-foreground p-3 rounded mb-4 whitespace-pre-wrap break-words overflow-x-auto max-w-full" style={{ wordBreak: "break-word" }}>
                 {script}
               </div>
               <h4 className="font-semibold mb-1">Test Conversation</h4>
@@ -138,12 +147,14 @@ export function ScriptCard({ channel, script }: ScriptCardProps) {
                 variant={status === "approved" ? "default" : "outline"}
                 onClick={() => setStatus("approved")}
               >
+                <Check className="mr-1" size={16} />
                 {status === "approved" ? "Approved" : "Approve"}
               </Button>
               <Button
                 variant={status === "rejected" ? "destructive" : "outline"}
                 onClick={() => setStatus("rejected")}
               >
+                <X className="mr-1" size={16} />
                 {status === "rejected" ? "Rejected" : "Reject"}
               </Button>
               <Button variant="ghost" onClick={() => setDialogOpen(false)}>
@@ -160,8 +171,18 @@ export function ScriptCard({ channel, script }: ScriptCardProps) {
           </DialogContent>
         </Dialog>
       </CardHeader>
-      <CardContent className="flex-grow">
-        <p className="text-sm text-foreground whitespace-pre-wrap break-words">{script}</p>
+      <CardContent className="flex-grow min-h-[60px]">
+        <p
+          className="text-sm text-foreground whitespace-pre-wrap break-words overflow-x-auto max-w-full"
+          style={{
+            wordBreak: "break-word",
+            overflowWrap: "break-word",
+            fontSize: "0.97rem",
+            margin: 0,
+          }}
+        >
+          {script}
+        </p>
       </CardContent>
     </Card>
   );
