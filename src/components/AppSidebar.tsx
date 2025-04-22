@@ -15,7 +15,8 @@ import {
   Bot,
   PlusCircle,
   Send,
-  List
+  List,
+  Shield
 } from "lucide-react";
 import {
   Sidebar,
@@ -40,6 +41,7 @@ const items = [
   { icon: Lightbulb, label: "AI Coach", path: "/coaching/feed" },
   { icon: Bot, label: "Agents", path: "/agents" },
   { icon: Palette, label: "Creative Suite", path: "/creative/suite" },
+  { icon: Shield, label: "Admin Review", path: "/admin/plugins/review" },
   { icon: Plus, label: "Add Plugin", path: "/admin/plugins/gallery" },
   { icon: UserPlus, label: "Invite Users", path: "/admin/invite" },
   { icon: Settings, label: "Plugin Settings", path: "/plugins/settings" },

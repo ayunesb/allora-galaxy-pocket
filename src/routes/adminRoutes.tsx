@@ -8,6 +8,7 @@ import PluginsDashboard from "@/app/admin/plugins/PluginsDashboard";
 import BillingPanel from "@/app/admin/billing/BillingPanel";
 import AnalyticsDashboard from "@/app/admin/analytics/AnalyticsDashboard";
 import InviteUserForm from "@/app/admin/invite/InviteUserForm";
+import PluginReviewPanel from "@/app/admin/plugins/review/page";
 
 export const adminRoutes: RouteObject[] = [
   { 
@@ -21,6 +22,10 @@ export const adminRoutes: RouteObject[] = [
   { 
     path: "/admin/plugins", 
     element: <AdminOnly><PluginsDashboard /></AdminOnly> 
+  },
+  { 
+    path: "/admin/plugins/review", 
+    element: <AdminOnly><PluginReviewPanel /></AdminOnly> 
   },
   { 
     path: "/admin/billing", 
