@@ -58,6 +58,11 @@ import PerformanceDashboard from "@/app/dashboard/performance";
 import CampaignPage from "@/app/campaign/CampaignPage";
 import NotFound from "@/pages/NotFound";
 
+// Import new dynamic route components
+import SingleStrategyDetail from "@/app/strategy/[id]";
+import SingleCampaignDetail from "@/app/campaigns/[id]";
+import DashboardInsights from "@/app/dashboard/insights/DashboardInsights";
+
 export default function AppRoutes() {
   return (
     <Routes>
@@ -129,6 +134,9 @@ export default function AppRoutes() {
         />
         <Route path="/profile/settings" element={<ProfileSettings />} />
         <Route path="/strategy" element={<StrategyWizard />} />
+        <Route path="/strategy/:id" element={<SingleStrategyDetail />} />
+        <Route path="/campaigns/:id" element={<SingleCampaignDetail />} />
+        <Route path="/dashboard/insights" element={<DashboardInsights />} />
         <Route path="/leads" element={<LeadPipeline />} />
         <Route 
           path="/admin/invite" 
