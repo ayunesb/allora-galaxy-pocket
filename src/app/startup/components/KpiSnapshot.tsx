@@ -6,6 +6,7 @@ import { useTenant } from "@/hooks/useTenant";
 import { Loader2 } from "lucide-react";
 import KpiCard from "../KpiCard";
 import { KpiMetricDialog } from "@/app/dashboard/components/KpiMetricDialog";
+import type { KpiMetric } from "@/types/kpi";
 
 export function KpiSnapshot() {
   const { tenant } = useTenant();
@@ -26,7 +27,7 @@ export function KpiSnapshot() {
       return data.map(m => ({
         label: m.metric,
         value: m.value,
-        trend: m.value > 0 ? "up" : "down",
+        trend: (m.value > 0 ? "up" : "down") as "up" | "down", // Explicitly cast to the union type
         changePercent: 0
       }));
     },
@@ -53,7 +54,10 @@ export function KpiSnapshot() {
             {metrics.map((metric, index) => (
               <KpiCard
                 key={index}
-                {...metric}
+                label={metric.label}
+                value={metric.value}
+                trend={metric.trend}
+                changePercent={metric.changePercent}
                 onUpdate={handleMetricUpdate}
               />
             ))}
