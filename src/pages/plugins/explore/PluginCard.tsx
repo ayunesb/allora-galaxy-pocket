@@ -2,7 +2,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Star } from "lucide-react";
-import { Plugin } from "../explore";
+import { Plugin } from "../types";
 
 interface PluginCardProps {
   plugin: Plugin;

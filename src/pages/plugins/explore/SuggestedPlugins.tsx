@@ -1,6 +1,7 @@
 
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plugin } from "../explore";
+import { Plugin } from "../types";
+
 interface SuggestedPluginsProps {
   suggestedPlugins: Plugin[];
 }
