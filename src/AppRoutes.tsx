@@ -4,6 +4,7 @@ import AuthenticatedLayout from "@/app/layouts/AuthenticatedLayout";
 import AdminOnly from "@/guards/AdminOnly";
 import ProfileSettings from "@/app/profile/ProfileSettings";
 import BillingPanel from "@/app/admin/billing/BillingPanel";
+import CampaignCenter from "@/app/campaigns/CampaignCenter";
 
 // Pages
 import Index from "@/pages/Index";
@@ -118,6 +119,7 @@ export default function AppRoutes() {
             </AdminOnly>
           } 
         />
+        <Route path="/campaigns/center" element={<CampaignCenter />} />
       </Route>
       
       <Route path="*" element={<NotFound />} />
