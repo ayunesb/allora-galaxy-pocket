@@ -26,8 +26,8 @@ export default function OnboardingWizard() {
     setProfile((prev) => ({ ...prev, ...data }));
     
     if (step === steps.length - 1) {
-      // Complete onboarding
-      navigate("/dashboard");
+      // Complete onboarding - redirect to startup dashboard instead of dashboard
+      navigate("/startup");
       return;
     }
     

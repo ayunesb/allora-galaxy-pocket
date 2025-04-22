@@ -28,7 +28,8 @@ serve(async (req) => {
         name: profile.companyName,
         industry: profile.industry,
         team_size: profile.teamSize,
-        revenue_tier: profile.revenue
+        revenue_tier: profile.revenue,
+        launch_mode: profile.launch_mode
       })
 
     // Save persona profile
