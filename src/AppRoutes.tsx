@@ -17,8 +17,17 @@ import { Toaster } from "@/components/ui/sonner";
 
 // Create a browser router with all routes
 const router = createBrowserRouter([
-  // Public routes (no auth required)
-  ...publicRoutes,
+  // Public routes with AuthProvider (no auth required, but auth context is available)
+  {
+    element: (
+      <AuthProvider>
+        <Outlet />
+      </AuthProvider>
+    ),
+    children: [
+      ...publicRoutes,
+    ],
+  },
   
   // Protected routes (requires authentication)
   {
