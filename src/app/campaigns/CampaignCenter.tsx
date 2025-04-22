@@ -23,44 +23,63 @@ export default function CampaignCenter() {
   const { agentProfile } = useAgentContext();
   const { logActivity } = useSystemLogs();
 
-  const { data: campaign, isLoading } = useQuery({
+  const { data: campaign, isLoading, error } = useQuery({
     queryKey: ['current-campaign', tenant?.id],
     queryFn: async () => {
       if (!tenant?.id) return null;
 
-      const { data, error } = await supabase
-        .from('campaigns')
-        .select('*')
-        .eq('tenant_id', tenant.id)
-        .eq('status', 'draft')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('campaigns')
+          .select('*')
+          .eq('tenant_id', tenant.id)
+          .eq('status', 'draft')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
 
-      if (error) {
-        if (error.code === 'PGRST116') return null; // No draft campaign found
-        throw error;
+        if (error) {
+          if (error.code === 'PGRST116') return null; // No draft campaign found
+          console.error("Error fetching campaign:", error);
+          throw error;
+        }
+
+        return data as Campaign;
+      } catch (err) {
+        console.error("Error in campaign query:", err);
+        throw err;
       }
-
-      return data;
     },
     enabled: !!tenant?.id
   });
 
   const handleApprove = async () => {
-    if (!campaign || !tenant?.id || !user?.id) return;
+    if (!campaign || !tenant?.id || !user?.id) {
+      toast({
+        title: "Error",
+        description: "Missing required information to approve the campaign",
+        variant: "destructive"
+      });
+      return;
+    }
     
     try {
+      // Define the update payload conditionally
+      const updatePayload = {
+        status: 'active',
+        // Only add agent_id if an agent profile exists
+        ...(agentProfile && { generated_by_agent_id: agentProfile.id })
+      };
+      
       const { error: updateError } = await supabase
         .from('campaigns')
-        .update({ 
-          status: 'active',
-          // Add agent_id if an agent profile exists
-          ...(agentProfile && { generated_by_agent_id: agentProfile.id })
-        })
+        .update(updatePayload)
         .eq('id', campaign.id);
         
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error("Error updating campaign status:", updateError);
+        throw updateError;
+      }
 
       setApproved(true);
       toast({
@@ -69,13 +88,17 @@ export default function CampaignCenter() {
       });
       
       // Log to system logs with agent information
+      const agentInfo = agentProfile 
+        ? { agent_id: agentProfile.id, agent_name: agentProfile.agent_name }
+        : {};
+        
       await logActivity({
         event_type: "campaign_approved",
         message: `Campaign "${campaign.name}" approved${agentProfile ? ` using agent ${agentProfile.agent_name}` : ''}`,
         meta: { 
           campaign_id: campaign.id,
           campaign_name: campaign.name,
-          ...(agentProfile && { agent_id: agentProfile.id, agent_name: agentProfile.agent_name })
+          ...agentInfo
         }
       });
       
@@ -94,7 +117,25 @@ export default function CampaignCenter() {
   if (isLoading) {
     return (
       <div className="container mx-auto p-6 flex items-center justify-center">
-        <Loader2 className="animate-spin h-6 w-6" />
+        <Loader2 className="animate-spin h-6 w-6 mr-2" />
+        <span>Loading campaign data...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="p-4 border border-red-300 rounded-lg bg-red-50 text-red-800">
+          <h3 className="font-medium">Error loading campaign</h3>
+          <p className="text-sm mt-1">{error instanceof Error ? error.message : 'Unknown error occurred'}</p>
+          <button 
+            onClick={() => queryClient.invalidateQueries({ queryKey: ['current-campaign'] })}
+            className="mt-2 text-sm bg-red-100 px-2 py-1 rounded hover:bg-red-200 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
