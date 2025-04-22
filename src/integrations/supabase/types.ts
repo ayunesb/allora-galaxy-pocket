@@ -505,6 +505,38 @@ export type Database = {
         }
         Relationships: []
       }
+      plugin_certifications: {
+        Row: {
+          certification_level: string | null
+          certified_at: string | null
+          certified_by: string | null
+          id: string
+          plugin_id: string | null
+        }
+        Insert: {
+          certification_level?: string | null
+          certified_at?: string | null
+          certified_by?: string | null
+          id?: string
+          plugin_id?: string | null
+        }
+        Update: {
+          certification_level?: string | null
+          certified_at?: string | null
+          certified_by?: string | null
+          id?: string
+          plugin_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plugin_certifications_plugin_id_fkey"
+            columns: ["plugin_id"]
+            isOneToOne: false
+            referencedRelation: "plugins"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plugin_creators: {
         Row: {
           id: string
