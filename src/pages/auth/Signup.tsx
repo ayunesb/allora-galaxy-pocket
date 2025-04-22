@@ -7,6 +7,8 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Link } from "react-router-dom";
 
 export default function Signup() {
   const { signup } = useAuth();
@@ -15,19 +17,25 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showEmailConfirmationAlert, setShowEmailConfirmationAlert] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const handleSignup = async () => {
+    if (!agreedToTerms) {
+      toast.error("Please agree to the terms", {
+        description: "You must accept the terms to create an account"
+      });
+      return;
+    }
+
     try {
       setIsLoading(true);
       await signup(email, password);
       
-      // Show success message and email confirmation alert
       toast.success("Signup successful!", {
         description: "Please check your email to confirm your account"
       });
       
       setShowEmailConfirmationAlert(true);
-      // Don't redirect yet - wait for email confirmation
     } catch (err: any) {
       toast.error("Signup failed", {
         description: err.message
@@ -70,10 +78,37 @@ export default function Signup() {
         onChange={(e) => setPassword(e.target.value)}
         disabled={isLoading || showEmailConfirmationAlert} 
       />
+
+      <div className="flex items-start space-x-2">
+        <Checkbox
+          id="terms"
+          checked={agreedToTerms}
+          onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
+          disabled={isLoading || showEmailConfirmationAlert}
+        />
+        <label
+          htmlFor="terms"
+          className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        >
+          I agree to the{" "}
+          <Link to="/legal/terms" className="font-medium text-primary hover:underline">
+            Terms of Use
+          </Link>
+          ,{" "}
+          <Link to="/legal/privacy" className="font-medium text-primary hover:underline">
+            Privacy Policy
+          </Link>
+          , and{" "}
+          <Link to="/legal/cookie" className="font-medium text-primary hover:underline">
+            Cookie Policy
+          </Link>
+        </label>
+      </div>
+
       <Button 
         className="w-full" 
         onClick={handleSignup}
-        disabled={isLoading || showEmailConfirmationAlert}
+        disabled={isLoading || showEmailConfirmationAlert || !agreedToTerms}
       >
         {isLoading ? (
           <>
