@@ -35,6 +35,7 @@ export const useStepNavigation = ({
     
     // For the final step, proceed directly to onboarding completion
     if (step === totalSteps - 1) {
+      console.log("Final step reached, completing onboarding...");
       await completeOnboarding(updatedProfile);
       return;
     }
