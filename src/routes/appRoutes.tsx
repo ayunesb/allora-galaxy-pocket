@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import AuthenticatedLayout from "@/app/layouts/AuthenticatedLayout";
@@ -29,6 +28,7 @@ import PricingPage from "@/pages/Pricing";
 import AgentSpacePage from "@/app/agents/AgentSpacePage";
 import PluginSettings from "@/app/plugins/settings/page";
 import CampaignPage from "@/app/campaign/CampaignPage";
+import PluginMyPage from "@/pages/plugins/my";
 
 export const appRoutes: RouteObject[] = [
   { path: "/vault", element: <VaultItemsList /> },
@@ -57,5 +57,6 @@ export const appRoutes: RouteObject[] = [
   { path: "/pricing", element: <PricingPage /> },
   { path: "/agents", element: <AgentSpacePage /> },
   { path: "/plugins/settings", element: <PluginSettings /> },
-  { path: "/campaign", element: <CampaignPage /> }
+  { path: "/campaign", element: <CampaignPage /> },
+  { path: "/plugins/my", element: <PluginMyPage /> }
 ];

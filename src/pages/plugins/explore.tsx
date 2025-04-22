@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +15,7 @@ type Plugin = {
   author: string;
   icon_url?: string;
   changelog?: any[];
+  category?: string;
 };
 
 export default function PluginExplorePage() {
@@ -24,6 +24,7 @@ export default function PluginExplorePage() {
   const [selectedPlugin, setSelectedPlugin] = useState<Plugin | null>(null);
   const [rating, setRating] = useState(5);
   const [review, setReview] = useState("");
+  const [category, setCategory] = useState<string | null>(null);
   const [pluginReviews, setPluginReviews] = useState<{[key: string]: {avgRating: number, count: number}}>({});
 
   useEffect(() => {
@@ -36,7 +37,6 @@ export default function PluginExplorePage() {
       } else if (data) {
         setPlugins(data);
         
-        // Fetch average ratings for each plugin
         const ratingPromises = data.map(async (plugin) => {
           const { data: reviews } = await supabase
             .from("plugin_reviews")
@@ -74,7 +74,7 @@ export default function PluginExplorePage() {
       tenant_id: tenant.id,
       plugin_id: pluginId,
       enabled: true,
-      last_checked_version: null // Reset last checked version on new install
+      last_checked_version: null
     });
 
     if (error) {
@@ -110,14 +110,65 @@ export default function PluginExplorePage() {
     }
   };
 
+  const suggestedPlugins = plugins.filter(p => 
+    p.name === "Stripe" || 
+    p.name === "HubSpot" || 
+    p.name === "Twilio"
+  );
+
+  const filteredPlugins = category 
+    ? plugins.filter(p => p.category === category)
+    : plugins;
+
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">🛒 Plugin Marketplace</h1>
       </div>
       
+      <div className="mb-6">
+        <h2 className="text-lg font-bold mb-4">🧠 AI Suggested Plugins</h2>
+        <div className="grid md:grid-cols-3 gap-4">
+          {suggestedPlugins.map((plugin) => (
+            <Card key={plugin.id} className="flex flex-col">
+              <CardHeader className="flex-row items-center space-x-4">
+                {plugin.icon_url && (
+                  <img 
+                    src={plugin.icon_url} 
+                    alt={`${plugin.name} icon`} 
+                    className="w-12 h-12 rounded-lg" 
+                  />
+                )}
+                <div>
+                  <CardTitle>{plugin.name}</CardTitle>
+                  <p className="text-sm text-muted-foreground">{plugin.description}</p>
+                </div>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      <div className="mb-6">
+        <label htmlFor="category-select" className="block text-sm font-medium text-gray-700 mb-2">
+          Filter by Category
+        </label>
+        <select 
+          id="category-select"
+          className="w-full border rounded p-2"
+          value={category || ''}
+          onChange={(e) => setCategory(e.target.value || null)}
+        >
+          <option value="">All Categories</option>
+          <option value="Marketing">Marketing</option>
+          <option value="Sales">Sales</option>
+          <option value="Automation">Automation</option>
+          <option value="Analytics">Analytics</option>
+        </select>
+      </div>
+
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {plugins.map((plugin) => (
+        {filteredPlugins.map((plugin) => (
           <Card key={plugin.id} className="flex flex-col">
             <CardHeader className="flex-row items-center justify-between space-y-0 space-x-4">
               <div className="flex items-center space-x-4">
@@ -133,15 +184,16 @@ export default function PluginExplorePage() {
                   <p className="text-sm text-muted-foreground">{plugin.version}</p>
                 </div>
               </div>
-              {plugin.badge && (
+              {plugin.category && (
                 <span 
                   className={`text-xs px-2 py-1 rounded-full ${
-                    plugin.badge === "Top Rated" ? "bg-green-300" :
-                    plugin.badge === "Most Used" ? "bg-purple-300" :
-                    "bg-yellow-300"
+                    plugin.category === 'Marketing' ? 'bg-blue-300' :
+                    plugin.category === 'Sales' ? 'bg-green-300' :
+                    plugin.category === 'Automation' ? 'bg-purple-300' :
+                    'bg-gray-300'
                   }`}
                 >
-                  {plugin.badge}
+                  {plugin.category}
                 </span>
               )}
             </CardHeader>
@@ -164,7 +216,7 @@ export default function PluginExplorePage() {
                   <span className="text-sm text-muted-foreground">
                     {pluginReviews[plugin.id]?.avgRating || 'No'} 
                     {` (${pluginReviews[plugin.id]?.count || 0} reviews)`}
-                </span>
+                  </span>
                 </div>
                 <Button onClick={() => installPlugin(plugin.id)}>
                   Install

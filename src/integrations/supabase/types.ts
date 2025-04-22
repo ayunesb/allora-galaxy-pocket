@@ -658,6 +658,50 @@ export type Database = {
           },
         ]
       }
+      plugin_submissions: {
+        Row: {
+          description: string | null
+          id: string
+          install_script: string | null
+          plugin_name: string
+          schema_sql: string | null
+          status: string | null
+          submitted_at: string | null
+          tenant_id: string
+          zip_url: string | null
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          install_script?: string | null
+          plugin_name: string
+          schema_sql?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          tenant_id: string
+          zip_url?: string | null
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          install_script?: string | null
+          plugin_name?: string
+          schema_sql?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          tenant_id?: string
+          zip_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plugin_submissions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plugin_usage_logs: {
         Row: {
           count: number
@@ -697,6 +741,7 @@ export type Database = {
         Row: {
           author: string | null
           badge: string | null
+          category: string | null
           changelog: Json | null
           created_at: string | null
           description: string | null
@@ -709,6 +754,7 @@ export type Database = {
         Insert: {
           author?: string | null
           badge?: string | null
+          category?: string | null
           changelog?: Json | null
           created_at?: string | null
           description?: string | null
@@ -721,6 +767,7 @@ export type Database = {
         Update: {
           author?: string | null
           badge?: string | null
+          category?: string | null
           changelog?: Json | null
           created_at?: string | null
           description?: string | null

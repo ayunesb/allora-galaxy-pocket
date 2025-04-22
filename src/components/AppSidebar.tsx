@@ -11,7 +11,10 @@ import {
   Palette,
   MessageSquare,
   Bell,
-  Bot
+  Bot,
+  PlugCircle,
+  Send,
+  List
 } from "lucide-react";
 import {
   Sidebar,
@@ -38,7 +41,22 @@ const items = [
   { icon: Palette, label: "Creative Suite", path: "/creative/suite" },
   { icon: Plus, label: "Add Plugin", path: "/admin/plugins/gallery" },
   { icon: UserPlus, label: "Invite Users", path: "/admin/invite" },
-  { icon: Settings, label: "Plugin Settings", path: "/plugins/settings" }
+  { icon: Settings, label: "Plugin Settings", path: "/plugins/settings" },
+  { 
+    icon: PlugCircle, 
+    label: "Plugin Marketplace", 
+    path: "/plugins/explore" 
+  },
+  { 
+    icon: List, 
+    label: "My Plugins", 
+    path: "/plugins/my" 
+  },
+  { 
+    icon: Send, 
+    label: "Submit Plugin", 
+    path: "/plugins/submit" 
+  }
 ];
 
 export function AppSidebar() {
