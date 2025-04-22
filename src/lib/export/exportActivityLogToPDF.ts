@@ -1,7 +1,7 @@
 
-import { exportToPDF } from './exportPDF';
+import { exportToPDF, ExportFilters } from './exportPDF';
 
-interface ExportFilters {
+interface ExportActivityFilters {
   tenantId: string;
   dateRange?: number;
   actionType?: string;
@@ -19,10 +19,10 @@ export async function exportActivityLogToPDF({
   actionType,
   userId,
   search
-}: ExportFilters): Promise<void> {
+}: ExportActivityFilters): Promise<void> {
   try {
     // Map to new filter structure
-    const filters = {
+    const filters: ExportFilters = {
       tenantId,
       dateRange,
       type: 'system',

@@ -1,14 +1,13 @@
-
+import { supabase } from '@/integrations/supabase/client';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
-import { supabase } from '@/integrations/supabase/client';
-import { logSystemActivity } from '@/hooks/useSystemLogs';
+import { useSystemLogs } from '@/hooks/useSystemLogs';
 
 // Type definitions for export functionality
 export interface ExportFilters {
   tenantId: string;
-  dateRange?: number; // Days to look back
+  dateRange?: number;
   type?: 'strategy' | 'campaign' | 'kpi' | 'system';
   userId?: string;
   search?: string;
@@ -375,6 +374,9 @@ async function fetchKpiData(filters: ExportFilters): Promise<any[]> {
  * Add KPI report to PDF
  */
 async function addKpiReport(pdf: jsPDF, data: any, filters: ExportFilters): Promise<void> {
+  const current = Array.isArray(data.current) ? data.current : [];
+  const history = Array.isArray(data.history) ? data.history : [];
+  
   // Add title
   pdf.setFontSize(16);
   pdf.text('KPI Metrics Report', 14, 20);
@@ -382,10 +384,10 @@ async function addKpiReport(pdf: jsPDF, data: any, filters: ExportFilters): Prom
   // Add export info
   pdf.setFontSize(10);
   pdf.text(`Date Range: Last ${filters.dateRange || 7} days`, 14, 28);
-  pdf.text(`Total Metrics: ${data.current.length}`, 14, 34);
+  pdf.text(`Total Metrics: ${current.length}`, 14, 34);
   
   // Format current KPI data for table
-  const tableData = data.current.map(item => [
+  const tableData = current.map(item => [
     item.metric,
     item.value.toString(),
     format(new Date(item.recorded_at), "MMM d, yyyy")
@@ -406,42 +408,34 @@ async function addKpiReport(pdf: jsPDF, data: any, filters: ExportFilters): Prom
       cellPadding: 3
     }
   });
-  
-  // Add history section if we have history data
-  if (data.history.length > 0) {
-    // Start new page for history
+
+  // Add history section
+  if (history.length > 0) {
     pdf.addPage();
     pdf.setFontSize(16);
     pdf.text('KPI Historical Trends', 14, 20);
     
-    // Group history by metric
-    const metricGroups = data.history.reduce((acc: any, item: any) => {
-      if (!acc[item.metric]) {
-        acc[item.metric] = [];
-      }
+    const metricGroups = history.reduce((acc: any, item: any) => {
+      if (!acc[item.metric]) acc[item.metric] = [];
       acc[item.metric].push(item);
       return acc;
     }, {});
     
-    // Format the history data for each metric
     let yOffset = 30;
-    Object.keys(metricGroups).forEach(metric => {
-      // Add metric name
+    Object.entries(metricGroups).forEach(([metric, items]: [string, any]) => {
       pdf.setFontSize(12);
       pdf.text(`Metric: ${metric}`, 14, yOffset);
       yOffset += 10;
       
-      // Format data for this metric
-      const metricHistory = metricGroups[metric].map((item: any) => [
+      const historyData = items.map((item: any) => [
         format(new Date(item.recorded_at), "MMM d, yyyy"),
         item.value.toString()
       ]);
       
-      // Add table for this metric
       autoTable(pdf, {
         startY: yOffset,
         head: [['Date', 'Value']],
-        body: metricHistory,
+        body: historyData,
         headStyles: {
           fillColor: [41, 128, 185],
           textColor: 255,
@@ -455,7 +449,6 @@ async function addKpiReport(pdf: jsPDF, data: any, filters: ExportFilters): Prom
       
       yOffset = (pdf as any).lastAutoTable.finalY + 15;
       
-      // Add new page if we're getting close to the bottom
       if (yOffset > pdf.internal.pageSize.getHeight() - 40) {
         pdf.addPage();
         yOffset = 20;

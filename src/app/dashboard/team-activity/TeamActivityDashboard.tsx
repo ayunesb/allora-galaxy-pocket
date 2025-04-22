@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Download, FileText, Loader2 } from "lucide-react";
@@ -26,16 +25,14 @@ export default function TeamActivityDashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const logsPerPage = 10;
   
-  const { exportCSV, exportPDF, exporting, exportingPDF } = useActivityExport(tenant?.id);
+  const { exportCSV, exportPDF, exporting, exportingPDF } = useActivityExport();
   
-  // Redirect non-admin users
   useEffect(() => {
     if (tenant?.id && !isAdmin) {
       navigate("/dashboard");
     }
   }, [tenant, isAdmin, navigate]);
 
-  // Fetch system logs
   useEffect(() => {
     async function fetchLogs() {
       if (!tenant?.id) return;
@@ -84,7 +81,6 @@ export default function TeamActivityDashboard() {
     fetchLogs();
   }, [tenant?.id, filters]);
   
-  // Fetch users for filter dropdown
   useEffect(() => {
     async function fetchUsers() {
       if (!tenant?.id) return;
