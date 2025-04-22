@@ -1,50 +1,64 @@
 
-import React, { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import Step1 from "./step1-company-details";
-import Step2 from "./step2-industry-selection";
-import Step3 from "./step3-goal-setting";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
-import { useAuth } from "@/hooks/useAuth";
-import { getReferralByEmail, claimReferral } from "@/lib/referrals/referralUtils";
+import type { OnboardingProfile } from "@/types/onboarding";
+import Step1Company from "./steps/Step1Company";
+import Step2Industry from "./steps/Step2Industry";
+import Step3Goals from "./steps/Step3Goals";
+import Step4Challenges from "./steps/Step4Challenges";
+import Step5Channels from "./steps/Step5Channels";
+import Step6Tools from "./steps/Step6Tools";
+import Step7Tone from "./steps/Step7Tone";
+import Step8TeamSize from "./steps/Step8TeamSize";
+import Step9Revenue from "./steps/Step9Revenue";
+import Step10SellType from "./steps/Step10SellType";
+
+const steps = [
+  Step1Company,
+  Step2Industry,
+  Step3Goals,
+  Step4Challenges,
+  Step5Channels,
+  Step6Tools,
+  Step7Tone,
+  Step8TeamSize,
+  Step9Revenue,
+  Step10SellType,
+];
 
 export default function OnboardingWizard() {
-  const [step, setStep] = useState(1);
-  const { user } = useAuth();
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  
-  const next = () => setStep((s) => Math.min(s + 1, 3));
-  const back = () => setStep((s) => Math.max(s - 1, 1));
+  const [step, setStep] = useState(0);
+  const [profile, setProfile] = useState<OnboardingProfile>({});
 
-  useEffect(() => {
-    const handleReferral = async () => {
-      if (!user?.email) return;
-      
-      // Check if user was referred
-      const { data: referral } = await getReferralByEmail(user.email);
-      
-      if (referral?.id && user.id) {
-        await claimReferral(user.id, referral.id);
-      }
-    };
+  const CurrentStep = steps[step];
 
-    handleReferral();
-  }, [user]);
-
-  // Save referral code to localStorage if present in URL
-  useEffect(() => {
-    const refCode = searchParams.get('ref');
-    if (refCode) {
-      localStorage.setItem('referralCode', refCode);
+  const next = (data: Partial<OnboardingProfile>) => {
+    setProfile((prev) => ({ ...prev, ...data }));
+    
+    if (step === steps.length - 1) {
+      // Complete onboarding
+      navigate("/dashboard");
+      return;
     }
-  }, [searchParams]);
+    
+    setStep((prev) => Math.min(prev + 1, steps.length - 1));
+  };
+
+  const back = () => setStep((prev) => Math.max(prev - 1, 0));
 
   return (
-    <Card className="w-full">
-      {step === 1 && <Step1 onNext={next} />}
-      {step === 2 && <Step2 onNext={next} onBack={back} />}
-      {step === 3 && <Step3 onBack={back} />}
-    </Card>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-2xl p-6 space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Setup your Allora OS</h1>
+          <span className="text-sm text-muted-foreground">
+            Step {step + 1} of {steps.length}
+          </span>
+        </div>
+        <CurrentStep next={next} back={back} profile={profile} />
+      </Card>
+    </div>
   );
 }
