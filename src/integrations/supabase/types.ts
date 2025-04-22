@@ -1588,9 +1588,21 @@ export type Database = {
         }
         Returns: boolean
       }
+      check_tenant_role_permission: {
+        Args: { _user_id: string; _tenant_id: string }
+        Returns: boolean
+      }
       execute_sql: {
         Args: { sql_query: string }
         Returns: undefined
+      }
+      get_current_user_tenant_roles: {
+        Args: { p_tenant_id: string }
+        Returns: {
+          tenant_id: string
+          user_id: string
+          role: Database["public"]["Enums"]["user_role"]
+        }[]
       }
       get_plugin_earnings: {
         Args: Record<PropertyKey, never>
