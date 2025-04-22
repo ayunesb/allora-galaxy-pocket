@@ -2,17 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
-
-export interface KpiAlert {
-  id: string;
-  metric: string;
-  threshold: number;
-  condition: 'above' | 'below';
-  triggered_at?: string;
-  status: 'active' | 'triggered' | 'resolved';
-  tenant_id: string;
-  created_at?: string;
-}
+import { KpiAlert } from "@/types/kpi";
 
 export function useKpiAlerts() {
   const { tenant } = useTenant();

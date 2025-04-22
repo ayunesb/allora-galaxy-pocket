@@ -2,7 +2,7 @@
 export interface KpiMetric {
   label: string;
   value: string | number;
-  trend?: "up" | "down" | "neutral";
+  trend: "up" | "down" | "neutral";
   changePercent?: number;
   historicalData?: Array<{
     value: number;

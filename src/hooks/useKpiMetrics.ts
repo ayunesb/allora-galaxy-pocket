@@ -22,11 +22,17 @@ export function useKpiMetrics() {
         if (error) throw error;
         
         // Group by metric name
-        const groupedByMetric = data.reduce((acc: Record<string, any[]>, item: any) => {
-          if (!acc[item.metric]) acc[item.metric] = [];
-          acc[item.metric].push(item);
-          return acc;
-        }, {});
+        const groupedByMetric: Record<string, any[]> = {};
+        
+        // First ensure data is an array before trying to iterate
+        if (Array.isArray(data)) {
+          data.forEach((item: any) => {
+            if (!groupedByMetric[item.metric]) {
+              groupedByMetric[item.metric] = [];
+            }
+            groupedByMetric[item.metric].push(item);
+          });
+        }
         
         // Process each metric group
         const processedData = Object.entries(groupedByMetric).map(([metricName, values]) => {
@@ -40,7 +46,9 @@ export function useKpiMetrics() {
           const previousValue = sortedValues.length > 1 ? sortedValues[sortedValues.length - 2]?.value : latestValue;
           const changePercent = previousValue === 0 ? 0 : ((latestValue - previousValue) / previousValue) * 100;
           
-          const trend = changePercent > 0 ? "up" : changePercent < 0 ? "down" : "neutral";
+          // Explicitly type the trend as one of the allowed values
+          const trend: "up" | "down" | "neutral" = 
+            changePercent > 0 ? "up" : changePercent < 0 ? "down" : "neutral";
           
           // Create historical data for charts
           const historicalData = sortedValues.map(item => ({
@@ -57,7 +65,7 @@ export function useKpiMetrics() {
           };
         });
         
-        return processedData;
+        return processedData as KpiMetric[];
       } catch (err) {
         console.error("Error fetching KPI metrics:", err);
         throw err;

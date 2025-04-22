@@ -40,7 +40,7 @@ export function KPITrackerWithData() {
   if (error) {
     return (
       <div className="p-8 text-center text-red-500">
-        Failed to load KPI metrics: {error.message}
+        Failed to load KPI metrics: {error instanceof Error ? error.message : 'Unknown error'}
       </div>
     );
   }
