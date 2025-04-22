@@ -14,6 +14,7 @@ import AIDisclosure from "@/pages/legal/ai-disclosure";
 import DataProcessingAddendum from "@/pages/legal/dpa";
 import PluginExplorePage from "@/pages/plugins/explore";
 import PluginSubmitPage from "@/pages/plugins/submit";
+import PluginProfilePage from "@/pages/plugins/[slug]";
 
 export const publicRoutes: RouteObject[] = [
   { path: "/docs", element: <Docs /> },
@@ -32,10 +33,13 @@ export const publicRoutes: RouteObject[] = [
       </ErrorBoundary>
     ) 
   },
-  // Legal routes
   { path: "/legal/terms", element: <TermsOfUse /> },
   { path: "/legal/privacy", element: <PrivacyPolicy /> },
   { path: "/legal/cookie", element: <CookiePolicy /> },
   { path: "/legal/ai-disclosure", element: <AIDisclosure /> },
-  { path: "/legal/dpa", element: <DataProcessingAddendum /> }
+  { path: "/legal/dpa", element: <DataProcessingAddendum /> },
+  { 
+    path: "/plugins/:slug", 
+    element: <PluginProfilePage /> 
+  }
 ];

@@ -505,6 +505,38 @@ export type Database = {
         }
         Relationships: []
       }
+      plugin_creators: {
+        Row: {
+          id: string
+          payout_percentage: number | null
+          plugin_id: string | null
+          stripe_connect_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          id?: string
+          payout_percentage?: number | null
+          plugin_id?: string | null
+          stripe_connect_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          id?: string
+          payout_percentage?: number | null
+          plugin_id?: string | null
+          stripe_connect_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plugin_creators_plugin_id_fkey"
+            columns: ["plugin_id"]
+            isOneToOne: false
+            referencedRelation: "plugins"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plugin_installs: {
         Row: {
           enabled: boolean | null
@@ -827,7 +859,9 @@ export type Database = {
           count: number
           created_at: string
           event: string
+          event_type: string | null
           id: string
+          page: string | null
           plugin_key: string
           tenant_id: string
         }
@@ -835,7 +869,9 @@ export type Database = {
           count?: number
           created_at?: string
           event: string
+          event_type?: string | null
           id?: string
+          page?: string | null
           plugin_key: string
           tenant_id: string
         }
@@ -843,7 +879,9 @@ export type Database = {
           count?: number
           created_at?: string
           event?: string
+          event_type?: string | null
           id?: string
+          page?: string | null
           plugin_key?: string
           tenant_id?: string
         }
@@ -904,6 +942,7 @@ export type Database = {
           id: string
           install_url: string | null
           name: string
+          slug: string | null
           version: string | null
         }
         Insert: {
@@ -917,6 +956,7 @@ export type Database = {
           id?: string
           install_url?: string | null
           name: string
+          slug?: string | null
           version?: string | null
         }
         Update: {
@@ -930,6 +970,7 @@ export type Database = {
           id?: string
           install_url?: string | null
           name?: string
+          slug?: string | null
           version?: string | null
         }
         Relationships: []
