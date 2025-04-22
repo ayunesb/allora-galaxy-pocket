@@ -18,6 +18,8 @@ import NotificationsPage from "@/app/notifications/page";
 // FALLBACK/MINIMAL "PAGE" ROUTES
 import RecoveryPage from "@/pages/recovery/page";
 import PluginLeaderboard from "@/pages/plugins/leaderboard";
+// KPI Dashboard Route
+import KpiDashboard from "@/app/insights/kpis/KpiDashboard";
 
 export const dashboardRoutes: RouteObject[] = [
   { path: "/dashboard", element: <DashboardHome /> },
@@ -32,5 +34,6 @@ export const dashboardRoutes: RouteObject[] = [
   { path: "/campaigns/center", element: <CampaignCenterPage /> },
   { path: "/notifications", element: <NotificationsPage /> },
   { path: "/recovery", element: <RecoveryPage /> },
-  { path: "/galaxy/plugins", element: <PluginLeaderboard /> }
+  { path: "/galaxy/plugins", element: <PluginLeaderboard /> },
+  { path: "/insights/kpis", element: <KpiDashboard /> },
 ];
