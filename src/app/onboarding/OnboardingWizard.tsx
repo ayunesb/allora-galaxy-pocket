@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
@@ -48,7 +47,6 @@ export default function OnboardingWizard() {
     setProfile((prev) => ({ ...prev, ...data }));
     
     if (step === steps.length - 1) {
-      // Complete onboarding and save data to Supabase
       await completeOnboarding({ ...profile, ...data });
       return;
     }
@@ -71,7 +69,6 @@ export default function OnboardingWizard() {
     setIsSubmitting(true);
 
     try {
-      // Save company profile with additional fields
       const { error: companyError } = await supabase
         .from('company_profiles')
         .upsert({
@@ -81,14 +78,12 @@ export default function OnboardingWizard() {
           team_size: finalProfile.teamSize || 'small',
           revenue_tier: finalProfile.revenue || 'pre-revenue',
           launch_mode: finalProfile.launch_mode || 'guided',
-          // New fields added
           product_stage: finalProfile.productStage,
           target_market: finalProfile.targetMarket
         });
 
       if (companyError) throw companyError;
 
-      // Save the persona profile
       const { error: personaError } = await supabase
         .from('persona_profiles')
         .upsert({
@@ -104,23 +99,20 @@ export default function OnboardingWizard() {
 
       if (personaError) throw personaError;
 
-      // Log this event
-      await supabase
-        .from('system_logs')
-        .insert({
-          tenant_id: tenant.id,
-          user_id: user.id,
-          event_type: 'onboarding_complete',
-          message: `Onboarding completed for ${finalProfile.companyName}`,
-          meta: { profile: finalProfile }
-        });
+      const { error: strategyError } = await supabase.functions.invoke('generate-strategy', {
+        body: { 
+          user_id: user?.id,
+          tenant_id: tenant?.id
+        }
+      });
+
+      if (strategyError) throw strategyError;
 
       toast({
         title: "Setup Complete!",
-        description: "Your Allora OS is now ready to use.",
+        description: "Your Allora OS is now ready to use. Initial strategies have been generated.",
       });
 
-      // Redirect to dashboard
       navigate("/dashboard");
     } catch (error: any) {
       console.error("Error saving onboarding data:", error);
@@ -134,19 +126,16 @@ export default function OnboardingWizard() {
     }
   };
 
-  // Determine which props to pass based on the current step
   const getStepProps = () => {
     const commonProps = {
       next,
       profile
     };
 
-    // First step doesn't need back button
     if (step === 0) {
       return commonProps;
     }
 
-    // All other steps need both next and back
     return {
       ...commonProps,
       back

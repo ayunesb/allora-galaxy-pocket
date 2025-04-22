@@ -537,6 +537,36 @@ export type Database = {
         }
         Relationships: []
       }
+      strategies: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          status: string | null
+          tags: string[] | null
+          title: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          status?: string | null
+          tags?: string[] | null
+          title?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          status?: string | null
+          tags?: string[] | null
+          title?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       strategy_feedback: {
         Row: {
           action: string
