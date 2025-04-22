@@ -7,4 +7,5 @@ export interface Campaign {
   tenant_id?: string;
   scripts?: Record<string, string>;
   created_at: string;
+  generated_by_agent_id?: string;
 }

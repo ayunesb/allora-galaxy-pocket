@@ -3,12 +3,15 @@ import { useState } from "react";
 import { CampaignHeader } from "./components/CampaignHeader";
 import { ScriptCard } from "./components/ScriptCard";
 import { ActionButtons } from "./components/ActionButtons";
+import { AgentInfoCard } from "./components/AgentInfoCard";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
+import { useAgentContext } from "@/contexts/AgentContext";
+import { useSystemLogs } from "@/hooks/useSystemLogs";
 import type { Campaign } from "@/types/campaign";
 
 export default function CampaignCenter() {
@@ -17,6 +20,8 @@ export default function CampaignCenter() {
   const { tenant } = useTenant();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { agentProfile } = useAgentContext();
+  const { logActivity } = useSystemLogs();
 
   const { data: campaign, isLoading } = useQuery({
     queryKey: ['current-campaign', tenant?.id],
@@ -48,7 +53,11 @@ export default function CampaignCenter() {
     try {
       const { error: updateError } = await supabase
         .from('campaigns')
-        .update({ status: 'active' })
+        .update({ 
+          status: 'active',
+          // Add agent_id if an agent profile exists
+          ...(agentProfile && { generated_by_agent_id: agentProfile.id })
+        })
         .eq('id', campaign.id);
         
       if (updateError) throw updateError;
@@ -57,6 +66,17 @@ export default function CampaignCenter() {
       toast({
         title: "Campaign Approved",
         description: "AI system is deploying all tasks now..."
+      });
+      
+      // Log to system logs with agent information
+      await logActivity({
+        event_type: "campaign_approved",
+        message: `Campaign "${campaign.name}" approved${agentProfile ? ` using agent ${agentProfile.agent_name}` : ''}`,
+        meta: { 
+          campaign_id: campaign.id,
+          campaign_name: campaign.name,
+          ...(agentProfile && { agent_id: agentProfile.id, agent_name: agentProfile.agent_name })
+        }
       });
       
       // Refresh related queries
@@ -95,6 +115,7 @@ export default function CampaignCenter() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      <AgentInfoCard />
       <CampaignHeader title={campaignData.name} description={campaignData.description} />
       
       <div className="grid gap-4 md:grid-cols-2">

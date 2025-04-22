@@ -1,41 +1,33 @@
 
 import React from "react";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { BrowserRouter as Router } from "react-router-dom";
+import { ThemeProvider } from "./components/ui/theme-provider";
+import { AuthProvider } from "./hooks/useAuth";
+import { TenantProvider } from "./hooks/useTenant";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter } from "react-router-dom";
-import { AuthProvider } from "@/hooks/useAuth";
-import { TenantProvider } from "@/hooks/useTenant";
-import { PluginProvider } from "@/hooks/usePlugins";
+import { Toaster } from "@/components/ui/sonner";
 import AppRoutes from "./AppRoutes";
-import { ThemeProvider } from "@/components/ui/theme-provider";
+import { AgentProvider } from "./contexts/AgentContext";
 
-// Create a client
-const queryClient = new QueryClient();
+function App() {
+  const queryClient = new QueryClient();
 
-const App = () => {
   return (
-    <React.StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <TenantProvider>
-            <ThemeProvider defaultTheme="dark" storageKey="allora-theme">
-              <PluginProvider>
-                <TooltipProvider>
-                  <Toaster />
-                  <Sonner />
-                  <BrowserRouter>
-                    <AppRoutes />
-                  </BrowserRouter>
-                </TooltipProvider>
-              </PluginProvider>
-            </ThemeProvider>
-          </TenantProvider>
-        </AuthProvider>
-      </QueryClientProvider>
-    </React.StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider defaultTheme="light">
+        <Router>
+          <AuthProvider>
+            <TenantProvider>
+              <AgentProvider>
+                <AppRoutes />
+                <Toaster position="top-right" />
+              </AgentProvider>
+            </TenantProvider>
+          </AuthProvider>
+        </Router>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
-};
+}
 
 export default App;

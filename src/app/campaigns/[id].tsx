@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -13,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
+import { AgentInfoCard } from "./components/AgentInfoCard";
 
 export default function CampaignDetail() {
   const { id } = useParams();
@@ -79,8 +79,6 @@ export default function CampaignDetail() {
   const handleUpdateImpressions = () => {
     if (!impressions) return;
     
-    // Here we would typically update a campaign_metrics or similar table
-    // For now, just show a toast
     toast({
       title: "Metrics updated",
       description: `${impressions} impressions recorded for this campaign`
@@ -140,12 +138,7 @@ export default function CampaignDetail() {
         </BreadcrumbItem>
       </Breadcrumb>
 
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">{campaign.name}</h1>
-        <Badge variant={campaign.status === 'active' ? 'default' : 'outline'}>
-          {campaign.status.charAt(0).toUpperCase() + campaign.status.slice(1)}
-        </Badge>
-      </div>
+      <AgentInfoCard />
 
       <Card className="mb-6">
         <CardHeader>
