@@ -1,52 +1,73 @@
 
-import React from "react";
-import KpiCard from "./KpiCard";
-import MilestoneItem from "./MilestoneItem";
-import CoachingFeed from "@/app/coaching/feed/CoachingFeed";
-
-const kpis = [
-  { label: "Monthly Recurring Revenue", value: "$3,200", trend: "up" as const },
-  { label: "Customer LTV", value: "$780", trend: "up" as const },
-  { label: "Churn Rate", value: "4.2%", trend: "down" as const },
-  { label: "CAC", value: "$71", trend: "down" as const }
-];
-
-const milestones = [
-  { label: "Launch Strategy Approved", achieved: true },
-  { label: "Reached $1K MRR", achieved: true },
-  { label: "Automated Campaign Deployed", achieved: false },
-  { label: "First AI Agent Activated", achieved: false }
-];
+import { useEffect, useState } from "react";
+import { WelcomeMessage } from "./components/WelcomeMessage";
+import { StrategyPreview } from "./components/StrategyPreview";
+import { CampaignSuggestions } from "./components/CampaignSuggestions";
+import { KpiSnapshot } from "./components/KpiSnapshot";
+import { CompetitorAnalysis } from "./components/CompetitorAnalysis";
+import { supabase } from "@/integrations/supabase/client";
+import type { Strategy } from "@/types/strategy";
+import { useAuth } from "@/hooks/useAuth";
+import { useTenant } from "@/hooks/useTenant";
 
 export default function StartupDashboard() {
-  return (
-    <div className="container mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold mb-8">Startup Dashboard</h1>
+  const { user } = useAuth();
+  const { tenant } = useTenant();
+  const [welcome, setWelcome] = useState("Welcome back to Allora OS.");
+  const [strategy, setStrategy] = useState<Strategy | null>(null);
+  const [campaigns] = useState([
+    { channel: "WhatsApp", message: "Start lead nurturing flow" },
+    { channel: "TikTok", message: "Launch awareness video series" },
+    { channel: "Email", message: "Schedule re-engagement drip" }
+  ]);
+
+  useEffect(() => {
+    async function fetchLatestStrategy() {
+      if (!tenant?.id) return;
       
-      <div className="space-y-8">
-        <section>
-          <h2 className="text-xl font-semibold mb-4">Your KPIs</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {kpis.map((kpi) => (
-              <KpiCard key={kpi.label} {...kpi} />
-            ))}
-          </div>
-        </section>
+      try {
+        const { data: strategies, error } = await supabase
+          .from('vault_strategies')
+          .select('*')
+          .eq('tenant_id', tenant.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
 
-        <section>
-          <h2 className="text-xl font-semibold mb-4">Milestones</h2>
-          <div className="space-y-3">
-            {milestones.map((m) => (
-              <MilestoneItem key={m.label} {...m} />
-            ))}
-          </div>
-        </section>
+        if (error) throw error;
+        if (strategies) setStrategy(strategies);
 
-        <section>
-          <CoachingFeed />
-        </section>
+        const { data: logs } = await supabase
+          .from('system_logs')
+          .select('message')
+          .eq('tenant_id', tenant.id)
+          .eq('event_type', 'welcome_message')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (logs?.message) setWelcome(logs.message);
+      } catch (error) {
+        console.error('Error fetching strategy:', error);
+      }
+    }
+
+    fetchLatestStrategy();
+  }, [tenant?.id]);
+
+  return (
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+        <div className="space-y-6">
+          <WelcomeMessage message={welcome} />
+          <StrategyPreview strategy={strategy} />
+        </div>
+        <div className="space-y-6">
+          <CampaignSuggestions campaigns={campaigns} />
+          <KpiSnapshot />
+          <CompetitorAnalysis />
+        </div>
       </div>
     </div>
   );
 }
-
