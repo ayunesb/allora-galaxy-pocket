@@ -7,7 +7,7 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
-import type { OnboardingProfile } from "@/types/onboarding";
+import type { OnboardingProfile, LaunchMode } from "@/types/onboarding";
 
 interface StepLaunchModeProps {
   next: (data: Partial<OnboardingProfile>) => void;
@@ -15,7 +15,7 @@ interface StepLaunchModeProps {
   profile: OnboardingProfile;
 }
 
-const LAUNCH_MODES = [
+const LAUNCH_MODES: { key: LaunchMode; label: string; desc: string }[] = [
   { 
     key: "ecom", 
     label: "📦 E-Commerce Brand", 

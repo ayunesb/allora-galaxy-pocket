@@ -14,6 +14,8 @@ export type Industry =
   | 'retail'
   | 'other';
 
+export type LaunchMode = 'ecom' | 'course' | 'agency' | 'saas';
+
 export interface OnboardingProfile {
   companyName?: string;
   website?: string;
@@ -26,4 +28,5 @@ export interface OnboardingProfile {
   teamSize?: TeamSize;
   revenue?: string;
   sellType?: SellType;
+  launch_mode?: LaunchMode;
 }
