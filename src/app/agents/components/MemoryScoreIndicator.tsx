@@ -1,5 +1,5 @@
 
-import { InfoCircle } from "lucide-react";
+import { Info } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface MemoryScoreIndicatorProps {
@@ -18,7 +18,7 @@ export function MemoryScoreIndicator({ score, lastUpdate, className }: MemorySco
         <div className="ml-2 text-lg font-bold">{score}</div>
         <Tooltip>
           <TooltipTrigger>
-            <InfoCircle className="h-4 w-4 ml-1 text-muted-foreground" />
+            <Info className="h-4 w-4 ml-1 text-muted-foreground" />
           </TooltipTrigger>
           <TooltipContent>
             <p>Memory Score: how well this agent adapts to your business</p>
