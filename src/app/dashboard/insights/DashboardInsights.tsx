@@ -34,6 +34,14 @@ export default function DashboardInsights() {
     conversionRate
   } = useInsightsData(dateRange);
 
+  // Process the feedback stats to create the grouped data structure needed by FeedbackAnalytics
+  const groupedFeedback = feedbackStats ? {
+    "Strategies": {
+      used: feedbackStats.used || 0,
+      dismissed: feedbackStats.dismissed || 0
+    }
+  } : {};
+
   if (isLoading) {
     return (
       <div className="container mx-auto py-8 px-4 flex justify-center">
@@ -112,7 +120,7 @@ export default function DashboardInsights() {
         </TabsList>
         
         <TabsContent value="feedback">
-          <FeedbackAnalytics grouped={grouped} />
+          <FeedbackAnalytics grouped={groupedFeedback} />
         </TabsContent>
         
         <TabsContent value="campaigns">
