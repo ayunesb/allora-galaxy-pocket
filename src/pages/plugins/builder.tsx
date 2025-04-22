@@ -8,9 +8,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useRolePermissions } from "@/hooks/useRolePermissions";
+import { useTenant } from "@/hooks/useTenant";
 
 export default function PluginBuilder() {
   const { user } = useAuth();
+  const { tenant } = useTenant();
   const { canManagePlugins } = useRolePermissions();
   const [form, setForm] = useState({
     plugin_name: "",
@@ -25,7 +27,7 @@ export default function PluginBuilder() {
     setForm(f => ({ ...f, components: [...f.components, component] }));
 
   const savePlugin = async () => {
-    if (!user || !canManagePlugins) {
+    if (!user || !tenant || !canManagePlugins) {
       toast.error("Unauthorized", {
         description: "You do not have permission to create plugins"
       });
@@ -34,7 +36,7 @@ export default function PluginBuilder() {
 
     try {
       const { error } = await supabase.from("plugin_submissions").insert({
-        tenant_id: user.tenant_id,
+        tenant_id: tenant.id,
         plugin_name: form.plugin_name,
         description: form.description,
         category: form.category,
