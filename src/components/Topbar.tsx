@@ -2,16 +2,14 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import DarkModeToggle from "@/components/ui/DarkModeToggle"; // Fixed: Changed from named import to default import
+import DarkModeToggle from "@/components/ui/DarkModeToggle";
 import { useTenant } from "@/hooks/useTenant";
 import { NotificationBell } from "@/components/NotificationBell";
+import { useSidebar } from "@/components/ui/sidebar";
 
-interface TopbarProps {
-  onMenuToggle?: () => void;
-}
-
-export default function Topbar({ onMenuToggle }: TopbarProps) {
+export default function Topbar() {
   const { tenant } = useTenant();
+  const { toggleSidebar } = useSidebar();
   const [tenantDetails, setTenantDetails] = useState({
     name: "Workspace",
     theme_mode: "light",
@@ -29,11 +27,11 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
   }, [tenant]);
 
   return (
-    <header className="border-b p-4 bg-white dark:bg-gray-900">
+    <header className="border-b p-4 bg-white dark:bg-gray-900 z-10">
       <div className="container mx-auto flex justify-between items-center">
         <div className="flex items-center">
           <Button
-            onClick={onMenuToggle}
+            onClick={toggleSidebar}
             variant="ghost"
             size="icon"
             className="md:hidden mr-2"
