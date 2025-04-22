@@ -60,6 +60,12 @@ export function AgentInfoCard() {
             <span>{channels}</span>
             <span className="hidden sm:block">•</span>
             <span>{agentProfile.language}</span>
+            {agentProfile.model_provider && (
+              <>
+                <span className="hidden sm:block">•</span>
+                <span>{agentProfile.model_provider.charAt(0).toUpperCase() + agentProfile.model_provider.slice(1)}</span>
+              </>
+            )}
           </div>
         </div>
         {isAdmin && (

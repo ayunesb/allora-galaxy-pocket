@@ -87,6 +87,50 @@ export type Database = {
         }
         Relationships: []
       }
+      assistant_logs: {
+        Row: {
+          agent_id: string | null
+          command: string
+          created_at: string | null
+          feedback: string | null
+          feedback_type: string | null
+          id: string
+          response: string
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          agent_id?: string | null
+          command: string
+          created_at?: string | null
+          feedback?: string | null
+          feedback_type?: string | null
+          id?: string
+          response: string
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string | null
+          command?: string
+          created_at?: string | null
+          feedback?: string | null
+          feedback_type?: string | null
+          id?: string
+          response?: string
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assistant_logs_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agent_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaigns: {
         Row: {
           created_at: string | null

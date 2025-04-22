@@ -38,6 +38,14 @@ export default function AgentPreview({ agent }: AgentPreviewProps) {
           <span className="text-sm font-medium">Language:</span>
           <span className="text-sm text-muted-foreground">{agent.language}</span>
         </div>
+        {agent.model_provider && (
+          <div className="flex justify-between">
+            <span className="text-sm font-medium">Model:</span>
+            <span className="text-sm text-muted-foreground">
+              {agent.model_provider.charAt(0).toUpperCase() + agent.model_provider.slice(1)}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

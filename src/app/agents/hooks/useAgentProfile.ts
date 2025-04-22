@@ -14,6 +14,7 @@ export interface AgentProfile {
   channels: string[];
   enabled_tools: string[];
   avatar_url?: string;
+  model_provider?: 'openai' | 'gemini' | 'anthropic';
   created_by?: string;
 }
 

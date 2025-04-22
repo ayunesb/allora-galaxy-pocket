@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,6 +31,8 @@ const agentFormSchema = z.object({
   language: z.string(),
   channels: z.array(z.string()),
   enabled_tools: z.array(z.string()),
+  avatar_url: z.string().url().optional(),
+  model_provider: z.enum(['openai', 'gemini', 'anthropic']).optional(),
 });
 
 type AgentFormValues = z.infer<typeof agentFormSchema>;
@@ -40,6 +41,7 @@ const tones = ["Friendly", "Professional", "Assertive", "Playful"];
 const languages = ["English", "Spanish", "French", "German"];
 const channels = ["Email", "WhatsApp", "TikTok", "Meta"];
 const tools = ["Strategy", "Campaign", "Assistant", "Reports"];
+const modelProviders = ["openai", "gemini", "anthropic"];
 
 export default function AgentProfileEditor({ initialData }: { initialData?: AgentProfile }) {
   const { tenant } = useTenant();
@@ -55,6 +57,8 @@ export default function AgentProfileEditor({ initialData }: { initialData?: Agen
       language: "English",
       channels: [],
       enabled_tools: ["Strategy", "Assistant"],
+      avatar_url: "",
+      model_provider: "openai",
     },
   });
 
@@ -152,6 +156,52 @@ export default function AgentProfileEditor({ initialData }: { initialData?: Agen
                   {languages.map((lang) => (
                     <SelectItem key={lang} value={lang}>
                       {lang}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="avatar_url"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Avatar URL</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="Optional avatar image URL" 
+                  {...field} 
+                  value={field.value || ''} 
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="model_provider"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Model Provider</FormLabel>
+              <Select 
+                onValueChange={field.onChange} 
+                defaultValue={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select model provider" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {modelProviders.map((provider) => (
+                    <SelectItem key={provider} value={provider}>
+                      {provider.charAt(0).toUpperCase() + provider.slice(1)}
                     </SelectItem>
                   ))}
                 </SelectContent>
