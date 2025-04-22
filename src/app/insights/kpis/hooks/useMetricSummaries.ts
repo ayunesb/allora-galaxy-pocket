@@ -46,7 +46,7 @@ export function useMetricSummaries(
         
         return {
           title: metricName,
-          value: typeof current === 'number' ? current.toFixed(1) : current.toString(),
+          value: current.toString(),
           trend,
           change: Math.abs(change).toFixed(1),
           alerts: metricAlerts
