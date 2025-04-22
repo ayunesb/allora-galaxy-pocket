@@ -10,6 +10,8 @@ export function useKpiMetrics() {
   return useQuery({
     queryKey: ["kpi-metrics", tenant?.id],
     queryFn: async (): Promise<KpiMetric[]> => {
+      if (!tenant?.id) return [];
+      
       const { data, error } = await supabase
         .from("kpi_metrics")
         .select("*")
@@ -20,7 +22,7 @@ export function useKpiMetrics() {
       return data.map(metric => ({
         label: metric.metric,
         value: metric.value,
-        trend: metric.value > 0 ? "up" : "down",
+        trend: metric.value > 0 ? "up" : "down", // Simple trend indication
         changePercent: 0 // We'll implement historical comparison later
       }));
     },

@@ -71,32 +71,55 @@ export default function OnboardingWizard() {
     setIsSubmitting(true);
 
     try {
-      // Get the Supabase URL from the client config
-      const response = await fetch(`https://lxsuqqlfuftnvuvtctsx.supabase.co/functions/v1/save-onboarding`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx4c3VxcWxmdWZ0bnZ1dnRjdHN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxMzA5OTgsImV4cCI6MjA1OTcwNjk5OH0.umJfetR46M11PJZtIN9CCURPkp3JK6tn_17KMMjC3ks'}`
-        },
-        body: JSON.stringify({
-          profile: finalProfile,
-          userId: user.id,
-          tenantId: tenant.id
-        })
-      });
+      // Direct Supabase call to save the company profile
+      const { error: companyError } = await supabase
+        .from('company_profiles')
+        .insert({
+          tenant_id: tenant.id,
+          name: finalProfile.companyName || 'My Company',
+          industry: finalProfile.industry || 'Other',
+          team_size: finalProfile.teamSize || 'small',
+          revenue_tier: finalProfile.revenue || 'pre-revenue',
+          launch_mode: finalProfile.launchMode || 'guided'
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to save onboarding data');
-      }
+      if (companyError) throw companyError;
+
+      // Save the persona profile
+      const { error: personaError } = await supabase
+        .from('persona_profiles')
+        .insert({
+          tenant_id: tenant.id,
+          user_id: user.id,
+          goal: finalProfile.goal || 'growth',
+          pain_points: finalProfile.challenges || [],
+          tone: finalProfile.tone || 'professional',
+          channels: finalProfile.channels || [],
+          tools: finalProfile.tools || [],
+          sell_type: finalProfile.sellType || 'b2b'
+        });
+
+      if (personaError) throw personaError;
+
+      // Log this event
+      await supabase
+        .from('system_logs')
+        .insert({
+          tenant_id: tenant.id,
+          user_id: user.id,
+          event_type: 'onboarding_complete',
+          message: `Onboarding completed for ${finalProfile.companyName}`,
+          meta: { profile: finalProfile }
+        });
 
       toast({
         title: "Setup Complete!",
         description: "Your Allora OS is now ready to use.",
       });
 
-      // Redirect to dashboard instead of startup
+      // Redirect to dashboard
       navigate("/dashboard");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving onboarding data:", error);
       toast({
         title: "Error",

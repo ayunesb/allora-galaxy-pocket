@@ -17,7 +17,7 @@ export function KPITracker() {
   if (error) {
     return (
       <div className="p-8 text-center text-red-500">
-        Failed to load KPI metrics
+        Failed to load KPI metrics: {error.message}
       </div>
     );
   }
@@ -25,7 +25,7 @@ export function KPITracker() {
   if (!metrics?.length) {
     return (
       <div className="p-8 text-center text-muted-foreground">
-        No KPI metrics available
+        No KPI metrics available. Set up your KPIs in the settings page.
       </div>
     );
   }
