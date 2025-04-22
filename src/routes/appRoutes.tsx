@@ -10,7 +10,7 @@ import StrategyPage from "@/app/strategy/page";
 import AssistantPage from "@/app/assistant/page";
 import AgentsPage from "@/app/agents/page";
 import CreativeSuitePage from "@/app/creative/SuitePanel";
-import CampaignDetail from "@/app/campaigns/[id]";
+import CampaignDetailPage from "@/app/campaigns/[id]";
 import CampaignCenterPage from "@/app/campaigns/center/page";
 
 export const appRoutes: RouteObject[] = [
@@ -26,5 +26,5 @@ export const appRoutes: RouteObject[] = [
   // Add specific route for campaign center
   { path: "/campaigns/center", element: <CampaignCenterPage /> },
   // Campaign detail route with an ID parameter
-  { path: "/campaigns/:id", element: <CampaignDetail /> }
+  { path: "/campaigns/:id", element: <CampaignDetailPage /> }
 ];
