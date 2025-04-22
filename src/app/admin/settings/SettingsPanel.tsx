@@ -22,6 +22,14 @@ export default function SettingsPanel() {
     });
   };
 
+  const handleZoomKeySave = (value: string) => {
+    if (!value) return;
+    toast({
+      title: "Zoom API Updated",
+      description: "Your Zoom API key has been securely saved"
+    });
+  };
+
   return (
     <div className="container mx-auto py-8 px-4">
       <h1 className="text-3xl font-bold mb-8">Admin Settings</h1>
@@ -36,6 +44,11 @@ export default function SettingsPanel() {
           label="HubSpot API Key"
           placeholder="pat_eu1_..."
           onSave={handleHubSpotKeySave}
+        />
+        <ApiKeyForm
+          label="Zoom API Key"
+          placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ..."
+          onSave={handleZoomKeySave}
         />
         <AutonomyToggle />
       </div>
