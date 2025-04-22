@@ -541,6 +541,39 @@ export type Database = {
         }
         Relationships: []
       }
+      plugin_permissions: {
+        Row: {
+          can_enable: boolean
+          can_use: boolean
+          created_at: string | null
+          id: string
+          plugin_key: string
+          role: Database["public"]["Enums"]["user_role"]
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          can_enable?: boolean
+          can_use?: boolean
+          created_at?: string | null
+          id?: string
+          plugin_key: string
+          role: Database["public"]["Enums"]["user_role"]
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          can_enable?: boolean
+          can_use?: boolean
+          created_at?: string | null
+          id?: string
+          plugin_key?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       plugin_usage_logs: {
         Row: {
           count: number
@@ -1028,6 +1061,15 @@ export type Database = {
       binary_quantize: {
         Args: { "": string } | { "": unknown }
         Returns: unknown
+      }
+      check_plugin_permission: {
+        Args: {
+          _tenant_id: string
+          _user_id: string
+          _plugin_key: string
+          _action: string
+        }
+        Returns: boolean
       }
       halfvec_avg: {
         Args: { "": number[] }

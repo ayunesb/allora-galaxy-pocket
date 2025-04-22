@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from "react";
@@ -9,12 +8,27 @@ import { pluginList } from "@/lib/plugins/pluginList";
 import { toast } from "sonner";
 import PluginConfigEditor from "@/app/admin/plugins/PluginConfigEditor";
 import { useRolePermissions } from "@/hooks/useRolePermissions";
+import { usePluginPermissions } from "@/hooks/usePluginPermissions";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function PluginSettings() {
   const { activePlugins, refreshPlugins } = usePlugins();
   const { canManagePlugins } = useRolePermissions();
+  const { checkPermission } = usePluginPermissions();
   const [selectedPlugin, setSelectedPlugin] = useState<string | null>(null);
+  const [pluginPermissions, setPluginPermissions] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const loadPermissions = async () => {
+      const permissions: Record<string, boolean> = {};
+      for (const plugin of pluginList) {
+        permissions[plugin.key] = await checkPermission(plugin.key, 'enable');
+      }
+      setPluginPermissions(permissions);
+    };
+    
+    loadPermissions();
+  }, [checkPermission]);
 
   // Save plugin config changes
   const handleSaveConfig = async (pluginKey: string, config: Record<string, string>) => {
@@ -79,6 +93,7 @@ export default function PluginSettings() {
                     </div>
                     <Switch
                       checked={activePlugins.includes(plugin.key)}
+                      disabled={!pluginPermissions[plugin.key]}
                       onCheckedChange={async () => {
                         try {
                           const { error } = await supabase
