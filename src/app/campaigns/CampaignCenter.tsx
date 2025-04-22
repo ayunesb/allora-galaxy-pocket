@@ -48,7 +48,10 @@ export default function CampaignCenter() {
       return {
         ...data,
         scripts: scripts ? scripts.reduce((acc: Record<string, string>, curr: any) => {
-          acc[curr.channel] = curr.content;
+          // Fix type issue by ensuring curr.channel and curr.content are strings
+          if (typeof curr.channel === 'string' && curr.content !== null) {
+            acc[curr.channel] = String(curr.content); // Ensure it's converted to string
+          }
           return acc;
         }, {}) : {}
       };

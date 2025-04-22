@@ -80,7 +80,7 @@ export default function OnboardingWizard() {
           industry: finalProfile.industry || 'Other',
           team_size: finalProfile.teamSize || 'small',
           revenue_tier: finalProfile.revenue || 'pre-revenue',
-          launch_mode: finalProfile.launchMode || 'guided'
+          launch_mode: finalProfile.launch_mode || 'guided'
         });
 
       if (companyError) throw companyError;
@@ -91,7 +91,7 @@ export default function OnboardingWizard() {
         .insert({
           tenant_id: tenant.id,
           user_id: user.id,
-          goal: finalProfile.goal || 'growth',
+          goal: finalProfile.goals?.[0] || 'growth', // Use first goal instead of deprecated 'goal'
           pain_points: finalProfile.challenges || [],
           tone: finalProfile.tone || 'professional',
           channels: finalProfile.channels || [],

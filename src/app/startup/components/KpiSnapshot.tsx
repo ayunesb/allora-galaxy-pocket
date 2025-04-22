@@ -22,11 +22,16 @@ export function KpiSnapshot() {
 
       if (error) throw error;
       
-      return data.map(metric => ({
-        label: metric.metric,
-        value: metric.value,
-        trend: Math.random() > 0.5 ? "up" : "down" // Mock trend until we have historical data
-      }));
+      return data.map(metric => {
+        // Ensure trend is always "up" or "down"
+        const trendValue: "up" | "down" = Math.random() > 0.5 ? "up" : "down";
+        
+        return {
+          label: metric.metric,
+          value: metric.value,
+          trend: trendValue // Now properly typed as "up" | "down"
+        };
+      });
     },
     enabled: !!tenant?.id
   });
