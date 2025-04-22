@@ -1,28 +1,73 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "@/components/ui/sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, session } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
+
+  // Check if we have a session from email confirmation
+  useEffect(() => {
+    async function checkSession() {
+      try {
+        // Check for auth code in the URL (from email confirmation)
+        if (location.hash && location.hash.includes('access_token')) {
+          const { data, error } = await supabase.auth.getSession();
+          
+          if (data.session && !error) {
+            toast.success("Email confirmed successfully!");
+            navigate("/onboarding");
+          }
+        }
+      } catch (error) {
+        console.error("Error checking session:", error);
+      } finally {
+        setIsCheckingSession(false);
+      }
+    }
+    
+    checkSession();
+  }, [location, navigate]);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (session && !isCheckingSession) {
+      navigate("/onboarding");
+    }
+  }, [session, isCheckingSession, navigate]);
 
   const handleLogin = async () => {
     try {
+      setIsLoading(true);
       await login(email, password);
       toast.success("Logged in successfully!");
-      navigate("/startup");
+      navigate("/onboarding");
     } catch (err: any) {
       toast.error("Login failed", {
         description: err.message
       });
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  if (isCheckingSession) {
+    return (
+      <div className="p-6 max-w-sm mx-auto text-center">
+        <p>Checking authentication status...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-sm mx-auto space-y-4">
@@ -30,18 +75,21 @@ export default function Login() {
       <Input 
         placeholder="Email" 
         type="email"
+        disabled={isLoading}
         onChange={(e) => setEmail(e.target.value)} 
       />
       <Input 
         placeholder="Password" 
         type="password" 
+        disabled={isLoading}
         onChange={(e) => setPassword(e.target.value)} 
       />
       <Button 
         className="w-full" 
         onClick={handleLogin}
+        disabled={isLoading}
       >
-        Login
+        {isLoading ? "Logging in..." : "Login"}
       </Button>
       <p className="text-sm text-center">
         Don't have an account?{" "}
