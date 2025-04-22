@@ -11,6 +11,7 @@ import AssistantPage from "@/app/assistant/page";
 import AgentsPage from "@/app/agents/page";
 import CreativeSuitePage from "@/app/creative/SuitePanel";
 import CampaignDetail from "@/app/campaigns/[id]";
+import OnboardingWizard from "@/app/onboarding/OnboardingWizard";
 
 export const appRoutes: RouteObject[] = [
   { path: "/startup", element: <StartupPage /> },
@@ -22,5 +23,6 @@ export const appRoutes: RouteObject[] = [
   { path: "/assistant", element: <AssistantPage /> },
   { path: "/agents", element: <AgentsPage /> },
   { path: "/creative/suite", element: <CreativeSuitePage /> },
-  { path: "/campaigns/:id", element: <CampaignDetail /> }
+  { path: "/campaigns/:id", element: <CampaignDetail /> },
+  { path: "/onboarding", element: <OnboardingWizard /> }
 ];

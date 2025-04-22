@@ -9,7 +9,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
+import { useLocation } from "react-router-dom";
 
 interface TenantOption {
   id: string;
@@ -18,12 +19,14 @@ interface TenantOption {
   theme_mode?: string;
 }
 
-export default function WorkspaceSwitcher() {
+export default function WorkspaceSwitcher({ highlight = false }) {
   const { tenant, setTenant } = useTenant();
   const [availableTenants, setAvailableTenants] = useState<TenantOption[]>([]);
   const [selected, setSelected] = useState<string | undefined>(tenant?.id);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const location = useLocation();
+  const isOnboarding = location.pathname === "/onboarding";
 
   // Fetch tenants the user has access to
   useEffect(() => {
@@ -74,9 +77,13 @@ export default function WorkspaceSwitcher() {
     }
   };
 
+  const selectClasses = highlight || isOnboarding 
+    ? "ring-2 ring-primary ring-offset-2 transition-all duration-200" 
+    : "";
+
   if (loading) {
     return (
-      <div className="flex w-full items-center justify-center h-12">
+      <div className="flex w-full items-center justify-center h-12 px-2">
         <Loader2 className="h-5 w-5 animate-spin mr-2" />
         <span>Loading workspaces...</span>
       </div>
@@ -85,7 +92,8 @@ export default function WorkspaceSwitcher() {
 
   if (error) {
     return (
-      <div className="text-red-500 py-2 px-2 text-sm">
+      <div className="text-red-500 py-2 px-2 text-sm flex items-center">
+        <AlertCircle className="h-4 w-4 mr-1" />
         {error}
       </div>
     );
@@ -101,11 +109,11 @@ export default function WorkspaceSwitcher() {
 
   return (
     <div className="space-y-2 px-2">
-      <label className="text-sm font-medium text-muted-foreground">
-        Workspace
+      <label className={`text-sm font-medium ${isOnboarding ? "text-primary font-bold" : "text-muted-foreground"}`}>
+        Workspace {isOnboarding && <span className="text-red-500">*</span>}
       </label>
       <Select value={selected} onValueChange={handleTenantChange}>
-        <SelectTrigger className="w-full">
+        <SelectTrigger className={`w-full ${selectClasses}`}>
           <SelectValue placeholder="Select workspace" />
         </SelectTrigger>
         <SelectContent>
@@ -116,7 +124,11 @@ export default function WorkspaceSwitcher() {
           ))}
         </SelectContent>
       </Select>
+      {isOnboarding && !tenant && (
+        <p className="text-sm mt-1 text-red-500">
+          Please select a workspace to continue with onboarding
+        </p>
+      )}
     </div>
   );
 }
-

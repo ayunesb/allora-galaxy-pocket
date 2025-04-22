@@ -22,6 +22,9 @@ import { OnboardingProgressIndicator } from "./components/OnboardingProgressIndi
 import { OnboardingError } from "./components/OnboardingError";
 import { useOnboardingSubmission } from "./hooks/useOnboardingSubmission";
 import { useStepNavigation } from "./components/StepNavigator";
+import WorkspaceSwitcher from "@/app/workspace/WorkspaceSwitcher";
+import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
 
 const steps = [
   Step1Company,
@@ -43,6 +46,7 @@ export default function OnboardingWizard() {
   const [step, setStep] = useState(0);
   const [profile, setProfile] = useState<OnboardingProfile>({});
   const [formError, setFormError] = useState<string | null>(null);
+  const [workspaceError, setWorkspaceError] = useState<boolean>(false);
 
   const { isSubmitting, completeOnboarding } = useOnboardingSubmission();
 
@@ -81,7 +85,7 @@ export default function OnboardingWizard() {
     };
   };
 
-  // If there's no live tenant selected, block onboarding steps
+  // If there's no live tenant selected, show workspace selector with instructions
   if (!tenant) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background dark:bg-gray-900 p-4">
@@ -89,10 +93,38 @@ export default function OnboardingWizard() {
           <Alert variant="destructive">
             <AlertTitle>No workspace selected</AlertTitle>
             <AlertDescription>
-              Please select a workspace before continuing.<br />
-              Use the workspace selector at the top of the page.
+              Please select a workspace before continuing with onboarding.
             </AlertDescription>
           </Alert>
+          
+          <div className="p-4 border rounded-md bg-muted/50">
+            <h3 className="text-lg font-medium mb-3">Select a workspace to continue</h3>
+            <WorkspaceSwitcher highlight={true} />
+            
+            {workspaceError && (
+              <p className="text-sm text-destructive mt-2">
+                You must select a workspace to continue with onboarding.
+              </p>
+            )}
+            
+            <div className="mt-6">
+              <Button 
+                className="w-full" 
+                onClick={() => {
+                  if (!tenant) {
+                    setWorkspaceError(true);
+                    toast({
+                      title: "Workspace required",
+                      description: "Please select a workspace from the dropdown above.",
+                      variant: "destructive"
+                    });
+                  }
+                }}
+              >
+                Continue to Onboarding <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </Card>
       </div>
     );
