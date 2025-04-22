@@ -19,5 +19,23 @@ export function handleTenantChange(
       title: "Workspace changed",
       description: `Now working in "${selectedTenant.name}"`,
     });
+    
+    return true;
+  }
+  return false;
+}
+
+export function createDefaultWorkspace(
+  toast: (arg: any) => void,
+  onSuccess?: () => void
+) {
+  // This will be implemented when we add workspace creation functionality
+  toast({
+    title: "Create new workspace",
+    description: "This feature will be implemented soon",
+  });
+  
+  if (onSuccess) {
+    onSuccess();
   }
 }

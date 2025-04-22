@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { useTenant } from "@/hooks/useTenant";
@@ -24,7 +24,7 @@ import { useOnboardingSubmission } from "./hooks/useOnboardingSubmission";
 import { useStepNavigation } from "./components/StepNavigator";
 import WorkspaceSwitcher from "@/app/workspace/WorkspaceSwitcher";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getFirstInvalidStep } from "./components/StepValidation";
 
@@ -43,7 +43,7 @@ const steps = [
 ];
 
 export default function OnboardingWizard() {
-  const { tenant } = useTenant();
+  const { tenant, isLoading: tenantLoading } = useTenant();
   const { toast } = useToast();
   const [step, setStep] = useState(0);
   const [profile, setProfile] = useState<OnboardingProfile>({});
@@ -54,6 +54,13 @@ export default function OnboardingWizard() {
   const { isSubmitting, completeOnboarding } = useOnboardingSubmission();
 
   const CurrentStep = steps[step];
+
+  useEffect(() => {
+    // Clear workspace error if tenant is selected
+    if (tenant) {
+      setWorkspaceError(false);
+    }
+  }, [tenant]);
 
   const next = (data: Partial<OnboardingProfile>) => {
     setProfile((prev) => ({ ...prev, ...data }));
@@ -99,6 +106,14 @@ export default function OnboardingWizard() {
     };
   };
 
+  if (tenantLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background dark:bg-gray-900 p-4">
+        <LoadingOverlay show={true} label="Loading your workspace..." />
+      </div>
+    );
+  }
+
   // If there's no live tenant selected, show workspace selector with instructions
   if (!tenant) {
     return (
@@ -136,6 +151,14 @@ export default function OnboardingWizard() {
                 }}
               >
                 Continue to Onboarding <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full mt-2"
+                onClick={() => window.location.reload()}
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh Page
               </Button>
             </div>
           </div>
