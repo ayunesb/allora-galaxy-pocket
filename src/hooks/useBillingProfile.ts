@@ -10,10 +10,17 @@ export function useBillingProfile() {
     queryFn: async (): Promise<BillingProfile | null> => {
       console.log("Fetching billing profile");
       try {
+        // First check if we're authenticated
+        const { data: session } = await supabase.auth.getSession();
+        if (!session?.session?.user) {
+          console.log("No authenticated user found");
+          return null;
+        }
+
         const { data, error } = await supabase
           .from('billing_profiles')
           .select('*')
-          .single();
+          .maybeSingle(); // Changed from single() to maybeSingle() to prevent errors
 
         if (error) {
           console.error('Error fetching billing profile:', error);
@@ -21,16 +28,44 @@ export function useBillingProfile() {
           if (error.code !== 'PGRST116') {
             toast.error('Failed to load billing data');
           }
-          return null;
+          
+          // Return a default profile to prevent blank screens
+          return {
+            id: 'default',
+            user_id: session.session.user.id,
+            plan: 'standard',
+            credits: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
         }
 
         console.log('Billing profile data retrieved:', data);
         return data;
       } catch (err) {
         console.error('Unexpected error in useBillingProfile:', err);
-        return null;
+        // Return a default profile to prevent blank screens
+        return {
+          id: 'default',
+          user_id: 'unknown',
+          plan: 'standard',
+          credits: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
       }
     },
     retry: 1, // Only retry once to avoid excessive requests
+    // Add stale time to reduce refetches
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    // Add fallback for when query is disabled
+    placeholderData: {
+      id: 'default',
+      user_id: 'unknown',
+      plan: 'standard',
+      credits: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
   });
 }

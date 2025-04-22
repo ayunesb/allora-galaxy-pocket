@@ -16,21 +16,11 @@ const AppRoutes = () => {
   console.log("Rendering AppRoutes");
   
   return (
-    <Routes>
-      {/* Public routes */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      {publicRoutes.map((route) => (
-        <Route key={route.path} path={route.path} element={
-          <ErrorBoundary>
-            {route.element}
-          </ErrorBoundary>
-        } />
-      ))}
-      
-      {/* Protected routes */}
-      <Route element={<AuthenticatedLayout />}>
-        {/* Dashboard routes */}
-        {dashboardRoutes.map((route) => (
+    <ErrorBoundary>
+      <Routes>
+        {/* Public routes */}
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        {publicRoutes.map((route) => (
           <Route key={route.path} path={route.path} element={
             <ErrorBoundary>
               {route.element}
@@ -38,36 +28,48 @@ const AppRoutes = () => {
           } />
         ))}
         
-        {/* Admin routes with Debug Error Boundary */}
-        {adminRoutes.map((route) => (
-          <Route key={route.path} path={route.path} element={
-            <DebugErrorBoundary>
-              {route.element}
-            </DebugErrorBoundary>
-          } />
-        ))}
-        
-        {/* App routes */}
-        {appRoutes.map((route) => (
-          <Route key={route.path} path={route.path} element={
-            <ErrorBoundary>
-              {route.element}
-            </ErrorBoundary>
-          } />
-        ))}
+        {/* Protected routes */}
+        <Route element={<AuthenticatedLayout />}>
+          {/* Dashboard routes */}
+          {dashboardRoutes.map((route) => (
+            <Route key={route.path} path={route.path} element={
+              <ErrorBoundary>
+                {route.element}
+              </ErrorBoundary>
+            } />
+          ))}
+          
+          {/* Admin routes with Debug Error Boundary */}
+          {adminRoutes.map((route) => (
+            <Route key={route.path} path={route.path} element={
+              <DebugErrorBoundary>
+                {route.element}
+              </DebugErrorBoundary>
+            } />
+          ))}
+          
+          {/* App routes */}
+          {appRoutes.map((route) => (
+            <Route key={route.path} path={route.path} element={
+              <ErrorBoundary>
+                {route.element}
+              </ErrorBoundary>
+            } />
+          ))}
 
-        {/* Plugin routes with Debug Error Boundary */}
-        {pluginRoutes.map((route) => (
-          <Route key={route.path} path={route.path} element={
-            <DebugErrorBoundary>
-              {route.element}
-            </DebugErrorBoundary>
-          } />
-        ))}
-      </Route>
-      
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+          {/* Plugin routes with Debug Error Boundary */}
+          {pluginRoutes.map((route) => (
+            <Route key={route.path} path={route.path} element={
+              <DebugErrorBoundary>
+                {route.element}
+              </DebugErrorBoundary>
+            } />
+          ))}
+        </Route>
+        
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </ErrorBoundary>
   );
 };
 

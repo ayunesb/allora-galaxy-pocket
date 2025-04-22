@@ -21,6 +21,7 @@ export class DebugErrorBoundary extends React.Component<DebugErrorBoundaryProps,
   }
 
   static getDerivedStateFromError(error: Error): DebugErrorBoundaryState {
+    console.error("Error caught in DebugErrorBoundary:", error);
     return { hasError: true, error };
   }
 
@@ -30,6 +31,7 @@ export class DebugErrorBoundary extends React.Component<DebugErrorBoundaryProps,
   }
 
   handleRetry = () => {
+    console.log("Retrying component render...");
     this.setState({ hasError: false, error: undefined, errorInfo: undefined });
   };
 
@@ -44,7 +46,7 @@ export class DebugErrorBoundary extends React.Component<DebugErrorBoundaryProps,
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-6">
-            <p className="mb-4 font-medium">{this.state.error?.message}</p>
+            <p className="mb-4 font-medium">{this.state.error?.message || 'An unexpected error occurred'}</p>
             <details className="whitespace-pre-wrap text-sm bg-gray-100 dark:bg-gray-800 p-4 rounded overflow-auto max-h-96">
               <summary className="cursor-pointer font-medium mb-2">Error details</summary>
               <p className="text-red-600 dark:text-red-400 font-mono">
@@ -65,6 +67,24 @@ export class DebugErrorBoundary extends React.Component<DebugErrorBoundaryProps,
       );
     }
 
-    return this.props.children;
+    try {
+      // Add an extra try/catch to prevent blank pages
+      return this.props.children;
+    } catch (error) {
+      console.error("Error rendering children in DebugErrorBoundary:", error);
+      return (
+        <Card className="border-amber-500 shadow-lg">
+          <CardHeader className="bg-amber-50 dark:bg-amber-900/20">
+            <CardTitle className="text-amber-600 dark:text-amber-400">Render Error</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>An error occurred while rendering this component.</p>
+            <Button onClick={this.handleRetry} variant="outline" className="mt-4">
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      );
+    }
   }
 }

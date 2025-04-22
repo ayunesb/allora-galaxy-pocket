@@ -30,6 +30,13 @@ export function BillingPreview() {
     );
   }
 
+  // Even if profile is null, we'll still render something
+  const displayPlan = profile?.plan 
+    ? profile.plan.charAt(0).toUpperCase() + profile.plan.slice(1) 
+    : 'Standard';
+  
+  const displayCredits = profile?.credits ?? 0;
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -37,11 +44,9 @@ export function BillingPreview() {
         <CreditCard className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{profile?.credits ?? 0}</div>
+        <div className="text-2xl font-bold">{displayCredits}</div>
         <p className="text-xs text-muted-foreground">
-          {profile?.plan ? 
-            profile.plan.charAt(0).toUpperCase() + profile.plan.slice(1) : 
-            'Standard'} Plan
+          {displayPlan} Plan
         </p>
       </CardContent>
     </Card>
