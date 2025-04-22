@@ -14,18 +14,18 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="light">
-        <Router>
-          <AuthProvider>
-            <TenantProvider>
+      <Router>
+        <AuthProvider>
+          <TenantProvider>
+            <ThemeProvider defaultTheme="light">
               <AgentProvider>
                 <AppRoutes />
                 <Toaster position="top-right" />
               </AgentProvider>
-            </TenantProvider>
-          </AuthProvider>
-        </Router>
-      </ThemeProvider>
+            </ThemeProvider>
+          </TenantProvider>
+        </AuthProvider>
+      </Router>
     </QueryClientProvider>
   );
 }
