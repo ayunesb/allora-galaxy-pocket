@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
@@ -11,23 +12,6 @@ import { SidebarBaseProps, SidebarProps } from "./sidebar-types"
 const SIDEBAR_WIDTH = "16rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
-
-/**
- * Props shared by all sidebar components
- */
-interface SidebarBaseProps extends React.HTMLAttributes<HTMLElement> {
-  className?: string
-  children?: React.ReactNode
-}
-
-/**
- * Props specific to the main Sidebar component
- */
-interface SidebarProps extends SidebarBaseProps {
-  side?: "left" | "right"
-  variant?: "sidebar" | "floating" | "inset"
-  collapsible?: "offcanvas" | "icon" | "none"
-}
 
 export const Sidebar = React.forwardRef<
   HTMLDivElement,
