@@ -3,7 +3,6 @@ import { useMemo } from "react";
 import type { KpiAlert } from "@/types/kpi";
 import type { MetricSummary } from "../components/KpiMetricSummaryGrid";
 
-// Define the shape of the KpiMetric from database
 interface KpiMetricFromDB {
   id: string;
   metric: string;
@@ -33,8 +32,9 @@ export function useMetricSummaries(
           new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime()
         );
         
-        const current = sortedValues[sortedValues.length - 1]?.value || 0;
-        const previous = sortedValues[0]?.value || 0;
+        // Safely handle potential undefined or null values
+        const current = sortedValues[sortedValues.length - 1]?.value ?? 0;
+        const previous = sortedValues[0]?.value ?? 0;
         
         const change = previous === 0 ? 0 : ((current - previous) / previous) * 100;
         
@@ -46,7 +46,7 @@ export function useMetricSummaries(
         
         return {
           title: metricName,
-          value: current.toString(), // Convert to string safely
+          value: String(current), // Safely convert to string
           trend,
           change: Math.abs(change).toFixed(1),
           alerts: metricAlerts
