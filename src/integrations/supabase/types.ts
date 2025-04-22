@@ -505,6 +505,42 @@ export type Database = {
         }
         Relationships: []
       }
+      plugin_manifests: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          entry_point: string
+          id: string
+          name: string
+          schema: Json | null
+          status: Database["public"]["Enums"]["plugin_status"] | null
+          updated_at: string | null
+          version: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          entry_point: string
+          id?: string
+          name: string
+          schema?: Json | null
+          status?: Database["public"]["Enums"]["plugin_status"] | null
+          updated_at?: string | null
+          version: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          entry_point?: string
+          id?: string
+          name?: string
+          schema?: Json | null
+          status?: Database["public"]["Enums"]["plugin_status"] | null
+          updated_at?: string | null
+          version?: string
+        }
+        Relationships: []
+      }
       plugin_usage_logs: {
         Row: {
           count: number
@@ -1087,6 +1123,7 @@ export type Database = {
       }
     }
     Enums: {
+      plugin_status: "active" | "inactive" | "deprecated"
       user_role: "admin" | "editor" | "viewer"
     }
     CompositeTypes: {
@@ -1203,6 +1240,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      plugin_status: ["active", "inactive", "deprecated"],
       user_role: ["admin", "editor", "viewer"],
     },
   },
