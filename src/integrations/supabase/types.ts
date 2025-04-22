@@ -547,6 +547,47 @@ export type Database = {
           },
         ]
       }
+      plugin_licenses: {
+        Row: {
+          created_at: string | null
+          id: string
+          license_key: string | null
+          license_type: string | null
+          mint_url: string | null
+          plugin_id: string | null
+          price_usd: number | null
+          terms: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          license_key?: string | null
+          license_type?: string | null
+          mint_url?: string | null
+          plugin_id?: string | null
+          price_usd?: number | null
+          terms?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          license_key?: string | null
+          license_type?: string | null
+          mint_url?: string | null
+          plugin_id?: string | null
+          price_usd?: number | null
+          terms?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plugin_licenses_plugin_id_fkey"
+            columns: ["plugin_id"]
+            isOneToOne: false
+            referencedRelation: "plugins"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plugin_manifests: {
         Row: {
           created_at: string | null
@@ -654,6 +695,41 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plugin_sandbox_installs: {
+        Row: {
+          id: string
+          plugin_submission_id: string | null
+          preview_success: boolean | null
+          schema_run: boolean | null
+          tenant_id: string
+          tested_at: string | null
+        }
+        Insert: {
+          id?: string
+          plugin_submission_id?: string | null
+          preview_success?: boolean | null
+          schema_run?: boolean | null
+          tenant_id: string
+          tested_at?: string | null
+        }
+        Update: {
+          id?: string
+          plugin_submission_id?: string | null
+          preview_success?: boolean | null
+          schema_run?: boolean | null
+          tenant_id?: string
+          tested_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plugin_sandbox_installs_plugin_submission_id_fkey"
+            columns: ["plugin_submission_id"]
+            isOneToOne: false
+            referencedRelation: "plugin_submissions"
             referencedColumns: ["id"]
           },
         ]
@@ -1240,6 +1316,10 @@ export type Database = {
           _action: string
         }
         Returns: boolean
+      }
+      execute_sql: {
+        Args: { sql_query: string }
+        Returns: undefined
       }
       halfvec_avg: {
         Args: { "": number[] }
