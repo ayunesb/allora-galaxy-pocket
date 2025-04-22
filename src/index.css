@@ -83,6 +83,21 @@
   .error-page-card {
     @apply bg-card dark:bg-gray-800;
   }
+  
+  /* Improved contrast for links and interactive elements */
+  a:not(.btn):not(.no-underline) {
+    @apply text-primary dark:text-blue-300 hover:underline;
+  }
+  
+  /* Better visibility for form elements */
+  input, select, textarea {
+    @apply border-input dark:border-gray-700 bg-background dark:bg-gray-800 text-foreground dark:text-white;
+  }
+  
+  /* Improved contrast for disabled elements */
+  .disabled, [disabled], :disabled {
+    @apply opacity-70 cursor-not-allowed;
+  }
 }
 
 :focus-visible {

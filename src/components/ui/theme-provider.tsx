@@ -41,11 +41,16 @@ export function ThemeProvider({
       }
       
       const storedTheme = localStorage.getItem(storageKey);
-      return (storedTheme as Theme) || defaultTheme;
+      if (storedTheme === "dark" || storedTheme === "light") {
+        return storedTheme;
+      }
+      
+      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     }
   );
   const [themeColor, setThemeColor] = useState(tenant?.theme_color || "indigo");
 
+  // Update theme when tenant changes
   useEffect(() => {
     if (tenant?.theme_mode) {
       setTheme(tenant.theme_mode as Theme);
@@ -56,6 +61,7 @@ export function ThemeProvider({
     }
   }, [tenant]);
 
+  // Apply theme to document
   useEffect(() => {
     const root = window.document.documentElement;
 

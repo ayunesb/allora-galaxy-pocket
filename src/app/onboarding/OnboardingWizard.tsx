@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -80,11 +81,11 @@ export default function OnboardingWizard() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background dark:bg-gray-900 p-4">
       <LoadingOverlay show={isSubmitting} label="Setting up your OS..." />
-      <Card className="w-full max-w-2xl p-6 space-y-6">
+      <Card className="w-full max-w-2xl p-6 space-y-6 bg-card dark:bg-gray-800 border border-border dark:border-gray-700">
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Setup your Allora OS</h1>
+          <h1 className="text-2xl font-bold text-foreground dark:text-white">Setup your Allora OS</h1>
           <OnboardingProgressIndicator currentStep={step} totalSteps={steps.length} />
         </div>
         <BillingPreview />

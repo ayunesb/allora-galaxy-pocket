@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useTheme } from "@/contexts/ThemeContext"
+import { useTheme } from "@/components/ui/theme-provider"
 import { ReactNode } from "react"
 
 export interface ThemeProviderProps {
@@ -9,10 +9,10 @@ export interface ThemeProviderProps {
 }
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  const { themeMode } = useTheme()
+  const { theme } = useTheme()
   
   return (
-    <div className={themeMode === 'dark' ? 'dark' : ''}>
+    <div className={theme === 'dark' ? 'dark' : ''}>
       {children}
     </div>
   )
