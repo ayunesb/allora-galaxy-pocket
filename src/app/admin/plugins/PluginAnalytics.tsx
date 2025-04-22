@@ -10,8 +10,13 @@ interface PluginUsageLog {
   count: number;
 }
 
+interface ChartData {
+  name: string;
+  value: number;
+}
+
 export function PluginAnalytics() {
-  const [usageLogs, setUsageLogs] = useState<PluginUsageLog[]>([]);
+  const [usageLogs, setUsageLogs] = useState<ChartData[]>([]);
 
   useEffect(() => {
     async function fetchPluginUsageLogs() {
@@ -37,7 +42,7 @@ export function PluginAnalytics() {
         }
         
         return acc;
-      }, [] as { name: string; value: number }[]);
+      }, [] as ChartData[]);
 
       setUsageLogs(aggregatedLogs);
     }
