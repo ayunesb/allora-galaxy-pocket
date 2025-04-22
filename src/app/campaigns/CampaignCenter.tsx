@@ -9,6 +9,7 @@ import { useTenant } from "@/hooks/useTenant";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
+import type { Campaign } from "@/types/campaign";
 
 export default function CampaignCenter() {
   const [approved, setApproved] = useState(false);
@@ -22,7 +23,6 @@ export default function CampaignCenter() {
     queryFn: async () => {
       if (!tenant?.id) return null;
 
-      // Get latest campaign
       const { data, error } = await supabase
         .from('campaigns')
         .select('*')
@@ -33,33 +33,11 @@ export default function CampaignCenter() {
         .single();
 
       if (error) {
-        if (error.code === 'PGRST116') return null;
+        if (error.code === 'PGRST116') return null; // No draft campaign found
         throw error;
       }
 
-      // Get related campaign scripts
-      const { data: scripts, error: scriptsError } = await supabase
-        .from('campaign_scripts')
-        .select('*')
-        .eq('campaign_id', data.id);
-
-      if (scriptsError) throw scriptsError;
-
-      return {
-        ...data,
-        scripts: scripts ? scripts.reduce((acc: Record<string, string>, curr: any) => {
-          // Fix type issue by ensuring curr.channel and curr.content are strings
-          if (typeof curr.channel === 'string' && curr.content !== null) {
-            // Fix TypeScript error by ensuring we only use string values
-            const content = typeof curr.content === 'string' 
-              ? curr.content 
-              : String(curr.content);
-            
-            acc[curr.channel] = content;
-          }
-          return acc;
-        }, {}) : {}
-      };
+      return data;
     },
     enabled: !!tenant?.id
   });
@@ -68,25 +46,12 @@ export default function CampaignCenter() {
     if (!campaign || !tenant?.id || !user?.id) return;
     
     try {
-      // Update campaign status
       const { error: updateError } = await supabase
         .from('campaigns')
         .update({ status: 'active' })
         .eq('id', campaign.id);
         
       if (updateError) throw updateError;
-
-      // Record feedback
-      const { error: feedbackError } = await supabase
-        .from('strategy_feedback')
-        .insert({
-          tenant_id: tenant.id,
-          user_id: user.id,
-          strategy_title: campaign.name,
-          action: 'used'
-        });
-        
-      if (feedbackError) throw feedbackError;
 
       setApproved(true);
       toast({
@@ -96,7 +61,6 @@ export default function CampaignCenter() {
       
       // Refresh related queries
       queryClient.invalidateQueries({ queryKey: ['campaigns'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-campaigns-count'] });
     } catch (error) {
       console.error('Error approving campaign:', error);
       toast({
@@ -115,7 +79,6 @@ export default function CampaignCenter() {
     );
   }
 
-  // Fallback to mock data if no campaigns found
   const campaignData = campaign || {
     name: "Q2 Launch Plan",
     description: "AI-generated strategy for increasing awareness via TikTok and nurturing via WhatsApp.",
@@ -135,11 +98,11 @@ export default function CampaignCenter() {
       <CampaignHeader title={campaignData.name} description={campaignData.description} />
       
       <div className="grid gap-4 md:grid-cols-2">
-        {Object.entries(campaignData.scripts).map(([channel, script]) => (
+        {Object.entries(campaignData.scripts || {}).map(([channel, script]) => (
           <ScriptCard 
             key={channel} 
             channel={channel} 
-            script={String(script)} // Ensure script is always treated as a string
+            script={String(script)}
           />
         ))}
       </div>

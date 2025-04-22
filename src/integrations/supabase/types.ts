@@ -42,24 +42,30 @@ export type Database = {
       campaigns: {
         Row: {
           created_at: string | null
+          description: string | null
           id: string
           name: string
+          scripts: Json | null
           status: string
           tenant_id: string | null
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
+          description?: string | null
           id?: string
           name: string
+          scripts?: Json | null
           status: string
           tenant_id?: string | null
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
+          description?: string | null
           id?: string
           name?: string
+          scripts?: Json | null
           status?: string
           tenant_id?: string | null
           updated_at?: string | null

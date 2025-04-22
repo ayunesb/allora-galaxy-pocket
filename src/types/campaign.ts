@@ -2,7 +2,9 @@
 export interface Campaign {
   id: string;
   name: string;
+  description?: string;
   status: "active" | "paused" | "draft";
-  strategy_id?: string;
+  tenant_id?: string;
+  scripts?: Record<string, string>;
   created_at: string;
 }
