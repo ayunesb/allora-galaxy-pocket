@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route } from "react-router-dom";
 import AuthenticatedLayout from "@/app/layouts/AuthenticatedLayout";
+import DashboardHome from "@/app/dashboard";
 import AdminOnly from "@/guards/AdminOnly";
 import ProfileSettings from "@/app/profile/ProfileSettings";
 import BillingPanel from "@/app/admin/billing/BillingPanel";
@@ -61,6 +62,7 @@ export default function AppRoutes() {
       
       {/* Protected routes */}
       <Route element={<AuthenticatedLayout />}>
+        <Route path="/dashboard" element={<DashboardHome />} />
         <Route path="/startup" element={<StartupDashboard />} />
         <Route path="/campaign" element={<CampaignPage />} />
         <Route path="/vault" element={<VaultItemsList />} />
