@@ -1,111 +1,61 @@
 
 import React from 'react';
-import { Routes, Route, Navigate } from "react-router-dom";
-import AuthenticatedLayout from "@/app/layouts/AuthenticatedLayout";
-import NotFound from "@/pages/NotFound";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { publicRoutes } from './routes/publicRoutes';
-import { dashboardRoutes } from './routes/dashboardRoutes';
-import { adminRoutes } from './routes/adminRoutes';
-import { appRoutes } from './routes/appRoutes';
-import { pluginRoutes } from './routes/pluginRoutes';
-import { DebugErrorBoundary } from '@/components/DebugErrorBoundary';
-import { RouteDebugger } from '@/components/RouteDebugger';
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
+import Layout from '@/components/Layout';
+import RequireAuth from "@/guards/RequireAuth";
 
-const AppRoutes = () => {
-  // Log when routes are being rendered
-  console.log("Rendering AppRoutes");
+// Routes
+import { publicRoutes } from '@/routes/publicRoutes';
+import { appRoutes } from '@/routes/appRoutes';
+import { dashboardRoutes } from '@/routes/dashboardRoutes';
+import { adminRoutes } from '@/routes/adminRoutes';
+import { pluginRoutes } from '@/routes/pluginRoutes';
+
+// Auth Context Provider
+import { AuthProvider } from '@/hooks/useAuth';
+import { TenantProvider } from '@/hooks/useTenant';
+import { Toaster } from "@/components/ui/sonner";
+
+// Create a browser router with all routes
+const router = createBrowserRouter([
+  // Public routes (no auth required)
+  ...publicRoutes,
   
+  // Protected routes (requires authentication)
+  {
+    element: (
+      <AuthProvider>
+        <TenantProvider>
+          <RequireAuth>
+            <Layout />
+          </RequireAuth>
+        </TenantProvider>
+      </AuthProvider>
+    ),
+    children: [
+      // Redirect from root to dashboard for authenticated users
+      { path: "/", element: <Navigate to="/dashboard" replace /> },
+      
+      // Dashboard routes
+      ...dashboardRoutes,
+      
+      // App routes (all other app features)
+      ...appRoutes,
+      
+      // Admin routes (admin-specific features)
+      ...adminRoutes,
+      
+      // Plugin routes
+      ...pluginRoutes,
+    ],
+  },
+]);
+
+export default function AppRoutes() {
   return (
-    <ErrorBoundary>
-      <RouteDebugger />
-      <Routes>
-        {/* Public routes */}
-        <Route path="/" element={
-          <DebugErrorBoundary>
-            <Navigate to="/dashboard" replace />
-          </DebugErrorBoundary>
-        } />
-        
-        {publicRoutes.map((route) => (
-          <Route 
-            key={route.path} 
-            path={route.path} 
-            element={
-              <DebugErrorBoundary>
-                {route.element}
-              </DebugErrorBoundary>
-            } 
-          />
-        ))}
-        
-        {/* Protected routes */}
-        <Route element={
-          <DebugErrorBoundary>
-            <AuthenticatedLayout />
-          </DebugErrorBoundary>
-        }>
-          {/* Dashboard routes */}
-          {dashboardRoutes.map((route) => (
-            <Route 
-              key={route.path} 
-              path={route.path} 
-              element={
-                <DebugErrorBoundary>
-                  {route.element}
-                </DebugErrorBoundary>
-              } 
-            />
-          ))}
-          
-          {/* Admin routes */}
-          {adminRoutes.map((route) => (
-            <Route 
-              key={route.path} 
-              path={route.path} 
-              element={
-                <DebugErrorBoundary>
-                  {route.element}
-                </DebugErrorBoundary>
-              } 
-            />
-          ))}
-          
-          {/* App routes */}
-          {appRoutes.map((route) => (
-            <Route 
-              key={route.path} 
-              path={route.path} 
-              element={
-                <DebugErrorBoundary>
-                  {route.element}
-                </DebugErrorBoundary>
-              } 
-            />
-          ))}
-
-          {/* Plugin routes */}
-          {pluginRoutes.map((route) => (
-            <Route 
-              key={route.path} 
-              path={route.path} 
-              element={
-                <DebugErrorBoundary>
-                  {route.element}
-                </DebugErrorBoundary>
-              } 
-            />
-          ))}
-        </Route>
-        
-        <Route path="*" element={
-          <DebugErrorBoundary>
-            <NotFound />
-          </DebugErrorBoundary>
-        } />
-      </Routes>
-    </ErrorBoundary>
+    <>
+      <RouterProvider router={router} />
+      <Toaster />
+    </>
   );
-};
-
-export default AppRoutes;
+}
