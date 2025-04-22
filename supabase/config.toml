@@ -9,3 +9,9 @@ verify_jwt = true
 
 [functions.check-kpi-alerts]
 verify_jwt = true
+
+[functions.twilio-send-sms]
+verify_jwt = true
+
+[functions.generate-alert-suggestions]
+verify_jwt = true
