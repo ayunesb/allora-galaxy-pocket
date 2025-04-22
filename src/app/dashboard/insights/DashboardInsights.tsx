@@ -1,10 +1,7 @@
 
 import { useState } from "react";
-import { Filter, ArrowUpRight, ArrowDownRight, TrendingUp } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2, TrendingUp } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2 } from "lucide-react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { MetricsOverview } from "./components/MetricsOverview";
 import { FeedbackAnalytics } from "./components/FeedbackAnalytics";
@@ -13,12 +10,13 @@ import { PluginUsageList } from "./components/PluginUsageList";
 import { KpiMetricsDisplay } from "./components/KpiMetricsDisplay";
 import { useInsightsData } from "./hooks/useInsightsData";
 import { useMetricsSubscription } from "./hooks/useMetricsSubscription";
+import KpiMetricCard from "./components/KpiMetricCard";
+import InsightsDateFilter from "./components/InsightsDateFilter";
 
 export default function DashboardInsights() {
   const [dateRange, setDateRange] = useState("30");
   const [campaignType, setCampaignType] = useState("all");
   
-  // Subscribe to real-time metrics updates
   useMetricsSubscription();
 
   const {
@@ -34,7 +32,6 @@ export default function DashboardInsights() {
     conversionRate
   } = useInsightsData(dateRange);
 
-  // Process the feedback stats to create the grouped data structure needed by FeedbackAnalytics
   const groupedFeedback = feedbackStats ? {
     "Strategies": {
       used: feedbackStats.used || 0,
@@ -54,22 +51,7 @@ export default function DashboardInsights() {
     <div className="container mx-auto py-8 px-4">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Dashboard Insights</h1>
-        <div className="flex gap-2">
-          <Select value={dateRange} onValueChange={setDateRange}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Time Period" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7">Last 7 days</SelectItem>
-              <SelectItem value="30">Last 30 days</SelectItem>
-              <SelectItem value="90">Last 90 days</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Button variant="outline" size="icon">
-            <Filter className="h-4 w-4" />
-          </Button>
-        </div>
+        <InsightsDateFilter dateRange={dateRange} setDateRange={setDateRange} />
       </div>
 
       <MetricsOverview
@@ -152,41 +134,5 @@ export default function DashboardInsights() {
         </TabsContent>
       </Tabs>
     </div>
-  );
-}
-
-interface KpiMetricCardProps {
-  title: string;
-  value: string;
-  trend: 'up' | 'down' | 'neutral';
-  change: number;
-}
-
-function KpiMetricCard({ title, value, trend, change }: KpiMetricCardProps) {
-  return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="flex justify-between items-start">
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold mt-1">{value}</p>
-          </div>
-          <div className={`flex items-center ${trend === 'up' ? 'text-green-500' : trend === 'down' ? 'text-red-500' : 'text-gray-500'}`}>
-            {trend === 'up' ? (
-              <ArrowUpRight className="h-4 w-4 mr-1" />
-            ) : trend === 'down' ? (
-              <ArrowDownRight className="h-4 w-4 mr-1" />
-            ) : null}
-            <span className="text-sm">{change > 0 ? '+' : ''}{change}%</span>
-          </div>
-        </div>
-        <div className="mt-4 h-1 bg-muted rounded-full overflow-hidden">
-          <div 
-            className={`h-full ${trend === 'up' ? 'bg-green-500' : trend === 'down' ? 'bg-red-500' : 'bg-gray-500'}`} 
-            style={{ width: `${Math.min(Math.abs(change) * 3, 100)}%` }}
-          ></div>
-        </div>
-      </CardContent>
-    </Card>
   );
 }
