@@ -44,6 +44,39 @@ export type Database = {
           },
         ]
       }
+      company_profiles: {
+        Row: {
+          created_at: string | null
+          id: string
+          industry: string
+          name: string
+          revenue_tier: string | null
+          team_size: string
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          industry: string
+          name: string
+          revenue_tier?: string | null
+          team_size: string
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          industry?: string
+          name?: string
+          revenue_tier?: string | null
+          team_size?: string
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       export_logs: {
         Row: {
           completed_at: string | null
@@ -152,6 +185,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      persona_profiles: {
+        Row: {
+          channels: string[] | null
+          created_at: string | null
+          goal: string | null
+          id: string
+          pain_points: string[] | null
+          sell_type: string | null
+          tenant_id: string
+          tone: string | null
+          tools: string[] | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          channels?: string[] | null
+          created_at?: string | null
+          goal?: string | null
+          id?: string
+          pain_points?: string[] | null
+          sell_type?: string | null
+          tenant_id: string
+          tone?: string | null
+          tools?: string[] | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          channels?: string[] | null
+          created_at?: string | null
+          goal?: string | null
+          id?: string
+          pain_points?: string[] | null
+          sell_type?: string | null
+          tenant_id?: string
+          tone?: string | null
+          tools?: string[] | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       plugin_usage_logs: {
         Row: {

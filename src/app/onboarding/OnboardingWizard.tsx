@@ -6,25 +6,11 @@ import type { OnboardingProfile } from "@/types/onboarding";
 import Step1Company from "./steps/Step1Company";
 import Step2Industry from "./steps/Step2Industry";
 import Step3Goals from "./steps/Step3Goals";
-import Step4Challenges from "./steps/Step4Challenges";
-import Step5Channels from "./steps/Step5Channels";
-import Step6Tools from "./steps/Step6Tools";
-import Step7Tone from "./steps/Step7Tone";
-import Step8TeamSize from "./steps/Step8TeamSize";
-import Step9Revenue from "./steps/Step9Revenue";
-import Step10SellType from "./steps/Step10SellType";
 
 const steps = [
   Step1Company,
   Step2Industry,
   Step3Goals,
-  Step4Challenges,
-  Step5Channels,
-  Step6Tools,
-  Step7Tone,
-  Step8TeamSize,
-  Step9Revenue,
-  Step10SellType,
 ];
 
 export default function OnboardingWizard() {
