@@ -16,10 +16,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     autoRefreshToken: true,
     storage: localStorage,
-    // Set the site URL to the current origin to prevent localhost redirects
     flowType: 'pkce',
     detectSessionInUrl: true,
-    // Configure proper redirect URLs
-    redirectTo: getSiteUrl()
+    // We'll use the site URL properly in the auth configuration
+    // but not as redirectTo which is not a valid property
   }
 });

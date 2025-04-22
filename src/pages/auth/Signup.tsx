@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 
 export default function Signup() {
   const { signup } = useAuth();
@@ -74,9 +74,13 @@ export default function Signup() {
         className="w-full" 
         onClick={handleSignup}
         disabled={isLoading || showEmailConfirmationAlert}
-        isLoading={isLoading}
       >
-        {isLoading ? "Signing up..." : "Sign up"}
+        {isLoading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Signing up...
+          </>
+        ) : "Sign up"}
       </Button>
       
       {showEmailConfirmationAlert && (
