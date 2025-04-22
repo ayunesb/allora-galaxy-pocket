@@ -3,9 +3,13 @@ import { useAgentContext } from "@/contexts/AgentContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Loader2 } from "lucide-react";
+import { ToneIndicator } from "@/app/assistant/components/ToneIndicator";
+import { useRolePermissions } from "@/hooks/useRolePermissions";
+import { Button } from "@/components/ui/button";
 
 export function AgentInfoCard() {
   const { agentProfile, isLoading } = useAgentContext();
+  const { isAdmin } = useRolePermissions();
 
   if (isLoading) {
     return (
@@ -44,18 +48,25 @@ export function AgentInfoCard() {
             <AvatarFallback>{initials}</AvatarFallback>
           )}
         </Avatar>
-        <div className="space-y-1">
+        <div className="space-y-1 flex-1">
           <div className="font-medium leading-none flex items-center">
             <span className="mr-1">Agent:</span> {agentProfile.agent_name}
           </div>
-          <div className="text-xs text-muted-foreground flex flex-col sm:flex-row sm:gap-2">
+          <div className="text-xs text-muted-foreground flex flex-col sm:flex-row sm:items-center sm:gap-2">
             <span>{agentProfile.role}</span>
             <span className="hidden sm:block">•</span>
-            <span>{agentProfile.tone} tone</span>
+            <ToneIndicator tone={agentProfile.tone} />
             <span className="hidden sm:block">•</span>
             <span>{channels}</span>
+            <span className="hidden sm:block">•</span>
+            <span>{agentProfile.language}</span>
           </div>
         </div>
+        {isAdmin && (
+          <Button size="sm" variant="outline" className="ml-auto">
+            Switch Agent
+          </Button>
+        )}
       </CardContent>
     </Card>
   );
