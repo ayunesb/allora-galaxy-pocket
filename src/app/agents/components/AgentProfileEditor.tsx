@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useUpdateAgentProfile } from "../hooks/useUpdateAgentProfile";
+import { type AgentProfile } from "../hooks/useAgentProfile";
 
 const agentFormSchema = z.object({
   agent_name: z.string().min(2).max(50),
@@ -40,11 +41,10 @@ const languages = ["English", "Spanish", "French", "German"];
 const channels = ["Email", "WhatsApp", "TikTok", "Meta"];
 const tools = ["Strategy", "Campaign", "Assistant", "Reports"];
 
-export default function AgentProfileEditor({ initialData }: { initialData?: AgentFormValues }) {
+export default function AgentProfileEditor({ initialData }: { initialData?: AgentProfile }) {
   const { tenant } = useTenant();
   const { toast } = useToast();
-  const { mutate: updateAgent } = useUpdateAgentProfile();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { mutate: updateAgent, isPending } = useUpdateAgentProfile();
 
   const form = useForm<AgentFormValues>({
     resolver: zodResolver(agentFormSchema),
@@ -60,7 +60,6 @@ export default function AgentProfileEditor({ initialData }: { initialData?: Agen
 
   async function onSubmit(data: AgentFormValues) {
     if (!tenant) return;
-    setIsSubmitting(true);
     
     try {
       await updateAgent({
@@ -78,8 +77,6 @@ export default function AgentProfileEditor({ initialData }: { initialData?: Agen
         description: "Failed to update agent profile.",
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
     }
   }
 
@@ -164,8 +161,8 @@ export default function AgentProfileEditor({ initialData }: { initialData?: Agen
           )}
         />
 
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Saving..." : "Save Changes"}
+        <Button type="submit" disabled={isPending}>
+          {isPending ? "Saving..." : "Save Changes"}
         </Button>
       </form>
     </Form>

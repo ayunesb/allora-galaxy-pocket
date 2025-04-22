@@ -1,15 +1,10 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
+import { type AgentProfile } from "../hooks/useAgentProfile";
 
 interface AgentPreviewProps {
-  agent: {
-    agent_name: string;
-    role: string;
-    tone: string;
-    language: string;
-    avatar_url?: string;
-  };
+  agent: AgentProfile;
 }
 
 export default function AgentPreview({ agent }: AgentPreviewProps) {

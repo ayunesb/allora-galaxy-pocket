@@ -1,9 +1,9 @@
 
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRolePermissions } from "@/hooks/useRolePermissions";
 import { useTenant } from "@/hooks/useTenant";
 import AgentProfileEditor from "./components/AgentProfileEditor";
 import AgentPreview from "./components/AgentPreview";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAgentProfile } from "./hooks/useAgentProfile";
 
 export default function AgentSpacePage() {
@@ -12,7 +12,11 @@ export default function AgentSpacePage() {
   const { data: agent, isLoading } = useAgentProfile();
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex h-full items-center justify-center">
+        <p>Loading agent profile...</p>
+      </div>
+    );
   }
 
   return (
@@ -27,8 +31,12 @@ export default function AgentSpacePage() {
           <CardContent>
             {isAdmin ? (
               <AgentProfileEditor initialData={agent} />
-            ) : (
+            ) : agent ? (
               <AgentPreview agent={agent} />
+            ) : (
+              <p className="text-center text-muted-foreground">
+                No agent profile configured yet.
+              </p>
             )}
           </CardContent>
         </Card>

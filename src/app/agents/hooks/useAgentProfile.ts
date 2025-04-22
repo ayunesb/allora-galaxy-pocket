@@ -3,6 +3,20 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 
+export interface AgentProfile {
+  id: string;
+  tenant_id: string;
+  agent_name: string;
+  role: string;
+  tone: string;
+  language: string;
+  memory_scope: string[];
+  channels: string[];
+  enabled_tools: string[];
+  avatar_url?: string;
+  created_by?: string;
+}
+
 export function useAgentProfile() {
   const { tenant } = useTenant();
 
@@ -18,7 +32,7 @@ export function useAgentProfile() {
         .single();
 
       if (error) throw error;
-      return data;
+      return data as AgentProfile;
     },
     enabled: !!tenant?.id,
   });
