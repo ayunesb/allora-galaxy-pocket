@@ -326,9 +326,25 @@ async function addCampaignReport(pdf: jsPDF, data: any[], filters: ExportFilters
 }
 
 /**
+ * Update type definitions for KPI data
+ */
+interface KpiData {
+  current: {
+    metric: string;
+    value: number;
+    recorded_at: string;
+  }[];
+  history: {
+    metric: string;
+    value: number;
+    recorded_at: string;
+  }[];
+}
+
+/**
  * Fetch KPI data
  */
-async function fetchKpiData(filters: ExportFilters): Promise<{ current: any[], history: any[] }> {
+async function fetchKpiData(filters: ExportFilters): Promise<KpiData> {
   // Calculate start date based on dateRange
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - (filters.dateRange || 7));
@@ -369,9 +385,9 @@ async function fetchKpiData(filters: ExportFilters): Promise<{ current: any[], h
 /**
  * Add KPI report to PDF
  */
-async function addKpiReport(pdf: jsPDF, data: { current: any[], history: any[] }, filters: ExportFilters): Promise<void> {
-  const current = Array.isArray(data.current) ? data.current : [];
-  const history = Array.isArray(data.history) ? data.history : [];
+async function addKpiReport(pdf: jsPDF, data: KpiData, filters: ExportFilters): Promise<void> {
+  const current = data.current;
+  const history = data.history;
   
   // Add title
   pdf.setFontSize(16);
