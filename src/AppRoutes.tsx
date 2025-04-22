@@ -11,44 +11,7 @@ import CreativeSuite from "@/app/creative/SuitePanel";
 import AssistantPanel from "@/app/assistant/AssistantPanel";
 import GrowthPanel from "@/app/notifications/GrowthPanel";
 import ExportPanel from "@/app/export/ExportPanel";
-
-// Pages
-import Index from "@/pages/Index";
-import NotFound from "@/pages/NotFound";
-import Login from "@/pages/auth/Login";
-import Signup from "@/pages/auth/Signup";
-import OnboardingLayout from "@/app/onboarding/OnboardingLayout";
-import OnboardingWizard from "@/app/onboarding/OnboardingWizard";
-import StartupDashboard from "@/app/startup/StartupDashboard";
-import CampaignPage from "@/app/campaign/CampaignPage";
-import VaultItemsList from "@/app/vault/VaultItemsList";
-import LaunchPage from "@/app/launch/LaunchPage";
-import PocketSwipe from "@/app/pocket/PocketSwipe";
-import AcademyFeed from "@/app/academy/AcademyFeed";
-import ExplorePage from "@/app/galaxy/explore/ExplorePage";
-import SettingsPanel from "@/app/admin/settings/SettingsPanel";
-import KpiDashboard from "@/app/insights/kpis/KpiDashboard";
-import SeedToolsPanel from "@/app/admin/seed-tools/SeedToolsPanel";
-import StrategyWizard from "@/app/strategy-gen/StrategyWizard";
-import LeadPipeline from "@/app/leads/LeadPipeline";
-import InviteUserForm from "@/app/admin/invite/InviteUserForm";
-import CoachingFeed from "@/app/coaching/feed/CoachingFeed";
-import InsightsPanel from "@/app/dashboard/insights/InsightsPanel";
-import StrategyDetail from "@/app/vault/strategy-detail/[id]";
-import NotificationsPage from "@/app/notifications/page";
-import PluginsDashboard from "@/app/admin/plugins/PluginsDashboard";
-import PluginGallery from "@/app/plugins/gallery/PluginGallery";
-import PluginDetail from "@/app/plugins/detail/PluginDetail";
-import Docs from "@/pages/Docs";
-import Explore from "@/pages/Explore";
-import AnalyticsDashboard from "@/app/admin/analytics/AnalyticsDashboard";
-import PerformanceDashboard from "@/app/dashboard/performance/PerformanceDashboard";
-import TermsOfUse from "@/pages/legal/terms";
-import PrivacyPolicy from "@/pages/legal/privacy";
-import CookiePolicy from "@/pages/legal/cookie";
-import AIDisclosure from "@/pages/legal/ai-disclosure";
-import DataProcessingAddendum from "@/pages/legal/dpa";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
+import PricingPage from "@/pages/Pricing";
 
 export default function AppRoutes() {
   return (
@@ -162,6 +125,7 @@ export default function AppRoutes() {
         <Route path="/creative/suite" element={<CreativeSuite />} />
         <Route path="/assistant" element={<AssistantPanel />} />
         <Route path="/export" element={<ExportPanel />} />
+        <Route path="/pricing" element={<PricingPage />} />
       </Route>
       
       <Route path="*" element={<NotFound />} />
