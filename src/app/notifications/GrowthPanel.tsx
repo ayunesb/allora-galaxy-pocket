@@ -1,9 +1,8 @@
-
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { useQuery } from "@tanstack/react-query";
-import { Bell, ChartLineUp, Target } from "lucide-react";
+import { Bell, ChartLine, Target } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -41,7 +40,7 @@ export default function GrowthPanel() {
       case "milestone":
         return <Target className="h-4 w-4" />;
       case "growth":
-        return <ChartLineUp className="h-4 w-4" />;
+        return <ChartLine className="h-4 w-4" />;
       default:
         return <Bell className="h-4 w-4" />;
     }
@@ -52,7 +51,7 @@ export default function GrowthPanel() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <ChartLineUp className="h-5 w-5" />
+            <ChartLine className="h-5 w-5" />
             Growth Notifications
           </CardTitle>
         </CardHeader>
