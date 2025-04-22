@@ -25,6 +25,8 @@ import { useStepNavigation } from "./components/StepNavigator";
 import WorkspaceSwitcher from "@/app/workspace/WorkspaceSwitcher";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { getFirstInvalidStep } from "./components/StepValidation";
 
 const steps = [
   Step1Company,
@@ -47,6 +49,7 @@ export default function OnboardingWizard() {
   const [profile, setProfile] = useState<OnboardingProfile>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [workspaceError, setWorkspaceError] = useState<boolean>(false);
+  const navigate = useNavigate();
 
   const { isSubmitting, completeOnboarding } = useOnboardingSubmission();
 
@@ -67,7 +70,18 @@ export default function OnboardingWizard() {
     onBack: back,
     setFormError,
     completeOnboarding: async (finalProfile) => {
-      await completeOnboarding(finalProfile);
+      // After submission, check for success, then navigate or return user to correction step
+      const result = await completeOnboarding(finalProfile);
+      if (result.success) {
+        // Navigate ASAP after success
+        navigate("/dashboard");
+      } else {
+        // Find which step is invalid and send user there
+        const firstErrorStep = getFirstInvalidStep(finalProfile);
+        if (firstErrorStep !== null) setStep(firstErrorStep);
+        // Also surface any error as a toast (already done in hook)
+        setFormError(result.error || "Unknown error, please try again.");
+      }
     }
   });
 

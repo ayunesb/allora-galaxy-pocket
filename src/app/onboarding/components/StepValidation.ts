@@ -1,6 +1,7 @@
 
 import { OnboardingProfile } from "@/types/onboarding";
 
+/** Validate the required data for current `step` out of onboarding steps. */
 export const validateStep = (step: number, data: Partial<OnboardingProfile>): string | null => {
   switch (step) {
     case 0:
@@ -60,6 +61,17 @@ export const validateStep = (step: number, data: Partial<OnboardingProfile>): st
       break;
     default:
       break;
+  }
+  return null;
+};
+
+/** Validate the complete profile, return the first step that is missing/invalid, or null if all steps valid. */
+export const getFirstInvalidStep = (profile: OnboardingProfile): number | null => {
+  for (let i = 0; i <= 10; i++) {
+    const stepProfile: Partial<OnboardingProfile> = profile;
+    if (validateStep(i, stepProfile)) {
+      return i;
+    }
   }
   return null;
 };

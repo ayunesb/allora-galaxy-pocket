@@ -1,27 +1,30 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { OnboardingProfile } from "@/types/onboarding";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
 
+/**
+ * Returns: { isSubmitting, completeOnboarding }
+ * `completeOnboarding(profile)` returns { success: boolean, error?: string }
+ */
 export const useOnboardingSubmission = () => {
-  const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
   const { tenant } = useTenant();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const completeOnboarding = async (finalProfile: OnboardingProfile) => {
+  const completeOnboarding = async (finalProfile: OnboardingProfile): Promise<{ success: boolean; error?: string }> => {
     if (!user || !tenant?.id) {
+      const errMsg = "We couldn't detect your login or workspace. Please refresh and try again.";
       toast({
         title: "Oops! Can't save your profile",
-        description: "We couldn't detect your login or workspace. Please refresh and try again.",
+        description: errMsg,
         variant: "destructive"
       });
-      return;
+      return { success: false, error: errMsg };
     }
     setIsSubmitting(true);
 
@@ -71,17 +74,12 @@ export const useOnboardingSubmission = () => {
         // Continue with navigation even if strategy generation fails
       }
 
-      // Show success toast
       toast({
         title: "Setup Complete!",
         description: "Your Allora OS is now ready. We've generated your first strategies!",
       });
 
-      // Navigate to the dashboard page (fixed: ensuring navigation happens)
-      console.log("Navigating to dashboard after successful onboarding");
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 500);
+      return { success: true };
     } catch (error: any) {
       console.error("Error saving onboarding data:", error);
       toast({
@@ -89,6 +87,7 @@ export const useOnboardingSubmission = () => {
         description: "Could not finish onboarding. Please check your internet and try again. If the problem continues, contact support.",
         variant: "destructive"
       });
+      return { success: false, error: error?.message || "Unknown error" };
     } finally {
       setIsSubmitting(false);
     }
