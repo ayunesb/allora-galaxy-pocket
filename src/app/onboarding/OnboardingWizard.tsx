@@ -1,6 +1,8 @@
 
 import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { useTenant } from "@/hooks/useTenant";
 import { useToast } from "@/hooks/use-toast";
 import { OnboardingProfile } from "@/types/onboarding";
 import Step1Company from "./steps/Step1Company";
@@ -36,13 +38,14 @@ const steps = [
 ];
 
 export default function OnboardingWizard() {
+  const { tenant } = useTenant();
   const { toast } = useToast();
   const [step, setStep] = useState(0);
   const [profile, setProfile] = useState<OnboardingProfile>({});
   const [formError, setFormError] = useState<string | null>(null);
 
   const { isSubmitting, completeOnboarding } = useOnboardingSubmission();
-  
+
   const CurrentStep = steps[step];
 
   const next = (data: Partial<OnboardingProfile>) => {
@@ -51,7 +54,7 @@ export default function OnboardingWizard() {
   };
 
   const back = () => setStep((prev) => Math.max(prev - 1, 0));
-  
+
   const { handleNext } = useStepNavigation({
     step,
     totalSteps: steps.length,
@@ -69,16 +72,31 @@ export default function OnboardingWizard() {
       next: handleNext,
       profile
     };
-
     if (step === 0) {
       return commonProps;
     }
-
     return {
       ...commonProps,
       back
     };
   };
+
+  // If there's no live tenant selected, block onboarding steps
+  if (!tenant) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background dark:bg-gray-900 p-4">
+        <Card className="w-full max-w-2xl p-6 space-y-6 bg-card dark:bg-gray-800 border border-border dark:border-gray-700">
+          <Alert variant="destructive">
+            <AlertTitle>No workspace selected</AlertTitle>
+            <AlertDescription>
+              Please select a workspace before continuing.<br />
+              Use the workspace selector at the top of the page.
+            </AlertDescription>
+          </Alert>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background dark:bg-gray-900 p-4">
