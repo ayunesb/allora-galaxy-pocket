@@ -25,7 +25,9 @@ export function BillingPreview() {
       <CardContent>
         <div className="text-2xl font-bold">{profile?.credits ?? 0}</div>
         <p className="text-xs text-muted-foreground">
-          {profile?.plan?.charAt(0).toUpperCase() + profile?.plan?.slice(1) ?? 'Standard'} Plan
+          {profile?.plan ? 
+            profile.plan.charAt(0).toUpperCase() + profile.plan.slice(1) : 
+            'Standard'} Plan
         </p>
       </CardContent>
     </Card>
