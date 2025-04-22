@@ -50,7 +50,12 @@ export default function CampaignCenter() {
         scripts: scripts ? scripts.reduce((acc: Record<string, string>, curr: any) => {
           // Fix type issue by ensuring curr.channel and curr.content are strings
           if (typeof curr.channel === 'string' && curr.content !== null) {
-            acc[curr.channel] = String(curr.content); // Ensure it's converted to string
+            // Fix TypeScript error by ensuring we only use string values
+            const content = typeof curr.content === 'string' 
+              ? curr.content 
+              : String(curr.content);
+            
+            acc[curr.channel] = content;
           }
           return acc;
         }, {}) : {}
