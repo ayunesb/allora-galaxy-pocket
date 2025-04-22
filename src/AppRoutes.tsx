@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Routes, Route } from "react-router-dom";
 import AuthenticatedLayout from "@/app/layouts/AuthenticatedLayout";
@@ -127,11 +128,7 @@ export default function AppRoutes() {
         <Route path="/dashboard/performance" element={<PerformanceDashboard />} />
         <Route path="/shopify/autopilot" element={<AutopilotPanel />} />
         <Route path="/creative/suite" element={<CreativeSuite />} />
-        <Route path="/assistant" element={
-          <AuthenticatedLayout>
-            <AssistantPanel />
-          </AuthenticatedLayout>
-        } />
+        <Route path="/assistant" element={<AssistantPanel />} />
       </Route>
       
       <Route path="*" element={<NotFound />} />
