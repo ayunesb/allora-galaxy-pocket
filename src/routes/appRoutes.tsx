@@ -7,6 +7,7 @@ import CreateGalaxyPage from "@/app/galaxy/create/page";
 import CoachingFeed from "@/app/coaching/feed/CoachingFeed";
 import LaunchPageWrapper from "@/app/launch/page";
 import StrategyPage from "@/app/strategy/page";
+import StrategyDetail from "@/app/strategy/[id]";
 import AssistantPage from "@/app/assistant/page";
 import AgentsPage from "@/app/agents/page";
 import CreativeSuitePage from "@/app/creative/SuitePanel";
@@ -20,11 +21,11 @@ export const appRoutes: RouteObject[] = [
   { path: "/coaching/feed", element: <CoachingFeed /> },
   { path: "/launch", element: <LaunchPageWrapper /> },
   { path: "/strategy", element: <StrategyPage /> },
+  { path: "/strategy/:id", element: <StrategyDetail /> },
   { path: "/assistant", element: <AssistantPage /> },
   { path: "/agents", element: <AgentsPage /> },
   { path: "/creative/suite", element: <CreativeSuitePage /> },
-  // Add specific route for campaign center
+  // Campaign routes
   { path: "/campaigns/center", element: <CampaignCenterPage /> },
-  // Campaign detail route with an ID parameter
   { path: "/campaigns/:id", element: <CampaignDetailPage /> }
 ];

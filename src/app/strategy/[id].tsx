@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -17,8 +16,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { StrategyErrorBoundary } from "./components/StrategyErrorBoundary";
 
-export default function StrategyDetail() {
+function StrategyDetailContent() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { tenant } = useTenant();
@@ -70,7 +70,6 @@ export default function StrategyDetail() {
     enabled: !!tenant?.id && !!strategy?.title
   });
 
-  // Subscribe to real-time updates for feedback
   useEffect(() => {
     if (!tenant?.id || !strategy?.title) return;
     
@@ -84,7 +83,6 @@ export default function StrategyDetail() {
           filter: `tenant_id=eq.${tenant.id}` 
         }, 
         (payload) => {
-          // Invalidate the query to refetch data when changes occur
           queryClient.invalidateQueries({ queryKey: ['strategy-feedback', id] });
         }
       )
@@ -119,7 +117,6 @@ export default function StrategyDetail() {
         description: action === 'used' ? 'The strategy has been approved' : 'The strategy has been declined'
       });
       
-      // Log activity
       logActivity({
         event_type: action === 'used' ? 'strategy_approved' : 'strategy_declined',
         message: `${action === 'used' ? 'Approved' : 'Declined'} strategy: ${strategy?.title}`,
@@ -167,7 +164,6 @@ export default function StrategyDetail() {
   const handleAddNote = () => {
     if (!note.trim() || !tenant?.id || !user?.id || !strategy) return;
     
-    // Save note as feedback
     supabase
       .from('strategy_feedback')
       .insert({
@@ -373,5 +369,13 @@ export default function StrategyDetail() {
         </CardFooter>
       </Card>
     </div>
+  );
+}
+
+export default function StrategyDetail() {
+  return (
+    <StrategyErrorBoundary>
+      <StrategyDetailContent />
+    </StrategyErrorBoundary>
   );
 }
