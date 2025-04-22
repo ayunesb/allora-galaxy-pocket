@@ -703,25 +703,37 @@ export type Database = {
       }
       vault_strategies: {
         Row: {
+          confidence: string | null
           created_at: string | null
           description: string | null
+          goal: string | null
           id: string
+          industry: string | null
+          status: string | null
           tenant_id: string | null
           title: string
           updated_at: string | null
         }
         Insert: {
+          confidence?: string | null
           created_at?: string | null
           description?: string | null
+          goal?: string | null
           id?: string
+          industry?: string | null
+          status?: string | null
           tenant_id?: string | null
           title: string
           updated_at?: string | null
         }
         Update: {
+          confidence?: string | null
           created_at?: string | null
           description?: string | null
+          goal?: string | null
           id?: string
+          industry?: string | null
+          status?: string | null
           tenant_id?: string | null
           title?: string
           updated_at?: string | null

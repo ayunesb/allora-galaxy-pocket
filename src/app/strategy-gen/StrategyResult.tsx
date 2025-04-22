@@ -1,35 +1,10 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 
 export default function StrategyResult({ industry, goal }: { 
   industry: string; 
   goal: string; 
 }) {
-  const { toast } = useToast();
-
-  const handleSaveStrategy = async () => {
-    const { error } = await supabase.from("vault_strategies").insert({
-      title: "Generated Strategy",
-      description: `Industry: ${industry}, Goal: ${goal}`,
-    });
-
-    if (error) {
-      toast({
-        title: "Error saving strategy",
-        description: error.message,
-        variant: "destructive"
-      });
-      return;
-    }
-
-    toast({
-      title: "Success",
-      description: "Strategy saved successfully"
-    });
-  };
-
   return (
     <Card>
       <CardHeader>

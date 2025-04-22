@@ -4,18 +4,47 @@ import StepIndustry from "./StepIndustry";
 import StepGoal from "./StepGoal";
 import StrategyResult from "./StrategyResult";
 import { useToast } from "@/hooks/use-toast";
+import { useTenant } from "@/hooks/useTenant";
+import { saveStrategy } from "@/services/strategyService";
 
 export default function StrategyWizard() {
   const { toast } = useToast();
+  const { tenant } = useTenant();
   const [step, setStep] = useState(1);
   const [industry, setIndustry] = useState("");
   const [goal, setGoal] = useState("");
 
-  const handleLaunchStrategy = () => {
-    toast({
-      title: "Strategy launched",
-      description: "Your AI-powered strategy is now being generated",
-    });
+  const handleLaunchStrategy = async () => {
+    if (!tenant?.id) {
+      toast({
+        title: "Error",
+        description: "No tenant found. Please try again.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await saveStrategy({
+        title: `${industry} Growth Strategy`,
+        description: `Industry: ${industry}, Goal: ${goal}`,
+        industry,
+        goal,
+        tenant_id: tenant.id,
+        confidence: "High"
+      });
+
+      toast({
+        title: "Strategy saved",
+        description: "Your strategy has been saved and is ready to launch",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error saving strategy",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   };
 
   return (
