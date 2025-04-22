@@ -65,8 +65,9 @@ import DashboardInsights from "@/app/dashboard/insights/DashboardInsights";
 
 // Import new team activity dashboard
 import TeamActivityDashboard from "@/app/dashboard/team-activity/TeamActivityDashboard";
+import PluginSettings from "@/app/plugins/settings/page";
 
-export default function AppRoutes() {
+const AppRoutes = () => {
   return (
     <Routes>
       {/* Public routes */}
@@ -194,9 +195,21 @@ export default function AppRoutes() {
             </AdminOnly>
           } 
         />
+        
+      <Route 
+        path="/plugins/settings" 
+        element={
+          <AdminOnly>
+            <PluginSettings />
+          </AdminOnly>
+        } 
+      />
+      
       </Route>
       
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
-}
+};
+
+export default AppRoutes;

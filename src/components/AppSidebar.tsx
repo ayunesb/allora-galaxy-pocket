@@ -38,7 +38,7 @@ const items = [
   { icon: Palette, label: "Creative Suite", path: "/creative/suite" },
   { icon: Plus, label: "Add Plugin", path: "/admin/plugins/gallery" },
   { icon: UserPlus, label: "Invite Users", path: "/admin/invite" },
-  { icon: Settings, label: "Settings", path: "/settings" }
+  { icon: Settings, label: "Plugin Settings", path: "/plugins/settings" }
 ];
 
 export function AppSidebar() {
