@@ -6,3 +6,6 @@ verify_jwt = true
 
 [functions.retry-agent-tasks]
 verify_jwt = true
+
+[functions.check-kpi-alerts]
+verify_jwt = true
