@@ -1,7 +1,5 @@
-
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { BookOpen } from "lucide-react";
+import React from "react";
+import { ScriptDialog } from "@/components/ScriptDialog";
 
 interface RemixedStrategyProps {
   title: string;
@@ -9,23 +7,29 @@ interface RemixedStrategyProps {
   onUse: () => void;
 }
 
-const RemixedStrategy = ({ title, author, onUse }: RemixedStrategyProps) => {
-  return (
-    <Card>
-      <CardContent className="flex justify-between items-center py-4">
-        <div className="flex items-start gap-3">
-          <BookOpen className="h-5 w-5 text-muted-foreground mt-0.5" />
-          <div>
-            <p className="font-medium">{title}</p>
-            <p className="text-xs text-muted-foreground">Remixed by {author}</p>
-          </div>
-        </div>
-        <Button variant="outline" size="sm" onClick={onUse}>
-          Use
-        </Button>
-      </CardContent>
-    </Card>
+export default function RemixedStrategy({ title, author, onUse }: RemixedStrategyProps) {
+  const script = `Strategy: ${title}\nRemixed by ${author}`;
+  const conversation = (
+    <div>
+      <b>User:</b> "What’s unique about this strategy?"<br />
+      <b>{author}:</b> "It's tailored for you! Let’s get started."
+    </div>
   );
-};
 
-export default RemixedStrategy;
+  return (
+    <div className="border rounded-lg bg-background p-4 flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <div>
+          <b>{title}</b> <span className="ml-2 text-xs text-muted-foreground">by {author}</span>
+        </div>
+        <ScriptDialog script={script} testConversation={conversation} variant="ghost" buttonSize="sm" />
+      </div>
+      <button
+        className="bg-secondary text-sm px-3 py-1 rounded hover:bg-secondary/90 mt-2"
+        onClick={onUse}
+      >
+        Use Strategy
+      </button>
+    </div>
+  );
+}
