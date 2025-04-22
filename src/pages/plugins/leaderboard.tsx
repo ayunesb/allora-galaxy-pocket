@@ -65,7 +65,7 @@ export default function PluginLeaderboard() {
                 <div>
                   <div className="flex items-center space-x-2">
                     <span className="font-bold">#{index + 1}</span>
-                    <span>{plugin.name}</h2>
+                    <span>{plugin.name}</span> {/* Fixed: Closed the span tag */}
                     {plugin.certification && (
                       <Badge variant="secondary">
                         {plugin.certification.certification_level} Certified
