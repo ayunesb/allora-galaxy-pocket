@@ -1,4 +1,3 @@
-
 import { NavLink } from "react-router-dom";
 import { 
   Home, 
@@ -18,7 +17,9 @@ import {
   List,
   Shield,
   DollarSign,
-  Star
+  Star,
+  Database,
+  Search
 } from "lucide-react";
 import {
   Sidebar,
@@ -77,6 +78,16 @@ const items = [
     icon: Star,
     label: "Publish to Galaxy",
     path: "/galaxy/create"
+  },
+  { 
+    icon: Database, 
+    label: "Agent Memory", 
+    path: "/admin/agents/memory" 
+  },
+  { 
+    icon: Search, 
+    label: "Agent Collab", 
+    path: "/admin/agents/collaboration" 
   }
 ];
 
