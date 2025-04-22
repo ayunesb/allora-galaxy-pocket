@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Check, X } from "lucide-react";
+import { MessageSquare, Check, X, Eye } from "lucide-react";
 
 interface ScriptCardProps {
   channel: string;
@@ -17,7 +17,7 @@ export function ScriptCard({ channel, script }: ScriptCardProps) {
   const getChannelIcon = (channel: string) => {
     switch (channel) {
       case "whatsapp":
-        return <MessageSquare size={16} color="#25d366" title="WhatsApp" />;
+        return <MessageSquare size={16} color="#25d366" />;
       case "email":
         return "📧";
       case "tiktok":
@@ -114,16 +114,38 @@ export function ScriptCard({ channel, script }: ScriptCardProps) {
   return (
     <Card className="h-full flex flex-col">
       <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle
+            className="text-md capitalize flex items-center gap-2"
+            style={{ wordBreak: "break-word" }}
+          >
+            {getChannelIcon(channel)} {channel.replace("_", " ")}
+          </CardTitle>
+          {/* Optionally, you could add an icon or something here */}
+        </div>
+      </CardHeader>
+      <CardContent className="flex flex-col flex-grow min-h-[60px]">
+        <p
+          className="text-sm text-foreground whitespace-pre-wrap break-words overflow-x-auto max-w-full"
+          style={{
+            wordBreak: "break-word",
+            overflowWrap: "break-word",
+            fontSize: "0.97rem",
+            margin: 0,
+          }}
+        >
+          {script}
+        </p>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <CardTitle
-              className="text-md capitalize flex items-center gap-2 cursor-pointer hover:underline"
-              title="View full strategy and test conversation"
+            <Button 
+              className="mt-4 w-fit px-4 py-2 flex items-center gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
+              variant="secondary"
               onClick={() => setDialogOpen(true)}
-              style={{ wordBreak: "break-word" }}
             >
-              {getChannelIcon(channel)} {channel.replace("_", " ")}
-            </CardTitle>
+              <Eye size={18} className="mr-1" />
+              View
+            </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
@@ -170,19 +192,6 @@ export function ScriptCard({ channel, script }: ScriptCardProps) {
             )}
           </DialogContent>
         </Dialog>
-      </CardHeader>
-      <CardContent className="flex-grow min-h-[60px]">
-        <p
-          className="text-sm text-foreground whitespace-pre-wrap break-words overflow-x-auto max-w-full"
-          style={{
-            wordBreak: "break-word",
-            overflowWrap: "break-word",
-            fontSize: "0.97rem",
-            margin: 0,
-          }}
-        >
-          {script}
-        </p>
       </CardContent>
     </Card>
   );
