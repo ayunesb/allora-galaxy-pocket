@@ -13,12 +13,16 @@ type Props = {
 export default function Step1Company({ next, profile }: Props) {
   const [companyName, setCompanyName] = React.useState(profile.companyName || "");
   const [website, setWebsite] = React.useState(profile.website || "");
+  const [touched, setTouched] = React.useState(false);
 
   const handleNext = () => {
+    setTouched(true);
     if (companyName.trim()) {
       next({ companyName, website });
     }
   };
+
+  const showError = touched && !companyName.trim();
 
   return (
     <div className="space-y-6">
@@ -34,9 +38,15 @@ export default function Step1Company({ next, profile }: Props) {
             id="companyName"
             value={companyName}
             onChange={(e) => setCompanyName(e.target.value)}
+            onBlur={() => setTouched(true)}
             placeholder="Your company name"
+            aria-required
             required
+            aria-invalid={showError}
           />
+          {showError && (
+            <span className="text-xs text-destructive">Company name is required.</span>
+          )}
         </div>
 
         <div className="space-y-2">

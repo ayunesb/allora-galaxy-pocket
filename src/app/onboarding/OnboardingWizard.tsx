@@ -18,6 +18,7 @@ import StepTools from "./steps/StepTools";
 import Step3Goals from "./steps/Step3Goals";
 import StepLaunchMode from "./steps/StepLaunchMode";
 import { BillingPreview } from "@/components/billing/BillingPreview";
+import LoadingOverlay from "@/components/ui/LoadingOverlay";
 
 const steps = [
   Step1Company,
@@ -41,17 +42,89 @@ export default function OnboardingWizard() {
   const [step, setStep] = useState(0);
   const [profile, setProfile] = useState<OnboardingProfile>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const CurrentStep = steps[step];
 
   const next = async (data: Partial<OnboardingProfile>) => {
+    setFormError(null);
     setProfile((prev) => ({ ...prev, ...data }));
-    
+
+    switch (step) {
+      case 0:
+        if (!data.companyName?.trim()) {
+          setFormError("Please provide your company name to continue.");
+          return;
+        }
+        break;
+      case 1:
+        if (!data.industry) {
+          setFormError("Please select your industry.");
+          return;
+        }
+        break;
+      case 2:
+        if (!data.teamSize) {
+          setFormError("Please select your team size.");
+          return;
+        }
+        break;
+      case 3:
+        if (!data.revenue) {
+          setFormError("Please select your revenue range.");
+          return;
+        }
+        break;
+      case 4:
+        if (!data.sellType) {
+          setFormError("Please select what you sell.");
+          return;
+        }
+        break;
+      case 5:
+        if (!data.tone) {
+          setFormError("Please select your brand's tone.");
+          return;
+        }
+        break;
+      case 6:
+        if (!Array.isArray(data.challenges) || !data.challenges.length) {
+          setFormError("Please add at least one business challenge.");
+          return;
+        }
+        break;
+      case 7:
+        if (!Array.isArray(data.channels) || !data.channels.length) {
+          setFormError("Please select at least one channel.");
+          return;
+        }
+        break;
+      case 8:
+        if (!Array.isArray(data.tools)) {
+          setFormError("Please select your tools (if any).");
+        }
+        break;
+      case 9:
+        if (!Array.isArray(data.goals) || !data.goals.length) {
+          setFormError("Please add at least one business goal.");
+          return;
+        }
+        break;
+      case 10:
+        if (!data.launch_mode) {
+          setFormError("Please select a launch mode.");
+          return;
+        }
+        break;
+      default:
+        break;
+    }
+
     if (step === steps.length - 1) {
       await completeOnboarding({ ...profile, ...data });
       return;
     }
-    
+
     setStep((prev) => Math.min(prev + 1, steps.length - 1));
   };
 
@@ -60,13 +133,12 @@ export default function OnboardingWizard() {
   const completeOnboarding = async (finalProfile: OnboardingProfile) => {
     if (!user || !tenant?.id) {
       toast({
-        title: "Error",
-        description: "Unable to save your profile. Please try again.",
+        title: "Oops! Can't save your profile",
+        description: "We couldn't detect your login or workspace. Please refresh and try again.",
         variant: "destructive"
       });
       return;
     }
-
     setIsSubmitting(true);
 
     try {
@@ -101,7 +173,7 @@ export default function OnboardingWizard() {
       if (personaError) throw personaError;
 
       const { error: strategyError } = await supabase.functions.invoke('generate-strategy', {
-        body: { 
+        body: {
           user_id: user?.id,
           tenant_id: tenant?.id
         }
@@ -111,15 +183,15 @@ export default function OnboardingWizard() {
 
       toast({
         title: "Setup Complete!",
-        description: "Your Allora OS is now ready to use. Initial strategies have been generated.",
+        description: "Your Allora OS is now ready. We've generated your first strategies!",
       });
 
       navigate("/dashboard");
     } catch (error: any) {
       console.error("Error saving onboarding data:", error);
       toast({
-        title: "Error",
-        description: "Failed to complete setup. Please try again.",
+        title: "We're sorry, something went wrong.",
+        description: "Could not finish onboarding. Please check your internet and try again. If the problem continues, contact support.",
         variant: "destructive"
       });
     } finally {
@@ -145,6 +217,7 @@ export default function OnboardingWizard() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
+      <LoadingOverlay show={isSubmitting} label="Setting up your OS..." />
       <Card className="w-full max-w-2xl p-6 space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">Setup your Allora OS</h1>
@@ -153,6 +226,11 @@ export default function OnboardingWizard() {
           </span>
         </div>
         <BillingPreview />
+        {formError && (
+          <div className="px-3 py-2 mt-2 mb-2 bg-destructive/10 text-destructive rounded text-sm" role="alert">
+            {formError}
+          </div>
+        )}
         <CurrentStep {...getStepProps()} />
       </Card>
     </div>
