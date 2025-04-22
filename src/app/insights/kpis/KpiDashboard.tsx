@@ -14,11 +14,13 @@ import KpiMetricSummaryGrid from "./components/KpiMetricSummaryGrid";
 import KpiAlertsPanel from "./components/KpiAlertsPanel";
 import { useMetricSummaries } from './hooks/useMetricSummaries';
 
-interface KpiMetric {
+// Define the type for database KPI metrics
+interface KpiMetricFromDB {
   id: string;
   metric: string;
   value: number;
   recorded_at: string;
+  tenant_id?: string;
 }
 
 export default function KpiDashboard() {
@@ -46,7 +48,7 @@ export default function KpiDashboard() {
         throw error;
       }
       
-      return data as KpiMetric[] || [];
+      return data as KpiMetricFromDB[] || [];
     },
     enabled: !!tenant?.id,
   });

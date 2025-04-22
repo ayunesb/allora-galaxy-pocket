@@ -1,6 +1,4 @@
-
 import { Card } from "@/components/ui/card";
-import KpiMetricCard from "@/app/dashboard/insights/components/KpiMetricCard";
 import { AlertTriangle, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { KpiAlert } from "@/types/kpi";
@@ -9,7 +7,7 @@ export interface MetricSummary {
   title: string;
   value: string;
   trend: "up" | "down" | "neutral";
-  change: string | number;
+  change: string;
   alerts: KpiAlert[];
 }
 

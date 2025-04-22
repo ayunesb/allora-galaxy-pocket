@@ -1,10 +1,19 @@
 
 import { useMemo } from "react";
-import type { KpiMetric, KpiAlert } from "@/types/kpi";
+import type { KpiAlert } from "@/types/kpi";
 import type { MetricSummary } from "../components/KpiMetricSummaryGrid";
 
+// Define the shape of the KpiMetric from database
+interface KpiMetricFromDB {
+  id: string;
+  metric: string;
+  value: number;
+  recorded_at: string;
+  tenant_id?: string;
+}
+
 export function useMetricSummaries(
-  metrics: KpiMetric[], 
+  metrics: KpiMetricFromDB[], 
   alerts: KpiAlert[]
 ): MetricSummary[] {
   return useMemo(() => {
@@ -15,7 +24,7 @@ export function useMetricSummaries(
       }
       acc[metric.metric].push(metric);
       return acc;
-    }, {} as Record<string, KpiMetric[]>);
+    }, {} as Record<string, KpiMetricFromDB[]>);
 
     // Process each metric group into summary data
     return Object.entries(metricsByType).map(([metricName, values]) => {
@@ -37,7 +46,7 @@ export function useMetricSummaries(
         
         return {
           title: metricName,
-          value: current.toFixed(1),
+          value: typeof current === 'number' ? current.toFixed(1) : current.toString(),
           trend,
           change: Math.abs(change).toFixed(1),
           alerts: metricAlerts
