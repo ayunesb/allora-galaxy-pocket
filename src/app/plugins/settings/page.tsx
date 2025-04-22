@@ -9,6 +9,7 @@ import { pluginList } from "@/lib/plugins/pluginList";
 import { toast } from "sonner";
 import PluginConfigEditor from "@/app/admin/plugins/PluginConfigEditor";
 import { useRolePermissions } from "@/hooks/useRolePermissions";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function PluginSettings() {
   const { activePlugins, refreshPlugins } = usePlugins();
