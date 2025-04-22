@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { scoreSuggestions } from "./scoreSuggestions";
 import { useTenant } from "@/hooks/useTenant";
+import { ScriptDialog } from "@/components/ScriptDialog";
 
 const suggestions = [
   {
@@ -26,12 +27,48 @@ const suggestions = [
   }
 ];
 
+// Helper to generate full script and test conversation per suggestion
+const getSuggestionDialogContent = (suggestion: { title: string; description: string; impact: string }) => {
+  const script = `Title: ${suggestion.title}
+Description: ${suggestion.description}
+Expected impact: ${suggestion.impact}`;
+  const conversation = (
+    <div>
+      <b>You:</b> "How will you apply this in my company?"<br />
+      <b>Coach:</b> {(() => {
+        // Custom tailored explanation per strategy
+        if (suggestion.title.includes("Activate Users")) {
+          return (
+            <>{"I will guide you to build a short onboarding checklist and set up quick rewards for the first three actions. This kickstarts team momentum, making users more likely to stick around and engage right away."}</>
+          );
+        }
+        if (suggestion.title.includes("Cut CAC")) {
+          return (
+            <>{"We'll leverage your website click data to build a Meta Custom Audience. I'll walk you through launching a targeted retargeting campaign, maximizing previous engagement for cheaper conversions."}</>
+          );
+        }
+        if (suggestion.title.includes("Increase Trial Conversion")) {
+          return (
+            <>{"I'll script an urgent Call-To-Action at day 6 of trial, intelligently offering a discount to hesitant users. This helps move users over the line before their trial expires."}</>
+          );
+        }
+        // fallback default
+        return "I'll walk you step-by-step through implementing this improvement, using AI to suggest timing and messaging that fits your goals.";
+      })()}
+    </div>
+  );
+  return { script, conversation };
+};
+
 export default function CoachingFeed() {
   const [feedbackLogs, setFeedbackLogs] = useState<any[]>([]);
   const [rankedSuggestions, setRankedSuggestions] = useState(suggestions);
   const { toast } = useToast();
   const { user } = useAuth();
   const { tenant } = useTenant();
+
+  // New: Track open dialog index (-1 = none open)
+  const [dialogIndex, setDialogIndex] = useState<number | null>(null);
 
   useEffect(() => {
     async function fetchFeedback() {
@@ -134,40 +171,57 @@ export default function CoachingFeed() {
           No new suggestions at the moment. Check back later!
         </div>
       ) : (
-        rankedSuggestions.map((suggestion, index) => (
-          <div 
-            key={index} 
-            className="bg-card dark:bg-gray-800/90 p-5 rounded-lg shadow-md space-y-3 border-l-4 border-primary"
-          >
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-lg font-semibold text-foreground dark:text-white">{suggestion.title}</h3>
-                <p className="text-sm text-muted-foreground dark:text-gray-300 mt-1">{suggestion.description}</p>
-                <span className="inline-block mt-2 text-xs bg-accent dark:bg-gray-700 text-accent-foreground dark:text-white px-2 py-1 rounded">
-                  Impact: {suggestion.impact}
-                </span>
-              </div>
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/50"
-                  onClick={() => handleUseSuggestion(index)}
-                >
-                  <Check className="mr-2 h-4 w-4" /> Use
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="text-gray-500 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700/50"
-                  onClick={() => handleDismissSuggestion(index)}
-                >
-                  <X className="mr-2 h-4 w-4" /> Dismiss
-                </Button>
+        rankedSuggestions.map((suggestion, index) => {
+          const { script, conversation } = getSuggestionDialogContent(suggestion);
+          return (
+            <div 
+              key={index} 
+              className="bg-card dark:bg-gray-800/90 p-5 rounded-lg shadow-md space-y-3 border-l-4 border-primary"
+            >
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground dark:text-white">{suggestion.title}</h3>
+                  <p className="text-sm text-muted-foreground dark:text-gray-300 mt-1">{suggestion.description}</p>
+                  <span className="inline-block mt-2 text-xs bg-accent dark:bg-gray-700 text-accent-foreground dark:text-white px-2 py-1 rounded">
+                    Impact: {suggestion.impact}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-2 items-end">
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/50"
+                      onClick={() => handleUseSuggestion(index)}
+                    >
+                      <Check className="mr-2 h-4 w-4" /> Use
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-gray-500 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700/50"
+                      onClick={() => handleDismissSuggestion(index)}
+                    >
+                      <X className="mr-2 h-4 w-4" /> Dismiss
+                    </Button>
+                  </div>
+                  {/* View (ScriptDialog) button */}
+                  <ScriptDialog
+                    label="View"
+                    script={script}
+                    testConversation={conversation}
+                    variant="ghost"
+                    buttonSize="sm"
+                    // Dialog opens only for this index
+                    // open and onOpenChange are used so only one at a time
+                    open={dialogIndex === index}
+                    onOpenChange={open => setDialogIndex(open ? index : null)}
+                  />
+                </div>
               </div>
             </div>
-          </div>
-        ))
+          );
+        })
       )}
     </div>
   );
