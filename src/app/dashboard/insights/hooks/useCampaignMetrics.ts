@@ -9,14 +9,14 @@ import type { Campaign } from "@/types/campaign";
 export function useCampaignMetrics(dateRange: string) {
   const { tenant } = useTenant();
   const formattedStartDate = new Date(Date.now() - parseInt(dateRange) * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
+  
   const [campaignApprovalRate, setCampaignApprovalRate] = useState({ 
     current: 0, 
     trend: 'neutral' as TrendType, 
     change: 0 
   });
 
-  const { data: topCampaigns } = useQuery({
+  const { data: campaigns } = useQuery({
     queryKey: ['top-campaigns', tenant?.id, dateRange],
     queryFn: async () => {
       if (!tenant?.id) return [];
@@ -35,9 +35,9 @@ export function useCampaignMetrics(dateRange: string) {
   });
 
   useEffect(() => {
-    if (topCampaigns) {
-      const approvedCampaigns = topCampaigns.filter(c => c.status === 'active' || c.status === 'delivered').length;
-      const totalCampaigns = topCampaigns.length;
+    if (campaigns) {
+      const approvedCampaigns = campaigns.filter(c => c.status === 'active').length;
+      const totalCampaigns = campaigns.length;
       const approvalRate = totalCampaigns > 0 ? Math.round((approvedCampaigns / totalCampaigns) * 100) : 0;
       
       setCampaignApprovalRate({
@@ -46,7 +46,7 @@ export function useCampaignMetrics(dateRange: string) {
         change: 0
       });
     }
-  }, [topCampaigns]);
+  }, [campaigns]);
 
-  return { campaignApprovalRate, topCampaigns };
+  return { campaignApprovalRate, topCampaigns: campaigns || [] };
 }

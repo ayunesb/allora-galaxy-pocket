@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Filter, ArrowUpRight, ArrowDownRight, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,17 +12,20 @@ import { CampaignsList } from "./components/CampaignsList";
 import { PluginUsageList } from "./components/PluginUsageList";
 import { KpiMetricsDisplay } from "./components/KpiMetricsDisplay";
 import { useInsightsData } from "./hooks/useInsightsData";
+import { useMetricsSubscription } from "./hooks/useMetricsSubscription";
 
 export default function DashboardInsights() {
   const [dateRange, setDateRange] = useState("30");
   const [campaignType, setCampaignType] = useState("all");
+  
+  // Subscribe to real-time metrics updates
+  useMetricsSubscription();
 
   const {
     kpiData,
     feedbackStats,
     pluginStats,
     topCampaigns,
-    grouped,
     roiData,
     isLoading,
     campaignApprovalRate,

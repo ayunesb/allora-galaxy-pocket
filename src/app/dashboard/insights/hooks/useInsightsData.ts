@@ -1,6 +1,5 @@
-
-import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { useKpiHistory } from "./useKpiHistory";
@@ -20,6 +19,15 @@ export function useInsightsData(dateRange: string) {
     trend: 'neutral' as const, 
     change: 0 
   });
+
+  // Use our specialized hooks
+  const { data: kpiData, isLoading: isLoadingKpiData } = useKpiHistory(dateRange);
+  const { feedbackPositivityRatio, feedbackStats } = useFeedbackMetrics(dateRange);
+  const { campaignApprovalRate, topCampaigns } = useCampaignMetrics(dateRange);
+  const { roiData } = useRoiMetrics(dateRange);
+
+  // Format start date for queries
+  const formattedStartDate = new Date(Date.now() - parseInt(dateRange) * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
   const { data: systemLogs, isLoading: isLoadingSystemLogs } = useQuery({
     queryKey: ['system-logs', tenant?.id, dateRange],
@@ -53,18 +61,10 @@ export function useInsightsData(dateRange: string) {
     enabled: !!tenant?.id
   });
 
-  // Use our new custom hooks
-  const { roiData, kpiData } = useRoiMetrics(dateRange);
-  const { feedbackPositivityRatio, feedbackStats } = useFeedbackMetrics(dateRange);
-  const { campaignApprovalRate, topCampaigns } = useCampaignMetrics(dateRange);
-  const { data: kpiHistory, isLoading: isLoadingKpiHistory } = useKpiHistory(dateRange);
-
   const pluginStats = pluginData ? pluginData.reduce((acc: Record<string, number>, item: any) => {
     acc[item.plugin_key] = (acc[item.plugin_key] || 0) + 1;
     return acc;
   }, {}) : {};
-
-  const isLoading = isLoadingSystemLogs || isLoadingPlugins || isLoadingKpiHistory;
 
   return {
     kpiData,
@@ -76,6 +76,6 @@ export function useInsightsData(dateRange: string) {
     campaignApprovalRate,
     aiRegenerationVolume,
     feedbackPositivityRatio,
-    isLoading
+    isLoading: isLoadingSystemLogs || isLoadingPlugins || isLoadingKpiData
   };
 }
