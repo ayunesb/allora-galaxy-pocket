@@ -15,3 +15,10 @@ verify_jwt = true
 
 [functions.generate-alert-suggestions]
 verify_jwt = true
+
+[functions.auto-recover]
+verify_jwt = true
+
+[functions.recovery-learn]
+verify_jwt = true
+
