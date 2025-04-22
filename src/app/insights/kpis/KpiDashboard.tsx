@@ -5,15 +5,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/hooks/useTenant';
-import KpiMetricCard from '@/app/dashboard/insights/components/KpiMetricCard';
 import { KPITrackerWithData } from '@/components/KPITracker';
 import InsightsDateFilter from '@/app/dashboard/insights/components/InsightsDateFilter';
 import { useKpiAlerts } from '@/hooks/useKpiAlerts';
-import type { KpiAlert } from '@/types/kpi';
 import KpiLoadingState from "./components/KpiLoadingState";
 import KpiErrorState from "./components/KpiErrorState";
 import KpiMetricSummaryGrid from "./components/KpiMetricSummaryGrid";
 import KpiAlertsPanel from "./components/KpiAlertsPanel";
+import { useMetricSummaries } from './hooks/useMetricSummaries';
 
 interface KpiMetric {
   id: string;
@@ -53,53 +52,10 @@ export default function KpiDashboard() {
   });
 
   const { alerts, isLoading: isLoadingAlerts, error: alertsError } = useKpiAlerts();
+  const metricSummaries = useMetricSummaries(metrics, alerts);
 
   const isLoading = isLoadingMetrics || isLoadingAlerts;
   const error = metricsError || alertsError;
-
-  const metricsByType = metrics.reduce((acc, metric) => {
-    if (!acc[metric.metric]) {
-      acc[metric.metric] = [];
-    }
-    acc[metric.metric].push(metric);
-    return acc;
-  }, {} as Record<string, KpiMetric[]>);
-
-  const metricSummaries = Object.entries(metricsByType).map(([metricName, values]) => {
-    try {
-      const sortedValues = [...values].sort((a, b) => 
-        new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime()
-      );
-      
-      const current = sortedValues[sortedValues.length - 1]?.value || 0;
-      const previous = sortedValues[0]?.value || 0;
-      
-      const change = previous === 0 ? 0 : ((current - previous) / previous) * 100;
-      
-      // Explicitly type the trend value as one of the allowed values
-      const trendValue: "up" | "down" | "neutral" = 
-        change > 0 ? "up" : change < 0 ? "down" : "neutral";
-      
-      const metricAlerts = alerts.filter(alert => alert.metric === metricName);
-      
-      return {
-        title: metricName,
-        value: current.toFixed(1),
-        trend: trendValue, // Use the explicitly typed value
-        change: Math.abs(change).toFixed(1),
-        alerts: metricAlerts
-      };
-    } catch (err) {
-      console.error(`Error processing metric ${metricName}:`, err);
-      return {
-        title: metricName,
-        value: "Error",
-        trend: "neutral" as const, // Use const assertion to ensure it's the correct type
-        change: "0",
-        alerts: []
-      };
-    }
-  });
 
   if (isLoading) {
     return <KpiLoadingState />;
@@ -111,7 +67,7 @@ export default function KpiDashboard() {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
         <h1 className="text-2xl font-bold">KPI Metrics Dashboard</h1>
         <InsightsDateFilter dateRange={dateRange} setDateRange={setDateRange} />
       </div>
