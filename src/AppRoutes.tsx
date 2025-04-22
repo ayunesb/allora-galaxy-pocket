@@ -7,6 +7,7 @@ import BillingPanel from "@/app/admin/billing/BillingPanel";
 import CampaignCenter from "@/app/campaigns/CampaignCenter";
 import AutopilotPanel from "@/app/shopify/AutopilotPanel";
 import CreativeSuite from "@/app/creative/SuitePanel";
+import AssistantPanel from "@/app/assistant/AssistantPanel";
 
 // Pages
 import Index from "@/pages/Index";
@@ -126,6 +127,11 @@ export default function AppRoutes() {
         <Route path="/dashboard/performance" element={<PerformanceDashboard />} />
         <Route path="/shopify/autopilot" element={<AutopilotPanel />} />
         <Route path="/creative/suite" element={<CreativeSuite />} />
+        <Route path="/assistant" element={
+          <AuthenticatedLayout>
+            <AssistantPanel />
+          </AuthenticatedLayout>
+        } />
       </Route>
       
       <Route path="*" element={<NotFound />} />
