@@ -9,6 +9,7 @@ import BillingPanel from "@/app/admin/billing/BillingPanel";
 import AnalyticsDashboard from "@/app/admin/analytics/AnalyticsDashboard";
 import InviteUserForm from "@/app/admin/invite/InviteUserForm";
 import PluginEarningsPage from "@/app/admin/plugins/earnings/page";
+import AdminSettingsPage from "@/pages/admin/settings/page";
 
 export const adminRoutes: RouteObject[] = [
   { 
@@ -42,5 +43,9 @@ export const adminRoutes: RouteObject[] = [
   { 
     path: "/admin/plugins/earnings", 
     element: <AdminOnly><PluginEarningsPage /></AdminOnly> 
+  },
+  { 
+    path: "/admin/settings", 
+    element: <AdminOnly><AdminSettingsPage /></AdminOnly> 
   }
 ];

@@ -11,6 +11,8 @@ import AlertsDashboard from "@/app/dashboard/alerts/page";
 import KPIAlertRules from "@/app/dashboard/kpi-alerts/KpiAlertRules";  // Correct import
 import RecoveryDashboard from "@/app/recovery/page";
 import PluginLeaderboard from "@/pages/plugins/leaderboard";
+import DashboardPage from "@/pages/dashboard/page";
+import InsightsPage from "@/pages/insights/kpis/page";
 
 export const dashboardRoutes: RouteObject[] = [
   { path: "/dashboard", element: <DashboardHome /> },
@@ -24,4 +26,6 @@ export const dashboardRoutes: RouteObject[] = [
   { path: "/dashboard/kpi-alert-rules", element: <KPIAlertRules /> },
   { path: "/recovery", element: <RecoveryDashboard /> },
   { path: "/galaxy/plugins", element: <PluginLeaderboard /> },
+  { path: "/dashboard", element: <DashboardPage /> },
+  { path: "/insights/kpis", element: <InsightsPage /> },
 ];

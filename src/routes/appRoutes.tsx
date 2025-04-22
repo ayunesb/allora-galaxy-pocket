@@ -29,6 +29,8 @@ import AgentSpacePage from "@/app/agents/AgentSpacePage";
 import PluginSettings from "@/app/plugins/settings/page";
 import CampaignPage from "@/app/campaign/CampaignPage";
 import PluginMyPage from "@/pages/plugins/my";
+import GalaxyExplorePage from "@/pages/galaxy/explore/page";
+import RecoveryPage from "@/pages/recovery/page";
 
 export const appRoutes: RouteObject[] = [
   { path: "/vault", element: <VaultItemsList /> },
@@ -36,7 +38,7 @@ export const appRoutes: RouteObject[] = [
   { path: "/launch", element: <LaunchPage /> },
   { path: "/pocket", element: <PocketSwipe /> },
   { path: "/academy", element: <AcademyFeed /> },
-  { path: "/galaxy/explore", element: <ExplorePage /> },
+  { path: "/galaxy/explore", element: <GalaxyExplorePage /> },
   { path: "/insights/kpis", element: <KpiDashboard /> },
   { path: "/settings", element: <SettingsPage /> },
   { path: "/profile/settings", element: <ProfileSettings /> },
@@ -58,5 +60,6 @@ export const appRoutes: RouteObject[] = [
   { path: "/agents", element: <AgentSpacePage /> },
   { path: "/plugins/settings", element: <PluginSettings /> },
   { path: "/campaign", element: <CampaignPage /> },
-  { path: "/plugins/my", element: <PluginMyPage /> }
+  { path: "/plugins/my", element: <PluginMyPage /> },
+  { path: "/recovery", element: <RecoveryPage /> }
 ];
