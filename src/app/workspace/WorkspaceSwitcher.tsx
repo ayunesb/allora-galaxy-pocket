@@ -17,7 +17,7 @@ const availableTenants = [
 
 export default function WorkspaceSwitcher() {
   const { tenant, setTenant } = useTenant();
-  const [selected, setSelected] = useState(tenant?.id);
+  const [selected, setSelected] = useState(tenant?.id || availableTenants[0].id);
 
   useEffect(() => {
     const stored = localStorage.getItem("tenant_id");
@@ -27,6 +27,11 @@ export default function WorkspaceSwitcher() {
         setTenant(storedTenant);
         setSelected(storedTenant.id);
       }
+    } else {
+      // Set default tenant if none selected
+      setTenant(availableTenants[0]);
+      setSelected(availableTenants[0].id);
+      localStorage.setItem("tenant_id", availableTenants[0].id);
     }
   }, []);
 

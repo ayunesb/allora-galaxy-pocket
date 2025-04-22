@@ -12,6 +12,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { useAgentContext } from "@/contexts/AgentContext";
 import { useSystemLogs } from "@/hooks/useSystemLogs";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import type { Campaign } from "@/types/campaign";
 
 export default function CampaignCenter() {
@@ -23,7 +25,7 @@ export default function CampaignCenter() {
   const { agentProfile } = useAgentContext();
   const { logActivity } = useSystemLogs();
 
-  const { data: campaign, isLoading, error } = useQuery({
+  const { data: campaign, isLoading, error, refetch } = useQuery({
     queryKey: ['current-campaign', tenant?.id],
     queryFn: async () => {
       if (!tenant?.id) return null;
@@ -50,7 +52,8 @@ export default function CampaignCenter() {
         throw err;
       }
     },
-    enabled: !!tenant?.id
+    enabled: !!tenant?.id,
+    retry: 1
   });
 
   const handleApprove = async () => {
@@ -126,16 +129,19 @@ export default function CampaignCenter() {
   if (error) {
     return (
       <div className="container mx-auto p-6">
-        <div className="p-4 border border-red-300 rounded-lg bg-red-50 text-red-800">
-          <h3 className="font-medium">Error loading campaign</h3>
-          <p className="text-sm mt-1">{error instanceof Error ? error.message : 'Unknown error occurred'}</p>
-          <button 
-            onClick={() => queryClient.invalidateQueries({ queryKey: ['current-campaign'] })}
-            className="mt-2 text-sm bg-red-100 px-2 py-1 rounded hover:bg-red-200 transition-colors"
-          >
-            Retry
-          </button>
-        </div>
+        <Alert variant="destructive" className="mb-4">
+          <AlertTitle>Error loading campaign</AlertTitle>
+          <AlertDescription>
+            {error instanceof Error ? error.message : 'Unknown error occurred'}
+          </AlertDescription>
+        </Alert>
+        <Button 
+          onClick={() => refetch()}
+          variant="outline"
+          size="sm"
+        >
+          Retry
+        </Button>
       </div>
     );
   }

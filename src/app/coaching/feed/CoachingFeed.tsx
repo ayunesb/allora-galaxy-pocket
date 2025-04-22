@@ -35,15 +35,21 @@ export default function CoachingFeed() {
 
   useEffect(() => {
     async function fetchFeedback() {
-      const { data } = await supabase
-        .from('strategy_feedback')
-        .select('strategy_title, action')
-        .eq('tenant_id', tenant?.id);
-        
-      if (data) {
-        setFeedbackLogs(data);
-        const ranked = scoreSuggestions(suggestions, data);
-        setRankedSuggestions(ranked);
+      if (!tenant?.id) return;
+      
+      try {
+        const { data } = await supabase
+          .from('strategy_feedback')
+          .select('strategy_title, action')
+          .eq('tenant_id', tenant.id);
+          
+        if (data) {
+          setFeedbackLogs(data);
+          const ranked = scoreSuggestions(suggestions, data);
+          setRankedSuggestions(ranked);
+        }
+      } catch (error) {
+        console.error("Error fetching feedback:", error);
       }
     }
     
@@ -51,51 +57,71 @@ export default function CoachingFeed() {
   }, [tenant?.id]);
 
   const handleUseSuggestion = async (index: number) => {
-    const suggestion = rankedSuggestions[index];
-
-    const { data, error } = await supabase
-      .from('vault_strategies')
-      .insert({
-        title: suggestion.title,
-        description: suggestion.description,
-        tenant_id: tenant?.id
-      });
-
-    await supabase
-      .from('strategy_feedback')
-      .insert({
-        strategy_title: suggestion.title,
-        action: 'used',
-        tenant_id: tenant?.id
-      });
-
-    if (error) {
+    if (!tenant?.id) {
       toast({
-        title: "Error saving strategy",
-        description: error.message,
+        title: "Error",
+        description: "Workspace not selected",
         variant: "destructive"
       });
-    } else {
+      return;
+    }
+    
+    const suggestion = rankedSuggestions[index];
+
+    try {
+      const { data, error } = await supabase
+        .from('vault_strategies')
+        .insert({
+          title: suggestion.title,
+          description: suggestion.description,
+          tenant_id: tenant.id
+        });
+
+      await supabase
+        .from('strategy_feedback')
+        .insert({
+          strategy_title: suggestion.title,
+          action: 'used',
+          tenant_id: tenant.id
+        });
+
+      if (error) {
+        console.error("Error saving strategy:", error);
+        throw error;
+      }
+
       toast({
         title: "Strategy saved",
         description: "The strategy has been added to your vault",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error saving strategy",
+        description: error.message || "An unknown error occurred",
+        variant: "destructive"
       });
     }
   };
 
   const handleDismissSuggestion = async (index: number) => {
+    if (!tenant?.id) return;
+    
     const suggestion = rankedSuggestions[index];
     
-    await supabase
-      .from('strategy_feedback')
-      .insert({
-        strategy_title: suggestion.title,
-        action: 'dismissed',
-        tenant_id: tenant?.id
-      });
-    
-    const updatedSuggestions = rankedSuggestions.filter((_, i) => i !== index);
-    setRankedSuggestions(updatedSuggestions);
+    try {
+      await supabase
+        .from('strategy_feedback')
+        .insert({
+          strategy_title: suggestion.title,
+          action: 'dismissed',
+          tenant_id: tenant?.id
+        });
+      
+      const updatedSuggestions = rankedSuggestions.filter((_, i) => i !== index);
+      setRankedSuggestions(updatedSuggestions);
+    } catch (error) {
+      console.error("Error dismissing suggestion:", error);
+    }
   };
 
   return (

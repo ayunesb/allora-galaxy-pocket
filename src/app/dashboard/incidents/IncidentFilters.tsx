@@ -17,14 +17,14 @@ export default function IncidentFilters({ agents, alertTypes, filters, setFilter
         <div className="w-full sm:w-1/2">
           <label className="text-sm font-medium mb-2 block">Filter by Agent</label>
           <Select
-            value={filters.agent || ""}
-            onValueChange={(value) => setFilters((prev) => ({ ...prev, agent: value || undefined }))}
+            value={filters.agent || "all"}
+            onValueChange={(value) => setFilters((prev) => ({ ...prev, agent: value === "all" ? undefined : value }))}
           >
             <SelectTrigger>
               <SelectValue placeholder="All Agents" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Agents</SelectItem>
+              <SelectItem value="all">All Agents</SelectItem>
               {agents.map((agent) => (
                 <SelectItem key={agent} value={agent}>
                   {agent}
@@ -37,14 +37,14 @@ export default function IncidentFilters({ agents, alertTypes, filters, setFilter
         <div className="w-full sm:w-1/2">
           <label className="text-sm font-medium mb-2 block">Filter by Alert Type</label>
           <Select
-            value={filters.alertType || ""}
-            onValueChange={(value) => setFilters((prev) => ({ ...prev, alertType: value || undefined }))}
+            value={filters.alertType || "all"}
+            onValueChange={(value) => setFilters((prev) => ({ ...prev, alertType: value === "all" ? undefined : value }))}
           >
             <SelectTrigger>
               <SelectValue placeholder="All Alert Types" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Alert Types</SelectItem>
+              <SelectItem value="all">All Alert Types</SelectItem>
               {alertTypes.map((type) => (
                 <SelectItem key={type} value={type}>
                   {type}

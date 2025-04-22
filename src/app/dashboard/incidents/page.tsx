@@ -8,6 +8,7 @@ import IncidentFilters from "./IncidentFilters";
 import IncidentListItem from "./IncidentListItem";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 
 type AgentAlert = {
   id: string;
@@ -25,11 +26,14 @@ export default function IncidentTimeline() {
   const [alerts, setAlerts] = useState<AgentAlert[]>([]);
   const [filters, setFilters] = useState<{ agent?: string; alertType?: string }>({});
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!tenant?.id) return;
     
     setLoading(true);
+    setError(null);
+
     let query = supabase
       .from("agent_alerts")
       .select("*")
@@ -46,6 +50,7 @@ export default function IncidentTimeline() {
     query.then(({ data, error }) => {
       if (error) {
         console.error("Error fetching alerts:", error);
+        setError(error.message);
       } else {
         setAlerts(data || []);
       }
@@ -55,6 +60,14 @@ export default function IncidentTimeline() {
 
   const uniqueAgents = [...new Set(alerts.map((a) => a.agent))];
   const uniqueAlertTypes = [...new Set(alerts.map((a) => a.alert_type))];
+
+  if (!tenant?.id) {
+    return (
+      <div className="p-6 text-center">
+        <p className="text-muted-foreground">Please select a workspace to view incidents.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
@@ -76,7 +89,24 @@ export default function IncidentTimeline() {
 
       {loading ? (
         <div className="flex justify-center p-12">
-          <div className="animate-pulse text-muted-foreground">Loading incidents...</div>
+          <Loader2 className="h-6 w-6 animate-spin mr-2" />
+          <div className="text-muted-foreground">Loading incidents...</div>
+        </div>
+      ) : error ? (
+        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
+          <p className="text-red-600 dark:text-red-400">{error}</p>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => {
+              setFilters({});
+              // Re-trigger the effect
+              setLoading(true);
+            }}
+            className="mt-4"
+          >
+            Reset filters
+          </Button>
         </div>
       ) : alerts.length > 0 ? (
         <ul className="border-l-2 border-primary pl-4">

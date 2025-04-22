@@ -2,6 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRolePermissions } from "@/hooks/useRolePermissions";
 import { useTenant } from "@/hooks/useTenant";
+import { Loader2 } from "lucide-react";
 import AgentProfileEditor from "./components/AgentProfileEditor";
 import AgentPreview from "./components/AgentPreview";
 import { useAgentProfile } from "./hooks/useAgentProfile";
@@ -14,6 +15,7 @@ export default function AgentSpacePage() {
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin mr-2" />
         <p>Loading agent profile...</p>
       </div>
     );
