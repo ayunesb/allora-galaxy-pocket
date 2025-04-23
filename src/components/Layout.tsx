@@ -1,66 +1,76 @@
 
-import { SidebarProvider } from "@/components/ui/sidebar"
-import Topbar from "./Topbar" 
-import { AppSidebar } from "./AppSidebar"
-import { TooltipProvider } from "@/components/ui/tooltip"
-import SidebarInset from "./ui/sidebar/SidebarInset"
-import { useAppLayout } from "@/hooks/useAppLayout"
-import { Skeleton } from "./ui/skeleton"
-import { useEffect } from "react"
-import { useRouteLogger } from "@/hooks/useRouteLogger"
+import React, { useState, useEffect } from "react";
+import { Menu, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Sidebar from "./Sidebar";
+import Topbar from "./Topbar";
 
-export default function Layout({ children }: { children: React.ReactNode }) {
-  const { layout, isLoading } = useAppLayout();
-
-  // Track route usage on every page load
-  useRouteLogger();
-
-  // Apply theme from layout
+const Layout = ({ children }: { children: React.ReactNode }) => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  // Check if mobile on mount and when window resizes
   useEffect(() => {
-    if (layout?.config?.theme) {
-      // Set theme mode (light/dark)
-      if (layout.config.theme.mode !== 'auto') {
-        document.documentElement.classList.toggle(
-          'dark', 
-          layout.config.theme.mode === 'dark'
-        );
-      }
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkIfMobile();
+    
+    window.addEventListener('resize', checkIfMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkIfMobile);
+    };
+  }, []);
 
-      // Theme color could be applied here if needed
-    }
-  }, [layout]);
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex w-full bg-background dark:bg-gray-900">
-        <Skeleton className="w-64 h-screen" />
-        <div className="flex-1 flex flex-col">
-          <Skeleton className="h-16 w-full" />
-          <div className="flex-1 p-6">
-            <Skeleton className="w-full h-[200px] mb-4" />
-            <Skeleton className="w-full h-[400px]" />
-          </div>
+  return (
+    <div className="min-h-screen bg-background">
+      <Topbar />
+      
+      {/* Desktop Sidebar */}
+      <Sidebar />
+      
+      {/* Mobile Sidebar Toggle Button */}
+      <div className="md:hidden fixed top-3 left-3 z-50">
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-10 w-10 rounded-full bg-background shadow-md"
+          onClick={toggleSidebar}
+        >
+          {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+        </Button>
+      </div>
+      
+      {/* Mobile Sidebar */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+      
+      <div 
+        className={`fixed top-0 bottom-0 left-0 w-64 bg-background border-r z-40 transition-transform transform md:hidden ${
+          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="pt-16">
+          <Sidebar />
         </div>
       </div>
-    );
-  }
-
-  const showSidebar = layout?.config?.sidebar?.enabled !== false;
-  const showTopbar = layout?.config?.topbar?.enabled !== false;
-  
-  return (
-    <SidebarProvider>
-      <TooltipProvider>
-        <div className="min-h-screen flex w-full bg-background dark:bg-gray-900">
-          {showSidebar && <AppSidebar />}
-          <div className="flex-1 flex flex-col">
-            {showTopbar && <Topbar />}
-            <SidebarInset className="flex-1 overflow-y-auto p-6 bg-background dark:bg-gray-900">
-              {children}
-            </SidebarInset>
-          </div>
-        </div>
-      </TooltipProvider>
-    </SidebarProvider>
+      
+      {/* Main Content */}
+      <main className="pt-16 md:pl-64 min-h-screen">
+        {children}
+      </main>
+    </div>
   );
-}
+};
+
+export default Layout;

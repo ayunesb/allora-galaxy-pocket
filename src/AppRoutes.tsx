@@ -11,6 +11,7 @@ import { appRoutes } from '@/routes/appRoutes';
 import { dashboardRoutes } from '@/routes/dashboardRoutes';
 import { adminRoutes } from '@/routes/adminRoutes';
 import { pluginRoutes } from '@/routes/pluginRoutes';
+import { billingRoutes } from '@/routes/billingRoutes';
 
 // Auth Context Provider
 import { AuthProvider } from '@/hooks/useAuth';
@@ -66,6 +67,9 @@ const router = createBrowserRouter([
       
       // Plugin routes
       ...pluginRoutes,
+      
+      // Billing routes
+      ...billingRoutes,
       
       // Catch-all route - must be last
       { path: "*", element: <NotFound /> }
