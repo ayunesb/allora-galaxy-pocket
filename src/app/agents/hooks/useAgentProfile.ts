@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
@@ -17,6 +18,7 @@ export interface AgentProfile {
   created_by?: string;
   memory_score?: number;
   last_memory_update?: string;
+  prompt?: string; // Added the prompt property
 }
 
 export function useAgentProfile() {
