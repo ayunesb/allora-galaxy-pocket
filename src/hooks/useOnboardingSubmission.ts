@@ -8,16 +8,13 @@ import { useTenant } from "@/hooks/useTenant";
 
 export function useOnboardingSubmission() {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const navigate = useNavigate();
   const { tenant } = useTenant();
+  const navigate = useNavigate();
 
   const completeOnboarding = async (profile: OnboardingProfile) => {
     if (!tenant?.id) {
       console.error("Cannot complete onboarding: No tenant ID available");
-      toast("Error", {
-        description: "Workspace not selected. Please try again.",
-        variant: "destructive"
-      });
+      toast.error("Workspace not selected. Please try again.");
       return {
         success: false,
         error: "Workspace not selected. Please try again."
@@ -39,16 +36,15 @@ export function useOnboardingSubmission() {
 
       if (error) throw error;
 
-      toast("Setup complete!", {
+      toast.success("Setup complete!", {
         description: "Welcome to Allora OS"
       });
 
       return { success: true };
     } catch (error: any) {
       console.error("Onboarding submission error:", error);
-      toast("Error", {
-        description: error.message || "Failed to save onboarding data",
-        variant: "destructive"
+      toast.error("Failed to save onboarding data", {
+        description: error.message || "An unexpected error occurred"
       });
       return {
         success: false,
