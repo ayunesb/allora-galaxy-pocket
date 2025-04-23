@@ -1,4 +1,3 @@
-
 export interface KpiMetric {
   id: string;
   kpi_name: string;
@@ -34,3 +33,4 @@ export interface KpiAlert {
   tenant_id: string;
   created_at: string;
 }
+

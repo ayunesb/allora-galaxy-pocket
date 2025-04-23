@@ -1,77 +1,54 @@
 
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
-import { KpiMetric } from "@/types/kpi";
-import { format } from "date-fns";
+import { useAnimatedNumber } from "@/hooks/useAnimatedNumber";
+import { KPIChart } from "@/components/KPIChart";
+import type { KpiMetric } from "@/types/kpi";
 
-export default function KpiCard({
-  kpi_name, 
-  value, 
-  target, 
-  trend_direction, 
-  status,
-  updated_at,
-  category,
-  label,
-  trend,
-  changePercent
-}: KpiMetric) {
-  const progressValue = target ? Math.min((value / target) * 100, 100) : 0;
-  const displayName = label || kpi_name;
-  const trendDir = trend || trend_direction;
+interface KpiCardProps extends KpiMetric {
+  onUpdate?: () => void;
+}
 
-  const trendIcon = () => {
-    switch(trendDir) {
-      case 'up': return <TrendingUp className="text-green-500" />;
-      case 'down': return <TrendingDown className="text-red-500" />;
-      default: return <Minus className="text-gray-500" />;
-    }
-  };
+export default function KpiCard({ 
+  kpi_name,
+  value,
+  trend_direction,
+  target,
+  historicalData,
+  onUpdate 
+}: KpiCardProps) {
+  const animatedValue = useAnimatedNumber(Number(value));
+
+  const trendColor = 
+    trend_direction === 'up' ? 'text-green-500' :
+    trend_direction === 'down' ? 'text-red-500' : 
+    'text-gray-500';
+
+  const chartData = historicalData?.map(item => ({
+    date: new Date(item.recorded_at).toLocaleDateString(),
+    value: item.value
+  })) || [];
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardHeader className="flex flex-row justify-between items-start">
-        <div>
-          <h3 className="text-lg font-semibold">{displayName}</h3>
-          {category && (
-            <Badge variant="secondary" className="mt-1">
-              {category}
-            </Badge>
-          )}
-        </div>
-        {trendIcon()}
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <h3 className="font-medium text-sm">{kpi_name}</h3>
+        <Badge variant="outline" className={trendColor}>
+          {trend_direction === 'up' && <TrendingUp className="h-4 w-4" />}
+          {trend_direction === 'down' && <TrendingDown className="h-4 w-4" />}
+          {trend_direction === 'neutral' && <Minus className="h-4 w-4" />}
+        </Badge>
       </CardHeader>
       <CardContent>
-        <div className="flex justify-between items-baseline mb-2">
-          <span className="text-3xl font-bold">{value.toLocaleString()}</span>
-          {target && (
-            <span className="text-sm text-muted-foreground">
-              Target: {target.toLocaleString()}
-            </span>
-          )}
-        </div>
-        
+        <div className="text-2xl font-bold">{animatedValue}</div>
         {target && (
-          <Progress 
-            value={progressValue} 
-            className={`mb-2 ${status === 'success' ? 'bg-green-200' : 'bg-red-200'}`} 
-          />
+          <p className="text-xs text-muted-foreground mt-1">
+            Target: {target}
+          </p>
         )}
-
-        <div className="flex justify-between text-xs text-muted-foreground">
-          <span>
-            Updated: {format(new Date(updated_at), 'MMM dd, yyyy HH:mm')}
-          </span>
-          {status && (
-            <Badge 
-              variant={status === 'success' ? 'default' : 'destructive'}
-              className="text-xs"
-            >
-              {status === 'success' ? 'On Target' : 'Behind Target'}
-            </Badge>
-          )}
+        <div className="mt-4 h-[200px]">
+          <KPIChart data={chartData} />
         </div>
       </CardContent>
     </Card>
