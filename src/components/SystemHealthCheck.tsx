@@ -1,16 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { AlertCircle, CheckCircle, RefreshCw } from 'lucide-react';
+
+import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/components/ui/sonner";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import HealthStatusSection from "./system-health/HealthStatusSection";
-import TablesStatusGrid from "./system-health/TablesStatusGrid";
-import SystemConfigAlert from "./system-health/SystemConfigAlert";
-import SystemOverallAlert from "./system-health/SystemOverallAlert";
+
+import { RefreshButton } from "./system-health/RefreshButton";
+import { TablesCheck } from "./system-health/TablesCheck";
+import { SystemConfigCreation } from "./system-health/SystemConfigCreation";
+import { SystemOverallStatus } from "./system-health/SystemOverallStatus";
 
 interface SystemStatus {
   database: boolean;
@@ -41,86 +39,90 @@ export default function SystemHealthCheck() {
     }
   });
   const [isChecking, setIsChecking] = useState(true);
-  const { user } = useAuth();
+  const { user } = (() => {
+    try {
+      // To import and use useAuth hook in a client component properly
+      return require("@/hooks/useAuth").useAuth();
+    } catch {
+      return { user: null };
+    }
+  })();
 
   const checkSystemHealth = async () => {
     setIsChecking(true);
     const newStatus = { ...status };
-    
+
     try {
-      // Check database connection
-      const { data: dbCheck, error: dbError } = await supabase.from('tenant_profiles').select('count(*)').limit(1);
+      // Check database connection by querying tenant_profiles table
+      const { error: dbError } = await supabase.from('tenant_profiles').select('count(*)').limit(1);
       newStatus.database = !dbError;
 
       // Check auth service
       newStatus.auth = !!user;
-      
-      // Check for maintenance mode table
+
+      // Check system_config table existence and maintenance mode
       try {
-        // First check if system_config table exists by querying it
         const { error: sysConfigError } = await supabase.from('system_config').select('count(*)').limit(1);
         newStatus.tables.system_config = !sysConfigError;
-        
+
         if (!sysConfigError) {
-          // Get maintenance mode setting if table exists
           const { data: maintenanceData, error: maintenanceError } = await supabase
             .from('system_config')
             .select('config')
             .eq('key', 'maintenance_mode')
-            .single();
-            
+            .maybeSingle();
+
           if (!maintenanceError && maintenanceData) {
             newStatus.maintenance = maintenanceData.config.enabled;
           } else {
-            // Table exists but no record found
             newStatus.maintenance = false;
           }
         }
-      } catch (err) {
-        console.error("Error checking system_config table:", err);
+      } catch (e) {
+        console.error("Error checking system_config table:", e);
       }
 
       // Check other critical tables
       try {
         const { error: userRolesError } = await supabase.from('user_roles').select('count(*)').limit(1);
         newStatus.tables.user_roles = !userRolesError;
-      } catch (err) {
-        console.error("Error checking user_roles table:", err);
+      } catch (e) {
+        console.error("Error checking user_roles table:", e);
       }
 
       try {
         const { error: tenantError } = await supabase.from('tenant_profiles').select('count(*)').limit(1);
         newStatus.tables.tenant_profiles = !tenantError;
-      } catch (err) {
-        console.error("Error checking tenant_profiles table:", err);
+      } catch (e) {
+        console.error("Error checking tenant_profiles table:", e);
       }
 
       try {
         const { error: companyError } = await supabase.from('company_profiles').select('count(*)').limit(1);
         newStatus.tables.company_profiles = !companyError;
-      } catch (err) {
-        console.error("Error checking company_profiles table:", err);
+      } catch (e) {
+        console.error("Error checking company_profiles table:", e);
       }
 
       try {
         const { error: personaError } = await supabase.from('persona_profiles').select('count(*)').limit(1);
         newStatus.tables.persona_profiles = !personaError;
-      } catch (err) {
-        console.error("Error checking persona_profiles table:", err);
+      } catch (e) {
+        console.error("Error checking persona_profiles table:", e);
       }
 
-      // Check edge functions by calling the check-secrets function
+      // Check edge functions availability
       try {
         const { error: functionsError } = await supabase.functions.invoke('check-secrets', {
           body: { checkOnly: true }
         });
         newStatus.edgeFunctions = !functionsError;
-      } catch (err) {
-        console.error("Error checking edge functions:", err);
+      } catch (e) {
+        console.error("Error checking edge functions:", e);
       }
 
-    } catch (err) {
-      console.error("Error checking system health:", err);
+    } catch (e) {
+      console.error("Error checking system health:", e);
       toast.error("Failed to check system health", {
         description: "Please try again or contact support if the issue persists."
       });
@@ -136,7 +138,6 @@ export default function SystemHealthCheck() {
 
   const createSystemConfigTable = async () => {
     try {
-      // Create the system_config table if it doesn't exist
       const { error } = await supabase.rpc('execute_sql', {
         sql_query: `
           CREATE TABLE IF NOT EXISTS public.system_config (
@@ -152,15 +153,14 @@ export default function SystemHealthCheck() {
       });
 
       if (error) throw error;
-      
+
       toast.success("System configuration table created", {
         description: "The system_config table has been created successfully."
       });
       
-      // Re-check system health
       checkSystemHealth();
-    } catch (err) {
-      console.error("Error creating system_config table:", err);
+    } catch (e) {
+      console.error("Error creating system_config table:", e);
       toast.error("Failed to create system configuration", {
         description: "Please try again or contact support if the issue persists."
       });
@@ -172,15 +172,7 @@ export default function SystemHealthCheck() {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-xl">System Health Check</CardTitle>
-          <Button 
-            size="sm" 
-            variant="outline" 
-            onClick={checkSystemHealth} 
-            disabled={isChecking}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isChecking ? 'animate-spin' : ''}`} />
-            {isChecking ? 'Checking...' : 'Refresh'}
-          </Button>
+          <RefreshButton isChecking={isChecking} onRefresh={checkSystemHealth} />
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -190,19 +182,17 @@ export default function SystemHealthCheck() {
           edgeFunctions={status.edgeFunctions}
           maintenance={status.maintenance}
         />
-
-        <TablesStatusGrid tables={status.tables} />
-
-        <SystemConfigAlert 
+        <TablesCheck tables={status.tables} />
+        <SystemConfigCreation 
           show={!status.tables.system_config}
-          onCreateSystemConfig={createSystemConfigTable}
+          onCreate={createSystemConfigTable}
         />
       </CardContent>
       <CardFooter className="border-t pt-4 flex-col items-start">
         <p className="text-sm text-muted-foreground mb-2">
           Last checked: {new Date().toLocaleString()}
         </p>
-        <SystemOverallAlert status={status} />
+        <SystemOverallStatus status={status} />
       </CardFooter>
     </Card>
   );
