@@ -9,3 +9,4 @@ verify_jwt = false
 
 [functions.crons]
 grade_submissions = "0 19 * * *" # Run daily at 7 PM
+
