@@ -5,6 +5,7 @@ import type { AccessTestResult } from "../hooks/useAccessTests";
 import { DisabledRlsRow } from "./rows/DisabledRlsRow";
 import { NoRlsPoliciesRow } from "./rows/NoRlsPoliciesRow";
 import { PolicyRow } from "./rows/PolicyRow";
+import { DebugErrorBoundary } from "@/components/DebugErrorBoundary";
 
 interface RlsTableRowProps {
   tableName: string;
@@ -20,24 +21,34 @@ export function RlsTableRow({
   testResult 
 }: RlsTableRowProps) {
   if (!rlsEnabled) {
-    return <DisabledRlsRow tableName={tableName} />;
+    return (
+      <DebugErrorBoundary>
+        <DisabledRlsRow tableName={tableName} />
+      </DebugErrorBoundary>
+    );
   }
 
   if (policies.length === 0) {
-    return <NoRlsPoliciesRow tableName={tableName} testResult={testResult} />;
+    return (
+      <DebugErrorBoundary>
+        <NoRlsPoliciesRow tableName={tableName} testResult={testResult} />
+      </DebugErrorBoundary>
+    );
   }
 
   return (
     <>
       {policies.map((policy, index) => (
-        <PolicyRow
-          key={`${tableName}-${policy.policyname}`}
-          policy={policy}
-          tableName={tableName}
-          isFirstPolicy={index === 0}
-          totalPolicies={policies.length}
-          testResult={testResult}
-        />
+        <DebugErrorBoundary key={`${tableName}-${policy.policyname}`}>
+          <PolicyRow
+            key={`${tableName}-${policy.policyname}`}
+            policy={policy}
+            tableName={tableName}
+            isFirstPolicy={index === 0}
+            totalPolicies={policies.length}
+            testResult={testResult}
+          />
+        </DebugErrorBoundary>
       ))}
     </>
   );

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Table } from "@/components/ui/table";
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
@@ -13,6 +12,7 @@ import { useRlsData } from "./hooks/useRlsData";
 import { useAccessTests } from "./hooks/useAccessTests";
 import { RlsTableRow } from "./components/RlsTableRow";
 import { SecurityAuditTips } from "./components/SecurityAuditTips";
+import { DebugErrorBoundary } from "@/components/DebugErrorBoundary";
 
 export default function RlsAuditReport() {
   const { user } = useAuth();
@@ -105,109 +105,114 @@ export default function RlsAuditReport() {
     }
 
     return tables.map(table => (
-      <RlsTableRow
-        key={table.tablename}
-        tableName={table.tablename}
-        rlsEnabled={table.rlsEnabled}
-        policies={table.policies}
-        testResult={testResults.find(r => r.tableName === table.tablename)}
-      />
+      <DebugErrorBoundary key={table.tablename}>
+        <RlsTableRow
+          tableName={table.tablename}
+          rlsEnabled={table.rlsEnabled}
+          policies={table.policies}
+          testResult={testResults.find(r => r.tableName === table.tablename)}
+        />
+      </DebugErrorBoundary>
     ));
   };
 
   return (
     <AdminOnly>
       <div className="container mx-auto py-6">
-        <Card className="mb-6">
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <div>
-                <CardTitle className="text-2xl">Row-Level Security Audit</CardTitle>
-                <CardDescription>
-                  Audit all tables with RLS enabled and test tenant-level access controls
-                </CardDescription>
+        <DebugErrorBoundary>
+          <Card className="mb-6">
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="text-2xl">Row-Level Security Audit</CardTitle>
+                  <CardDescription>
+                    Audit all tables with RLS enabled and test tenant-level access controls
+                  </CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={fetchRlsTables}
+                    disabled={isLoading}
+                    className="flex items-center gap-1"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                    Refresh Tables
+                  </Button>
+                  <Button
+                    variant="default"
+                    onClick={() => runAccessTests(tables)}
+                    disabled={isRunningTests || isLoading || !tables.length}
+                    className="flex items-center gap-1"
+                  >
+                    <ShieldAlert className="h-4 w-4" />
+                    Run Access Tests
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={downloadReport}
+                    disabled={!tables.length}
+                    className="flex items-center gap-1"
+                  >
+                    <Download className="h-4 w-4" />
+                    Export CSV
+                  </Button>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={fetchRlsTables}
-                  disabled={isLoading}
-                  className="flex items-center gap-1"
-                >
-                  <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                  Refresh Tables
-                </Button>
-                <Button
-                  variant="default"
-                  onClick={() => runAccessTests(tables)}
-                  disabled={isRunningTests || isLoading || !tables.length}
-                  className="flex items-center gap-1"
-                >
-                  <ShieldAlert className="h-4 w-4" />
-                  Run Access Tests
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={downloadReport}
-                  disabled={!tables.length}
-                  className="flex items-center gap-1"
-                >
-                  <Download className="h-4 w-4" />
-                  Export CSV
-                </Button>
+            </CardHeader>
+            <CardContent>
+              {!user || !tenant ? (
+                <Alert className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Authentication Required</AlertTitle>
+                  <AlertDescription>
+                    You must be logged in with an active tenant to run access tests.
+                  </AlertDescription>
+                </Alert>
+              ) : null}
+              
+              {tables.length === 0 && !isLoading ? (
+                <Alert className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>No Tables Found</AlertTitle>
+                  <AlertDescription>
+                    Could not retrieve table information from the database.
+                  </AlertDescription>
+                </Alert>
+              ) : null}
+              
+              {testResults.length > 0 && (
+                <div className="mb-4 text-sm text-muted-foreground">
+                  <p>Tests run at: {lastRun}</p>
+                  <p>User ID: {user?.id}</p>
+                  <p>Tenant ID: {tenant?.id}</p>
+                </div>
+              )}
+              
+              <div className="overflow-x-auto">
+                <Table>
+                  <thead>
+                    <tr className="bg-muted">
+                      <th className="p-3 border">Table</th>
+                      <th className="p-3 border">RLS Status</th>
+                      <th className="p-3 border">Policy Name</th>
+                      <th className="p-3 border">Command</th>
+                      <th className="p-3 border">Auth Reference</th>
+                      <th className="p-3 border">Access Test Result</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {renderTableRows()}
+                  </tbody>
+                </Table>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {!user || !tenant ? (
-              <Alert className="mb-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Authentication Required</AlertTitle>
-                <AlertDescription>
-                  You must be logged in with an active tenant to run access tests.
-                </AlertDescription>
-              </Alert>
-            ) : null}
-            
-            {tables.length === 0 && !isLoading ? (
-              <Alert className="mb-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>No Tables Found</AlertTitle>
-                <AlertDescription>
-                  Could not retrieve table information from the database.
-                </AlertDescription>
-              </Alert>
-            ) : null}
-            
-            {testResults.length > 0 && (
-              <div className="mb-4 text-sm text-muted-foreground">
-                <p>Tests run at: {lastRun}</p>
-                <p>User ID: {user?.id}</p>
-                <p>Tenant ID: {tenant?.id}</p>
-              </div>
-            )}
-            
-            <div className="overflow-x-auto">
-              <Table>
-                <thead>
-                  <tr className="bg-muted">
-                    <th className="p-3 border">Table</th>
-                    <th className="p-3 border">RLS Status</th>
-                    <th className="p-3 border">Policy Name</th>
-                    <th className="p-3 border">Command</th>
-                    <th className="p-3 border">Auth Reference</th>
-                    <th className="p-3 border">Access Test Result</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {renderTableRows()}
-                </tbody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </DebugErrorBoundary>
         
-        <SecurityAuditTips />
+        <DebugErrorBoundary>
+          <SecurityAuditTips />
+        </DebugErrorBoundary>
       </div>
     </AdminOnly>
   );
