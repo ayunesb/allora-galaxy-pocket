@@ -29,7 +29,6 @@ export const CEO_Agent = {
   task_type: "generate-onboarding-flow",
   prompt: `You are an onboarding flow optimizer.
 Given a signup context, propose step-by-step onboarding, success criteria, and optimal timeline for user value.`,
-  
 
   generateStrategyFromProfile: async (profile: GenerateFromProfileInput) => {
     const { getTunedPrompt } = useAgentFeedback();
