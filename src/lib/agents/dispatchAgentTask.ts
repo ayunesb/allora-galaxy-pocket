@@ -67,5 +67,16 @@ export async function dispatchAgentTask({ user_id, agent, task_type, payload }: 
     return { status: "executed", result: "Plugin recommendations would go here." };
   }
 
+  // Log agent_tasks with prompt_version if provided
+  await supabase.from("agent_tasks").insert({
+    agent,
+    task_type,
+    payload,
+    status: "success",
+    prompt_version: payload?.prompt_version,
+    plugin_id: payload?.plugin_id || null,
+    executed_at: new Date().toISOString()
+  });
+
   return { status: "executed" };
 }

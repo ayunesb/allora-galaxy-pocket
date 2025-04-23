@@ -1,4 +1,3 @@
-
 import { NavLink } from "react-router-dom";
 import { 
   Home, 
@@ -35,6 +34,18 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import WorkspaceSwitcher from "@/app/workspace/WorkspaceSwitcher";
+
+function canAccessRoute(role, path) {
+  const accessMatrix = {
+    client: ["/dashboard", "/strategy-gen", "/vault"],
+    developer: ["/dashboard", "/plugins/builder", "/agents/performance"],
+    admin: ["*"]
+  };
+  return (
+    accessMatrix[role]?.includes(path) ||
+    accessMatrix[role]?.includes("*")
+  );
+}
 
 const items = [
   { icon: Home, label: "Dashboard", path: "/dashboard" },
@@ -95,6 +106,9 @@ const items = [
 ];
 
 export function AppSidebar() {
+  const { user } = require("@/hooks/useAuth")();
+  const { role } = require("@/hooks/useUserRole")();
+
   return (
     <Sidebar>
       <SidebarHeader className="border-b p-4">
@@ -108,21 +122,23 @@ export function AppSidebar() {
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.path}>
-                  <SidebarMenuButton asChild tooltip={item.label}>
-                    <NavLink
-                      to={item.path}
-                      className={({ isActive }) =>
-                        `w-full ${isActive ? 'data-[active=true]' : ''}`
-                      }
-                    >
-                      <item.icon />
-                      <span>{item.label}</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {items
+                .filter(item => canAccessRoute(role, item.path))
+                .map((item) => (
+                  <SidebarMenuItem key={item.path}>
+                    <SidebarMenuButton asChild tooltip={item.label}>
+                      <NavLink
+                        to={item.path}
+                        className={({ isActive }) =>
+                          `w-full ${isActive ? "data-[active=true]" : ""}`
+                        }
+                      >
+                        <item.icon />
+                        <span>{item.label}</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
