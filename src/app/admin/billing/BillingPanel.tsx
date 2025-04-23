@@ -9,6 +9,8 @@ import { BillingPreview } from "@/components/billing/BillingPreview";
 import { CreditsPlanCard } from "./components/CreditsPlanCard";
 import { PaymentMethodsCard } from "./components/PaymentMethodsCard";
 import { BillingHistoryCard } from "./components/BillingHistoryCard";
+import { CreditExportButton } from "@/components/billing/CreditExportButton";
+import { InvoiceGenerator } from "@/components/billing/InvoiceGenerator";
 
 export default function BillingPanel() {
   const { tenant } = useTenant();
@@ -28,6 +30,11 @@ export default function BillingPanel() {
   return (
     <div className="space-y-6 p-4">
       <CreditsPlanCard />
+      
+      <div className="flex flex-wrap gap-2 justify-end">
+        <CreditExportButton />
+        <InvoiceGenerator />
+      </div>
       
       {showDetails && <BillingPreview />}
       
