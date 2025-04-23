@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAvailableTenants } from "./hooks/useAvailableTenants";
 import { useInitializeSelectedTenant } from "./hooks/useInitializeSelectedTenant";
 import { handleTenantChange, createDefaultWorkspace } from "./utils/workspaceUtils";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function WorkspaceSwitcher({ highlight = false }) {

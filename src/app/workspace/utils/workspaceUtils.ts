@@ -1,13 +1,14 @@
 
 import type { TenantOption } from "../hooks/useAvailableTenants";
 import { supabase } from "@/integrations/supabase/client";
+import { Tenant } from "@/types/tenant";
 
 export function handleTenantChange(
   value: string,
   availableTenants: TenantOption[],
   setSelected: (id: string) => void,
   setTenant: (tenant: TenantOption) => void,
-  toast: (arg: any) => void
+  toast: any
 ) {
   const selectedTenant = availableTenants.find((t) => t.id === value);
   if (selectedTenant) {
@@ -26,9 +27,9 @@ export function handleTenantChange(
 }
 
 export async function createDefaultWorkspace(
-  toast: (arg: any) => void,
+  toast: any,
   onSuccess?: () => void
-) {
+): Promise<Tenant | null> {
   try {
     // Get current user
     const { data: { user } } = await supabase.auth.getUser();
@@ -57,6 +58,22 @@ export async function createDefaultWorkspace(
     
     if (error) {
       console.error("Error creating workspace:", error);
+      
+      // Show specific error message based on the error code
+      if (error.code === '23505') { // Unique constraint violation
+        toast({
+          title: "Workspace already exists",
+          description: "Please try a different name.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Could not create workspace",
+          description: error.message || "Please try again later.",
+          variant: "destructive"
+        });
+      }
+      
       throw error;
     }
     

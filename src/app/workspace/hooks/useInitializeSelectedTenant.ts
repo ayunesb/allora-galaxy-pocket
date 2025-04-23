@@ -1,4 +1,3 @@
-
 import { useTenant } from "@/hooks/useTenant";
 import { useState, useEffect } from "react";
 import type { TenantOption } from "./useAvailableTenants";
@@ -13,12 +12,14 @@ export function useInitializeSelectedTenant(tenants: TenantOption[], loading: bo
 
   // Run once when tenants are retrieved
   useEffect(() => {
+    // Skip if any of these conditions are met
     if (loading || initialized || tenants.length === 0 || processingSelection) return;
 
     setProcessingSelection(true);
     
     try {
       const storedId = localStorage.getItem("tenant_id");
+      // If stored tenant exists in the available tenants, use it
       if (storedId && tenants.some((t) => t.id === storedId)) {
         const foundTenant = tenants.find((t) => t.id === storedId);
         if (foundTenant) {
@@ -27,6 +28,7 @@ export function useInitializeSelectedTenant(tenants: TenantOption[], loading: bo
           console.log("Restored tenant:", foundTenant.name);
         }
       } else if (tenants.length > 0) {
+        // Otherwise use the first tenant
         setTenant(tenants[0]);
         setSelected(tenants[0].id);
         localStorage.setItem("tenant_id", tenants[0].id);
@@ -40,6 +42,7 @@ export function useInitializeSelectedTenant(tenants: TenantOption[], loading: bo
         }
         console.log("Set default tenant:", tenants[0].name);
       } else {
+        // No tenants available
         setTenant(null);
         setSelected(undefined);
         localStorage.removeItem("tenant_id");

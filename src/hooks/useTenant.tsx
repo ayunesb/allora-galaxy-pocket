@@ -3,6 +3,7 @@ import { createContext, useContext, useState, ReactNode, useEffect } from "react
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/types/supabase";
 import { Tenant } from "@/types/tenant";
+import { toast } from "@/components/ui/sonner";
 
 interface TenantContextType {
   tenant: Tenant | null;
@@ -44,6 +45,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
           }
         } catch (err) {
           console.error("Error initializing tenant:", err);
+          // Don't throw - just log the error and continue with null tenant
         }
       }
       
