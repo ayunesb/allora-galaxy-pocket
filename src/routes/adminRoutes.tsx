@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import CollaborationPage from "@/app/admin/agents/collaboration/page";
@@ -19,5 +18,6 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/plugins/gallery", element: <AddPluginPage /> },
   { path: "/admin/agents/memory", element: <AgentMemoryConsole /> },
   { path: "/admin/users", element: <UserManagementPage /> },
-  { path: "/admin/users/role-requests", element: <RoleChangeRequestsPage /> }
+  { path: "/admin/users/role-requests", element: <RoleChangeRequestsPage /> },
+  { path: "/admin/integrations", element: <div>Admin Integrations</div> }
 ];
