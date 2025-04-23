@@ -10,6 +10,9 @@ export interface Strategy {
   goal?: string | null;
   confidence?: string | null;
   status?: string | null;
-  impact_score?: number | null;  // Added to fix build
-  is_public?: boolean | null;    // Added to fix build
+  impact_score?: number | null;
+  is_public?: boolean | null;
+  generated_by?: string | null;
+  retry_prompt?: string | null;
+  approved_at?: string | null;
 }
