@@ -26,6 +26,7 @@ export function useAvailableTenants() {
     if (!user?.id) {
       setLoading(false);
       setStatus("success");
+      setTenants([]);
       return;
     }
 
@@ -34,14 +35,49 @@ export function useAvailableTenants() {
     setError(null);
 
     try {
-      // Simplify the approach - directly fetch available tenant profiles
-      // This avoids the recursive RLS policy issue by not querying tenant_user_roles
-      const { data, error: fetchError } = await supabase
-        .from("tenant_profiles")
-        .select("id, name, theme_color, theme_mode")
-        .limit(10);
-
-      if (fetchError) throw fetchError;
+      console.log("Fetching tenants for user:", user.id);
+      
+      // First attempt - try to get tenants through tenant_user_roles
+      let data;
+      let fetchError;
+      
+      try {
+        const response = await supabase
+          .from("tenant_user_roles")
+          .select("tenant_id, tenant_profiles:tenant_id(id, name, theme_color, theme_mode)")
+          .eq("user_id", user.id);
+          
+        if (!response.error && response.data?.length > 0) {
+          // Extract tenant profiles from the response
+          data = response.data.map((item) => item.tenant_profiles);
+          console.log("Tenants found via roles:", data);
+        } else {
+          console.log("No tenants found via roles or error:", response.error);
+          fetchError = response.error;
+        }
+      } catch (roleError) {
+        console.error("Error fetching via tenant_user_roles:", roleError);
+        fetchError = roleError;
+      }
+      
+      // If no tenants found through roles, fallback to direct tenant query
+      if (!data || data.length === 0) {
+        console.log("Falling back to direct tenant query");
+        
+        // Fallback approach - directly fetch tenant profiles
+        // This is a simplified approach that might not respect all permissions
+        const fallbackResponse = await supabase
+          .from("tenant_profiles")
+          .select("id, name, theme_color, theme_mode")
+          .limit(10);
+          
+        if (fallbackResponse.error) {
+          throw fallbackResponse.error;
+        }
+        
+        data = fallbackResponse.data;
+        console.log("Tenants found via direct query:", data);
+      }
 
       setTenants(data || []);
       setStatus("success");

@@ -31,6 +31,18 @@ export async function createDefaultWorkspace(
   onSuccess?: () => void
 ) {
   try {
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to create a workspace.",
+        variant: "destructive"
+      });
+      return null;
+    }
+    
     // Create a new default workspace
     const { data: newTenant, error } = await supabase
       .from('tenant_profiles')
@@ -41,40 +53,46 @@ export async function createDefaultWorkspace(
           theme_mode: 'light'
         }
       ])
-      .select('*')
+      .select()
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error("Error creating workspace:", error);
+      throw error;
+    }
     
     if (newTenant) {
-      toast({
-        title: "Workspace created",
-        description: "New workspace has been created successfully.",
-      });
-      
       // Add current user to the tenant with admin role
-      // Note: This might fail due to RLS policies but the tenant is created
       try {
         const { error: roleError } = await supabase
           .from('tenant_user_roles')
           .insert([
             {
               tenant_id: newTenant.id,
+              user_id: user.id,
               role: 'admin'
             }
           ]);
         
         if (roleError) {
           console.warn("Could not assign role to user:", roleError);
+          // Even if role assignment fails, we want to continue
+          // as the workspace is created
         }
       } catch (roleErr) {
         console.warn("Role assignment failed:", roleErr);
       }
       
+      toast({
+        title: "Workspace created",
+        description: "New workspace has been created successfully.",
+      });
+      
       if (onSuccess) {
         onSuccess();
       }
       
+      // Return the created tenant data
       return newTenant;
     }
   } catch (err) {

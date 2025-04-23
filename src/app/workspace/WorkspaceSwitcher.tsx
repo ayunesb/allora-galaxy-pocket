@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAvailableTenants } from "./hooks/useAvailableTenants";
 import { useInitializeSelectedTenant } from "./hooks/useInitializeSelectedTenant";
 import { handleTenantChange, createDefaultWorkspace } from "./utils/workspaceUtils";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function WorkspaceSwitcher({ highlight = false }) {
   const { tenant, setTenant } = useTenant();
@@ -17,6 +17,7 @@ export default function WorkspaceSwitcher({ highlight = false }) {
   const { selected, setSelected } = useInitializeSelectedTenant(availableTenants, loading, error);
   const location = useLocation();
   const isOnboarding = location.pathname === "/onboarding";
+  const [isCreating, setIsCreating] = useState(false);
 
   const selectClasses = highlight || isOnboarding
     ? "ring-2 ring-primary ring-offset-2 transition-all duration-200"
@@ -26,11 +27,25 @@ export default function WorkspaceSwitcher({ highlight = false }) {
     handleTenantChange(value, availableTenants, setSelected, setTenant, toast);
   };
 
-  const handleCreateWorkspace = () => {
-    createDefaultWorkspace(toast, () => {
-      // After workspace creation, refresh the list
-      retryFetch();
-    });
+  const handleCreateWorkspace = async () => {
+    setIsCreating(true);
+    try {
+      const newWorkspace = await createDefaultWorkspace(toast, () => {
+        // After workspace creation, refresh the list
+        retryFetch();
+      });
+      
+      // If workspace was created successfully, automatically select it
+      if (newWorkspace) {
+        setTenant(newWorkspace);
+        setSelected(newWorkspace.id);
+        localStorage.setItem("tenant_id", newWorkspace.id);
+      }
+    } catch (err) {
+      console.error("Error in workspace creation flow:", err);
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const handleRetry = () => {
@@ -89,9 +104,19 @@ export default function WorkspaceSwitcher({ highlight = false }) {
           size="sm"
           className="w-full"
           onClick={handleCreateWorkspace}
+          disabled={isCreating}
         >
-          <PlusCircle className="h-4 w-4 mr-2" />
-          Create Workspace
+          {isCreating ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Creating...
+            </>
+          ) : (
+            <>
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Create Workspace
+            </>
+          )}
         </Button>
       </div>
     );
@@ -120,9 +145,10 @@ export default function WorkspaceSwitcher({ highlight = false }) {
           size="icon"
           className="flex-shrink-0"
           onClick={handleCreateWorkspace}
+          disabled={isCreating}
           title="Create new workspace"
         >
-          <PlusCircle className="h-4 w-4" />
+          {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}
         </Button>
       </div>
       {isOnboarding && !tenant && (
