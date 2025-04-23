@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import ReactMarkdown from "react-markdown";
 import { AlertOctagon, AlertTriangle, Info } from "lucide-react";
+import { useRouter } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AlertCardProps {
   id: string;
@@ -27,6 +29,8 @@ export function AlertCard({
   onForward,
   onApprove
 }: AlertCardProps) {
+  const router = useRouter();
+  
   const getSeverityIcon = () => {
     switch (impact_level) {
       case 'critical':
@@ -51,6 +55,28 @@ export function AlertCard({
     }
   };
 
+  const handleGenerateCampaign = async () => {
+    try {
+      const response = await fetch('/functions/extract-campaign', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ plan: suggested_action })
+      });
+
+      const { campaign_data } = await response.json();
+
+      if (campaign_data) {
+        router.navigate(`/campaigns/create?prefill=${encodeURIComponent(JSON.stringify(campaign_data))}`);
+      }
+    } catch (error) {
+      console.error('Error generating campaign:', error);
+      toast.error('Failed to generate campaign. Please try again.');
+    }
+  };
+
   const hasRecoveryPlan = suggested_action?.startsWith('## Recovery Plan');
 
   return (
@@ -72,11 +98,18 @@ export function AlertCard({
         {suggested_action && (
           <div className="bg-muted p-3 rounded-md">
             {hasRecoveryPlan ? (
-              <ReactMarkdown 
-                className="text-sm prose prose-sm dark:prose-invert max-w-none"
-              >
-                {suggested_action}
-              </ReactMarkdown>
+              <div className="space-y-4">
+                <ReactMarkdown className="text-sm prose prose-sm dark:prose-invert max-w-none">
+                  {suggested_action}
+                </ReactMarkdown>
+                <Button
+                  variant="default"
+                  onClick={handleGenerateCampaign}
+                  className="w-fit"
+                >
+                  🚀 Create Campaign from Plan
+                </Button>
+              </div>
             ) : (
               <p className="text-sm text-muted-foreground">{suggested_action}</p>
             )}
