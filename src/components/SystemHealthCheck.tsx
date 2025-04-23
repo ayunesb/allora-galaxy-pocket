@@ -1,9 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import HealthStatusSection from "./system-health/HealthStatusSection";
+import SystemStatusDetails from "./system-health/SystemStatusDetails";
+import TableListSection from "./system-health/TableListSection";
 
 import { RefreshButton } from "./system-health/RefreshButton";
 import { TablesCheck } from "./system-health/TablesCheck";
@@ -41,7 +42,6 @@ export default function SystemHealthCheck() {
   const [isChecking, setIsChecking] = useState(true);
   const { user } = (() => {
     try {
-      // To import and use useAuth hook in a client component properly
       return require("@/hooks/useAuth").useAuth();
     } catch {
       return { user: null };
@@ -53,14 +53,11 @@ export default function SystemHealthCheck() {
     const newStatus = { ...status };
 
     try {
-      // Check database connection by querying tenant_profiles table
       const { error: dbError } = await supabase.from('tenant_profiles').select('count(*)').limit(1);
       newStatus.database = !dbError;
 
-      // Check auth service
       newStatus.auth = !!user;
 
-      // Check system_config table existence and maintenance mode
       try {
         const { error: sysConfigError } = await supabase.from('system_config').select('count(*)').limit(1);
         newStatus.tables.system_config = !sysConfigError;
@@ -82,7 +79,6 @@ export default function SystemHealthCheck() {
         console.error("Error checking system_config table:", e);
       }
 
-      // Check other critical tables
       try {
         const { error: userRolesError } = await supabase.from('user_roles').select('count(*)').limit(1);
         newStatus.tables.user_roles = !userRolesError;
@@ -111,7 +107,6 @@ export default function SystemHealthCheck() {
         console.error("Error checking persona_profiles table:", e);
       }
 
-      // Check edge functions availability
       try {
         const { error: functionsError } = await supabase.functions.invoke('check-secrets', {
           body: { checkOnly: true }
@@ -176,13 +171,13 @@ export default function SystemHealthCheck() {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <HealthStatusSection
+        <SystemStatusDetails
           database={status.database}
           auth={status.auth}
           edgeFunctions={status.edgeFunctions}
           maintenance={status.maintenance}
         />
-        <TablesCheck tables={status.tables} />
+        <TableListSection tables={status.tables} />
         <SystemConfigCreation 
           show={!status.tables.system_config}
           onCreate={createSystemConfigTable}
