@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import CollaborationPage from "@/app/admin/agents/collaboration/page";
@@ -9,6 +10,7 @@ import AgentMemoryConsole from "@/app/admin/agents/memory/page";
 import RoleChangeRequestsPage from "@/app/admin/users/role-requests/page";
 import UserManagementPage from "@/app/admin/users/page";
 import AdminCronLogsPage from "@/pages/admin/logs/page";
+import WeeklySummaryFeed from "@/app/admin/ai-decisions/weekly/page";
 
 export const adminRoutes: RouteObject[] = [
   { path: "/admin/agents/collaboration", element: <CollaborationPage /> },
