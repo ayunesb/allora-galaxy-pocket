@@ -14,15 +14,21 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   const [shouldCheckOnboarding, setShouldCheckOnboarding] = useState(false);
   const redirectedRef = useRef(false);
   const onboardingCheckDoneRef = useRef(false);
+  const stableStateRef = useRef(false);
   
   // Special cases where we don't need to check onboarding
   const skipOnboardingCheck = location.pathname === "/onboarding" || 
                              location.pathname === "/workspace";
   
-  // Only enable onboarding check when both user and tenant are loaded
+  // Delay onboarding check until both user and tenant are loaded
   useEffect(() => {
     if (user && tenant?.id && !authLoading && !tenantLoading && !shouldCheckOnboarding && !skipOnboardingCheck) {
       setShouldCheckOnboarding(true);
+    }
+
+    // Mark state as stable once all loading is complete
+    if (!authLoading && !tenantLoading) {
+      stableStateRef.current = true;
     }
   }, [user, tenant?.id, authLoading, tenantLoading, shouldCheckOnboarding, skipOnboardingCheck]);
   
@@ -69,22 +75,23 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     return <>{children}</>;
   }
 
-  // Don't redirect while checking auth status
-  if (showLoading) {
+  // Don't redirect while checking auth status or before state is stable
+  if (showLoading || !stableStateRef.current) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <LoadingSpinner size={40} label="Loading..." />
+        <LoadingSpinner size={40} label={showLoading ? "Loading..." : "Preparing application..."} />
       </div>
     );
   }
   
-  // If not logged in, redirect to onboarding
+  // If not logged in, redirect to auth page
   if (!user) {
     // Special case: already on auth pages
     if (location.pathname.startsWith("/auth/")) {
       return <>{children}</>;
     }
     
+    console.log("RequireAuth: User not logged in, redirecting to login");
     redirectedRef.current = true;
     return <Navigate to="/auth/login" state={{ from: location.pathname }} replace />;
   }
@@ -96,6 +103,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
       return <>{children}</>;
     }
     
+    console.log("RequireAuth: No tenant selected, redirecting to workspace");
     redirectedRef.current = true;
     return <Navigate to="/workspace" state={{ from: location.pathname }} replace />;
   }
@@ -106,6 +114,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
       onboardingCheckDoneRef.current &&
       onboardingComplete === false && 
       !skipOnboardingCheck) {
+    console.log("RequireAuth: Onboarding incomplete, redirecting to onboarding");
     redirectedRef.current = true;
     return <Navigate to="/onboarding" state={{ from: location.pathname }} replace />;
   }
