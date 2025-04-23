@@ -31,6 +31,9 @@ verify_jwt = true
 [functions.stripe-subscription-webhook]
 verify_jwt = false
 
+[functions.stripe-invoice-webhook]
+verify_jwt = false
+
 [functions.fetch-ga4-metrics]
 verify_jwt = true
 
@@ -65,3 +68,4 @@ schedule = "0 */6 * * *"  # Run every 6 hours
 # Add CRON schedule for strategy adjustments
 [functions.strategy-adjustments]
 schedule = "0 6 * * MON"  # Run at 6 AM every Monday
+
