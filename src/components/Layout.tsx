@@ -1,4 +1,3 @@
-
 import { SidebarProvider } from "@/components/ui/sidebar"
 import Topbar from "./Topbar" 
 import { AppSidebar } from "./AppSidebar"
@@ -7,10 +6,14 @@ import SidebarInset from "./ui/sidebar/SidebarInset"
 import { useAppLayout } from "@/hooks/useAppLayout"
 import { Skeleton } from "./ui/skeleton"
 import { useEffect } from "react"
+import { useRouteLogger } from "@/hooks/useRouteLogger"
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const { layout, isLoading } = useAppLayout();
-  
+
+  // Track route usage on every page load
+  useRouteLogger();
+
   // Apply theme from layout
   useEffect(() => {
     if (layout?.config?.theme) {

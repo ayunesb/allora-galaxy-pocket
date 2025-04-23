@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,15 +5,23 @@ import DarkModeToggle from "@/components/ui/DarkModeToggle";
 import { useTenant } from "@/hooks/useTenant";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useSidebar } from "@/components/ui/sidebar";
+import { useUserRole } from "@/hooks/useUserRole";
 
 export default function Topbar() {
   const { tenant } = useTenant();
   const { toggleSidebar } = useSidebar();
+  const { role } = useUserRole();
   const [tenantDetails, setTenantDetails] = useState({
     name: "Workspace",
     theme_mode: "light",
     theme_color: "indigo",
   });
+
+  const roleText = {
+    client: "🧑‍💼 Founder",
+    developer: "👨‍💻 Builder",
+    admin: "🧠 Admin"
+  };
 
   useEffect(() => {
     if (tenant) {
@@ -64,7 +71,6 @@ export default function Topbar() {
         </div>
 
         <div className="flex items-center gap-4">
-          {/* Workspace Name */}
           <Link to="/workspace" className="hidden md:block">
             <Button variant="outline" size="sm" className="gap-2">
               <span>{tenantDetails.name}</span>
@@ -85,14 +91,12 @@ export default function Topbar() {
             </Button>
           </Link>
           
-          {/* Notification Bell */}
           <NotificationBell />
 
-          {/* Theme Toggle */}
           <DarkModeToggle />
 
-          {/* User Menu (placeholder) */}
-          <Button variant="ghost" className="rounded-full" size="icon">
+          <Button variant="ghost" className="rounded-full relative"
+                  size="icon">
             <span className="sr-only">User Menu</span>
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -109,6 +113,11 @@ export default function Topbar() {
               <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
               <circle cx="12" cy="7" r="4" />
             </svg>
+            {role && (
+              <span className="absolute -top-2 -right-2 text-xs ml-2 bg-muted px-2 py-1 rounded shadow">
+                {roleText[role] || role.charAt(0).toUpperCase() + role.slice(1)}
+              </span>
+            )}
           </Button>
         </div>
       </div>
