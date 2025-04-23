@@ -12,10 +12,9 @@ port = 54322
 [studio]
 enabled = true
 port = 54323
-inmemory = false
 
 [inbucket]
-enabled = false
+enabled = true
 port = 54324
 
 [auth]
@@ -24,22 +23,42 @@ port = 54325
 
 [storage]
 enabled = true
+port = 54326
 
 [realtime]
 enabled = true
+port = 54327
 
-[functions.check-rls-policies]
+[functions]
+[functions.generate-campaign]
 verify_jwt = true
 
-[functions.check-secrets]
+[functions.generate-tech-plan]
 verify_jwt = true
 
-[functions.save-onboarding]
+[functions.generate-financials]
 verify_jwt = true
 
-[functions.create-system-tables]
+[functions.generate-email-optimization]
 verify_jwt = true
 
-[vector]
-enabled = true
+[functions.generate-retention-plan]
+verify_jwt = true
 
+[functions.generate-recovery-plan]
+verify_jwt = true
+
+[functions.generate-daily-digest]
+verify_jwt = true
+
+[functions.plugin-recommend]
+verify_jwt = true
+
+[functions.generate-outreach]
+verify_jwt = true
+
+[functions.strategy-scorecard]
+verify_jwt = true
+
+[functions.strategy-self-diagnose]
+verify_jwt = true
