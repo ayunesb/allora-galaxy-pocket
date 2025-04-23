@@ -1,11 +1,11 @@
-
-import React, { useEffect, useState, useMemo } from "react";
+import React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AgentFeedbackTable } from "./components/AgentFeedbackTable";
 import { ApprovalMetricsCard } from "./components/ApprovalMetricsCard";
 import { DecisionFilters } from "./components/DecisionFilters";
 import { AuditAnalytics } from "./components/AuditAnalytics";
 import { DecisionList } from "./components/DecisionList";
+import { ApprovalStatsTable } from "./components/ApprovalStatsTable";
 
 type Decision = {
   id: string;
@@ -153,6 +153,10 @@ export default function AIDecisionAudit() {
 
       <div className="grid gap-6 mb-6">
         <ApprovalMetricsCard />
+      </div>
+
+      <div className="mb-8">
+        <ApprovalStatsTable />
       </div>
 
       <div className="mb-8">

@@ -1793,6 +1793,7 @@ export type Database = {
           retry_prompt: string | null
           status: string | null
           tags: string[] | null
+          tenant_id: string | null
           title: string | null
           user_id: string | null
         }
@@ -1812,6 +1813,7 @@ export type Database = {
           retry_prompt?: string | null
           status?: string | null
           tags?: string[] | null
+          tenant_id?: string | null
           title?: string | null
           user_id?: string | null
         }
@@ -1831,10 +1833,61 @@ export type Database = {
           retry_prompt?: string | null
           status?: string | null
           tags?: string[] | null
+          tenant_id?: string | null
           title?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "strategies_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      strategy_approval_log: {
+        Row: {
+          approved_by: string | null
+          created_at: string | null
+          id: string
+          strategy_id: string | null
+          summary: string
+          tenant_id: string | null
+        }
+        Insert: {
+          approved_by?: string | null
+          created_at?: string | null
+          id?: string
+          strategy_id?: string | null
+          summary: string
+          tenant_id?: string | null
+        }
+        Update: {
+          approved_by?: string | null
+          created_at?: string | null
+          id?: string
+          strategy_id?: string | null
+          summary?: string
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strategy_approval_log_strategy_id_fkey"
+            columns: ["strategy_id"]
+            isOneToOne: false
+            referencedRelation: "strategies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "strategy_approval_log_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       strategy_feedback: {
         Row: {
@@ -2276,6 +2329,24 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "kpi_metrics_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      strategy_approval_stats: {
+        Row: {
+          ai_approved: number | null
+          ai_percent: number | null
+          human_approved: number | null
+          tenant_id: string | null
+          total_approved: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strategies_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenant_profiles"
