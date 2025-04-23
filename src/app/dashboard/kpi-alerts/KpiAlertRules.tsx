@@ -254,7 +254,7 @@ export function KpiAlertRules() {
         )}
       </div>
     </div>
-  )
+  );
 }
 
 // Add default export

@@ -46,7 +46,7 @@ export default function PersonaEditor() {
         <div className="space-y-2">
           <label className="text-sm font-medium">Communication Tone</label>
           <Select
-            value={persona.tone}
+            value={persona.tone || "professional"}
             onValueChange={(value) => 
               updatePersona({ 
                 tone: value as "professional" | "casual" | "inspirational" | "technical" 

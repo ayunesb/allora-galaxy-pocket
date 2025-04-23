@@ -64,7 +64,7 @@ export default function KpiDashboardPage() {
             <SelectValue placeholder="Filter Category" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Categories</SelectItem>
+            <SelectItem value="all">All Categories</SelectItem>
             <SelectItem value="Sales">Sales</SelectItem>
             <SelectItem value="Marketing">Marketing</SelectItem>
             <SelectItem value="Operations">Operations</SelectItem>
