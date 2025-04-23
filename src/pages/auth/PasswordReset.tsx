@@ -5,15 +5,18 @@ import { toast } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { ArrowLeft, AlertCircle, Loader2, CheckCircle } from "lucide-react";
 
+// This page handles both requesting a password reset and setting a new password
 export default function PasswordReset() {
+  const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessingToken, setIsProcessingToken] = useState(true);
   const [resetToken, setResetToken] = useState<string | null>(null);
+  const [resetSuccess, setResetSuccess] = useState(false);
   
   const navigate = useNavigate();
   const location = useLocation();
@@ -43,6 +46,14 @@ export default function PasswordReset() {
     extractToken();
   }, [location]);
 
+  const validatePassword = (password: string) => {
+    if (password.length < 8) {
+      return "Password must be at least 8 characters";
+    }
+    // Add more validation as needed
+    return null;
+  };
+
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -51,8 +62,9 @@ export default function PasswordReset() {
       return;
     }
     
-    if (newPassword.length < 8) {
-      toast.error("Password must be at least 8 characters");
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) {
+      toast.error(passwordError);
       return;
     }
     
@@ -64,26 +76,20 @@ export default function PasswordReset() {
     setIsLoading(true);
     
     try {
-      if (resetToken) {
-        // User has a token, update the password
-        const { error } = await supabase.auth.updateUser({
-          password: newPassword
-        });
-        
-        if (error) throw error;
-        
-        toast.success("Password updated successfully");
+      // User has a token, update the password
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      
+      if (error) throw error;
+      
+      setResetSuccess(true);
+      toast.success("Password updated successfully");
+      
+      // After 3 seconds, redirect to login
+      setTimeout(() => {
         navigate("/auth/login");
-      } else {
-        // User is requesting a reset email
-        const { error } = await supabase.auth.resetPasswordForEmail(newPassword, {
-          redirectTo: `${window.location.origin}/auth/recovery`,
-        });
-        
-        if (error) throw error;
-        
-        toast.success("Password reset email sent, please check your inbox");
-      }
+      }, 3000);
     } catch (error: any) {
       toast.error("Error resetting password", {
         description: error.message
@@ -96,7 +102,7 @@ export default function PasswordReset() {
   const handleRequestReset = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!newPassword || !newPassword.includes('@')) {
+    if (!email || !email.includes('@')) {
       toast.error("Please enter a valid email address");
       return;
     }
@@ -105,22 +111,61 @@ export default function PasswordReset() {
     
     try {
       // User is requesting a reset email
-      const { error } = await supabase.auth.resetPasswordForEmail(newPassword, {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/recovery`,
       });
       
       if (error) throw error;
       
+      setResetSuccess(true);
       toast.success("Password reset email sent, please check your inbox");
+      
+      // Clear the email field
+      setEmail("");
     } catch (error: any) {
       toast.error("Error requesting password reset", {
         description: error.message
       });
     } finally {
       setIsLoading(false);
-      setNewPassword("");
     }
   };
+  
+  // Show success states when completed
+  if (resetSuccess) {
+    return (
+      <div className="flex items-center justify-center min-h-screen p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <div className="flex items-center space-x-2">
+              <CheckCircle className="h-6 w-6 text-green-500" />
+              <CardTitle>Success!</CardTitle>
+            </div>
+            <CardDescription>
+              {resetToken ? 
+                "Your password has been reset successfully." : 
+                "Password reset instructions have been sent to your email."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-center text-muted-foreground">
+              {resetToken ? 
+                "You will be redirected to login in a few seconds..." : 
+                "Please check your inbox and follow the instructions to reset your password."}
+            </p>
+          </CardContent>
+          <CardFooter>
+            <Button 
+              className="w-full" 
+              onClick={() => navigate("/auth/login")}
+            >
+              Go to Login
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
 
   if (isProcessingToken) {
     return (
@@ -129,7 +174,7 @@ export default function PasswordReset() {
           <CardContent className="pt-6">
             <div className="flex flex-col items-center justify-center space-y-4">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="text-center text-muted-foreground">Processing your password reset...</p>
+              <p className="text-center text-muted-foreground">Processing your password reset request...</p>
             </div>
           </CardContent>
         </Card>
@@ -174,14 +219,33 @@ export default function PasswordReset() {
                     minLength={8}
                   />
                 </div>
+                
+                {/* Password requirements */}
+                <div className="rounded-md bg-muted p-3">
+                  <div className="text-sm font-medium mb-2">Password Requirements:</div>
+                  <ul className="text-xs space-y-1 text-muted-foreground">
+                    <li className={`flex items-center ${newPassword.length >= 8 ? 'text-green-600' : ''}`}>
+                      <CheckCircle className={`h-3 w-3 mr-2 ${newPassword.length >= 8 ? 'text-green-600' : 'text-muted-foreground'}`} />
+                      At least 8 characters
+                    </li>
+                    <li className={`flex items-center ${/[A-Z]/.test(newPassword) ? 'text-green-600' : ''}`}>
+                      <CheckCircle className={`h-3 w-3 mr-2 ${/[A-Z]/.test(newPassword) ? 'text-green-600' : 'text-muted-foreground'}`} />
+                      Contains uppercase letter
+                    </li>
+                    <li className={`flex items-center ${/[0-9]/.test(newPassword) ? 'text-green-600' : ''}`}>
+                      <CheckCircle className={`h-3 w-3 mr-2 ${/[0-9]/.test(newPassword) ? 'text-green-600' : 'text-muted-foreground'}`} />
+                      Contains number
+                    </li>
+                  </ul>
+                </div>
               </>
             ) : (
               <div className="space-y-2">
                 <Input
                   type="email"
                   placeholder="Email Address"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
                   required
                 />
@@ -202,19 +266,32 @@ export default function PasswordReset() {
                 resetToken ? "Update Password" : "Send Reset Link"
               )}
             </Button>
-            
-            <Button
-              type="button"
-              variant="ghost"
-              className="w-full mt-2"
-              onClick={() => navigate("/auth/login")}
-              disabled={isLoading}
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Login
-            </Button>
           </form>
         </CardContent>
+        <CardFooter className="flex justify-between">
+          <Button
+            type="button"
+            variant="ghost"
+            className="flex items-center"
+            onClick={() => navigate("/auth/login")}
+            disabled={isLoading}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Login
+          </Button>
+          
+          {!resetToken && (
+            <Button
+              type="button"
+              variant="link"
+              className="text-xs"
+              onClick={() => navigate("/auth/signup")}
+              disabled={isLoading}
+            >
+              Don't have an account? Sign up
+            </Button>
+          )}
+        </CardFooter>
       </Card>
     </div>
   );
