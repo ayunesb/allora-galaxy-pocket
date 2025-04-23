@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
@@ -27,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getFirstInvalidStep } from "./components/StepValidation";
+import LiveSystemVerification from "@/components/LiveSystemVerification";
 
 const steps = [
   Step1Company,
@@ -56,7 +56,6 @@ export default function OnboardingWizard() {
   const CurrentStep = steps[step];
 
   useEffect(() => {
-    // Clear workspace error if tenant is selected
     if (tenant) {
       setWorkspaceError(false);
     }
@@ -77,16 +76,12 @@ export default function OnboardingWizard() {
     onBack: back,
     setFormError,
     completeOnboarding: async (finalProfile) => {
-      // After submission, check for success, then navigate or return user to correction step
       const result = await completeOnboarding(finalProfile);
       if (result.success) {
-        // Navigate ASAP after success
         navigate("/dashboard");
       } else {
-        // Find which step is invalid and send user there
         const firstErrorStep = getFirstInvalidStep(finalProfile);
         if (firstErrorStep !== null) setStep(firstErrorStep);
-        // Also surface any error as a toast (already done in hook)
         setFormError(result.error || "Unknown error, please try again.");
       }
     }
@@ -114,11 +109,11 @@ export default function OnboardingWizard() {
     );
   }
 
-  // If there's no live tenant selected, show workspace selector with instructions
   if (!tenant) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background dark:bg-gray-900 p-4">
-        <Card className="w-full max-w-2xl p-6 space-y-6 bg-card dark:bg-gray-800 border border-border dark:border-gray-700">
+        <Card className="w-full max-w-2xl p-6 space-y-6 bg-card dark:bg-gray-800 border border-border dark:border-gray-700 relative">
+          <LiveSystemVerification />
           <Alert variant="destructive">
             <AlertTitle>No workspace selected</AlertTitle>
             <AlertDescription>
@@ -170,7 +165,8 @@ export default function OnboardingWizard() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background dark:bg-gray-900 p-4">
       <LoadingOverlay show={isSubmitting} label="Setting up your OS..." />
-      <Card className="w-full max-w-2xl p-6 space-y-6 bg-card dark:bg-gray-800 border border-border dark:border-gray-700">
+      <Card className="w-full max-w-2xl p-6 space-y-6 bg-card dark:bg-gray-800 border border-border dark:border-gray-700 relative">
+        <LiveSystemVerification />
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-foreground dark:text-white">Setup your Allora OS</h1>
           <OnboardingProgressIndicator currentStep={step} totalSteps={steps.length} />

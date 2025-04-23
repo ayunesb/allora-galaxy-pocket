@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import AppRoutes from './AppRoutes';
 import { TenantProvider } from './hooks/useTenant';
 import { ThemeProvider } from './components/ui/theme-provider';
@@ -8,6 +8,8 @@ import { MaintenanceMode } from './components/MaintenanceMode';
 import EnhancedErrorBoundary from './components/EnhancedErrorBoundary';
 import { AuthProvider } from './hooks/useAuth';
 import { Toaster } from "@/components/ui/sonner";
+import { useSystemInit } from './hooks/useSystemInit';
+import { toast } from "@/components/ui/sonner";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -19,6 +21,16 @@ const queryClient = new QueryClient({
 });
 
 export default function App() {
+  const { isInitializing, isInitialized, error } = useSystemInit();
+
+  useEffect(() => {
+    if (isInitialized) {
+      toast.success("System initialized successfully", {
+        description: "All required tables and configurations are ready."
+      });
+    }
+  }, [isInitialized]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <EnhancedErrorBoundary>

@@ -12,7 +12,7 @@ interface MaintenanceModeProps {
 }
 
 export function MaintenanceMode({ children }: MaintenanceModeProps) {
-  const { isLoading, maintenanceMode } = useMaintenanceMode();
+  const { isLoading, maintenanceMode, tableExists } = useMaintenanceMode();
   const { role } = useUserRole();
   
   // If still loading the maintenance status
@@ -22,6 +22,11 @@ export function MaintenanceMode({ children }: MaintenanceModeProps) {
         <LoadingSpinner size={40} label="Checking system status..." />
       </div>
     );
+  }
+
+  // If table doesn't exist, skip maintenance check and render children
+  if (!tableExists) {
+    return <>{children}</>;
   }
   
   // If maintenance mode is enabled but user role is in allowed list
