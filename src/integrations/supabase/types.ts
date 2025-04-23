@@ -2062,6 +2062,7 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          is_demo: boolean | null
           name: string | null
           slack_webhook_url: string | null
           theme_color: string | null
@@ -2072,6 +2073,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id?: string
+          is_demo?: boolean | null
           name?: string | null
           slack_webhook_url?: string | null
           theme_color?: string | null
@@ -2082,6 +2084,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           id?: string
+          is_demo?: boolean | null
           name?: string | null
           slack_webhook_url?: string | null
           theme_color?: string | null
