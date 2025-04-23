@@ -1058,7 +1058,10 @@ export type Database = {
           github_repo_url: string | null
           id: string
           install_script: string | null
+          installs: number | null
+          is_public: boolean | null
           plugin_name: string
+          remix_count: number | null
           schema_sql: string | null
           status: string | null
           submitted_at: string | null
@@ -1071,7 +1074,10 @@ export type Database = {
           github_repo_url?: string | null
           id?: string
           install_script?: string | null
+          installs?: number | null
+          is_public?: boolean | null
           plugin_name: string
+          remix_count?: number | null
           schema_sql?: string | null
           status?: string | null
           submitted_at?: string | null
@@ -1084,7 +1090,10 @@ export type Database = {
           github_repo_url?: string | null
           id?: string
           install_script?: string | null
+          installs?: number | null
+          is_public?: boolean | null
           plugin_name?: string
+          remix_count?: number | null
           schema_sql?: string | null
           status?: string | null
           submitted_at?: string | null
