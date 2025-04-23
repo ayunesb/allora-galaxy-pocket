@@ -1,11 +1,22 @@
-
 import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { useTenant } from "@/hooks/useTenant";
 
 export default function Home() {
+  const { tenant } = useTenant();
+
   return (
     <div className="min-h-screen flex flex-col">
+      {tenant?.is_demo && (
+        <div className="w-full bg-yellow-50 dark:bg-yellow-900/20 py-2 px-4 text-center">
+          <Badge variant="outline" className="bg-yellow-100 text-yellow-700 dark:text-yellow-400 border-yellow-200">
+            🧪 Demo Mode – View Only
+          </Badge>
+        </div>
+      )}
+      
       {/* Hero Section */}
       <div className="flex-1 flex flex-col items-center justify-center p-8 bg-gradient-to-b from-background to-muted">
         <div className="text-center space-y-6 max-w-3xl">
@@ -21,7 +32,11 @@ export default function Home() {
                 Get Started <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
-            <Button variant="outline">Watch Demo</Button>
+            <Link to="/demo">
+              <Button variant="outline" className="gap-2">
+                🎓 Explore the Demo
+              </Button>
+            </Link>
           </div>
         </div>
 
