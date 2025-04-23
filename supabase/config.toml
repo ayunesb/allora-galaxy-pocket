@@ -1,4 +1,3 @@
-
 project_id = "lxsuqqlfuftnvuvtctsx"
 
 [api]
@@ -30,6 +29,10 @@ enabled = true
 port = 54327
 
 [functions]
+[functions.trackCampaignOutcomes]
+verify_jwt = true
+schedule = "0 8 * * *"  # Daily at 8AM
+
 [functions.generate-campaign]
 verify_jwt = true
 
@@ -68,4 +71,3 @@ verify_jwt = true
 
 [functions.generate-investor-pitch]
 verify_jwt = true
-
