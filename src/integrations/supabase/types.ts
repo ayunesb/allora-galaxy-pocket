@@ -131,6 +131,39 @@ export type Database = {
           },
         ]
       }
+      agent_feedback: {
+        Row: {
+          agent: string
+          created_at: string | null
+          feedback: string | null
+          id: string
+          rating: number | null
+          task_id: string | null
+          tenant_id: string
+          type: string | null
+        }
+        Insert: {
+          agent: string
+          created_at?: string | null
+          feedback?: string | null
+          id?: string
+          rating?: number | null
+          task_id?: string | null
+          tenant_id: string
+          type?: string | null
+        }
+        Update: {
+          agent?: string
+          created_at?: string | null
+          feedback?: string | null
+          id?: string
+          rating?: number | null
+          task_id?: string | null
+          tenant_id?: string
+          type?: string | null
+        }
+        Relationships: []
+      }
       agent_memory: {
         Row: {
           agent_name: string
@@ -139,6 +172,7 @@ export type Database = {
           tenant_id: string
           timestamp: string | null
           type: string
+          xp_delta: number | null
         }
         Insert: {
           agent_name: string
@@ -147,6 +181,7 @@ export type Database = {
           tenant_id: string
           timestamp?: string | null
           type: string
+          xp_delta?: number | null
         }
         Update: {
           agent_name?: string
@@ -155,6 +190,7 @@ export type Database = {
           tenant_id?: string
           timestamp?: string | null
           type?: string
+          xp_delta?: number | null
         }
         Relationships: [
           {

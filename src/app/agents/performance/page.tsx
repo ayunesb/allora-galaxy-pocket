@@ -1,19 +1,90 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import { useTenant } from "@/hooks/useTenant";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AgentPerformancePage() {
   const [stats, setStats] = useState<any[]>([]);
+  const { tenant } = useTenant();
+  const { toast } = useToast();
+
+  const adjustAgentXP = async (agent: string, delta: number) => {
+    if (!tenant?.id) return;
+
+    const { error } = await supabase.from("agent_memory").insert({
+      agent_name: agent,
+      type: "feedback",
+      context: `Manual XP adjustment: ${delta}`,
+      xp_delta: delta,
+      tenant_id: tenant.id
+    });
+
+    if (error) {
+      toast({
+        title: "XP Adjustment Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "XP Adjusted",
+        description: `${agent} received ${delta} XP`
+      });
+    }
+  };
+
+  const rateAgentTask = async (agent: string, rating: number) => {
+    if (!tenant?.id) return;
+
+    const { error } = await supabase.from("agent_feedback").insert({
+      agent,
+      rating,
+      type: "task_rating",
+      tenant_id: tenant.id
+    });
+
+    if (error) {
+      toast({
+        title: "Rating Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Task Rated",
+        description: `${agent} rated ${rating}/5 stars`
+      });
+    }
+  };
+
+  const submitPromptFeedback = async (agent: string, feedback: string) => {
+    if (!tenant?.id || !feedback.trim()) return;
+
+    const { error } = await supabase.from("agent_feedback").insert({
+      agent,
+      type: "prompt_feedback",
+      feedback,
+      tenant_id: tenant.id
+    });
+
+    if (error) {
+      toast({
+        title: "Prompt Feedback Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Prompt Feedback Submitted",
+        description: `Feedback for ${agent} sent successfully`
+      });
+    }
+  };
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -81,7 +152,7 @@ export default function AgentPerformancePage() {
           return (
             <div
               key={agent}
-              className="border p-4 rounded-xl bg-background shadow"
+              className="border p-4 rounded-xl bg-background shadow space-y-2"
             >
               <h2 className="text-xl font-semibold">{agent}</h2>
               <p className="text-sm text-muted-foreground">
@@ -90,6 +161,44 @@ export default function AgentPerformancePage() {
               <p className="text-sm">
                 🏅 {badge} • Health Score: {score}%
               </p>
+
+              <div className="flex gap-2 mt-2">
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  onClick={() => adjustAgentXP(agent, +10)}
+                >
+                  +10 XP
+                </Button>
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  onClick={() => adjustAgentXP(agent, -5)}
+                >
+                  -5 XP
+                </Button>
+              </div>
+
+              <div className="flex items-center gap-1 mt-2">
+                <span className="text-xs mr-2">Rate Tasks:</span>
+                {[1, 2, 3, 4, 5].map((rating) => (
+                  <Button
+                    key={rating}
+                    variant="ghost"
+                    size="sm"
+                    className="p-0 hover:bg-transparent"
+                    onClick={() => rateAgentTask(agent, rating)}
+                  >
+                    <span className="text-xl">⭐</span>
+                  </Button>
+                ))}
+              </div>
+
+              <Textarea
+                placeholder={`Feedback to improve ${agent}'s prompt`}
+                className="mt-2"
+                onBlur={(e) => submitPromptFeedback(agent, e.target.value)}
+              />
             </div>
           );
         })}
