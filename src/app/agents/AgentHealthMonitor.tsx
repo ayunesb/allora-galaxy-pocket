@@ -2,10 +2,11 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from "recharts";
 import { AgentProfile } from "./hooks/useAgentProfile";
 
 /**
- * Shows live metrics: task count, success %, XP and last run for this agent.
+ * Shows live metrics: task count, success %, XP and XP trend chart for this agent.
  */
 export default function AgentHealthMonitor({ agent }: { agent: AgentProfile | null }) {
   const agentName = agent?.agent_name || "";
@@ -30,7 +31,19 @@ export default function AgentHealthMonitor({ agent }: { agent: AgentProfile | nu
               .filter((t) => !!t.executed_at)
               .sort((a, b) => b.executed_at.localeCompare(a.executed_at))[0]?.executed_at
           : undefined;
-      return { success, failed, total, lastRun };
+
+      // XP history: group by day and count tasks
+      const grouped: Record<string, number> = {};
+      for (const task of data) {
+        if (!task.executed_at) continue;
+        const day = new Date(task.executed_at).toLocaleDateString();
+        grouped[day] = (grouped[day] || 0) + 1;
+      }
+      const history = Object.entries(grouped)
+        .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
+        .map(([date, xp]) => ({ date, xp }));
+
+      return { success, failed, total, lastRun, history };
     },
     enabled: !!agentName,
   });
@@ -51,7 +64,7 @@ export default function AgentHealthMonitor({ agent }: { agent: AgentProfile | nu
     );
   }
 
-  const { success, failed, total, lastRun } = stats;
+  const { success, failed, total, lastRun, history } = stats;
   const healthScore = total > 0 ? Math.round((success / total) * 100) : 0;
   const xp = total;
   const badge = xp > 50 ? "🔥 Pro" : xp > 20 ? "⭐ Skilled" : "🟢 Rookie";
@@ -71,6 +84,18 @@ export default function AgentHealthMonitor({ agent }: { agent: AgentProfile | nu
       <p className="text-xs text-muted-foreground">
         Last run: {lastRun ? new Date(lastRun).toLocaleString() : "N/A"}
       </p>
+
+      <h3 className="text-sm font-semibold mt-4 mb-2">📈 XP Over Time</h3>
+      <div className="w-full" style={{ minHeight: 200 }}>
+        <ResponsiveContainer width="100%" height={200}>
+          <LineChart data={history}>
+            <XAxis dataKey="date" />
+            <YAxis allowDecimals={false} />
+            <Tooltip />
+            <Line type="monotone" dataKey="xp" stroke="#3b82f6" />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }
