@@ -101,12 +101,14 @@ export default function Login() {
       >
         {isLoading ? "Logging in..." : "Login"}
       </Button>
-      <p className="text-sm text-center">
-        Don't have an account?{" "}
+      <div className="flex justify-between text-sm">
         <Button variant="link" className="p-0" onClick={() => navigate("/auth/signup")}>
           Sign up
         </Button>
-      </p>
+        <Button variant="link" className="p-0" onClick={() => navigate("/auth/recovery")}>
+          Forgot password?
+        </Button>
+      </div>
     </div>
   );
 }
