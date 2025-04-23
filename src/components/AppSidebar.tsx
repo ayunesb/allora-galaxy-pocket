@@ -3,9 +3,8 @@ import { Settings } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel
+  SidebarHeader,
+  SidebarFooter
 } from "@/components/ui/sidebar";
 import { NavLink } from "react-router-dom";
 import { SidebarNavigationGroup } from "./sidebar/SidebarNavigationGroup";
@@ -40,7 +39,11 @@ export function AppSidebar() {
   );
 
   return (
-    <Sidebar>
+    <Sidebar className="border-r border-border">
+      <SidebarHeader className="flex items-center justify-center py-4">
+        <h3 className="text-lg font-bold">Allora OS</h3>
+      </SidebarHeader>
+      
       <SidebarContent>
         <SidebarErrorBoundary>
           <SidebarNavigationGroup 
@@ -66,22 +69,19 @@ export function AppSidebar() {
             items={filteredPluginItems}
             show={filteredPluginItems.length > 0} 
           />
-
-          <SidebarGroup>
-            <SidebarGroupLabel>Settings</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <NavLink to="/settings" className={({ isActive }) =>
-                `flex items-center gap-2 rounded-md p-2 text-sm ${
-                  isActive ? "bg-accent text-accent-foreground" : ""
-                }`
-              }>
-                <Settings className="h-4 w-4" />
-                <span>Settings</span>
-              </NavLink>
-            </SidebarGroupContent>
-          </SidebarGroup>
         </SidebarErrorBoundary>
       </SidebarContent>
+      
+      <SidebarFooter>
+        <NavLink to="/settings" className={({ isActive }) =>
+          `flex items-center gap-2 rounded-md p-2 text-sm ${
+            isActive ? "bg-accent text-accent-foreground" : ""
+          }`
+        }>
+          <Settings className="h-4 w-4" />
+          <span>Settings</span>
+        </NavLink>
+      </SidebarFooter>
     </Sidebar>
   );
 }

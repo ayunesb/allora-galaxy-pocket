@@ -39,7 +39,7 @@ export function SidebarNavigationGroup({ label, items, show = true }: SidebarNav
                     `w-full ${isActive ? "data-[active=true]" : ""}`
                   }
                 >
-                  <item.icon />
+                  <item.icon className="h-4 w-4" />
                   <span>{item.label}</span>
                 </NavLink>
               </SidebarMenuButton>
