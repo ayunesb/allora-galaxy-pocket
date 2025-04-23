@@ -10,6 +10,12 @@ interface VersionEntry {
   created_at: string;
 }
 
+interface PartialVersionEntry {
+  id: string;
+  version: number;
+  prompt: string;
+}
+
 export function VersionList({
   agent,
   onSelect,
@@ -22,12 +28,23 @@ export function VersionList({
   useEffect(() => {
     const fetch = async () => {
       if (!agent) return setHistory([]);
+      
       const { data } = await supabase
         .from("agent_prompt_versions")
-        .select("id, version, prompt")
+        .select("id, version, prompt, created_at, agent_name")
         .eq("agent_name", agent)
         .order("version", { ascending: false });
-      setHistory(data || []);
+        
+      // Ensure we have all the required fields or set defaults
+      const typedData = data?.map(item => ({
+        id: item.id,
+        version: item.version,
+        prompt: item.prompt,
+        agent_name: item.agent_name || agent,
+        created_at: item.created_at || new Date().toISOString()
+      })) as VersionEntry[] || [];
+      
+      setHistory(typedData);
     };
     fetch();
   }, [agent]);

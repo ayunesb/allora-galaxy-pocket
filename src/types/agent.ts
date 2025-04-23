@@ -16,3 +16,13 @@ export interface AgentCollabMessage {
   created_at: string;
   tenant_id: string;
 }
+
+export interface AgentPromptVersion {
+  id: string;
+  agent_name: string;
+  prompt: string;
+  version: number;
+  created_at: string;
+  edited_by?: string;
+  tenant_id?: string;
+}
