@@ -8,19 +8,14 @@ import {
   DialogTitle,
   DialogTrigger
 } from "@/components/ui/dialog";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
 import { useTenant } from "@/hooks/useTenant";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, FileText, Mail } from "lucide-react";
-import { format } from "date-fns";
+import { FileText } from "lucide-react";
+import { InvoiceMonthSelector } from "./InvoiceMonthSelector";
+import { InvoiceActions } from "./InvoiceActions";
+import { InvoicePreview } from "./InvoicePreview";
 
 export function InvoiceGenerator() {
   const [selectedMonth, setSelectedMonth] = useState<string>("");
@@ -31,7 +26,6 @@ export function InvoiceGenerator() {
   const { tenant } = useTenant();
   const { user } = useAuth();
   
-  // Fetch available billing months when dialog opens
   const fetchAvailableMonths = async () => {
     if (!tenant?.id) return;
     
@@ -44,7 +38,6 @@ export function InvoiceGenerator() {
       
       if (data && data.length > 0) {
         setAvailableMonths(data);
-        // Default to most recent month
         setSelectedMonth(data[0]);
       } else {
         toast.info("No billing data available");
@@ -55,7 +48,6 @@ export function InvoiceGenerator() {
     }
   };
   
-  // Generate and view invoice
   const generateInvoice = async () => {
     if (!tenant?.id || !selectedMonth) {
       toast.error("Please select a billing period");
@@ -87,7 +79,6 @@ export function InvoiceGenerator() {
     }
   };
   
-  // Email invoice
   const emailInvoice = async () => {
     if (!tenant?.id || !selectedMonth || !user?.email) {
       toast.error("Missing required information");
@@ -114,15 +105,6 @@ export function InvoiceGenerator() {
       setIsLoading(false);
     }
   };
-  
-  // Format date strings for display
-  const formatMonthOption = (dateStr: string) => {
-    try {
-      return format(new Date(dateStr), "MMMM yyyy");
-    } catch (e) {
-      return dateStr;
-    }
-  };
 
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -147,52 +129,25 @@ export function InvoiceGenerator() {
         
         <div className="space-y-4 py-4">
           <div className="flex items-center gap-4">
-            <Select 
-              value={selectedMonth} 
-              onValueChange={setSelectedMonth}
-              disabled={isLoading || availableMonths.length === 0}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select period" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableMonths.map((month) => (
-                  <SelectItem key={month} value={month}>
-                    {formatMonthOption(month)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <InvoiceMonthSelector 
+              selectedMonth={selectedMonth}
+              availableMonths={availableMonths}
+              onSelectMonth={setSelectedMonth}
+              isLoading={isLoading}
+            />
             
-            <Button 
-              onClick={generateInvoice} 
-              disabled={isLoading || !selectedMonth}
-            >
-              {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FileText className="h-4 w-4 mr-2" />}
-              Generate Invoice
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              onClick={emailInvoice} 
-              disabled={isLoading || !selectedMonth}
-            >
-              <Mail className="h-4 w-4 mr-2" />
-              Email Invoice
-            </Button>
+            <InvoiceActions 
+              onGenerate={generateInvoice}
+              onEmail={emailInvoice}
+              isLoading={isLoading}
+              selectedMonth={selectedMonth}
+            />
           </div>
           
-          {invoiceHtml && (
-            <div className="border rounded-md p-4 mt-4 max-h-[500px] overflow-auto">
-              <div dangerouslySetInnerHTML={{ __html: invoiceHtml }} />
-            </div>
-          )}
-          
-          {!invoiceHtml && !isLoading && (
-            <div className="text-center py-8 text-muted-foreground">
-              Select a billing period and generate an invoice to view it here
-            </div>
-          )}
+          <InvoicePreview 
+            invoiceHtml={invoiceHtml}
+            isLoading={isLoading}
+          />
         </div>
       </DialogContent>
     </Dialog>
