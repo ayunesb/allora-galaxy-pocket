@@ -2294,6 +2294,41 @@ export type Database = {
           },
         ]
       }
+      weekly_ai_summaries: {
+        Row: {
+          generated_at: string | null
+          id: string
+          metadata: Json | null
+          summary: string
+          tenant_id: string | null
+          week_start: string
+        }
+        Insert: {
+          generated_at?: string | null
+          id?: string
+          metadata?: Json | null
+          summary: string
+          tenant_id?: string | null
+          week_start: string
+        }
+        Update: {
+          generated_at?: string | null
+          id?: string
+          metadata?: Json | null
+          summary?: string
+          tenant_id?: string | null
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_ai_summaries_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       most_remixed_memories: {
@@ -2425,6 +2460,16 @@ export type Database = {
           tenant_id: string
           user_id: string
           role: Database["public"]["Enums"]["user_role"]
+        }[]
+      }
+      get_latest_weekly_summaries: {
+        Args: { tenant_id_param: string; limit_param?: number }
+        Returns: {
+          id: string
+          summary: string
+          week_start: string
+          generated_at: string
+          metadata: Json
         }[]
       }
       get_plugin_earnings: {
