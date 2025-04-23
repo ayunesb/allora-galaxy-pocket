@@ -2527,6 +2527,16 @@ export type Database = {
           role: Database["public"]["Enums"]["user_role"]
         }[]
       }
+      get_incomplete_rls_policies: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          tablename: string
+          policyname: string
+          has_auth_reference: boolean
+          has_tenant_reference: boolean
+          is_full_policy: boolean
+        }[]
+      }
       get_latest_weekly_summaries: {
         Args: { tenant_id_param: string; limit_param?: number }
         Returns: {
@@ -2544,6 +2554,13 @@ export type Database = {
           plugin_name: string
           total_earned: number
           sales_count: number
+        }[]
+      }
+      get_tables_without_rls: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          table_name: string
+          has_tenant_id: boolean
         }[]
       }
       get_user_role: {
