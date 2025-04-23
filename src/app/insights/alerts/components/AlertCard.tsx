@@ -4,6 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import ReactMarkdown from "react-markdown";
+import { AlertOctagon, AlertTriangle, Info } from "lucide-react";
 
 interface AlertCardProps {
   id: string;
