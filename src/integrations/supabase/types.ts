@@ -536,6 +536,44 @@ export type Database = {
         }
         Relationships: []
       }
+      kpi_insights: {
+        Row: {
+          created_at: string | null
+          id: string
+          impact_level: string | null
+          insight: string
+          kpi_name: string
+          suggested_action: string | null
+          tenant_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          impact_level?: string | null
+          insight: string
+          kpi_name: string
+          suggested_action?: string | null
+          tenant_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          impact_level?: string | null
+          insight?: string
+          kpi_name?: string
+          suggested_action?: string | null
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kpi_insights_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kpi_metrics: {
         Row: {
           created_at: string | null
