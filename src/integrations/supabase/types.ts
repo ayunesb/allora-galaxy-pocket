@@ -2366,6 +2366,8 @@ export type Database = {
       most_remixed_memories: {
         Row: {
           agent_name: string | null
+          ai_feedback: string | null
+          ai_rating: number | null
           context: string | null
           id: string | null
           is_user_submitted: boolean | null
@@ -2409,7 +2411,7 @@ export type Database = {
           definition: string | null
           permissive: string | null
           policyname: unknown | null
-          roles: unknown | null
+          roles: unknown[] | null
           schemaname: unknown | null
           tablename: unknown | null
         }
