@@ -39,6 +39,42 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_blueprints: {
+        Row: {
+          agent_name: string
+          capabilities: string[]
+          created_at: string
+          id: string
+          mission: string
+          output_schema: string
+          personas: string[]
+          prompt: string
+          task_type: string
+        }
+        Insert: {
+          agent_name: string
+          capabilities: string[]
+          created_at?: string
+          id?: string
+          mission: string
+          output_schema: string
+          personas: string[]
+          prompt: string
+          task_type: string
+        }
+        Update: {
+          agent_name?: string
+          capabilities?: string[]
+          created_at?: string
+          id?: string
+          mission?: string
+          output_schema?: string
+          personas?: string[]
+          prompt?: string
+          task_type?: string
+        }
+        Relationships: []
+      }
       agent_collaboration: {
         Row: {
           agent: string
