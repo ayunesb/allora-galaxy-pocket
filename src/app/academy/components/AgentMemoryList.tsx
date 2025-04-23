@@ -35,6 +35,11 @@ export function AgentMemoryList({ memories, isLoading }: AgentMemoryListProps) {
           <CardHeader className="flex-row justify-between items-start space-y-0">
             <div className="flex items-center gap-2">
               <span className="font-semibold">{memory.agent_name}</span>
+              {memory.is_user_submitted && (
+                <Badge variant="secondary" className="cursor-help">
+                  👥 User
+                </Badge>
+              )}
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -65,7 +70,7 @@ export function AgentMemoryList({ memories, isLoading }: AgentMemoryListProps) {
           
           <CardFooter className="justify-between">
             <span className="text-sm text-muted-foreground">
-              XP: {memory.xp_delta}
+              🔁 Remixed: {memory.remix_count || 0} times
             </span>
             <Button 
               variant="outline"

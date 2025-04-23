@@ -77,6 +77,11 @@ export default function VaultStrategyCreator() {
         tenant_id: localStorage.getItem("currentTenantId")
       });
 
+    // If strategy was remixed from a memory, increment remix count
+    if (memoryId) {
+      await supabase.rpc('increment_remix_count', { memory_id: memoryId });
+    }
+
     if (error) {
       toast.error("Failed to save strategy");
       return;
@@ -84,6 +89,25 @@ export default function VaultStrategyCreator() {
 
     toast.success("Strategy saved to vault");
     navigate("/vault");
+  };
+
+  const submitToAcademy = async () => {
+    const formData = form.getValues();
+    
+    const { data, error } = await supabase.from('agent_memory').insert({
+      agent_name: 'UserContributor',
+      tenant_id: localStorage.getItem("currentTenantId"),
+      summary: formData.description.slice(0, 280),
+      tags: tags,
+      is_user_submitted: true
+    });
+
+    if (error) {
+      toast.error("Failed to submit to Academy");
+      return;
+    }
+
+    toast.success('Submitted to Academy!');
   };
 
   return (
@@ -168,6 +192,13 @@ export default function VaultStrategyCreator() {
                 <Button type="submit">
                   <Save className="mr-2 h-4 w-4" />
                   Save Strategy
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline"
+                  onClick={submitToAcademy}
+                >
+                  🎓 Submit to Academy
                 </Button>
                 <Button type="button" variant="outline">
                   <Rocket className="mr-2 h-4 w-4" />

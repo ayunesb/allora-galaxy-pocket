@@ -172,6 +172,8 @@ export type Database = {
           agent_name: string
           context: string
           id: string
+          is_user_submitted: boolean | null
+          remix_count: number | null
           tenant_id: string
           timestamp: string | null
           type: string
@@ -181,6 +183,8 @@ export type Database = {
           agent_name: string
           context: string
           id?: string
+          is_user_submitted?: boolean | null
+          remix_count?: number | null
           tenant_id: string
           timestamp?: string | null
           type: string
@@ -190,6 +194,8 @@ export type Database = {
           agent_name?: string
           context?: string
           id?: string
+          is_user_submitted?: boolean | null
+          remix_count?: number | null
           tenant_id?: string
           timestamp?: string | null
           type?: string
@@ -1965,6 +1971,10 @@ export type Database = {
       has_role: {
         Args: { user_id: string; required_role: string }
         Returns: boolean
+      }
+      increment_remix_count: {
+        Args: { memory_id: string }
+        Returns: undefined
       }
       is_admin: {
         Args: Record<PropertyKey, never>
