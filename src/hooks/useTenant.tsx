@@ -1,13 +1,8 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Database } from "@/types/supabase";
 
-interface Tenant {
-  id: string;
-  name: string;
-  theme_color?: string;
-  theme_mode?: string;
-  isDemo?: boolean;
-}
+type Tenant = Database["public"]["Tables"]["tenant_profiles"]["Row"];
 
 interface TenantContextType {
   tenant: Tenant | null;
