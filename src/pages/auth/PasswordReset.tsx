@@ -29,15 +29,25 @@ export default function PasswordReset() {
         if (location.hash && location.hash.includes('access_token')) {
           const hashParams = new URLSearchParams(location.hash.substring(1));
           const accessToken = hashParams.get('access_token');
-          setResetToken(accessToken);
-        } else {
-          // If no token in URL, we're just on the request password page
-          setIsProcessingToken(false);
+          
+          if (accessToken) {
+            // Set the session with the access token
+            const { data, error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: hashParams.get('refresh_token') || '',
+            });
+            
+            if (error) throw error;
+            setResetToken(accessToken);
+          } else {
+            toast.error("Invalid reset link");
+          }
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error processing reset token:", error);
-        toast.error("Invalid password reset link");
-        setIsProcessingToken(false);
+        toast.error("Invalid password reset link", {
+          description: error.message
+        });
       } finally {
         setIsProcessingToken(false);
       }
@@ -50,7 +60,12 @@ export default function PasswordReset() {
     if (password.length < 8) {
       return "Password must be at least 8 characters";
     }
-    // Add more validation as needed
+    if (!/[A-Z]/.test(password)) {
+      return "Password must contain at least one uppercase letter";
+    }
+    if (!/[0-9]/.test(password)) {
+      return "Password must contain at least one number";
+    }
     return null;
   };
 
@@ -77,14 +92,16 @@ export default function PasswordReset() {
     
     try {
       // User has a token, update the password
-      const { error } = await supabase.auth.updateUser({
+      const { data, error } = await supabase.auth.updateUser({
         password: newPassword
       });
       
       if (error) throw error;
       
       setResetSuccess(true);
-      toast.success("Password updated successfully");
+      toast.success("Password updated successfully", {
+        description: "You can now log in with your new password"
+      });
       
       // After 3 seconds, redirect to login
       setTimeout(() => {
@@ -111,14 +128,16 @@ export default function PasswordReset() {
     
     try {
       // User is requesting a reset email
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/recovery`,
       });
       
       if (error) throw error;
       
       setResetSuccess(true);
-      toast.success("Password reset email sent, please check your inbox");
+      toast.success("Password reset email sent", {
+        description: "Please check your inbox and follow the instructions"
+      });
       
       // Clear the email field
       setEmail("");
