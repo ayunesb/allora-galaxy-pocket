@@ -512,6 +512,33 @@ export type Database = {
         }
         Relationships: []
       }
+      credit_logs: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       export_logs: {
         Row: {
           completed_at: string | null
@@ -2038,6 +2065,10 @@ export type Database = {
         Args: { user_uuid: string; tenant_uuid: string }
         Returns: string
       }
+      grant_billing_credits: {
+        Args: { p_user_id: string; p_amount: number }
+        Returns: undefined
+      }
       has_role: {
         Args: { user_id: string; required_role: string }
         Returns: boolean
@@ -2049,6 +2080,10 @@ export type Database = {
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      reset_billing_credits: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       update_agent_memory_score: {
         Args: { p_agent_id: string }
