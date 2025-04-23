@@ -15,12 +15,16 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   const redirectedRef = useRef(false);
   const onboardingCheckDoneRef = useRef(false);
   
+  // Special cases where we don't need to check onboarding
+  const skipOnboardingCheck = location.pathname === "/onboarding" || 
+                             location.pathname === "/workspace";
+  
   // Only enable onboarding check when both user and tenant are loaded
   useEffect(() => {
-    if (user && tenant?.id && !authLoading && !tenantLoading && !shouldCheckOnboarding) {
+    if (user && tenant?.id && !authLoading && !tenantLoading && !shouldCheckOnboarding && !skipOnboardingCheck) {
       setShouldCheckOnboarding(true);
     }
-  }, [user, tenant?.id, authLoading, tenantLoading, shouldCheckOnboarding]);
+  }, [user, tenant?.id, authLoading, tenantLoading, shouldCheckOnboarding, skipOnboardingCheck]);
   
   // Check onboarding status when user and tenant are available
   const { data: onboardingComplete, isLoading: onboardingLoading } = useQuery({
@@ -76,14 +80,19 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   
   // If not logged in, redirect to onboarding
   if (!user) {
+    // Special case: already on auth pages
+    if (location.pathname.startsWith("/auth/")) {
+      return <>{children}</>;
+    }
+    
     redirectedRef.current = true;
-    return <Navigate to="/onboarding" state={{ from: location.pathname }} replace />;
+    return <Navigate to="/auth/login" state={{ from: location.pathname }} replace />;
   }
   
   // If logged in but no tenant selected, redirect to workspace selection
   if (!tenant) {
-    // Special case: already on onboarding page
-    if (location.pathname === "/onboarding") {
+    // Special case: already on onboarding or workspace page
+    if (location.pathname === "/onboarding" || location.pathname === "/workspace") {
       return <>{children}</>;
     }
     
@@ -96,7 +105,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   if (shouldCheckOnboarding && 
       onboardingCheckDoneRef.current &&
       onboardingComplete === false && 
-      !location.pathname.includes("/onboarding")) {
+      !skipOnboardingCheck) {
     redirectedRef.current = true;
     return <Navigate to="/onboarding" state={{ from: location.pathname }} replace />;
   }

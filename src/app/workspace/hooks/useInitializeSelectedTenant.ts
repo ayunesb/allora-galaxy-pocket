@@ -13,8 +13,14 @@ export function useInitializeSelectedTenant(tenants: TenantOption[], loading: bo
   // Run once when tenants are retrieved
   useEffect(() => {
     // Skip if any of these conditions are met
-    if (loading || initialized || tenants.length === 0 || processingSelection) return;
+    if (loading || initialized || processingSelection) return;
 
+    // Special case: No tenants available
+    if (tenants.length === 0) {
+      setInitialized(true);
+      return;
+    }
+    
     setProcessingSelection(true);
     
     try {
@@ -41,12 +47,6 @@ export function useInitializeSelectedTenant(tenants: TenantOption[], loading: bo
           });
         }
         console.log("Set default tenant:", tenants[0].name);
-      } else {
-        // No tenants available
-        setTenant(null);
-        setSelected(undefined);
-        localStorage.removeItem("tenant_id");
-        console.log("No tenants available");
       }
     } catch (err) {
       console.error("Error initializing tenant selection:", err);

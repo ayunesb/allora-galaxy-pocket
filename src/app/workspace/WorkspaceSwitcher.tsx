@@ -8,18 +8,29 @@ import { useToast } from "@/hooks/use-toast";
 import { useAvailableTenants } from "./hooks/useAvailableTenants";
 import { useInitializeSelectedTenant } from "./hooks/useInitializeSelectedTenant";
 import { handleTenantChange, createDefaultWorkspace } from "./utils/workspaceUtils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function WorkspaceSwitcher({ highlight = false }) {
   const { tenant, setTenant } = useTenant();
   const { toast } = useToast();
   const { tenants: availableTenants, loading, error, retryFetch } = useAvailableTenants();
-  const { selected, setSelected } = useInitializeSelectedTenant(availableTenants, loading, error);
+  const { selected, setSelected, initialized } = useInitializeSelectedTenant(availableTenants, loading, error);
   const location = useLocation();
   const { user } = useAuth();
   const isOnboarding = location.pathname === "/onboarding";
   const [isCreating, setIsCreating] = useState(false);
+  const [justCreated, setJustCreated] = useState(false);
+
+  // Effect to handle post-creation transitions - wait a bit before redirecting to ensure all data is synced
+  useEffect(() => {
+    if (justCreated && tenant && isOnboarding) {
+      const timer = setTimeout(() => {
+        window.location.reload();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [justCreated, tenant, isOnboarding]);
 
   const selectClasses = highlight || isOnboarding
     ? "ring-2 ring-primary ring-offset-2 transition-all duration-200"
@@ -51,6 +62,12 @@ export default function WorkspaceSwitcher({ highlight = false }) {
         setTenant(newWorkspace);
         setSelected(newWorkspace.id);
         localStorage.setItem("tenant_id", newWorkspace.id);
+        setJustCreated(true);
+        
+        toast({
+          title: "Workspace ready",
+          description: "You can now continue with onboarding.",
+        });
       }
     } catch (err) {
       console.error("Error in workspace creation flow:", err);

@@ -50,7 +50,8 @@ export async function createDefaultWorkspace(
         { 
           name: 'My Workspace',
           theme_color: 'indigo',
-          theme_mode: 'light'
+          theme_mode: 'light',
+          enable_auto_approve: true
         }
       ])
       .select()
@@ -94,6 +95,34 @@ export async function createDefaultWorkspace(
           console.error("Could not assign role to user:", roleError);
           // Even if role assignment fails, we want to continue
           // as the workspace is created
+        }
+        
+        // Create a company profile for the workspace immediately
+        const { error: companyError } = await supabase
+          .from('company_profiles')
+          .insert([{
+            tenant_id: newTenant.id,
+            name: 'My Company',
+            industry: 'tech',
+            team_size: '1-10'
+          }]);
+          
+        if (companyError) {
+          console.error("Could not create company profile:", companyError);
+        }
+        
+        // Create a persona profile for the user in this workspace
+        const { error: personaError } = await supabase
+          .from('persona_profiles')
+          .insert([{
+            tenant_id: newTenant.id,
+            user_id: user.id,
+            tone: 'professional',
+            goal: 'growth'
+          }]);
+          
+        if (personaError) {
+          console.error("Could not create persona profile:", personaError);
         }
       } catch (roleErr) {
         console.error("Role assignment failed:", roleErr);
