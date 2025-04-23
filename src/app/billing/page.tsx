@@ -12,6 +12,7 @@ import { Link } from "react-router-dom";
 import { CreditsDisplay } from "@/components/billing/CreditsDisplay";
 import { BillingPreview } from "@/components/billing/BillingPreview";
 import { useStripeUsageReporting } from "@/hooks/useStripeUsageReporting";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function BillingDashboard() {
   const { profile, isLoading, addCredits, updatePlan } = useBillingProfile();
@@ -20,7 +21,7 @@ export default function BillingDashboard() {
   
   const handleCheckout = async () => {
     try {
-      const { data, error } = await window.supabase.functions.invoke("create-checkout");
+      const { data, error } = await supabase.functions.invoke("create-checkout");
       
       if (error) {
         toast.error("Failed to start checkout", {
@@ -42,7 +43,7 @@ export default function BillingDashboard() {
   
   const handlePortal = async () => {
     try {
-      const { data, error } = await window.supabase.functions.invoke("customer-portal");
+      const { data, error } = await supabase.functions.invoke("customer-portal");
       
       if (error) {
         toast.error("Failed to open customer portal", {
@@ -170,7 +171,7 @@ export default function BillingDashboard() {
                                 variant={plan === 'standard' ? 'outline' : 'default'}
                                 onClick={() => {
                                   if (plan === 'standard') {
-                                    updatePlan('standard');
+                                    updatePlan.mutate('standard');
                                   } else {
                                     handleCheckout();
                                   }
@@ -270,7 +271,7 @@ export default function BillingDashboard() {
                           <Button 
                             size="sm" 
                             variant="outline"
-                            onClick={() => addCredits(10)}
+                            onClick={() => addCredits.mutate(10)}
                           >
                             Add 10 Credits
                           </Button>

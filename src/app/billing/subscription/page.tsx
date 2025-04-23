@@ -7,13 +7,14 @@ import { AlertCircle, Check, CreditCard, Shield } from "lucide-react";
 import { useBillingProfile } from "@/hooks/useBillingProfile";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function SubscriptionManagement() {
   const { profile, isLoading, error } = useBillingProfile();
   
   const handleCustomerPortal = async () => {
     try {
-      const { data, error } = await window.supabase.functions.invoke("customer-portal");
+      const { data, error } = await supabase.functions.invoke("customer-portal");
       
       if (error) {
         toast.error("Failed to open customer portal", {
@@ -27,6 +28,7 @@ export default function SubscriptionManagement() {
         window.location.href = data.url;
       }
     } catch (err) {
+      console.error("Error opening customer portal:", err);
       toast.error("Something went wrong", {
         description: "Please try again later"
       });
@@ -35,7 +37,7 @@ export default function SubscriptionManagement() {
   
   const checkSubscription = async () => {
     try {
-      const { error } = await window.supabase.functions.invoke("check-subscription");
+      const { error } = await supabase.functions.invoke("check-subscription");
       
       if (!error) {
         toast.success("Subscription status updated", {
@@ -45,6 +47,7 @@ export default function SubscriptionManagement() {
         toast.error("Failed to check subscription status");
       }
     } catch (err) {
+      console.error("Error checking subscription:", err);
       toast.error("Failed to refresh subscription status");
     }
   };
