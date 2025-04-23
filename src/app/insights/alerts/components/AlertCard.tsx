@@ -1,11 +1,12 @@
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import ReactMarkdown from "react-markdown";
-import { AlertOctagon, AlertTriangle, Info } from "lucide-react";
-import { useRouter } from "react-router-dom";
+import { AlertOctagon, AlertTriangle, Info, Rocket } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AlertCardProps {
@@ -14,7 +15,9 @@ interface AlertCardProps {
   insight: string;
   impact_level: string;
   suggested_action?: string;
+  recommended_action?: string;
   created_at: string;
+  tenant_id?: string;
   onForward: (id: string) => void;
   onApprove: (id: string) => void;
 }
@@ -25,14 +28,16 @@ export function AlertCard({
   insight,
   impact_level,
   suggested_action,
+  recommended_action,
   created_at,
+  tenant_id,
   onForward,
   onApprove
 }: AlertCardProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
   
   const getSeverityIcon = () => {
-    switch (impact_level) {
+    switch (impact_level.toLowerCase()) {
       case 'critical':
         return <AlertOctagon className="h-5 w-5" />;
       case 'high':
@@ -43,7 +48,7 @@ export function AlertCard({
   };
 
   const getSeverityColor = () => {
-    switch (impact_level) {
+    switch (impact_level.toLowerCase()) {
       case 'critical':
         return 'danger';
       case 'high':
@@ -55,7 +60,11 @@ export function AlertCard({
     }
   };
 
-  const handleGenerateCampaign = async () => {
+  const handleGenerateCampaign = async (insight: { recommended_action?: string; tenant_id?: string }) => {
+    if (!insight.recommended_action) {
+      toast.error("No recovery plan available to generate a campaign.");
+      return;
+    }
     try {
       const response = await fetch('/functions/extract-campaign', {
         method: 'POST',
@@ -63,13 +72,15 @@ export function AlertCard({
           'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ plan: suggested_action })
+        body: JSON.stringify({ plan: insight.recommended_action, tenant_id: insight.tenant_id })
       });
 
       const { campaign_data } = await response.json();
 
       if (campaign_data) {
-        router.navigate(`/campaigns/create?prefill=${encodeURIComponent(JSON.stringify(campaign_data))}`);
+        navigate(`/campaigns/create?prefill=${encodeURIComponent(JSON.stringify(campaign_data))}`);
+      } else {
+        toast.error("Failed to generate campaign data.");
       }
     } catch (error) {
       console.error('Error generating campaign:', error);
@@ -77,7 +88,9 @@ export function AlertCard({
     }
   };
 
-  const hasRecoveryPlan = suggested_action?.startsWith('## Recovery Plan');
+  const hasRecoveryPlan = (recommended_action || suggested_action)?.startsWith('## Recovery Plan');
+
+  const planText = recommended_action ?? suggested_action ?? null;
 
   return (
     <Card className="animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -95,23 +108,24 @@ export function AlertCard({
       </CardHeader>
       <CardContent>
         <p className="text-sm mb-4">{insight}</p>
-        {suggested_action && (
+        {planText && (
           <div className="bg-muted p-3 rounded-md">
             {hasRecoveryPlan ? (
               <div className="space-y-4">
                 <ReactMarkdown className="text-sm prose prose-sm dark:prose-invert max-w-none">
-                  {suggested_action}
+                  {planText}
                 </ReactMarkdown>
                 <Button
                   variant="default"
-                  onClick={handleGenerateCampaign}
+                  onClick={() => handleGenerateCampaign({ recommended_action: planText, tenant_id })}
                   className="w-fit"
                 >
-                  🚀 Create Campaign from Plan
+                  <Rocket className="mr-1 h-4 w-4" />
+                  Create Campaign from Plan
                 </Button>
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">{suggested_action}</p>
+              <p className="text-sm text-muted-foreground">{planText}</p>
             )}
           </div>
         )}
