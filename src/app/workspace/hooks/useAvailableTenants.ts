@@ -23,7 +23,11 @@ export function useAvailableTenants() {
   const [retryCount, setRetryCount] = useState(0);
 
   const fetchTenants = useCallback(async () => {
+    // Enhanced logging for debugging
+    console.log("Fetching tenants - User:", user?.id);
+    
     if (!user?.id) {
+      console.warn("No user ID available for tenant fetch");
       setLoading(false);
       setStatus("success");
       setTenants([]);
@@ -35,61 +39,64 @@ export function useAvailableTenants() {
     setError(null);
 
     try {
-      console.log("Fetching tenants for user:", user.id);
-      
-      // First attempt - try to get tenants through tenant_user_roles
-      let data;
-      let fetchError;
-      
-      try {
-        const response = await supabase
-          .from("tenant_user_roles")
-          .select("tenant_id, tenant_profiles:tenant_id(id, name, theme_color, theme_mode)")
-          .eq("user_id", user.id);
-          
-        if (!response.error && response.data?.length > 0) {
-          // Extract tenant profiles from the response
-          data = response.data.map((item) => item.tenant_profiles);
-          console.log("Tenants found via roles:", data);
-        } else {
-          console.log("No tenants found via roles or error:", response.error);
-          fetchError = response.error;
-        }
-      } catch (roleError) {
-        console.error("Error fetching via tenant_user_roles:", roleError);
-        fetchError = roleError;
+      // Attempt to fetch tenants via multiple methods with detailed error handling
+      const tenantRolesResponse = await supabase
+        .from("tenant_user_roles")
+        .select("tenant_profiles(id, name, theme_color, theme_mode)")
+        .eq("user_id", user.id);
+
+      console.log("Tenant roles response:", tenantRolesResponse);
+
+      if (tenantRolesResponse.error) {
+        console.error("Error fetching tenant roles:", tenantRolesResponse.error);
+        throw tenantRolesResponse.error;
       }
-      
-      // If no tenants found through roles, fallback to direct tenant query
-      if (!data || data.length === 0) {
-        console.log("Falling back to direct tenant query");
-        
-        // Fallback approach - directly fetch tenant profiles
-        // This is a simplified approach that might not respect all permissions
-        const fallbackResponse = await supabase
+
+      const tenantProfiles = tenantRolesResponse.data
+        ?.map((item: any) => item.tenant_profiles)
+        .filter(Boolean);
+
+      console.log("Extracted tenant profiles:", tenantProfiles);
+
+      // Fallback to direct tenant query if no tenants found via roles
+      if (!tenantProfiles || tenantProfiles.length === 0) {
+        const directTenantResponse = await supabase
           .from("tenant_profiles")
           .select("id, name, theme_color, theme_mode")
           .limit(10);
-          
-        if (fallbackResponse.error) {
-          throw fallbackResponse.error;
+
+        console.log("Direct tenant query response:", directTenantResponse);
+
+        if (directTenantResponse.error) {
+          console.error("Error in direct tenant query:", directTenantResponse.error);
+          throw directTenantResponse.error;
         }
-        
-        data = fallbackResponse.data;
-        console.log("Tenants found via direct query:", data);
+
+        tenantProfiles = directTenantResponse.data || [];
       }
 
-      setTenants(data || []);
+      setTenants(tenantProfiles);
       setStatus("success");
-      setRetryCount(0); // Reset retry count on success
+      setRetryCount(0);
     } catch (err: any) {
-      console.error("Tenant fetch error:", err);
-      setError("Could not fetch workspaces. Please refresh.");
+      console.error("Comprehensive tenant fetch error:", err);
+      setError(err.message || "Could not fetch workspaces. Please refresh.");
       setStatus("error");
+      
+      // Show a toast with more context
+      toast({
+        title: "Workspace Fetch Error",
+        description: err.message || "Unable to retrieve workspaces",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [user?.id, toast]);
+  
+  useEffect(() => {
+    fetchTenants();
+  }, [fetchTenants]);
 
   const retryFetch = useCallback(() => {
     if (retryCount < 3) {
@@ -103,10 +110,6 @@ export function useAvailableTenants() {
       });
     }
   }, [fetchTenants, retryCount, toast]);
-
-  useEffect(() => {
-    fetchTenants();
-  }, [fetchTenants]);
 
   return { tenants, loading, error, status, retryFetch };
 }
