@@ -6,14 +6,14 @@ export function useDemoRestrictions() {
   const { tenant } = useTenant();
   const { toast } = useToast();
 
-  const isDemoMode = tenant?.is_demo ?? false;
+  const isDemoMode = tenant?.isDemo ?? false;
 
   const restrictDemoAction = (action: string): boolean => {
     if (isDemoMode) {
       toast({
         title: "Demo Mode Restriction",
         description: `This action (${action}) is not available in demo mode`,
-        variant: "warning"
+        variant: "destructive"
       });
       return true;
     }
