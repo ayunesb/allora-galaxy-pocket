@@ -54,6 +54,10 @@ export function KpiSnapshot() {
             {metrics.map((metric, index) => (
               <KpiCard
                 key={index}
+                id={`metric-${index}`}  // Add required properties
+                kpi_name={metric.label || ''}
+                tenant_id={tenant?.id || ''}
+                updated_at={new Date().toISOString()}
                 label={metric.label}
                 value={metric.value}
                 trend={metric.trend}
