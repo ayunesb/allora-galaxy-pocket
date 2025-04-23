@@ -8,7 +8,6 @@ import { TenantProvider } from "@/hooks/useTenant";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import routes from "./routes";
 import { Toaster } from "@/components/ui/toaster";
-import { SecurityProvider } from './providers/SecurityProvider';
 
 function App() {
   const queryClient = new QueryClient();
@@ -19,10 +18,8 @@ function App() {
       <ThemeProvider defaultTheme="light" storageKey="allora-theme-preference">
         <AuthProvider>
           <TenantProvider>
-            <SecurityProvider>
-              <RouterProvider router={router} />
-              <Toaster />
-            </SecurityProvider>
+            <RouterProvider router={router} />
+            <Toaster />
           </TenantProvider>
         </AuthProvider>
       </ThemeProvider>
