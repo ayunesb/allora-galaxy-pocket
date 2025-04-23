@@ -3,6 +3,7 @@ import React from 'react';
 import { createBrowserRouter, RouterProvider, Navigate, Outlet } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import RequireAuth from "@/guards/RequireAuth";
+import NotFound from '@/pages/NotFound';
 
 // Routes
 import { publicRoutes } from '@/routes/publicRoutes';
@@ -55,6 +56,9 @@ const router = createBrowserRouter([
       
       // Plugin routes
       ...pluginRoutes,
+      
+      // Catch-all route - must be last
+      { path: "*", element: <NotFound /> }
     ],
   },
 ]);

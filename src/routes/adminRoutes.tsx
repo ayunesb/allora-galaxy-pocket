@@ -7,6 +7,8 @@ import InviteUsersPage from "@/app/admin/invite/page";
 import PluginReviewPage from "@/app/admin/plugins/review/page";
 import AddPluginPage from "@/app/admin/plugins/gallery/page";
 import AgentMemoryConsole from "@/app/admin/agents/memory/page";
+import RoleChangeRequestsPage from "@/app/admin/users/role-requests/page";
+import UserManagementPage from "@/app/admin/users/page";
 
 export const adminRoutes: RouteObject[] = [
   { path: "/admin/agents/collaboration", element: <CollaborationPage /> },
@@ -15,5 +17,7 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/invite", element: <InviteUsersPage /> },
   { path: "/admin/plugins/review", element: <PluginReviewPage /> },
   { path: "/admin/plugins/gallery", element: <AddPluginPage /> },
-  { path: "/admin/agents/memory", element: <AgentMemoryConsole /> }
+  { path: "/admin/agents/memory", element: <AgentMemoryConsole /> },
+  { path: "/admin/users", element: <UserManagementPage /> },
+  { path: "/admin/users/role-requests", element: <RoleChangeRequestsPage /> }
 ];
