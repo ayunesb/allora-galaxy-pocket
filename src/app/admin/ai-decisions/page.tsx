@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import PromptDiff from "./PromptDiff";
@@ -12,6 +11,7 @@ import {
   Tooltip,
   Legend
 } from "recharts";
+import { AgentFeedbackTable } from "./components/AgentFeedbackTable";
 
 type Decision = {
   id: string;
@@ -167,6 +167,28 @@ export default function AIDecisionAudit() {
     <div className="p-6 max-w-6xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">📜 AI Decision Log</h1>
 
+      {/* Add Agent Feedback Section */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold mb-4">Agent Feedback History</h2>
+        <AgentFeedbackTable />
+      </div>
+
+      {/* Keep existing decision audit content */}
+      <div className="mb-10 bg-muted rounded-lg p-3">
+        <h3 className="font-bold mb-1">Audit Analytics (by Version)</h3>
+        <ResponsiveContainer width="100%" height={200}>
+          <LineChart data={auditData}>
+            <XAxis dataKey="version" />
+            <YAxis domain={[0, 100]} />
+            <Tooltip />
+            <Legend />
+            <Line type="monotone" dataKey="success_rate" stroke="#10b981" name="Success %" />
+            <Line type="monotone" dataKey="upvotes" stroke="#3b82f6" name="Upvotes" />
+            <Line type="monotone" dataKey="rollback_count" stroke="#ef4444" name="Rollbacks" />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
       <div className="flex flex-wrap gap-3 mb-6">
         <select
           onChange={e => setAgentFilter(e.target.value)}
@@ -192,22 +214,6 @@ export default function AIDecisionAudit() {
             </option>
           ))}
         </select>
-      </div>
-
-      {/* Audit summary chart */}
-      <div className="mb-10 bg-muted rounded-lg p-3">
-        <h3 className="font-bold mb-1">Audit Analytics (by Version)</h3>
-        <ResponsiveContainer width="100%" height={200}>
-          <LineChart data={auditData}>
-            <XAxis dataKey="version" />
-            <YAxis domain={[0, 100]} />
-            <Tooltip />
-            <Legend />
-            <Line type="monotone" dataKey="success_rate" stroke="#10b981" name="Success %" />
-            <Line type="monotone" dataKey="upvotes" stroke="#3b82f6" name="Upvotes" />
-            <Line type="monotone" dataKey="rollback_count" stroke="#ef4444" name="Rollbacks" />
-          </LineChart>
-        </ResponsiveContainer>
       </div>
 
       <div className="space-y-8">

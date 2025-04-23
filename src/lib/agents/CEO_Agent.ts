@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { OnboardingProfile } from "@/types/onboarding";
+import { useAgentFeedback } from "@/app/agents/hooks/useAgentFeedback";
 
 type GenerateFromProfileInput = {
   companyName: string;
@@ -8,6 +9,7 @@ type GenerateFromProfileInput = {
   challenges?: string[];
   teamSize?: string;
   sellType?: string;
+  tenantId: string;
 };
 
 export const CEO_Agent = {
@@ -29,14 +31,19 @@ export const CEO_Agent = {
 Given a signup context, propose step-by-step onboarding, success criteria, and optimal timeline for user value.`,
   
 
-  generateStrategyFromProfile: (profile: GenerateFromProfileInput) => {
-    return `You are the AI CEO of a company named "${profile.companyName}" in the "${profile.industry}" industry.
+  generateStrategyFromProfile: async (profile: GenerateFromProfileInput) => {
+    const { getTunedPrompt } = useAgentFeedback();
+    const tunedPrompt = await getTunedPrompt(profile.tenantId);
 
-Their main goal is: ${profile.goal || 'Growth and expansion'}
-Team Size: ${profile.teamSize || 'Not specified'}
-Business Type: ${profile.sellType || 'Not specified'}
+    return `${tunedPrompt}
 
-Challenges: ${profile.challenges?.join(', ') || 'Not specified'}
+Company Profile:
+- Name: "${profile.companyName}"
+- Industry: "${profile.industry}"
+- Goal: ${profile.goal || 'Growth and expansion'}
+- Team Size: ${profile.teamSize || 'Not specified'}
+- Business Type: ${profile.sellType || 'Not specified'}
+- Challenges: ${profile.challenges?.join(', ') || 'Not specified'}
 
 Generate a full business strategy including:
 - Lead acquisition strategy
@@ -148,7 +155,8 @@ export const generateInitialStrategy = async (profile: OnboardingProfile, tenant
       goal: Array.isArray(profile.goals) ? profile.goals[0] : undefined,
       challenges: profile.challenges,
       teamSize: profile.teamSize,
-      sellType: profile.sellType
+      sellType: profile.sellType,
+      tenantId: tenantId
     });
 
     // Use Supabase Edge Function to generate the strategy instead of directly calling OpenAI
