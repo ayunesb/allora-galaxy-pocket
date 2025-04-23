@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
@@ -68,6 +69,28 @@ export default function OnboardingWizard() {
 
   const back = () => setStep((prev) => Math.max(prev - 1, 0));
 
+  const handleOnboardingCompletion = async (finalProfile: OnboardingProfile) => {
+    try {
+      const result = await completeOnboarding(finalProfile);
+      if (result.success) {
+        // Add a small delay before navigation to ensure all state updates complete
+        setTimeout(() => {
+          navigate("/dashboard", { replace: true });
+        }, 500);
+      } else {
+        const firstErrorStep = getFirstInvalidStep(finalProfile);
+        if (firstErrorStep !== null) {
+          console.log(`[handleOnboardingCompletion] Found invalid step: ${firstErrorStep}, setting current step`);
+          setStep(firstErrorStep);
+        }
+        setFormError(result.error || "Unknown error, please try again.");
+      }
+    } catch (error) {
+      console.error("[handleOnboardingCompletion] Unexpected error:", error);
+      setFormError("A system error occurred. Please try again or contact support.");
+    }
+  };
+
   const { handleNext } = useStepNavigation({
     step,
     totalSteps: steps.length,
@@ -75,16 +98,7 @@ export default function OnboardingWizard() {
     onNext: next,
     onBack: back,
     setFormError,
-    completeOnboarding: async (finalProfile) => {
-      const result = await completeOnboarding(finalProfile);
-      if (result.success) {
-        navigate("/dashboard");
-      } else {
-        const firstErrorStep = getFirstInvalidStep(finalProfile);
-        if (firstErrorStep !== null) setStep(firstErrorStep);
-        setFormError(result.error || "Unknown error, please try again.");
-      }
-    }
+    completeOnboarding: handleOnboardingCompletion
   });
 
   const getStepProps = () => {

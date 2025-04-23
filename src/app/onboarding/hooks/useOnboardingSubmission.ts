@@ -29,6 +29,9 @@ export const useOnboardingSubmission = () => {
     setIsSubmitting(true);
 
     try {
+      // Log onboarding attempt details for debugging
+      console.log("[completeOnboarding] Starting onboarding completion for tenant:", tenant.id);
+
       // Save company profile
       const { error: companyError } = await supabase
         .from('company_profiles')
@@ -43,7 +46,10 @@ export const useOnboardingSubmission = () => {
           target_market: finalProfile.targetMarket
         });
 
-      if (companyError) throw companyError;
+      if (companyError) {
+        console.error("[completeOnboarding] Company profile error:", companyError);
+        throw companyError;
+      }
 
       // Save persona profile
       const { error: personaError } = await supabase
@@ -51,7 +57,7 @@ export const useOnboardingSubmission = () => {
         .upsert({
           tenant_id: tenant.id,
           user_id: user.id,
-          goal: finalProfile.goals?.[0] || 'growth',
+          goal: Array.isArray(finalProfile.goals) && finalProfile.goals.length > 0 ? finalProfile.goals[0] : 'growth',
           pain_points: finalProfile.challenges || [],
           tone: finalProfile.tone || 'professional',
           channels: finalProfile.channels || [],
@@ -59,18 +65,25 @@ export const useOnboardingSubmission = () => {
           sell_type: finalProfile.sellType || 'b2b'
         });
 
-      if (personaError) throw personaError;
+      if (personaError) {
+        console.error("[completeOnboarding] Persona profile error:", personaError);
+        throw personaError;
+      }
+
+      console.log("[completeOnboarding] Profiles saved successfully");
 
       // Generate strategy in background
       try {
+        console.log("[completeOnboarding] Initiating strategy generation");
         await supabase.functions.invoke('generate-strategy', {
           body: {
             user_id: user?.id,
             tenant_id: tenant?.id
           }
         });
+        console.log("[completeOnboarding] Strategy generation initiated successfully");
       } catch (strategyError) {
-        console.error("Strategy generation error:", strategyError);
+        console.error("[completeOnboarding] Strategy generation error:", strategyError);
         // Continue with navigation even if strategy generation fails
       }
 
@@ -79,9 +92,10 @@ export const useOnboardingSubmission = () => {
         description: "Your Allora OS is now ready. We've generated your first strategies!",
       });
 
+      console.log("[completeOnboarding] Onboarding completed successfully");
       return { success: true };
     } catch (error: any) {
-      console.error("Error saving onboarding data:", error);
+      console.error("[completeOnboarding] Error saving onboarding data:", error);
       toast({
         title: "We're sorry, something went wrong.",
         description: "Could not finish onboarding. Please check your internet and try again. If the problem continues, contact support.",
