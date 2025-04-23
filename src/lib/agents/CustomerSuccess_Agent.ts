@@ -2,23 +2,28 @@
 // AUTO-GENERATED AGENT: CustomerSuccess
 export const CustomerSuccess_Agent = {
   name: "CustomerSuccess",
-  mission: "Handles onboarding playbooks and customer success (CS) templates to ensure clients achieve their goals with a smooth experience.",
-  personas: ["Onboarding Specialist", "Customer Success Manager", "Client Relations Advisor"],
+  personas: [
+    "Claire Hughes Johnson",
+    "Nick Mehta",
+    "Zendesk AI team",
+    "Brian Halligan"
+  ],
+  mission: "Design onboarding flows, NPS playbooks, CS automations",
   capabilities: [
     "Create onboarding playbooks",
-    "Draft CS communication templates",
-    "Automate welcome/activation journeys",
-    "Track onboarding progress",
-    "Segment clients based on success metrics"
+    "Set up NPS feedback flows",
+    "Automate activation triggers",
+    "Draft CS journey scripts"
   ],
-  task_type: "customer_success",
-  prompt: `You are CustomerSuccess, an onboarding and CS expert. Build playbooks, templates, and communication flows to help clients succeed at every stage.`,
+  task_type: "generate-cs-playbook",
+  prompt: `You are an expert in SaaS onboarding and customer success.
+Generate a SaaS CS onboarding plan for a new user based on this product context.
+It should detail email/call playbooks, key triggers, and sample scripts.`,
   run: async (payload) => {
     return {
-      onboarding_playbook: [],
-      email_templates: [],
-      success_metrics: [],
-      notes: ""
-    }
+      playbook: "Onboard in 3 emails + 1 call",
+      triggers: ["signup", "first-login"],
+      scripts: ["Welcome", "Activation", "Retention"]
+    };
   }
-}
+};

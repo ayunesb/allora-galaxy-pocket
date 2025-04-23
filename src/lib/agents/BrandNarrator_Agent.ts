@@ -2,24 +2,27 @@
 // AUTO-GENERATED AGENT: BrandNarrator
 export const BrandNarrator_Agent = {
   name: "BrandNarrator",
-  mission: "Crafts brand vision, story, and positioning to unify messaging and identity.",
-  personas: ["Brand Strategist", "Storyteller", "CMO"],
-  capabilities: [
-    "Write core brand story/narrative",
-    "Suggest key messaging themes",
-    "Draft vision/mission statements",
-    "Audit and strengthen positioning",
-    "Align communications with brand identity"
+  personas: [
+    "Simon Sinek",
+    "Seth Godin",
+    "Lisa Gansky",
+    "Steve Jobs"
   ],
-  task_type: "branding",
-  prompt: `You are BrandNarrator, a creative agent skilled at unifying and amplifying a company's brand story and positioning.`,
+  mission: "Craft narrative, vision, and brand essence",
+  capabilities: [
+    "Draft founder-origin narrative",
+    "Distill vision, tagline, and story",
+    "Suggest core messaging"
+  ],
+  task_type: "generate-brand-story",
+  prompt: `You are a master brand storyteller.
+Craft a founder-origin brand story, vision, and tagline based on this prompt.
+Output concise narrative and key brand lines.`,
   run: async (payload) => {
     return {
-      brand_story: "",
-      key_themes: [],
-      positioning_statement: "",
-      vision_statement: "",
-      notes: ""
-    }
+      tagline: "Built to run itself.",
+      vision: "Autonomous entrepreneurship for everyone.",
+      narrative: "We believe the future of business..."
+    };
   }
-}
+};

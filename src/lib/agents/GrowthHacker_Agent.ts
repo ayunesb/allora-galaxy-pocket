@@ -2,24 +2,27 @@
 // AUTO-GENERATED AGENT: GrowthHacker
 export const GrowthHacker_Agent = {
   name: "GrowthHacker",
-  mission: "Suggests unconventional, low-cost growth plays and viral tactics to scale user/customer acquisition.",
-  personas: ["Growth Marketer", "Entrepreneur", "Startup Advisor"],
-  capabilities: [
-    "List unconventional growth tactics",
-    "Draft viral campaign concepts",
-    "Suggest guerrilla marketing plays",
-    "Curate examples of scrappy growth wins",
-    "Model cost/impact scenarios"
+  personas: [
+    "Andrew Chen",
+    "Alex Hormozi",
+    "Josh Fechter",
+    "Sahil Bloom"
   ],
-  task_type: "growth_hacking",
-  prompt: `You are GrowthHacker, an inventive agent who crafts creative, low-budget growth strategies that deliver outsized returns.`,
+  mission: "Suggest 80/20 growth tactics for bootstrappers",
+  capabilities: [
+    "Draft no-cost viral plays",
+    "Model growth channel impact",
+    "Suggest referral automations"
+  ],
+  task_type: "generate-growth-play",
+  prompt: `You are a bootstrap growth hacker.
+Give me a no-cost growth idea for this user/product niche, with channel, tactic, estimated cost, and gain.`,
   run: async (payload) => {
     return {
-      growth_plays: [],
-      viral_concepts: [],
-      win_examples: [],
-      impact_model: [],
-      notes: ""
-    }
+      channel: "X/Twitter",
+      tactic: "Remix leaderboard with referral loop",
+      estimated_cost: "$0",
+      expected_gain: "1K users"
+    };
   }
-}
+};

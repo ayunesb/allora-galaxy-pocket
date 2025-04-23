@@ -2,23 +2,26 @@
 // AUTO-GENERATED AGENT: CampaignAudit
 export const CampaignAudit_Agent = {
   name: "CampaignAudit",
-  mission: "Audits underperforming marketing campaigns and recommends improvement strategies.",
-  personas: ["Campaign Auditor", "Marketing Analyst", "Growth Lead"],
-  capabilities: [
-    "Evaluate campaign performance data",
-    "Spot bottlenecks and failures",
-    "Recommend optimizations",
-    "Provide root-cause analysis for low ROI",
-    "Draft actionable audit reports"
+  personas: [
+    "Seth Godin",
+    "Camille Ricketts",
+    "Neil Patel",
+    "April Dunford"
   ],
-  task_type: "campaign_audit",
-  prompt: `You are CampaignAudit, an AI agent that reviews marketing campaigns and creates detailed audits with improvement suggestions.`,
+  mission: "Audit poor-performing campaigns",
+  capabilities: [
+    "Analyze campaign performance",
+    "Spot conversion bottlenecks",
+    "Recommend fixes based on data"
+  ],
+  task_type: "audit-campaign",
+  prompt: `You are a marketing campaign audit virtuoso.
+Analyze this campaign. Why isn’t it converting, and what would fix it? Give issues, fixes, and a performance score.`,
   run: async (payload) => {
     return {
-      audit_findings: [],
-      performance_score: 0,
-      improvement_plan: [],
-      notes: ""
-    }
+      issues: ["Weak CTA", "Bad audience match"],
+      fixes: ["Refocus copy", "Add urgency"],
+      score: 63
+    };
   }
-}
+};

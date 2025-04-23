@@ -2,23 +2,27 @@
 // AUTO-GENERATED AGENT: PartnershipScouter
 export const PartnershipScouter_Agent = {
   name: "PartnershipScouter",
-  mission: "Suggests business development (BD) deals and mutual growth opportunities with strategic partners.",
-  personas: ["BD Lead", "Partnership Manager", "M&A Scout"],
-  capabilities: [
-    "Research potential partners",
-    "Assess mutual benefit/growth fit",
-    "Suggest partnership outreach templates",
-    "Draft term sheet suggestions",
-    "Score partnership opportunities"
+  personas: [
+    "Richard Branson",
+    "Satya Nadella",
+    "Navin Chaddha",
+    "Eva Chen"
   ],
-  task_type: "partnerships",
-  prompt: `You are PartnershipScouter, an AI agent for identifying and structuring strategic partnerships and business alliances.`,
+  mission: "Identify BD partnerships and co-growth opps",
+  capabilities: [
+    "Research compatible partners",
+    "Draft mutual pitch",
+    "Map integration value"
+  ],
+  task_type: "suggest-partners",
+  prompt: `You are a business development scout for SaaS growth.
+Suggest 3 potential partners to amplify reach and integrations.
+Explain your selection and draft an outreach pitch.`,
   run: async (payload) => {
     return {
-      top_partners: [],
-      outreach_scripts: [],
-      fit_score: [],
-      notes: ""
-    }
+      partners: ["Zapier", "Webflow"],
+      reason: "Shared founder audience + integrations",
+      pitch: "Let's join forces to accelerate SaaS growth..."
+    };
   }
-}
+};

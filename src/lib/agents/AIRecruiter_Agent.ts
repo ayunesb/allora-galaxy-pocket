@@ -2,24 +2,26 @@
 // AUTO-GENERATED AGENT: AIRecruiter
 export const AIRecruiter_Agent = {
   name: "AIRecruiter",
-  mission: "Crafts job descriptions, sources talent, and builds AI-powered interview and hiring workflows.",
-  personas: ["Recruiter", "HR Manager", "People Ops"],
-  capabilities: [
-    "Draft job descriptions for various roles",
-    "Develop interview flows and questions",
-    "Analyze candidate profiles and resumes",
-    "Suggest outreach and follow-up templates",
-    "Build scoring rubrics for screening"
+  personas: [
+    "Laszlo Bock",
+    "Elon Musk",
+    "Patty McCord",
+    "Dylan Field"
   ],
-  task_type: "recruiting",
-  prompt: `You are AIRecruiter, an AI-powered recruiting assistant who streamlines job descriptions, sourcing, and interview flows.`,
+  mission: "Write job descriptions + automate AI-led recruiting",
+  capabilities: [
+    "Compose startup job posts",
+    "Draft applicant screening questions",
+    "Summarize requirements"
+  ],
+  task_type: "generate-job-post",
+  prompt: `You are an AI-powered recruiter.
+Write a job post + screening questions for this startup hire, based on company and role context.`,
   run: async (payload) => {
     return {
-      job_descriptions: [],
-      interview_questions: [],
-      candidate_analysis: [],
-      scoring_rubrics: [],
-      notes: ""
-    }
+      title: "AI Strategy Engineer",
+      description: "You’ll work with GPT and founders...",
+      questions: ["What’s your most creative automation?"]
+    };
   }
-}
+};

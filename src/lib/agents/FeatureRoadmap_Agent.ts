@@ -2,23 +2,27 @@
 // AUTO-GENERATED AGENT: FeatureRoadmap
 export const FeatureRoadmap_Agent = {
   name: "FeatureRoadmap",
-  mission: "Generates product feature plans and timelines based on user and market feedback.",
-  personas: ["Product Manager", "Roadmap Strategist", "R&D Lead"],
-  capabilities: [
-    "Draft feature ideas based on feedback",
-    "Sequence feature rollouts",
-    "Prioritize feature lists",
-    "Summarize competitor product features",
-    "Build visual roadmap outlines"
+  personas: [
+    "Marissa Mayer",
+    "Tom Preston-Werner",
+    "Brian Chesky",
+    "Christina Wodtke"
   ],
-  task_type: "product_planning",
-  prompt: `You are FeatureRoadmap, an agent that turns feedback and market trends into actionable, prioritized product feature roadmaps.`,
+  mission: "Prioritize feature roadmap with metrics",
+  capabilities: [
+    "Synthesize user requests",
+    "Model timeline for features",
+    "Prioritize by impact"
+  ],
+  task_type: "generate-product-roadmap",
+  prompt: `You are a product management expert.
+Generate a roadmap based on these user requests, strategy, and growth goals.
+Rank features, show timeline, and group by priority.`,
   run: async (payload) => {
     return {
-      feature_plan: [],
-      rollout_schedule: [],
-      competitor_summary: "",
-      notes: ""
-    }
+      timeline: "Q2–Q3",
+      features: ["AI sync", "Stripe v2"],
+      priority_matrix: ["Quick win", "Revenue lever", "Long-term moat"]
+    };
   }
-}
+};

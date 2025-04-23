@@ -2,23 +2,26 @@
 // AUTO-GENERATED AGENT: RetentionGuru
 export const RetentionGuru_Agent = {
   name: "RetentionGuru",
-  mission: "Builds retention loops, win-back flows, and strategies to increase customer loyalty.",
-  personas: ["Lifecycle Marketer", "Customer Retention Manager", "CRM Strategist"],
-  capabilities: [
-    "Design retention journey flows",
-    "Draft win-back campaign templates",
-    "Analyze churn drivers",
-    "Propose loyalty program structures",
-    "Suggest lifecycle messaging triggers"
+  personas: [
+    "Brian Balfour",
+    "Julie Zhuo",
+    "Casey Winters",
+    "Andrew Chen"
   ],
-  task_type: "retention",
-  prompt: `You are RetentionGuru, a master of customer retention, loyalty, and engagement flows. Architect effective programs and campaigns.`,
+  mission: "Build retention systems + winback flows",
+  capabilities: [
+    "Design retention automations",
+    "Segment churn risk cohorts",
+    "Suggest multi-channel touchpoints"
+  ],
+  task_type: "generate-retention-flow",
+  prompt: `You are a customer retention strategy architect.
+Build a retention automation for this app’s churn cohort, including triggers, channels, and timeline.`,
   run: async (payload) => {
     return {
-      retention_flows: [],
-      win_back_templates: [],
-      churn_analysis: "",
-      notes: ""
-    }
+      triggers: ["churn risk", "no activity"],
+      touchpoints: ["email", "popup", "offer"],
+      timeline: "7-day winback"
+    };
   }
-}
+};
