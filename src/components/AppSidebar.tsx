@@ -40,8 +40,8 @@ import { useUserRole } from "@/hooks/useUserRole";
 
 function canAccessRoute(role, path) {
   const accessMatrix = {
-    client: ["/dashboard", "/strategy-gen", "/vault"],
-    developer: ["/dashboard", "/plugins/builder", "/agents/performance"],
+    client: ["/dashboard", "/strategy-gen", "/vault", "/startup", "/campaigns/center", "/insights/kpis", "/launch", "/assistant", "/notifications", "/creative/suite"],
+    developer: ["/dashboard", "/plugins/builder", "/agents/performance", "/creative/suite", "/startup", "/campaigns/center"],
     admin: ["*"]
   };
   return (
@@ -52,12 +52,18 @@ function canAccessRoute(role, path) {
 
 const items = [
   { icon: Home, label: "Dashboard", path: "/dashboard" },
+  { icon: BarChart2, label: "Insights", path: "/dashboard/insights" },
+  { icon: BarChart2, label: "Performance", path: "/dashboard/performance" },
+  { icon: BarChart2, label: "KPIs", path: "/dashboard/kpi" },
+  { icon: BarChart2, label: "Team Activity", path: "/dashboard/team-activity" },
+  { icon: AlertTriangle, label: "Incidents", path: "/dashboard/incidents" },
+  { icon: Bell, label: "Alerts", path: "/dashboard/alerts" },
+  { icon: Home, label: "Startup", path: "/dashboard/startup" },
   { icon: Rocket, label: "Launch", path: "/launch" },
   { icon: BriefcaseBusiness, label: "Strategy", path: "/strategy" },
   { icon: BarChart2, label: "Campaigns", path: "/campaigns/center" },
   { icon: MessageSquare, label: "Assistant", path: "/assistant" },
   { icon: Bell, label: "Notifications", path: "/notifications" },
-  { icon: AlertTriangle, label: "Incidents", path: "/dashboard/incidents" },
   { icon: Lightbulb, label: "AI Coach", path: "/coaching/feed" },
   { icon: Bot, label: "Agents", path: "/agents" },
   { icon: Palette, label: "Creative Suite", path: "/creative/suite" },
@@ -105,8 +111,23 @@ const items = [
     icon: Search, 
     label: "Agent Collab", 
     path: "/admin/agents/collaboration" 
+  },
+  { 
+    icon: Settings, 
+    label: "Settings", 
+    path: "/settings" 
   }
 ];
+
+// Group items by category
+const dashboardItems = items.filter(item => item.path.startsWith('/dashboard'));
+const featureItems = items.filter(item => 
+  !item.path.startsWith('/dashboard') && 
+  !item.path.startsWith('/admin') && 
+  !item.path.startsWith('/plugins')
+);
+const adminItems = items.filter(item => item.path.startsWith('/admin'));
+const pluginItems = items.filter(item => item.path.startsWith('/plugins'));
 
 export function AppSidebar() {
   const { user } = useAuth();
@@ -121,11 +142,93 @@ export function AppSidebar() {
         <SidebarGroup>
           <WorkspaceSwitcher />
         </SidebarGroup>
+        
+        {/* Dashboard navigation */}
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel>Dashboard</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items
+              {dashboardItems
+                .filter(item => canAccessRoute(role, item.path))
+                .map((item) => (
+                  <SidebarMenuItem key={item.path}>
+                    <SidebarMenuButton asChild tooltip={item.label}>
+                      <NavLink
+                        to={item.path}
+                        className={({ isActive }) =>
+                          `w-full ${isActive ? "data-[active=true]" : ""}`
+                        }
+                      >
+                        <item.icon />
+                        <span>{item.label}</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        
+        {/* Core features navigation */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Features</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {featureItems
+                .filter(item => canAccessRoute(role, item.path))
+                .map((item) => (
+                  <SidebarMenuItem key={item.path}>
+                    <SidebarMenuButton asChild tooltip={item.label}>
+                      <NavLink
+                        to={item.path}
+                        className={({ isActive }) =>
+                          `w-full ${isActive ? "data-[active=true]" : ""}`
+                        }
+                      >
+                        <item.icon />
+                        <span>{item.label}</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        
+        {/* Admin section - only show if user has admin access */}
+        {role === 'admin' && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Admin</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {adminItems
+                  .filter(item => canAccessRoute(role, item.path))
+                  .map((item) => (
+                    <SidebarMenuItem key={item.path}>
+                      <SidebarMenuButton asChild tooltip={item.label}>
+                        <NavLink
+                          to={item.path}
+                          className={({ isActive }) =>
+                            `w-full ${isActive ? "data-[active=true]" : ""}`
+                          }
+                        >
+                          <item.icon />
+                          <span>{item.label}</span>
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+        
+        {/* Plugins section */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Plugins</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {pluginItems
                 .filter(item => canAccessRoute(role, item.path))
                 .map((item) => (
                   <SidebarMenuItem key={item.path}>
