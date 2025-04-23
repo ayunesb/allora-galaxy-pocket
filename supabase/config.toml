@@ -7,6 +7,17 @@ verify_jwt = true
 [functions.stripe-subscription-webhook]
 verify_jwt = false
 
+[functions.reset-billing-credits]
+schedule = "0 6 1 * *"  # 6AM on the 1st of every month
+
+[functions.create-checkout]
+verify_jwt = false
+
+[functions.check-subscription]
+verify_jwt = false
+
+[functions.customer-portal]
+verify_jwt = false
+
 [functions.crons]
 grade_submissions = "0 19 * * *" # Run daily at 7 PM
-
