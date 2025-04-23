@@ -5,11 +5,20 @@ import { useTenant } from "@/hooks/useTenant";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
 
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, isLoading: authLoading } = useAuth();
   const { tenant, isLoading: tenantLoading } = useTenant();
   const location = useLocation();
+  const [shouldCheckOnboarding, setShouldCheckOnboarding] = useState(false);
+  
+  // Only enable onboarding check when both user and tenant are loaded
+  useEffect(() => {
+    if (user && tenant?.id && !authLoading && !tenantLoading) {
+      setShouldCheckOnboarding(true);
+    }
+  }, [user, tenant?.id, authLoading, tenantLoading]);
   
   // Check onboarding status when user and tenant are available
   const { data: onboardingComplete, isLoading: onboardingLoading } = useQuery({
@@ -34,13 +43,11 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
         
       return !!companyProfile && !!personaProfile;
     },
-    enabled: !!user && !!tenant?.id,
+    enabled: shouldCheckOnboarding,
   });
   
-  const isLoading = authLoading || tenantLoading || (!!user && !!tenant?.id && onboardingLoading);
-  
   // Don't redirect while checking auth status
-  if (isLoading) {
+  if (authLoading || tenantLoading || (shouldCheckOnboarding && onboardingLoading)) {
     return (
       <div className="flex items-center justify-center h-screen">
         <LoadingSpinner size={40} label="Loading..." />
@@ -50,18 +57,23 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   
   // If not logged in, redirect to onboarding
   if (!user) {
-    return <Navigate to="/onboarding" state={{ from: location }} replace />;
+    // Using string literal to prevent possible recursion due to object references
+    return <Navigate to="/onboarding" state={{ from: location.pathname }} replace />;
   }
   
   // If logged in but no tenant selected, redirect to workspace selection
   if (!tenant) {
-    return <Navigate to="/workspace" state={{ from: location }} replace />;
+    // Using string literal to prevent possible recursion due to object references
+    return <Navigate to="/workspace" state={{ from: location.pathname }} replace />;
   }
 
-  // If onboarding is not complete and we're not already on the onboarding page,
+  // If onboarding check completed and it's not complete and we're not already on the onboarding page,
   // redirect to onboarding
-  if (onboardingComplete === false && !location.pathname.includes("/onboarding")) {
-    return <Navigate to="/onboarding" state={{ from: location }} replace />;
+  if (shouldCheckOnboarding && 
+      onboardingComplete === false && 
+      !location.pathname.includes("/onboarding")) {
+    // Using string literal to prevent possible recursion
+    return <Navigate to="/onboarding" state={{ from: location.pathname }} replace />;
   }
 
   return <>{children}</>;
