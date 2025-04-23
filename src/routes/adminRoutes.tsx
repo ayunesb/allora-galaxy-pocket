@@ -9,7 +9,7 @@ import AddPluginPage from "@/app/admin/plugins/gallery/page";
 import AgentMemoryConsole from "@/app/admin/agents/memory/page";
 import RoleChangeRequestsPage from "@/app/admin/users/role-requests/page";
 import UserManagementPage from "@/app/admin/users/page";
-// Update the import to use the correct path or create the missing page
+// Import the newly created AdminCronLogsPage
 import AdminCronLogsPage from "@/pages/admin/logs/page";
 
 export const adminRoutes: RouteObject[] = [
