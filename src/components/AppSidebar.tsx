@@ -1,3 +1,4 @@
+
 import { NavLink } from "react-router-dom";
 import { 
   Home, 
@@ -34,6 +35,8 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import WorkspaceSwitcher from "@/app/workspace/WorkspaceSwitcher";
+import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 
 function canAccessRoute(role, path) {
   const accessMatrix = {
@@ -106,8 +109,8 @@ const items = [
 ];
 
 export function AppSidebar() {
-  const { user } = require("@/hooks/useAuth")();
-  const { role } = require("@/hooks/useUserRole")();
+  const { user } = useAuth();
+  const { role } = useUserRole();
 
   return (
     <Sidebar>
