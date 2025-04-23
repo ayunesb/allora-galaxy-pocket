@@ -5,13 +5,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { useAuth } from "@/hooks/useAuth";
 
-interface LogActivityParams {
+export interface LogActivityParams {
   event_type: string;
   message: string;
   meta?: Record<string, any>;
 }
 
-interface FetchLogsParams {
+export interface FetchLogsParams {
   dateRange?: number;
   actionType?: string;
   userId?: string;
