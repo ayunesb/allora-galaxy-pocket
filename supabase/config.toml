@@ -1,5 +1,5 @@
 
-project_id = "YOUR-PROJECT-ID"
+project_id = "lxsuqqlfuftnvuvtctsx"
 
 [api]
 enabled = true
@@ -28,6 +28,10 @@ verify_jwt = true
 [functions.strategy-adjustments]
 verify_jwt = true
 
+[functions.send-alert-digest]
+verify_jwt = true
+schedule = "0 9 * * MON"  # Run at 9 AM every Monday
+
 # Add CRON schedule for GA4 metrics fetch
 [functions.fetch-ga4-metrics.cron]
 schedule = "0 4 * * *"  # Run at 4 AM daily
@@ -35,4 +39,3 @@ schedule = "0 4 * * *"  # Run at 4 AM daily
 # Add CRON schedule for strategy adjustments
 [functions.strategy-adjustments.cron]
 schedule = "0 6 * * MON"  # Run at 6 AM every Monday
-

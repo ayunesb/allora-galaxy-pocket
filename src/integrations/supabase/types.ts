@@ -479,6 +479,7 @@ export type Database = {
       company_profiles: {
         Row: {
           created_at: string | null
+          ga4_property_id: string | null
           id: string
           industry: string
           launch_mode: string | null
@@ -490,6 +491,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          ga4_property_id?: string | null
           id?: string
           industry: string
           launch_mode?: string | null
@@ -501,6 +503,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          ga4_property_id?: string | null
           id?: string
           industry?: string
           launch_mode?: string | null
