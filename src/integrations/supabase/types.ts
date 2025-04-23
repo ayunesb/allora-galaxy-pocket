@@ -1628,42 +1628,51 @@ export type Database = {
       }
       strategies: {
         Row: {
+          approved_at: string | null
           created_at: string | null
           description: string | null
           diagnosis: Json | null
           failure_reason: string | null
+          generated_by: string | null
           health_score: number | null
           id: string
           impact_score: number | null
           is_public: boolean | null
+          retry_prompt: string | null
           status: string | null
           tags: string[] | null
           title: string | null
           user_id: string | null
         }
         Insert: {
+          approved_at?: string | null
           created_at?: string | null
           description?: string | null
           diagnosis?: Json | null
           failure_reason?: string | null
+          generated_by?: string | null
           health_score?: number | null
           id?: string
           impact_score?: number | null
           is_public?: boolean | null
+          retry_prompt?: string | null
           status?: string | null
           tags?: string[] | null
           title?: string | null
           user_id?: string | null
         }
         Update: {
+          approved_at?: string | null
           created_at?: string | null
           description?: string | null
           diagnosis?: Json | null
           failure_reason?: string | null
+          generated_by?: string | null
           health_score?: number | null
           id?: string
           impact_score?: number | null
           is_public?: boolean | null
+          retry_prompt?: string | null
           status?: string | null
           tags?: string[] | null
           title?: string | null
