@@ -1,4 +1,3 @@
-
 export interface AgentMemory {
   id: string;
   agent_name: string;
@@ -12,9 +11,10 @@ export interface AgentMemory {
   xp_delta: number;
   remix_count?: number;
   is_user_submitted?: boolean;
+  ai_rating?: number | null;
+  ai_feedback?: string | null;
 }
 
-// Add missing type for AgentCollabMessage
 export interface AgentCollabMessage {
   id: string;
   session_id: string;
@@ -23,10 +23,8 @@ export interface AgentCollabMessage {
   created_at: string;
 }
 
-// Add missing type for AgentMemoryLog (using AgentMemory as base)
 export type AgentMemoryLog = AgentMemory;
 
-// Add missing type for PromptPerformanceData
 export interface PromptPerformanceData {
   agent: string;
   version: number;
