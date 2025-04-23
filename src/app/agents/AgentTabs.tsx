@@ -5,12 +5,11 @@ import AgentPersonaOverview from "./AgentPersonaOverview";
 import AgentSkillMatrix from "./AgentSkillMatrix";
 import AgentHealthMonitor from "./AgentHealthMonitor";
 import { AgentProfile } from "./hooks/useAgentProfile";
-// import AgentXPTracker from "./AgentXPTracker" // phase 2 if desired
 
 export default function AgentTabs({ agent }: { agent: AgentProfile | null }) {
-  // Create agent names array from the single agent for AgentHealthMonitor
-  // Ensure we only add the agent_name if agent exists
-  const agentNames = agent ? [agent.agent_name] : [];
+  // Only pass agent to the components that expect AgentProfile.
+  // For AgentHealthMonitor, pass array of names (empty if not defined)
+  const agentNames = agent && agent.agent_name ? [agent.agent_name] : [];
 
   return (
     <Tabs defaultValue="overview">
@@ -18,7 +17,6 @@ export default function AgentTabs({ agent }: { agent: AgentProfile | null }) {
         <TabsTrigger value="overview">Overview</TabsTrigger>
         <TabsTrigger value="skills">Skills</TabsTrigger>
         <TabsTrigger value="health">Health</TabsTrigger>
-        {/* <TabsTrigger value="xp">XP</TabsTrigger> */}
       </TabsList>
       <TabsContent value="overview">
         <AgentPersonaOverview agent={agent} />
@@ -29,9 +27,6 @@ export default function AgentTabs({ agent }: { agent: AgentProfile | null }) {
       <TabsContent value="health">
         <AgentHealthMonitor agentNames={agentNames} />
       </TabsContent>
-      {/* <TabsContent value="xp">
-        <AgentXPTracker agent={agent} />
-      </TabsContent> */}
     </Tabs>
   );
 }
