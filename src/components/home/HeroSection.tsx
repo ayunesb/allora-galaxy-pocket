@@ -5,25 +5,29 @@ import { ArrowRight } from "lucide-react";
 
 export const HeroSection = () => {
   return (
-    <div className="text-center space-y-6 max-w-3xl">
-      <h1 className="text-6xl font-bold tracking-tight">
-        <span className="inline-block">🚀</span> Allora OS
+    <section className="bg-gradient-to-b from-background to-muted py-20 text-center">
+      <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-4">
+        Your AI executive team is ready.
       </h1>
-      <p className="text-xl text-muted-foreground">
-        Your AI CEO. One platform to plan, execute, and scale your business — with only 10% human input.
+      <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+        Allora OS is the first 90% AI-powered business platform. From strategy to execution, 
+        let your company run itself—with just your approval.
       </p>
-      <div className="flex items-center justify-center gap-4 pt-4">
-        <Link to="/onboarding">
-          <Button className="gap-2">
-            Get Started <ArrowRight className="h-4 w-4" />
-          </Button>
-        </Link>
-        <Link to="/demo">
-          <Button variant="outline" className="gap-2">
-            🎓 Explore the Demo
-          </Button>
-        </Link>
+
+      <div className="mt-8 flex justify-center gap-4 flex-wrap">
+        <Button size="lg" asChild>
+          <Link to="/demo" className="gap-2">
+            🎓 Explore the Live Demo <ArrowRight className="h-5 w-5" />
+          </Link>
+        </Button>
+        <Button variant="outline" size="lg" asChild>
+          <Link to="/pricing">See Plans</Link>
+        </Button>
       </div>
-    </div>
+
+      <p className="text-sm text-muted-foreground mt-4 italic">
+        No login required · View-only mode · Resets daily
+      </p>
+    </section>
   );
 };
