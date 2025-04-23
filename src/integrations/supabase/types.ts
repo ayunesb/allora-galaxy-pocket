@@ -261,6 +261,7 @@ export type Database = {
           agent_name: string
           created_at: string | null
           edited_by: string | null
+          explanation: string | null
           id: string
           prompt: string
           tenant_id: string
@@ -270,6 +271,7 @@ export type Database = {
           agent_name: string
           created_at?: string | null
           edited_by?: string | null
+          explanation?: string | null
           id?: string
           prompt: string
           tenant_id: string
@@ -279,6 +281,7 @@ export type Database = {
           agent_name?: string
           created_at?: string | null
           edited_by?: string | null
+          explanation?: string | null
           id?: string
           prompt?: string
           tenant_id?: string

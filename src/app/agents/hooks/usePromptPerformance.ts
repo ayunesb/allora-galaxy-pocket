@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
@@ -111,15 +110,15 @@ export function generatePromptRecommendations(
     
   if (!bestPerformer || bestPerformer.version === currentVersion) return null;
   
-  // Only recommend if there's a significant difference (20%)
+  // Only recommend if there's a significant difference (30%)
   const delta = bestPerformer.success_rate - currentVersionData.success_rate;
-  if (delta >= 0.2) {
+  if (delta >= 0.3) {
     return {
       agent: agentName,
       current_version: currentVersion,
       suggested_version: bestPerformer.version,
       performance_delta: delta,
-      message: `Agent ${agentName} is underperforming. Try switching to v${bestPerformer.version}?`
+      message: `Agent ${agentName} detected a significant performance improvement. Recommend switching to version ${bestPerformer.version}.`
     };
   }
   

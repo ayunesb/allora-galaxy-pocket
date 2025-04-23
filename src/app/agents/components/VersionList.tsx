@@ -8,12 +8,7 @@ interface VersionEntry {
   prompt: string;
   version: number;
   created_at: string;
-}
-
-interface PartialVersionEntry {
-  id: string;
-  version: number;
-  prompt: string;
+  explanation?: string;
 }
 
 export function VersionList({
@@ -31,17 +26,17 @@ export function VersionList({
       
       const { data } = await supabase
         .from("agent_prompt_versions")
-        .select("id, version, prompt, created_at, agent_name")
+        .select("id, version, prompt, created_at, agent_name, explanation")
         .eq("agent_name", agent)
         .order("version", { ascending: false });
         
-      // Ensure we have all the required fields or set defaults
       const typedData = data?.map(item => ({
         id: item.id,
         version: item.version,
         prompt: item.prompt,
         agent_name: item.agent_name || agent,
-        created_at: item.created_at || new Date().toISOString()
+        created_at: item.created_at || new Date().toISOString(),
+        explanation: item.explanation
       })) as VersionEntry[] || [];
       
       setHistory(typedData);
@@ -60,7 +55,14 @@ export function VersionList({
             onClick={() => onSelect(v.prompt)}
             title={v.prompt}
           >
-            v{v.version}: {v.prompt.slice(0, 60)}...
+            <div className="flex justify-between items-center">
+              <span>v{v.version}: {v.prompt.slice(0, 60)}...</span>
+            </div>
+            {v.explanation && (
+              <p className="text-xs text-muted-foreground mt-1 italic">
+                🧠 {v.explanation.slice(0, 100)}...
+              </p>
+            )}
           </li>
         ))}
       </ul>
