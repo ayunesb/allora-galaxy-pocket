@@ -8,6 +8,8 @@ export interface AgentStat {
   xp: number;
   success: number;
   failed: number;
+  prompt_version?: number; // Added for version tracking
+  total?: number;          // Added for total count
 }
 
 export function useAgentStats() {
@@ -16,7 +18,7 @@ export function useAgentStats() {
     const fetchStats = async () => {
       const { data } = await supabase
         .from("agent_tasks")
-        .select("agent, status, executed_at");
+        .select("agent, status, executed_at, prompt_version");
 
       if (!data) {
         setStats([]);
@@ -25,15 +27,29 @@ export function useAgentStats() {
 
       const grouped = data.reduce((acc: Record<string, any>, task: any) => {
         const date = new Date(task.executed_at).toLocaleDateString();
-        const key = `${task.agent}-${date}`;
+        const version = task.prompt_version || 0;
+        const key = `${task.agent}-${date}-${version}`;
+        
         if (!acc[key]) {
-          acc[key] = { agent: task.agent, date, xp: 0, success: 0, failed: 0 };
+          acc[key] = { 
+            agent: task.agent, 
+            date, 
+            xp: 0, 
+            success: 0, 
+            failed: 0,
+            prompt_version: version,
+            total: 0
+          };
         }
+        
         acc[key].xp += 1;
+        acc[key].total += 1;
         if (task.status === "success") acc[key].success += 1;
         if (task.status === "failed") acc[key].failed += 1;
+        
         return acc;
       }, {});
+      
       setStats(Object.values(grouped));
     };
 
@@ -41,3 +57,4 @@ export function useAgentStats() {
   }, []);
   return stats;
 }
+
