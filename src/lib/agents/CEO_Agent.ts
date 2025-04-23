@@ -1,31 +1,69 @@
-
 import { supabase } from "@/integrations/supabase/client";
+import type { OnboardingProfile } from "@/types/onboarding";
+
+type GenerateFromProfileInput = {
+  companyName: string;
+  industry: string;
+  goal?: string;
+  challenges?: string[];
+  teamSize?: string;
+  sellType?: string;
+};
 
 export const CEO_Agent = {
   name: "CEO_Agent",
-  /**
-   * Runs the CEO agent with the specified founder profile and market.
-   * Accepts options to notify via Slack or email, and pass in user info for email.
-   * Also computes/stores strategy impact score.
-   */
-  run: async (
-    {
-      founderProfile,
-      market,
-      notifySlack,
-      notifyEmail,
-      userEmail,
-      kpiInsert,
-    }: {
-      founderProfile: string;
-      market: string;
-      notifySlack?: boolean;
-      notifyEmail?: boolean;
-      userEmail?: string;
-      kpiInsert?: boolean;
-      saveToDb?: boolean;
-    }
-  ) => {
+  personas: [
+    "Claire Hughes Johnson",
+    "Wes Kao",
+    "Andrew Chen",
+    "Des Traynor"
+  ],
+  mission: "Optimize signup → aha moment flow",
+  capabilities: [
+    "Map onboarding journey",
+    "Define success criteria",
+    "Recommend fast time-to-value"
+  ],
+  task_type: "generate-onboarding-flow",
+  prompt: `You are an onboarding flow optimizer.
+Given a signup context, propose step-by-step onboarding, success criteria, and optimal timeline for user value.`,
+  
+
+  generateStrategyFromProfile: (profile: GenerateFromProfileInput) => {
+    return `You are the AI CEO of a company named "${profile.companyName}" in the "${profile.industry}" industry.
+
+Their main goal is: ${profile.goal || 'Growth and expansion'}
+Team Size: ${profile.teamSize || 'Not specified'}
+Business Type: ${profile.sellType || 'Not specified'}
+
+Challenges: ${profile.challenges?.join(', ') || 'Not specified'}
+
+Generate a full business strategy including:
+- Lead acquisition strategy
+- Marketing channel recommendations
+- Product/service offers
+- Team structure and automation opportunities
+- Growth milestones and KPIs
+
+Return the strategy in markdown format.`;
+  },
+
+  run: async ({
+    founderProfile,
+    market,
+    notifySlack,
+    notifyEmail,
+    userEmail,
+    kpiInsert,
+  }: {
+    founderProfile: string;
+    market: string;
+    notifySlack?: boolean;
+    notifyEmail?: boolean;
+    userEmail?: string;
+    kpiInsert?: boolean;
+    saveToDb?: boolean;
+  }) => {
     // Call Supabase Edge Function to run OpenAI prompt
     const res = await fetch("/functions/v1/ceo-strategy", {
       method: "POST",
@@ -98,5 +136,54 @@ export const CEO_Agent = {
     }
 
     return { strategy, impactScore };
+  }
+};
+
+// Add a helper function to generate initial strategy after onboarding
+export const generateInitialStrategy = async (profile: OnboardingProfile, tenantId: string) => {
+  try {
+    const prompt = CEO_Agent.generateStrategyFromProfile({
+      companyName: profile.companyName || 'My Company',
+      industry: profile.industry || 'Other',
+      goal: Array.isArray(profile.goals) ? profile.goals[0] : undefined,
+      challenges: profile.challenges,
+      teamSize: profile.teamSize,
+      sellType: profile.sellType
+    });
+
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: "You are an expert CEO advisor." },
+          { role: "user", content: prompt }
+        ]
+      })
+    });
+
+    const data = await response.json();
+    const strategy = data.choices[0].message.content;
+
+    // Save to strategies table
+    const { error } = await supabase.from('strategies').insert({
+      title: 'Initial Business Strategy',
+      description: 'Auto-generated strategy based on your company profile',
+      content: strategy,
+      status: 'pending',
+      tenant_id: tenantId,
+      tags: ['onboarding', 'initial-strategy']
+    });
+
+    if (error) throw error;
+    
+    return { success: true, strategy };
+  } catch (error) {
+    console.error('Error generating initial strategy:', error);
+    return { success: false, error: error.message };
   }
 };

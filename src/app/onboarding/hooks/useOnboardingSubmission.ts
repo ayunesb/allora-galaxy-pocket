@@ -1,10 +1,10 @@
-
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { OnboardingProfile } from "@/types/onboarding";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
+import { generateInitialStrategy } from "@/lib/agents/CEO_Agent";
 
 /**
  * Returns: { isSubmitting, completeOnboarding }
@@ -29,7 +29,6 @@ export const useOnboardingSubmission = () => {
     setIsSubmitting(true);
 
     try {
-      // Log onboarding attempt details for debugging
       console.log("[completeOnboarding] Starting onboarding completion for tenant:", tenant.id);
 
       // Save company profile
@@ -46,10 +45,7 @@ export const useOnboardingSubmission = () => {
           target_market: finalProfile.targetMarket
         });
 
-      if (companyError) {
-        console.error("[completeOnboarding] Company profile error:", companyError);
-        throw companyError;
-      }
+      if (companyError) throw companyError;
 
       // Save persona profile
       const { error: personaError } = await supabase
@@ -65,26 +61,14 @@ export const useOnboardingSubmission = () => {
           sell_type: finalProfile.sellType || 'b2b'
         });
 
-      if (personaError) {
-        console.error("[completeOnboarding] Persona profile error:", personaError);
-        throw personaError;
-      }
+      if (personaError) throw personaError;
 
-      console.log("[completeOnboarding] Profiles saved successfully");
-
-      // Generate strategy in background
-      try {
-        console.log("[completeOnboarding] Initiating strategy generation");
-        await supabase.functions.invoke('generate-strategy', {
-          body: {
-            user_id: user?.id,
-            tenant_id: tenant?.id
-          }
-        });
-        console.log("[completeOnboarding] Strategy generation initiated successfully");
-      } catch (strategyError) {
-        console.error("[completeOnboarding] Strategy generation error:", strategyError);
-        // Continue with navigation even if strategy generation fails
+      // Generate initial strategy
+      const { success: strategySuccess, error: strategyError } = await generateInitialStrategy(finalProfile, tenant.id);
+      
+      if (!strategySuccess) {
+        console.warn("[completeOnboarding] Strategy generation warning:", strategyError);
+        // Continue with onboarding even if strategy generation fails
       }
 
       toast({
