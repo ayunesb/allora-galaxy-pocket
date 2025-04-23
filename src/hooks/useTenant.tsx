@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -7,6 +6,7 @@ interface Tenant {
   name: string;
   theme_color?: string;
   theme_mode?: string;
+  isDemo?: boolean;
 }
 
 interface TenantContextType {
@@ -32,7 +32,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
           // Fetch the tenant details from Supabase
           const { data, error } = await supabase
             .from("tenant_profiles")
-            .select("id, name, theme_color, theme_mode")
+            .select("id, name, theme_color, theme_mode, isDemo")
             .eq("id", storedId)
             .single();
           
