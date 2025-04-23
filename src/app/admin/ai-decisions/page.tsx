@@ -1,4 +1,5 @@
-import React from "react";
+
+import React, { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AgentFeedbackTable } from "./components/AgentFeedbackTable";
 import { ApprovalMetricsCard } from "./components/ApprovalMetricsCard";
