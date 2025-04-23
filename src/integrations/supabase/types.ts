@@ -577,6 +577,41 @@ export type Database = {
           },
         ]
       }
+      encrypted_tokens: {
+        Row: {
+          created_at: string | null
+          encrypted_token: string
+          id: string
+          service: string
+          tenant_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          encrypted_token: string
+          id?: string
+          service: string
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          encrypted_token?: string
+          id?: string
+          service?: string
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "encrypted_tokens_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       export_logs: {
         Row: {
           completed_at: string | null
