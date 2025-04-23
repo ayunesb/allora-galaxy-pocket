@@ -7,10 +7,6 @@ import { toast } from "@/components/ui/sonner";
 import { useTenant } from "@/hooks/useTenant";
 import { useAuth } from "@/hooks/useAuth";
 
-/**
- * Returns: { isSubmitting, completeOnboarding }
- * `completeOnboarding(profile)` returns { success: boolean, error?: string }
- */
 export const useOnboardingSubmission = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { tenant } = useTenant();
@@ -20,6 +16,10 @@ export const useOnboardingSubmission = () => {
   const completeOnboarding = async (profile: OnboardingProfile): Promise<{ success: boolean; error?: string }> => {
     if (!tenant?.id) {
       console.error("Cannot complete onboarding: No tenant ID available");
+      toast("Error", {
+        description: "Workspace not selected. Please try again.",
+        variant: "destructive"
+      });
       return {
         success: false,
         error: "Workspace not selected. Please try again."
@@ -28,6 +28,10 @@ export const useOnboardingSubmission = () => {
 
     if (!user) {
       console.error("Cannot complete onboarding: No user available");
+      toast("Error", {
+        description: "User not authenticated. Please sign in again.",
+        variant: "destructive"
+      });
       return {
         success: false,
         error: "User not authenticated. Please sign in again."
@@ -49,16 +53,14 @@ export const useOnboardingSubmission = () => {
 
       if (error) throw error;
 
-      toast({
-        title: "Setup complete!",
+      toast("Setup complete!", {
         description: "Welcome to Allora OS"
       });
 
       return { success: true };
     } catch (error: any) {
       console.error("Onboarding submission error:", error);
-      toast({
-        title: "Error",
+      toast("Error", {
         description: error.message || "Failed to save onboarding data",
         variant: "destructive"
       });
