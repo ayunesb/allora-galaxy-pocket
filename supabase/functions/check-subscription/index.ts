@@ -8,6 +8,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Helper logging function for debugging
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[CHECK-SUBSCRIPTION] ${step}${detailsStr}`);
@@ -85,7 +86,7 @@ serve(async (req) => {
       const price = await stripe.prices.retrieve(priceId);
       const amount = price.unit_amount || 0;
       if (amount <= 999) {
-        subscriptionTier = "Basic";
+        subscriptionTier = "Standard";
       } else if (amount <= 1999) {
         subscriptionTier = "Premium";
       } else {
