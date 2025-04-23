@@ -23,7 +23,6 @@ export function useAvailableTenants() {
   const [retryCount, setRetryCount] = useState(0);
 
   const fetchTenants = useCallback(async () => {
-    // Enhanced logging for debugging
     console.log("[useAvailableTenants] Fetching tenants - User:", user?.id, "Retry count:", retryCount);
     
     if (!user) {
@@ -39,57 +38,70 @@ export function useAvailableTenants() {
     setError(null);
 
     try {
-      // Try direct tenant profiles query first - simpler and less prone to RLS issues
+      // First try the current_user_tenant_roles view approach (non-recursive)
+      const viewResponse = await supabase
+        .from("current_user_tenant_roles")
+        .select("tenant_id")
+        .then(async (result) => {
+          if (result.error) {
+            console.warn("[useAvailableTenants] View query error:", result.error);
+            return null;
+          }
+          
+          if (!result.data || result.data.length === 0) {
+            console.log("[useAvailableTenants] No roles found via view");
+            return [];
+          }
+          
+          // Get tenant details for the found tenant IDs
+          const tenantIds = result.data.map(row => row.tenant_id);
+          console.log("[useAvailableTenants] Found tenant IDs:", tenantIds);
+          
+          const tenantsResponse = await supabase
+            .from("tenant_profiles")
+            .select("id, name, theme_color, theme_mode")
+            .in("id", tenantIds);
+            
+          if (tenantsResponse.error) {
+            console.error("[useAvailableTenants] Error fetching tenant details:", tenantsResponse.error);
+            return null;
+          }
+          
+          return tenantsResponse.data;
+        });
+
+      if (viewResponse !== null) {
+        console.log("[useAvailableTenants] View approach succeeded:", viewResponse);
+        setTenants(viewResponse);
+        setStatus("success");
+        setRetryCount(0);
+        return;
+      }
+
+      // Fallback to direct tenant profiles query if view approach fails
+      console.log("[useAvailableTenants] Falling back to direct tenant query...");
       const directTenantResponse = await supabase
         .from("tenant_profiles")
         .select("id, name, theme_color, theme_mode")
         .limit(20);
 
-      console.log("[useAvailableTenants] Direct tenant query response:", directTenantResponse);
-
       if (directTenantResponse.error) {
-        console.error("[useAvailableTenants] Error in direct tenant query:", directTenantResponse.error);
-        
-        // If this is an RLS error, try the alternative approach
-        if (directTenantResponse.error.message.includes("permission denied") || 
-            directTenantResponse.error.message.includes("policy")) {
-          console.log("[useAvailableTenants] Falling back to tenant_user_roles approach due to RLS");
-        } else {
-          throw directTenantResponse.error;
-        }
+        console.error("[useAvailableTenants] Direct tenant query error:", directTenantResponse.error);
+        throw directTenantResponse.error;
       }
 
-      // If direct query works, use that data
       if (directTenantResponse.data && directTenantResponse.data.length > 0) {
+        console.log("[useAvailableTenants] Direct tenant query succeeded:", directTenantResponse.data.length, "tenants");
         setTenants(directTenantResponse.data);
         setStatus("success");
         setRetryCount(0);
         return;
       }
 
-      // Otherwise try via tenant_user_roles relationship
-      console.log("[useAvailableTenants] No direct tenants found, trying via user roles...");
-      const tenantRolesResponse = await supabase
-        .from("tenant_user_roles")
-        .select("tenant_profiles(id, name, theme_color, theme_mode)")
-        .eq("user_id", user.id);
-
-      console.log("[useAvailableTenants] Tenant roles response:", tenantRolesResponse);
-
-      if (tenantRolesResponse.error) {
-        console.error("[useAvailableTenants] Error fetching tenant roles:", tenantRolesResponse.error);
-        throw tenantRolesResponse.error;
-      }
-
-      const tenantProfiles = tenantRolesResponse.data
-        ?.map((item: any) => item.tenant_profiles)
-        .filter(Boolean);
-
-      console.log("[useAvailableTenants] Extracted tenant profiles:", tenantProfiles);
-      
-      setTenants(tenantProfiles || []);
+      // No tenants found through any method
+      console.log("[useAvailableTenants] No tenants found through any method");
+      setTenants([]);
       setStatus("success");
-      setRetryCount(0);
     } catch (err: any) {
       console.error("[useAvailableTenants] Comprehensive tenant fetch error:", err);
       setError(err.message || "Could not fetch workspaces. Please refresh.");
