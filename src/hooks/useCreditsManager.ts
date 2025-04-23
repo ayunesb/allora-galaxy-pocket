@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useBillingProfile } from './useBillingProfile';
 import { useStripeUsageReporting } from './useStripeUsageReporting';
@@ -68,7 +67,7 @@ export function useCreditsManager() {
       }
       
       // 3. Report to Stripe for metering (optional, only if connected)
-      if (profile.stripe_subscription_id) {
+      if (profile?.stripe_subscription_id) {
         await reportCreditUsage(amount);
       }
       
