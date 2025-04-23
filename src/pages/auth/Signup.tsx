@@ -1,6 +1,8 @@
+
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -12,11 +14,20 @@ import { toast } from "@/components/ui/sonner";
 import { Loader2, AlertCircle } from "lucide-react";
 import { isValidEmail, isValidPassword } from "@/lib/validation";
 
+// Add allowed roles to choose from, omitting 'admin' from direct registration for now
+const roleOptions = [
+  { value: "client", label: "🧑‍💼 Client (User/Founder)" },
+  { value: "developer", label: "👨‍💻 Developer (Agent/Plugin Builder)" },
+  // To allow admin: Uncomment below or add conditional protection as needed
+  // { value: "admin", label: "👨‍✈️ Admin (System)" }
+];
+
 export default function Signup() {
   const { signup } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("client");
   const [isLoading, setIsLoading] = useState(false);
   const [showEmailConfirmationAlert, setShowEmailConfirmationAlert] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -24,12 +35,11 @@ export default function Signup() {
   const handleSignup = async () => {
     if (!agreedToTerms) {
       toast.error("Please agree to the terms", {
-      description: "You must accept the terms to create an account"
+        description: "You must accept the terms to create an account"
       });
       return;
     }
 
-    // Validate form inputs
     if (!isValidEmail(email)) {
       toast.error("Invalid email", {
         description: "Please enter a valid email address"
@@ -44,14 +54,34 @@ export default function Signup() {
       return;
     }
 
+    // Example: Prevent admin self-enrollment (optional)
+    // if (role === "admin") {
+    //   toast.error("Admin access must be granted by a system administrator.");
+    //   return;
+    // }
+
     try {
       setIsLoading(true);
-      await signup(email, password);
-      
+      // Use supabase directly to get user id from signup response
+      const { data: signUpUser, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password
+      });
+      if (signUpError || !signUpUser?.user?.id) {
+        throw signUpError || new Error("No user returned from sign up");
+      }
+      // Insert role to user_roles if signup succeeded
+      const { error: roleError } = await supabase.from("user_roles").insert({
+        user_id: signUpUser.user.id,
+        role
+      });
+      if (roleError) {
+        throw roleError;
+      }
+
       toast.success("Signup successful!", {
         description: "Please check your email to confirm your account"
       });
-      
       setShowEmailConfirmationAlert(true);
     } catch (err: any) {
       toast.error("Signup failed", {
@@ -139,6 +169,29 @@ export default function Signup() {
             />
           </div>
 
+          <div>
+            <label
+              htmlFor="role"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Select Your Role
+            </label>
+            <select
+              id="role"
+              className="w-full p-2 border border-gray-300 rounded mb-4"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              disabled={isLoading || showEmailConfirmationAlert}
+              aria-label="User Role"
+            >
+              {roleOptions.map(opt => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="flex items-center space-x-2">
             <Checkbox
               id="terms"
@@ -220,3 +273,4 @@ export default function Signup() {
     </main>
   );
 }
+
