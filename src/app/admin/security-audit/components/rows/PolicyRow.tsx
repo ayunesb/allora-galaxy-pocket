@@ -2,14 +2,16 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import type { RlsPolicy } from "../../hooks/useRlsData";
+import type { AccessTestResult } from "../../hooks/useAccessTests";
 import { PolicyStatusBadge } from "../badges/PolicyStatusBadge";
+import { AccessTestBadge } from "../badges/AccessTestBadge";
 
 interface PolicyRowProps {
   policy: RlsPolicy;
   tableName: string;
   isFirstPolicy: boolean;
   totalPolicies: number;
-  testResult?: { status: string; rowCount?: number; errorMessage?: string };
+  testResult?: AccessTestResult;
 }
 
 export function PolicyRow({ 
