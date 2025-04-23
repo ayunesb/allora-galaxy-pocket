@@ -1705,6 +1705,7 @@ export type Database = {
       strategies: {
         Row: {
           approved_at: string | null
+          assigned_agent: string | null
           created_at: string | null
           description: string | null
           diagnosis: Json | null
@@ -1722,6 +1723,7 @@ export type Database = {
         }
         Insert: {
           approved_at?: string | null
+          assigned_agent?: string | null
           created_at?: string | null
           description?: string | null
           diagnosis?: Json | null
@@ -1739,6 +1741,7 @@ export type Database = {
         }
         Update: {
           approved_at?: string | null
+          assigned_agent?: string | null
           created_at?: string | null
           description?: string | null
           diagnosis?: Json | null
@@ -2133,6 +2136,24 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "fk_tenant_id"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mql_kpi_delta: {
+        Row: {
+          delta: number | null
+          kpi_name: string | null
+          previous: number | null
+          recent: number | null
+          tenant_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kpi_metrics_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenant_profiles"
