@@ -39,6 +39,27 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_assignments: {
+        Row: {
+          agent: string
+          assigned_at: string
+          id: string
+          tenant_id: string
+        }
+        Insert: {
+          agent: string
+          assigned_at?: string
+          id?: string
+          tenant_id: string
+        }
+        Update: {
+          agent?: string
+          assigned_at?: string
+          id?: string
+          tenant_id?: string
+        }
+        Relationships: []
+      }
       agent_blueprints: {
         Row: {
           agent_name: string
