@@ -9,6 +9,7 @@ import { useAvailableTenants } from "./hooks/useAvailableTenants";
 import { useInitializeSelectedTenant } from "./hooks/useInitializeSelectedTenant";
 import { handleTenantChange, createDefaultWorkspace } from "./utils/workspaceUtils";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function WorkspaceSwitcher({ highlight = false }) {
   const { tenant, setTenant } = useTenant();
@@ -16,6 +17,7 @@ export default function WorkspaceSwitcher({ highlight = false }) {
   const { tenants: availableTenants, loading, error, retryFetch } = useAvailableTenants();
   const { selected, setSelected } = useInitializeSelectedTenant(availableTenants, loading, error);
   const location = useLocation();
+  const { user } = useAuth();
   const isOnboarding = location.pathname === "/onboarding";
   const [isCreating, setIsCreating] = useState(false);
 
@@ -28,6 +30,15 @@ export default function WorkspaceSwitcher({ highlight = false }) {
   };
 
   const handleCreateWorkspace = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to create a workspace.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsCreating(true);
     try {
       const newWorkspace = await createDefaultWorkspace(toast, () => {
@@ -104,7 +115,7 @@ export default function WorkspaceSwitcher({ highlight = false }) {
           size="sm"
           className="w-full"
           onClick={handleCreateWorkspace}
-          disabled={isCreating}
+          disabled={isCreating || !user}
         >
           {isCreating ? (
             <>
@@ -145,7 +156,7 @@ export default function WorkspaceSwitcher({ highlight = false }) {
           size="icon"
           className="flex-shrink-0"
           onClick={handleCreateWorkspace}
-          disabled={isCreating}
+          disabled={isCreating || !user}
           title="Create new workspace"
         >
           {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}

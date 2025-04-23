@@ -24,9 +24,9 @@ export function useAvailableTenants() {
 
   const fetchTenants = useCallback(async () => {
     // Enhanced logging for debugging
-    console.log("Fetching tenants - User:", user?.id);
+    console.log("Fetching tenants - User:", user);
     
-    if (!user?.id) {
+    if (!user) {
       console.warn("No user ID available for tenant fetch");
       setLoading(false);
       setStatus("success");
@@ -94,11 +94,19 @@ export function useAvailableTenants() {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, toast]);
+  }, [user, toast]);
   
   useEffect(() => {
-    fetchTenants();
-  }, [fetchTenants]);
+    if (user) {
+      fetchTenants();
+    } else {
+      // Clear tenants when user is not logged in
+      setTenants([]);
+      setLoading(false);
+      setError(null);
+      setStatus("success");
+    }
+  }, [fetchTenants, user]);
 
   const retryFetch = useCallback(() => {
     if (retryCount < 3) {

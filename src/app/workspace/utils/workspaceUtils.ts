@@ -1,7 +1,6 @@
 
 import type { TenantOption } from "../hooks/useAvailableTenants";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 
 export function handleTenantChange(
   value: string,
@@ -75,12 +74,12 @@ export async function createDefaultWorkspace(
           ]);
         
         if (roleError) {
-          console.warn("Could not assign role to user:", roleError);
+          console.error("Could not assign role to user:", roleError);
           // Even if role assignment fails, we want to continue
           // as the workspace is created
         }
       } catch (roleErr) {
-        console.warn("Role assignment failed:", roleErr);
+        console.error("Role assignment failed:", roleErr);
       }
       
       toast({
