@@ -24,7 +24,10 @@ export default function RoleGuard({
     // If role is loaded, user is not allowed, and we haven't redirected yet
     if (!isLoading && role && !allowedRoles.includes(role) && !redirectedRef.current) {
       redirectedRef.current = true;
-      toast.error("Access denied. Redirecting to dashboard.");
+      toast({
+        title: "Access denied. Redirecting to dashboard.",
+        variant: "destructive"
+      });
       setTimeout(() => {
         navigate("/dashboard", { replace: true });
       }, 1500);

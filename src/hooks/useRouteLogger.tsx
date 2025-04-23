@@ -17,27 +17,18 @@ export function useRouteLogger() {
     if (!user?.id || !role || !location.pathname) return;
 
     const logRouteVisit = async () => {
-      try {
-        const { error } = await supabase.from("route_logs").insert({
-          user_id: user.id,
-          role,
-          route: location.pathname
-        });
-        
-        if (error) {
-          // Silently handle errors to not disrupt user experience
-          // Uncomment for debugging analytics flows
-          // console.error("Route log error:", error);
-        }
-      } catch (err) {
-        // Fallback error handling
-        // console.error("Route logging failed:", err);
-      }
+      const { error } = await supabase.from("route_logs").insert({
+        user_id: user.id,
+        role,
+        route: location.pathname
+      });
+      // Silently handle errors to not disrupt user experience
+      // Uncomment for debugging analytics flows
+      // if (error) console.error("Route log error:", error);
     };
 
     // Execute the logging function
     logRouteVisit();
-    
     // Only log when pathname changes
     // eslint-disable-next-line
   }, [user?.id, role, location.pathname]);
