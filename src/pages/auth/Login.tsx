@@ -51,7 +51,17 @@ export default function Login() {
       setIsLoading(true);
       await login(email, password);
       toast.success("Logged in successfully!");
-      navigate("/onboarding");
+
+      // Fetch canonical user role for redirect after login
+      const { data: roleData, error } = await supabase.rpc("get_user_role");
+      if (!error && roleData) {
+        if (roleData === "client") navigate("/onboarding");
+        else if (roleData === "developer") navigate("/plugins/generator");
+        else if (roleData === "admin") navigate("/admin/ai-decisions");
+        else navigate("/dashboard");
+      } else {
+        navigate("/dashboard");
+      }
     } catch (err: any) {
       toast.error("Login failed", {
         description: err.message

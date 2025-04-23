@@ -1,41 +1,36 @@
 
+// Deprecated: useUserRole instead for canonical role!
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useTenant } from './useTenant';
-import { UserRole } from '@/types/invite';
 
 export function useRole() {
-  const [role, setRole] = useState<UserRole>('viewer');
+  const [role, setRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { tenant } = useTenant();
 
   useEffect(() => {
+    let active = true;
     async function fetchRole() {
       try {
-        if (!tenant?.id) return;
-
-        // Get the current user ID properly by awaiting the getUser() Promise
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user?.id) return;
-
-        const { data, error } = await supabase
-          .from('tenant_user_roles')
-          .select('role')
-          .eq('tenant_id', tenant.id)
-          .eq('user_id', user.id)
-          .single();
-
-        if (error) throw error;
-        if (data) setRole(data.role);
+        // Use the new get_user_role()
+        const { data, error } = await supabase.rpc("get_user_role");
+        if (active) {
+          if (error) {
+            setRole(null);
+            console.error('Error fetching role:', error);
+          } else {
+            setRole(data);
+          }
+        }
       } catch (error) {
         console.error('Error fetching role:', error);
       } finally {
-        setIsLoading(false);
+        if (active) setIsLoading(false);
       }
     }
 
     fetchRole();
-  }, [tenant?.id]);
+    return () => { active = false; };
+  }, []);
 
   return { role, isLoading };
 }

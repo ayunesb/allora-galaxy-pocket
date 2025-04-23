@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2, AlertCircle } from "lucide-react";
@@ -68,20 +67,15 @@ export default function SignupForm() {
   };
 
   // After signup (email confirmation/login), auto-redirect based on user role
-  // The parent page should handle this after session is created, but we leave helper here for completeness
-  // This pattern ensures the correct flow for post-signup onboarding
   const redirectAfterSignup = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
-    const { data } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", session.user.id)
-      .single();
-
-    if (data?.role === "client") navigate("/onboarding");
-    else if (data?.role === "developer") navigate("/plugins/generator");
-    else if (data?.role === "admin") navigate("/admin/ai-decisions");
+    // Use new role system for smart redirect
+    const { data: roleData, error } = await supabase.rpc("get_user_role");
+    if (error || !roleData) return;
+    if (roleData === "client") navigate("/onboarding");
+    else if (roleData === "developer") navigate("/plugins/generator");
+    else if (roleData === "admin") navigate("/admin/ai-decisions");
   };
 
   return (
