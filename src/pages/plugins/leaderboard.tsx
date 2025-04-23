@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { Trophy, New, Repeat } from "lucide-react";
+import { Trophy, BadgeInfo, Repeat } from "lucide-react";
 
 type PluginWithCertification = {
   id: string;
@@ -100,7 +100,7 @@ export default function PluginLeaderboard() {
                       )}
                       {isNew && (
                         <Badge variant="outline" className="flex items-center gap-1">
-                          <New className="w-4 h-4 text-blue-500" /> New
+                          <BadgeInfo className="w-4 h-4 text-blue-500" /> New
                         </Badge>
                       )}
                       {isRemixed && (

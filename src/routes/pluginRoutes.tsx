@@ -9,11 +9,13 @@ import PluginsPage from "@/pages/plugins/page";
 import PluginSettingsPage from "@/app/plugins/settings/index";
 import MyPluginsPage from "@/app/plugins/my/page";
 import PluginExplorePage from "@/pages/plugins/explore";
+import PluginPerformance from "@/pages/plugins/performance";
 
 export const pluginRoutes: RouteObject[] = [
   { path: "/plugins", element: <PluginsPage /> },
   { path: "/plugins/builder", element: <PluginBuilder /> },
   { path: "/plugins/leaderboard", element: <PluginLeaderboard /> },
+  { path: "/plugins/performance", element: <PluginPerformance /> },
   { path: "/plugins/revenue/apply", element: <RevenueShareApply /> },
   { path: "/plugins/submit", element: <PluginSubmitPage /> },
   { path: "/plugins/settings", element: <PluginSettingsPage /> },

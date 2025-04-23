@@ -3,7 +3,7 @@ import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Plug, Plus, BarChart3, Code } from "lucide-react";
+import { Plug, Plus, BarChart3, Code, TrendingUp } from "lucide-react";
 
 export default function PluginsDashboard() {
   return (
@@ -55,6 +55,21 @@ export default function PluginsDashboard() {
             <Link to="/plugins/submit">
               <Button className="w-full" variant="outline">
                 Submit Plugin
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-md transition-shadow">
+          <CardHeader>
+            <TrendingUp className="h-8 w-8 mb-2 text-primary" />
+            <CardTitle>Plugin Performance</CardTitle>
+            <CardDescription>View plugin ROI and earnings metrics</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link to="/plugins/performance">
+              <Button className="w-full" variant="outline">
+                View Performance
               </Button>
             </Link>
           </CardContent>
