@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
@@ -57,10 +56,15 @@ export default function OnboardingWizard() {
   const CurrentStep = steps[step];
 
   useEffect(() => {
-    if (tenant) {
-      setWorkspaceError(false);
+    if (!tenantLoading && !tenant) {
+      setWorkspaceError(true);
+      toast({
+        title: "Workspace required",
+        description: "Please select or create a workspace to continue.",
+        variant: "destructive"
+      });
     }
-  }, [tenant]);
+  }, [tenant, tenantLoading, toast]);
 
   const next = (data: Partial<OnboardingProfile>) => {
     setProfile((prev) => ({ ...prev, ...data }));
@@ -73,7 +77,6 @@ export default function OnboardingWizard() {
     try {
       const result = await completeOnboarding(finalProfile);
       if (result.success) {
-        // Add a small delay before navigation to ensure all state updates complete
         setTimeout(() => {
           navigate("/dashboard", { replace: true });
         }, 500);
