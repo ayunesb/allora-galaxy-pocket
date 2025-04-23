@@ -1467,6 +1467,8 @@ export type Database = {
           failure_reason: string | null
           health_score: number | null
           id: string
+          impact_score: number | null
+          is_public: boolean | null
           status: string | null
           tags: string[] | null
           title: string | null
@@ -1479,6 +1481,8 @@ export type Database = {
           failure_reason?: string | null
           health_score?: number | null
           id?: string
+          impact_score?: number | null
+          is_public?: boolean | null
           status?: string | null
           tags?: string[] | null
           title?: string | null
@@ -1491,6 +1495,8 @@ export type Database = {
           failure_reason?: string | null
           health_score?: number | null
           id?: string
+          impact_score?: number | null
+          is_public?: boolean | null
           status?: string | null
           tags?: string[] | null
           title?: string | null

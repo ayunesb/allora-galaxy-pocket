@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from "@/hooks/useAuth";
@@ -124,6 +123,9 @@ export default function DashboardPage() {
                       <CardDescription className="line-clamp-2">
                         {strategy.description || 'No description available'}
                       </CardDescription>
+                      <p className="text-xs mt-1 text-muted-foreground">
+                        📈 Impact Score: {strategy.impact_score ?? "N/A"}
+                      </p>
                     </CardHeader>
                     <CardContent>
                       <div className="flex justify-between items-center">

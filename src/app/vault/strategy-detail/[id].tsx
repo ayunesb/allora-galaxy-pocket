@@ -24,7 +24,9 @@ export default function StrategyDetail() {
             description: "This strategy focuses on increasing user activation through targeted engagement campaigns and personalized onboarding flows, leading to higher retention rates.",
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-            tenant_id: "tenant-001"
+            tenant_id: "tenant-001",
+            impact_score: 85,
+            is_public: true
           };
           
           setStrategy(mockStrategy);
@@ -93,6 +95,26 @@ export default function StrategyDetail() {
           <p className="text-sm text-muted-foreground">
             Created {strategy.created_at && format(new Date(strategy.created_at), 'PPP')}
           </p>
+          <p className="text-xs mt-2">📈 Impact Score: {strategy.impact_score ?? "N/A"}</p>
+          <div className="flex items-center mt-1">
+            <input
+              type="checkbox"
+              checked={Boolean(strategy.is_public)}
+              onChange={async (e) => {
+                await supabase
+                  .from("strategies")
+                  .update({ is_public: e.target.checked })
+                  .eq("id", strategy.id);
+                toast({
+                  title: "Visibility Updated",
+                  description: e.target.checked
+                    ? "Strategy shared to /vault/public"
+                    : "Strategy is now private",
+                });
+              }}
+            />
+            <label className="text-sm ml-2">🌍 Share to /vault/public</label>
+          </div>
         </CardHeader>
         <CardContent>
           <p>{strategy.description}</p>

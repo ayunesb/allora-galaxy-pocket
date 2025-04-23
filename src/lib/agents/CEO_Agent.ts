@@ -1,12 +1,12 @@
 
 import { supabase } from "@/integrations/supabase/client";
-// Slack and Email notification logic is included in the run method (as options)
 
 export const CEO_Agent = {
-  name: "CEO_Agent", // Add name property for consistency with other agents
+  name: "CEO_Agent",
   /**
    * Runs the CEO agent with the specified founder profile and market.
    * Accepts options to notify via Slack or email, and pass in user info for email.
+   * Also computes/stores strategy impact score.
    */
   run: async (
     {
@@ -23,6 +23,7 @@ export const CEO_Agent = {
       notifyEmail?: boolean;
       userEmail?: string;
       kpiInsert?: boolean;
+      saveToDb?: boolean;
     }
   ) => {
     // Call Supabase Edge Function to run OpenAI prompt
@@ -35,14 +36,31 @@ export const CEO_Agent = {
     const data = await res.json();
     const strategy: string = data.strategy;
 
+    // Compute and persist "impact_score" (Phases * 10)
+    let impactScore: number | undefined;
+    let strategyId: string | undefined;
+
+    try {
+      impactScore = (strategy.match(/Phase/gi) || []).length * 10;
+      // Optionally: insert into "strategies" and update impact_score if edge function supplies id
+      if (data.strategyId) {
+        strategyId = data.strategyId;
+        await supabase
+          .from("strategies")
+          .update({ impact_score: impactScore })
+          .eq("id", strategyId);
+      }
+    } catch (e) {
+      // Soft error, show in logs only
+      console.warn("Unable to compute/store impact_score", e);
+    }
+
     // Slack notification (optional)
     if (notifySlack && typeof strategy === "string") {
       try {
-        // Use the built-in webhook alert hook/edge function
         await supabase.functions.invoke("send-webhook-alert", {
           body: {
-            message:
-              `📦 New Strategy Created by CEO_Agent\n\n${strategy.slice(0, 400)}...`,
+            message: `📦 New Strategy Created by CEO_Agent\n\n${strategy.slice(0, 400)}...`,
             channel: "slack"
           }
         });
@@ -66,7 +84,7 @@ export const CEO_Agent = {
       }
     }
 
-    // KPI INSERT (optional, uses "Execution Plan Depth")
+    // KPI INSERT (optional)
     if (kpiInsert && typeof strategy === "string") {
       try {
         await supabase.from("kpi_metrics").insert({
@@ -79,6 +97,6 @@ export const CEO_Agent = {
       }
     }
 
-    return { strategy };
+    return { strategy, impactScore };
   }
 };
