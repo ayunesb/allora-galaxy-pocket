@@ -1,9 +1,8 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Award, Badge as BadgeIcon, Repeat } from "lucide-react";
+import { Award, BadgeInfo, Repeat } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export default function PluginLeaderboardPage() {
@@ -21,7 +20,6 @@ export default function PluginLeaderboardPage() {
     fetch();
   }, []);
 
-  // Badge logic: top 3 most installed plugins
   const top3Ids =
     plugins
       .slice() // do not mutate
@@ -57,7 +55,7 @@ export default function PluginLeaderboardPage() {
                 )}
                 {isNew && (
                   <Badge variant="outline" className="flex items-center gap-1">
-                    <BadgeIcon className="w-4 h-4 text-blue-500" />
+                    <BadgeInfo className="w-4 h-4 text-blue-500" />
                     New
                   </Badge>
                 )}
