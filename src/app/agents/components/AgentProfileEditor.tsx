@@ -63,7 +63,7 @@ export default function AgentProfileEditor({ initialData }: { initialData?: Agen
     },
   });
 
-  const [mainPrompt, setMainPrompt] = useState(initialData?.prompt || "");
+  const [mainPrompt, setMainPrompt] = useState("");
 
   async function onSubmit(data: AgentFormValues) {
     if (!tenant) return;
