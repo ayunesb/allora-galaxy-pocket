@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { generateAgentFile } from "./AgentFileWriter";
+import { supabase } from "@/integrations/supabase/client";
 
 const defaultPersonas = [
   "Sheryl Sandberg", "Tim Cook", "Gwynne Shotwell", "Thomas Kurian",
@@ -20,11 +22,61 @@ export default function AgentGeneratorWizard() {
   const [taskType, setTaskType] = useState("");
   const [outputSchema, setOutputSchema] = useState("");
   const [prompt, setPrompt] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handlePersonaToggle = (p: string) => {
     setPersonas((prev) =>
       prev.includes(p) ? prev.filter((i) => i !== p) : [...prev, p]
     );
+  };
+
+  const handleExport = () => {
+    const content = generateAgentFile({
+      agentName,
+      mission,
+      personas,
+      capabilities,
+      taskType,
+      outputSchema,
+      prompt
+    });
+    const blob = new Blob([content], { type: "text/javascript" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${agentName || "Agent"}_Agent.ts`;
+    link.click();
+  };
+
+  const saveToSupabase = async () => {
+    setLoading(true);
+    try {
+      const userResp = await supabase.auth.getUser();
+      const user = userResp.data.user;
+      if (!user) {
+        alert("You must be logged in to save blueprints.");
+        setLoading(false);
+        return;
+      }
+      const { error } = await supabase.from("agent_blueprints").insert({
+        agent_name: agentName,
+        personas,
+        mission,
+        capabilities,
+        task_type: taskType,
+        output_schema: outputSchema,
+        prompt,
+        created_by: user.id
+      });
+      if (error) {
+        alert("Error saving to Supabase: " + error.message);
+      } else {
+        alert("Blueprint saved to Supabase!");
+      }
+    } catch (err: any) {
+      alert("Unexpected error: " + (err.message || err));
+    }
+    setLoading(false);
   };
 
   return (
@@ -128,16 +180,26 @@ export default function AgentGeneratorWizard() {
         />
       </div>
 
-      <Button
-        className="w-full"
-        onClick={() => {
-          console.log("Agent Built:", {
-            agentName, personas, mission, capabilities, taskType, outputSchema, prompt
-          });
-        }}
-      >
-        🚀 Generate Agent Blueprint
-      </Button>
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="secondary"
+          className="text-sm"
+          onClick={handleExport}
+          disabled={!agentName}
+        >
+          📄 Export .ts File
+        </Button>
+        <Button
+          type="button"
+          variant="default"
+          className="bg-primary text-white"
+          onClick={saveToSupabase}
+          disabled={loading || !agentName}
+        >
+          {loading ? "Saving..." : "💾 Save to Supabase"}
+        </Button>
+      </div>
     </div>
   );
 }
