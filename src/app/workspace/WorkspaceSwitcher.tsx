@@ -14,23 +14,33 @@ import { useAuth } from "@/hooks/useAuth";
 export default function WorkspaceSwitcher({ highlight = false }) {
   const { tenant, setTenant } = useTenant();
   const { toast } = useToast();
-  const { tenants: availableTenants, loading, error, retryFetch } = useAvailableTenants();
+  const { tenants: availableTenants, loading, error, retryFetch, status } = useAvailableTenants();
   const { selected, setSelected, initialized } = useInitializeSelectedTenant(availableTenants, loading, error);
   const location = useLocation();
   const { user } = useAuth();
   const isOnboarding = location.pathname === "/onboarding";
   const [isCreating, setIsCreating] = useState(false);
   const [justCreated, setJustCreated] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   // Effect to handle post-creation transitions - wait a bit before redirecting to ensure all data is synced
   useEffect(() => {
     if (justCreated && tenant && isOnboarding) {
       const timer = setTimeout(() => {
         window.location.reload();
-      }, 500);
+      }, 1000);
       return () => clearTimeout(timer);
     }
   }, [justCreated, tenant, isOnboarding]);
+
+  // Auto-retry once if no tenants are found and there's no error
+  useEffect(() => {
+    if (!loading && availableTenants.length === 0 && !error && retryCount < 1 && user) {
+      console.log("[WorkspaceSwitcher] No tenants found but user is logged in. Auto-retrying fetch...");
+      setRetryCount(prev => prev + 1);
+      retryFetch();
+    }
+  }, [loading, availableTenants, error, retryCount, retryFetch, user]);
 
   const selectClasses = highlight || isOnboarding
     ? "ring-2 ring-primary ring-offset-2 transition-all duration-200"
@@ -52,13 +62,16 @@ export default function WorkspaceSwitcher({ highlight = false }) {
     
     setIsCreating(true);
     try {
+      console.log("[WorkspaceSwitcher] Creating new workspace for user:", user.id);
       const newWorkspace = await createDefaultWorkspace(toast, () => {
         // After workspace creation, refresh the list
+        console.log("[WorkspaceSwitcher] Workspace created, refreshing tenant list");
         retryFetch();
       });
       
       // If workspace was created successfully, automatically select it
       if (newWorkspace) {
+        console.log("[WorkspaceSwitcher] New workspace created:", newWorkspace.id, newWorkspace.name);
         setTenant(newWorkspace);
         setSelected(newWorkspace.id);
         localStorage.setItem("tenant_id", newWorkspace.id);
@@ -70,13 +83,19 @@ export default function WorkspaceSwitcher({ highlight = false }) {
         });
       }
     } catch (err) {
-      console.error("Error in workspace creation flow:", err);
+      console.error("[WorkspaceSwitcher] Error in workspace creation flow:", err);
+      toast({
+        title: "Workspace creation failed",
+        description: "Please try again or contact support",
+        variant: "destructive"
+      });
     } finally {
       setIsCreating(false);
     }
   };
 
   const handleRetry = () => {
+    console.log("[WorkspaceSwitcher] Manual retry requested");
     retryFetch();
   };
 
@@ -126,7 +145,7 @@ export default function WorkspaceSwitcher({ highlight = false }) {
     return (
       <div className="space-y-3 px-2">
         <div className="px-2 text-muted-foreground text-sm">
-          No workspaces found. Create your first workspace.
+          No workspaces found. Create your first workspace to continue.
         </div>
         <Button
           size="sm"
@@ -137,7 +156,7 @@ export default function WorkspaceSwitcher({ highlight = false }) {
           {isCreating ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Creating...
+              Creating workspace...
             </>
           ) : (
             <>

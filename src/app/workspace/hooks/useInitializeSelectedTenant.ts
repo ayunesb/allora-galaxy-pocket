@@ -16,7 +16,8 @@ export function useInitializeSelectedTenant(tenants: TenantOption[], loading: bo
     if (loading || initialized || processingSelection) return;
 
     // Special case: No tenants available
-    if (tenants.length === 0) {
+    if (!tenants || tenants.length === 0) {
+      console.log("[useInitializeSelectedTenant] No tenants available, marking as initialized");
       setInitialized(true);
       return;
     }
@@ -25,16 +26,20 @@ export function useInitializeSelectedTenant(tenants: TenantOption[], loading: bo
     
     try {
       const storedId = localStorage.getItem("tenant_id");
+      console.log("[useInitializeSelectedTenant] Stored tenant ID:", storedId);
+      console.log("[useInitializeSelectedTenant] Available tenants:", tenants.map(t => `${t.id}:${t.name}`).join(', '));
+      
       // If stored tenant exists in the available tenants, use it
       if (storedId && tenants.some((t) => t.id === storedId)) {
         const foundTenant = tenants.find((t) => t.id === storedId);
         if (foundTenant) {
+          console.log("[useInitializeSelectedTenant] Restoring tenant:", foundTenant.name);
           setTenant(foundTenant);
           setSelected(foundTenant.id);
-          console.log("Restored tenant:", foundTenant.name);
         }
       } else if (tenants.length > 0) {
         // Otherwise use the first tenant
+        console.log("[useInitializeSelectedTenant] Setting default tenant:", tenants[0].name);
         setTenant(tenants[0]);
         setSelected(tenants[0].id);
         localStorage.setItem("tenant_id", tenants[0].id);
@@ -46,10 +51,9 @@ export function useInitializeSelectedTenant(tenants: TenantOption[], loading: bo
             description: `Now working in "${tenants[0].name}"`,
           });
         }
-        console.log("Set default tenant:", tenants[0].name);
       }
     } catch (err) {
-      console.error("Error initializing tenant selection:", err);
+      console.error("[useInitializeSelectedTenant] Error initializing tenant selection:", err);
       toast({
         title: "Error selecting workspace",
         description: "Please try again or contact support",
@@ -64,9 +68,9 @@ export function useInitializeSelectedTenant(tenants: TenantOption[], loading: bo
   // Handle error case
   useEffect(() => {
     if (error && !loading && !processingSelection) {
+      console.error("[useInitializeSelectedTenant] Tenant loading error:", error);
       setTenant(null);
       setSelected(undefined);
-      console.error("Tenant loading error:", error);
     }
   }, [error, loading, setTenant, processingSelection]);
 

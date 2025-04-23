@@ -12,6 +12,7 @@ export function handleTenantChange(
 ) {
   const selectedTenant = availableTenants.find((t) => t.id === value);
   if (selectedTenant) {
+    console.log("[handleTenantChange] Switching to tenant:", selectedTenant.name, selectedTenant.id);
     setSelected(value);
     setTenant(selectedTenant);
     localStorage.setItem("tenant_id", value);
@@ -31,10 +32,13 @@ export async function createDefaultWorkspace(
   onSuccess?: () => void
 ): Promise<Tenant | null> {
   try {
+    console.log("[createDefaultWorkspace] Starting workspace creation process");
+    
     // Get current user
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
+      console.error("[createDefaultWorkspace] No authenticated user found");
       toast({
         title: "Authentication required",
         description: "Please sign in to create a workspace.",
@@ -42,6 +46,8 @@ export async function createDefaultWorkspace(
       });
       return null;
     }
+    
+    console.log("[createDefaultWorkspace] Creating workspace for user:", user.id);
     
     // Create a new default workspace
     const { data: newTenant, error } = await supabase
@@ -58,7 +64,7 @@ export async function createDefaultWorkspace(
       .single();
     
     if (error) {
-      console.error("Error creating workspace:", error);
+      console.error("[createDefaultWorkspace] Error creating workspace:", error);
       
       // Show specific error message based on the error code
       if (error.code === '23505') { // Unique constraint violation
@@ -79,8 +85,11 @@ export async function createDefaultWorkspace(
     }
     
     if (newTenant) {
+      console.log("[createDefaultWorkspace] Workspace created successfully:", newTenant.id);
+      
       // Add current user to the tenant with admin role
       try {
+        console.log("[createDefaultWorkspace] Assigning admin role to user:", user.id);
         const { error: roleError } = await supabase
           .from('tenant_user_roles')
           .insert([
@@ -92,12 +101,13 @@ export async function createDefaultWorkspace(
           ]);
         
         if (roleError) {
-          console.error("Could not assign role to user:", roleError);
+          console.error("[createDefaultWorkspace] Could not assign role to user:", roleError);
           // Even if role assignment fails, we want to continue
           // as the workspace is created
         }
         
         // Create a company profile for the workspace immediately
+        console.log("[createDefaultWorkspace] Creating company profile");
         const { error: companyError } = await supabase
           .from('company_profiles')
           .insert([{
@@ -108,10 +118,11 @@ export async function createDefaultWorkspace(
           }]);
           
         if (companyError) {
-          console.error("Could not create company profile:", companyError);
+          console.error("[createDefaultWorkspace] Could not create company profile:", companyError);
         }
         
         // Create a persona profile for the user in this workspace
+        console.log("[createDefaultWorkspace] Creating persona profile");
         const { error: personaError } = await supabase
           .from('persona_profiles')
           .insert([{
@@ -122,10 +133,10 @@ export async function createDefaultWorkspace(
           }]);
           
         if (personaError) {
-          console.error("Could not create persona profile:", personaError);
+          console.error("[createDefaultWorkspace] Could not create persona profile:", personaError);
         }
       } catch (roleErr) {
-        console.error("Role assignment failed:", roleErr);
+        console.error("[createDefaultWorkspace] Role assignment failed:", roleErr);
       }
       
       toast({
@@ -141,7 +152,7 @@ export async function createDefaultWorkspace(
       return newTenant;
     }
   } catch (err) {
-    console.error("Error creating workspace:", err);
+    console.error("[createDefaultWorkspace] Error creating workspace:", err);
     toast({
       title: "Could not create workspace",
       description: "Please try again or contact support.",
