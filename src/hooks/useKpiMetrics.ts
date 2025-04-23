@@ -43,15 +43,16 @@ export function useKpiMetrics(dateRange = "30", category?: string, searchQuery?:
             changePercent: Math.floor(Math.random() * 10), // Simplified for now
             updated_at: metric.updated_at || metric.created_at || new Date().toISOString(),
             tenant_id: tenant.id,
-            // Add search capability
-            ...(searchQuery ? 
-              (metric.metric?.toLowerCase().includes(searchQuery.toLowerCase()) ? {} : { filtered: true }) 
-              : {})
+            label: metric.metric || 'Unnamed Metric'
           } as KpiMetric;
         }) || [];
         
-        // Filter out metrics that don't match search query
-        return processedMetrics.filter(metric => !metric.filtered);
+        // Filter out metrics that don't match search query if provided
+        return searchQuery 
+          ? processedMetrics.filter(metric => 
+              metric.kpi_name.toLowerCase().includes(searchQuery.toLowerCase())
+            )
+          : processedMetrics;
       } catch (err) {
         console.error("Error fetching KPI metrics:", err);
         throw err;
