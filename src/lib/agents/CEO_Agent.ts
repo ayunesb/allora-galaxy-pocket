@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import type { OnboardingProfile } from "@/types/onboarding";
 
@@ -151,26 +152,16 @@ export const generateInitialStrategy = async (profile: OnboardingProfile, tenant
       sellType: profile.sellType
     });
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: "You are an expert CEO advisor." },
-          { role: "user", content: prompt }
-        ]
-      })
+    // Use Supabase Edge Function to generate the strategy instead of directly calling OpenAI
+    const { data, error } = await supabase.functions.invoke("generate-strategy", {
+      body: { prompt }
     });
 
-    const data = await response.json();
-    const strategy = data.choices[0].message.content;
+    if (error) throw error;
+    const strategy = data.strategy;
 
     // Save to strategies table
-    const { error } = await supabase.from('strategies').insert({
+    const { error: saveError } = await supabase.from('strategies').insert({
       title: 'Initial Business Strategy',
       description: 'Auto-generated strategy based on your company profile',
       content: strategy,
@@ -179,7 +170,7 @@ export const generateInitialStrategy = async (profile: OnboardingProfile, tenant
       tags: ['onboarding', 'initial-strategy']
     });
 
-    if (error) throw error;
+    if (saveError) throw saveError;
     
     return { success: true, strategy };
   } catch (error) {
