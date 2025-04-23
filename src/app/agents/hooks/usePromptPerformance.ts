@@ -12,18 +12,23 @@ export function usePromptPerformance(agentName: string) {
     queryFn: async () => {
       if (!tenant?.id || !agentName) return [];
 
-      const { data, error } = await supabase.rpc('get_prompt_performance', {
-        p_agent_name: agentName,
-        p_tenant_id: tenant.id
-      }).catch(() => {
-        // Fallback if the RPC doesn't exist - query directly
-        return supabase
+      // Try to use the RPC function first
+      let result;
+      try {
+        result = await supabase.rpc('get_prompt_performance', {
+          p_agent_name: agentName,
+          p_tenant_id: tenant.id
+        });
+      } catch (error) {
+        // If the RPC call fails, fall back to direct query
+        result = await supabase
           .from("agent_tasks")
           .select("prompt_version, status")
           .eq("agent", agentName)
           .eq("tenant_id", tenant.id);
-      });
+      }
 
+      const { data, error } = result;
       if (error) throw error;
       if (!data || data.length === 0) return [];
 
