@@ -11,6 +11,7 @@ import RoleChangeRequestsPage from "@/app/admin/users/role-requests/page";
 import UserManagementPage from "@/app/admin/users/page";
 import WeeklySummaryFeed from "@/app/admin/ai-decisions/weekly/page";
 import AdminLogsPage from "@/app/admin/logs/page";
+import SecurityAuditPage from "@/app/admin/security-audit/page";
 
 export const adminRoutes: RouteObject[] = [
   { path: "/admin/agents/collaboration", element: <CollaborationPage /> },
@@ -24,5 +25,6 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/users/role-requests", element: <RoleChangeRequestsPage /> },
   { path: "/admin/integrations", element: <div>Admin Integrations</div> },
   { path: "/admin/logs", element: <AdminLogsPage /> },
-  { path: "/admin/ai-decisions/weekly", element: <WeeklySummaryFeed /> }
+  { path: "/admin/ai-decisions/weekly", element: <WeeklySummaryFeed /> },
+  { path: "/admin/security-audit", element: <SecurityAuditPage /> }
 ];
