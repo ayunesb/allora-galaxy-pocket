@@ -77,6 +77,36 @@ export default function KpiDashboard() {
     return <KpiErrorState error={error} />;
   }
 
+  // Add fallback UI for empty metrics state
+  if (!metrics || metrics.length === 0) {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+          <h1 className="text-2xl font-bold">KPI Metrics Dashboard</h1>
+          <InsightsDateFilter dateRange={dateRange} setDateRange={setDateRange} />
+        </div>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>📉 No KPI Metrics Available</CardTitle>
+          </CardHeader>
+          <CardContent className="p-8 text-center">
+            <p className="text-lg text-muted-foreground mb-4">
+              Your KPI metrics dashboard is ready, but there's no data yet.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Once your AI agents begin executing tasks and campaigns, 
+              KPI metrics will start appearing here.
+            </p>
+            <p className="text-sm mt-4">
+              You can manually add KPI metrics from the settings page.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
