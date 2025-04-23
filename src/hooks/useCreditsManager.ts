@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useBillingProfile } from './useBillingProfile';
 import { useStripeUsageReporting } from './useStripeUsageReporting';
@@ -6,7 +7,7 @@ import { useTenant } from './useTenant';
 import { toast } from "sonner";
 
 export function useCreditsManager() {
-  const { profile, isLoading, error } = useBillingProfile();
+  const { profile, isLoading, error, refetch } = useBillingProfile();
   const { reportCreditUsage } = useStripeUsageReporting();
   const { tenant } = useTenant();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -71,6 +72,9 @@ export function useCreditsManager() {
         await reportCreditUsage(amount);
       }
       
+      // 4. Invalidate the billing profile to update the UI
+      refetch();
+      
       toast.success(`${amount} credits used`, {
         description: `Used for ${feature}`
       });
@@ -108,11 +112,64 @@ export function useCreditsManager() {
   const getRemainingCredits = (): number => {
     return profile?.credits || 0;
   };
+  
+  /**
+   * Get credit usage summary for the current tenant
+   */
+  const getCreditUsageSummary = async () => {
+    if (!tenant?.id) return null;
+    
+    try {
+      const { data, error } = await supabase
+        .from('tenant_billing_summary')
+        .select('*')
+        .eq('tenant_id', tenant.id)
+        .single();
+        
+      if (error) {
+        console.error("Error fetching credit usage summary:", error);
+        return null;
+      }
+      
+      return data;
+    } catch (err) {
+      console.error("Error in getCreditUsageSummary:", err);
+      return null;
+    }
+  };
+  
+  /**
+   * Get detailed credit usage by module
+   */
+  const getCreditUsageByModule = async () => {
+    if (!tenant?.id) return [];
+    
+    try {
+      const { data, error } = await supabase
+        .from('credit_usage_log')
+        .select('module, sum(credits_used)')
+        .eq('tenant_id', tenant.id)
+        .group('module')
+        .order('sum', { ascending: false });
+        
+      if (error) {
+        console.error("Error fetching credit usage by module:", error);
+        return [];
+      }
+      
+      return data || [];
+    } catch (err) {
+      console.error("Error in getCreditUsageByModule:", err);
+      return [];
+    }
+  };
 
   return {
     useCredits,
     hasEnoughCredits,
     getRemainingCredits,
+    getCreditUsageSummary,
+    getCreditUsageByModule,
     isLoading,
     isProcessing,
     error

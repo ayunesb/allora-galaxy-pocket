@@ -9,7 +9,7 @@ export function useBillingProfile() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   
-  const { data: profile, isLoading, error } = useQuery({
+  const { data: profile, isLoading, error, refetch } = useQuery({
     queryKey: ['billing-profile', user?.id],
     queryFn: async (): Promise<BillingProfile | null> => {
       console.log("Fetching billing profile for user:", user?.id);
@@ -139,11 +139,58 @@ export function useBillingProfile() {
     }
   });
 
+  // Function to get billing history
+  const getBillingHistory = async () => {
+    try {
+      if (!user?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('credit_usage_log')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+        
+      if (error) {
+        throw error;
+      }
+      
+      return data || [];
+    } catch (err) {
+      console.error('Error fetching billing history:', err);
+      return [];
+    }
+  };
+
+  // Function to get subscription status
+  const getSubscriptionStatus = async () => {
+    if (!profile?.stripe_subscription_id) {
+      return null;
+    }
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('check-subscription', {
+        body: { 
+          subscription_id: profile.stripe_subscription_id
+        }
+      });
+      
+      if (error) throw error;
+      return data;
+    } catch (err) {
+      console.error('Error checking subscription status:', err);
+      return null;
+    }
+  };
+
   return {
     profile,
     isLoading,
     error,
     addCredits,
-    updatePlan
+    updatePlan,
+    refetch,
+    getBillingHistory,
+    getSubscriptionStatus
   };
 }
