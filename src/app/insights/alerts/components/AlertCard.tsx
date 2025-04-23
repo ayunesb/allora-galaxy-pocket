@@ -1,10 +1,9 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
-import { Info, AlertTriangle, AlertOctagon } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 
 interface AlertCardProps {
   id: string;
@@ -51,6 +50,8 @@ export function AlertCard({
     }
   };
 
+  const hasRecoveryPlan = suggested_action?.startsWith('## Recovery Plan');
+
   return (
     <Card className="animate-in fade-in slide-in-from-bottom-4 duration-500">
       <CardHeader>
@@ -69,8 +70,15 @@ export function AlertCard({
         <p className="text-sm mb-4">{insight}</p>
         {suggested_action && (
           <div className="bg-muted p-3 rounded-md">
-            <p className="text-sm font-medium">Suggested Action:</p>
-            <p className="text-sm text-muted-foreground">{suggested_action}</p>
+            {hasRecoveryPlan ? (
+              <ReactMarkdown 
+                className="text-sm prose prose-sm dark:prose-invert max-w-none"
+              >
+                {suggested_action}
+              </ReactMarkdown>
+            ) : (
+              <p className="text-sm text-muted-foreground">{suggested_action}</p>
+            )}
           </div>
         )}
       </CardContent>

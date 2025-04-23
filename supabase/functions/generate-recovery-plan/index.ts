@@ -1,12 +1,40 @@
 
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import OpenAI from "https://deno.land/x/openai@v4.24.0/mod.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const generateMitigationPrompt = ({ kpi_name, value, target, insight, severity }: any) => `
+You are the Growth Strategy Agent for Allora OS.
+
+A new KPI alert has been flagged with severity "${severity}".
+
+KPI: ${kpi_name}
+Current Value: ${value}
+Target: ${target}
+Insight: ${insight}
+
+Your task:
+- Analyze why the KPI may be underperforming
+- Propose a 3-step recovery strategy
+- Include timeline and responsible AI agents or departments
+- Suggest automation (campaigns, offers, training, etc.)
+
+Respond only with the recovery plan in markdown.
+
+Example format:
+## Recovery Plan: ${kpi_name}
+1. ...
+2. ...
+3. ...
+
+Estimated Time: X days
+Assigned Agent: [AgentName]
+Automation: [yes/no]
+`;
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -15,66 +43,62 @@ serve(async (req) => {
   }
 
   try {
-    const openai = new OpenAI({
-      apiKey: Deno.env.get('OPENAI_API_KEY')!
-    });
+    const { insight_id } = await req.json();
     
-    const { alert, metrics } = await req.json();
-    
-    const result = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { 
-          role: "system", 
-          content: "You are a crisis management expert who excels under pressure and delivers results."
-        },
-        { 
-          role: "user", 
-          content: `Alert triggered: ${alert}
-          
-          KPI metrics affected: ${JSON.stringify(metrics)}
-          
-          Create a recovery plan that includes:
-          1. Immediate actions (next 24 hours)
-          2. Root cause analysis approach
-          3. Timeline for recovery
-          4. Crisis messaging for stakeholders
-          5. Follow-up measurement plan`
-        }
-      ],
-      temperature: 0.6,
+    // Initialize Supabase client
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Fetch insight details
+    const { data: insight, error: insightError } = await supabaseClient
+      .from('kpi_insights')
+      .select('*')
+      .eq('id', insight_id)
+      .single();
+
+    if (insightError) throw new Error(`Error fetching insight: ${insightError.message}`);
+    if (!insight) throw new Error('Insight not found');
+
+    // Generate prompt
+    const prompt = generateMitigationPrompt(insight);
+
+    // Call OpenAI
+    const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: 'You are a senior business growth strategist.' },
+          { role: 'user', content: prompt }
+        ]
+      })
     });
 
-    const content = result.choices[0].message.content;
-    
-    // Extract actions
-    const actionsSection = content.match(/immediate actions[^:]*:(.*?)(?=\n\n|\n\d\.)/is)?.[1] || "";
-    const actions = actionsSection.split(/[\n]/).filter(Boolean).map(item => 
-      item.replace(/^\s*[-*•\d\.]\s*/, "").trim()
-    );
-    
-    // Extract timeline
-    const timelineMatch = content.match(/timeline[^:]*:(.*?)(?=\n\n|\n\d\.)/is);
-    const timeline = timelineMatch ? timelineMatch[1].trim() : "72-hour recovery plan";
-    
-    // Extract messaging
-    const messagingMatch = content.match(/messaging[^:]*:(.*?)(?=\n\n|\n\d\.)/is);
-    const messaging = messagingMatch ? messagingMatch[1].trim() : "Transparent communication about the issue and resolution plan";
+    const aiData = await aiResponse.json();
+    const plan = aiData.choices[0].message.content;
 
-    return new Response(
-      JSON.stringify({
-        actions: actions.length > 0 ? actions : ["Identify impact", "Assemble response team", "Implement fixes"],
-        timeline: timeline,
-        messaging: messaging,
-        fullPlan: content
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    // Update insight with recovery plan
+    const { error: updateError } = await supabaseClient
+      .from('kpi_insights')
+      .update({ suggested_action: plan })
+      .eq('id', insight_id);
+
+    if (updateError) throw new Error(`Error updating insight: ${updateError.message}`);
+
+    return new Response(JSON.stringify({ success: true, plan }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   } catch (error) {
-    console.error('Error in generate-recovery-plan function:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    console.error('Error in generate-recovery-plan:', error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });
