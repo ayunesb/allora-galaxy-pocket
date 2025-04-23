@@ -111,7 +111,7 @@ export default function AgentHirePage() {
               <Button
                 onClick={() => toggleAssignment(agent.name)}
                 disabled={changing === agent.name}
-                variant={assignments[agent.name] ? "success" : "outline"}
+                variant={assignments[agent.name] ? "secondary" : "outline"}
                 className={
                   assignments[agent.name]
                     ? "bg-green-500 text-white"
