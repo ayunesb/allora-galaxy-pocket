@@ -613,6 +613,44 @@ export type Database = {
         }
         Relationships: []
       }
+      demo_analytics: {
+        Row: {
+          created_at: string | null
+          event_type: string
+          id: string
+          interaction_details: Json | null
+          page_path: string | null
+          session_id: string
+          tenant_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_type: string
+          id?: string
+          interaction_details?: Json | null
+          page_path?: string | null
+          session_id: string
+          tenant_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          interaction_details?: Json | null
+          page_path?: string | null
+          session_id?: string
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demo_analytics_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       encrypted_tokens: {
         Row: {
           created_at: string | null
