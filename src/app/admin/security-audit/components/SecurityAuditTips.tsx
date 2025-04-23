@@ -17,7 +17,7 @@ export function SecurityAuditTips() {
           </AlertDescription>
         </Alert>
         
-        <Alert variant="outline">
+        <Alert variant="default">
           <CheckCircle className="h-4 w-4" />
           <AlertTitle>Best Practices</AlertTitle>
           <AlertDescription className="text-sm space-y-1">
