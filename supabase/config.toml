@@ -7,6 +7,10 @@ verify_jwt = true
 [functions.stripe-subscription-webhook]
 verify_jwt = false
 
+[functions.send-credit-digest]
+verify_jwt = false
+schedule = "0 9 * * MON"  # Every Monday at 9 AM
+
 [functions.reset-billing-credits]
 schedule = "0 6 1 * *"  # 6AM on the 1st of every month
 

@@ -539,6 +539,44 @@ export type Database = {
         }
         Relationships: []
       }
+      credit_usage_log: {
+        Row: {
+          agent_name: string
+          created_at: string | null
+          credits_used: number
+          details: Json | null
+          id: string
+          module: string
+          tenant_id: string
+        }
+        Insert: {
+          agent_name: string
+          created_at?: string | null
+          credits_used: number
+          details?: Json | null
+          id?: string
+          module: string
+          tenant_id: string
+        }
+        Update: {
+          agent_name?: string
+          created_at?: string | null
+          credits_used?: number
+          details?: Json | null
+          id?: string
+          module?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_usage_log_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       export_logs: {
         Row: {
           completed_at: string | null
@@ -2010,6 +2048,40 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "fk_tenant_id"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_billing_summary: {
+        Row: {
+          billing_month: string | null
+          tenant_id: string | null
+          total_credits_used: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_usage_log_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      weekly_agent_credit_usage: {
+        Row: {
+          agent_name: string | null
+          module: string | null
+          tenant_id: string | null
+          total_credits: number | null
+          week_start: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_usage_log_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenant_profiles"
