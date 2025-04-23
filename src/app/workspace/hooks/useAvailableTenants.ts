@@ -52,7 +52,8 @@ export function useAvailableTenants() {
         throw tenantRolesResponse.error;
       }
 
-      const tenantProfiles = tenantRolesResponse.data
+      // Change from const to let to allow reassignment
+      let tenantProfiles = tenantRolesResponse.data
         ?.map((item: any) => item.tenant_profiles)
         .filter(Boolean);
 
@@ -72,6 +73,7 @@ export function useAvailableTenants() {
           throw directTenantResponse.error;
         }
 
+        // Now this reassignment is allowed
         tenantProfiles = directTenantResponse.data || [];
       }
 
