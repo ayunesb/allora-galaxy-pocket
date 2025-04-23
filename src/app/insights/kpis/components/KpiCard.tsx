@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { TrendingUp, TrendingDown, TrendingRight } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { KpiMetric } from "@/types/kpi";
 import { format } from "date-fns";
 
@@ -13,15 +13,20 @@ export default function KpiCard({
   trend_direction, 
   status,
   updated_at,
-  category
+  category,
+  label,
+  trend,
+  changePercent
 }: KpiMetric) {
   const progressValue = target ? Math.min((value / target) * 100, 100) : 0;
+  const displayName = label || kpi_name;
+  const trendDir = trend || trend_direction;
 
   const trendIcon = () => {
-    switch(trend_direction) {
+    switch(trendDir) {
       case 'up': return <TrendingUp className="text-green-500" />;
       case 'down': return <TrendingDown className="text-red-500" />;
-      default: return <TrendingRight className="text-gray-500" />;
+      default: return <Minus className="text-gray-500" />;
     }
   };
 
@@ -29,7 +34,7 @@ export default function KpiCard({
     <Card className="hover:shadow-md transition-shadow">
       <CardHeader className="flex flex-row justify-between items-start">
         <div>
-          <h3 className="text-lg font-semibold">{kpi_name}</h3>
+          <h3 className="text-lg font-semibold">{displayName}</h3>
           {category && (
             <Badge variant="secondary" className="mt-1">
               {category}

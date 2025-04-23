@@ -1,7 +1,7 @@
 
 import { Loader2 } from "lucide-react";
 import { useKpiMetrics } from "@/hooks/useKpiMetrics";
-import KpiCard from "@/app/insights/kpis/KpiCard";
+import KpiCard from "@/app/insights/kpis/components/KpiCard";
 import type { KpiMetric } from "@/types/kpi";
 
 interface KPITrackerProps {
@@ -20,7 +20,7 @@ export function KPITracker({ kpis }: KPITrackerProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4">
       {kpis.map((metric) => (
-        <KpiCard key={metric.label} {...metric} />
+        <KpiCard key={metric.id} {...metric} />
       ))}
     </div>
   );

@@ -25,7 +25,7 @@ export function KpiMetricDialog({ metric, onSuccess }: KpiMetricDialogProps) {
   const { tenant } = useTenant();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
-    label: metric?.label || "",
+    label: (metric?.label || metric?.kpi_name) || "",
     value: metric?.value || "",
   });
   const [loading, setLoading] = useState(false);

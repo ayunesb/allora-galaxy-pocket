@@ -32,7 +32,16 @@ export function useKpiMetrics(dateRange = "30", category?: string, searchQuery?:
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as KpiMetric[];
+      
+      // Map database fields to match our component expectations
+      return (data as KpiMetric[]).map(kpi => ({
+        ...kpi,
+        label: kpi.kpi_name, // Add label for UI components
+        trend: kpi.trend_direction, // Map trend_direction to trend
+        changePercent: kpi.last_value 
+          ? Number(((kpi.value - kpi.last_value) / kpi.last_value * 100).toFixed(1))
+          : 0
+      }));
     },
     enabled: !!tenant?.id
   });
