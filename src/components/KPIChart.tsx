@@ -6,6 +6,16 @@ interface KPIChartProps {
 }
 
 export function KPIChart({ data }: KPIChartProps) {
+  // Handle empty data case
+  if (!data || data.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full w-full p-8 text-center">
+        <p className="text-muted-foreground mb-2">No chart data available</p>
+        <p className="text-xs text-muted-foreground">Metrics will appear here once collected</p>
+      </div>
+    );
+  }
+
   return (
     <ResponsiveContainer width="100%" height={200}>
       <LineChart data={data}>

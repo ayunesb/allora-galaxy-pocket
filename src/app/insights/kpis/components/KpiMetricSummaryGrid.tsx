@@ -1,73 +1,48 @@
 
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, TrendingDown } from "lucide-react";
-
-interface MetricSummary {
-  label: string;
-  value: string | number;
-  trend: "up" | "down" | "neutral";
-  changePercent?: number;
-  hasAlert?: boolean;
-}
+import type { KpiMetric } from "@/types/kpi";
 
 interface KpiMetricSummaryGridProps {
-  metricSummaries: MetricSummary[];
+  metricSummaries: KpiMetric[];
 }
 
 export default function KpiMetricSummaryGrid({ metricSummaries }: KpiMetricSummaryGridProps) {
-  if (!metricSummaries?.length) {
+  if (!metricSummaries || metricSummaries.length === 0) {
     return (
-      <div className="p-8 bg-slate-50 rounded-lg text-center">
-        <h3 className="text-lg font-medium mb-2">No metrics available</h3>
-        <p className="text-muted-foreground">
-          Set up your KPIs in the settings to start tracking your performance.
-        </p>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-center">No KPI Data Yet</CardTitle>
+        </CardHeader>
+        <CardContent className="py-8 text-center">
+          <p className="text-muted-foreground mb-2">Metrics will appear here once your AI agents begin executing.</p>
+          <p className="text-sm">You can set up KPI metrics in the settings page or wait for automatic data collection.</p>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {metricSummaries.map((metric) => (
-        <Card 
-          key={metric.label} 
-          className={`overflow-hidden transition-shadow hover:shadow-md 
-            ${metric.hasAlert ? 'border-amber-300' : ''}`}
-        >
+        <Card key={metric.id || metric.kpi_name}>
           <CardHeader className="pb-2">
-            <div className="flex justify-between">
-              <CardTitle className="text-lg font-medium">{metric.label}</CardTitle>
-              {metric.trend !== "neutral" && (
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium">{metric.kpi_name}</CardTitle>
+              {metric.trend && (
                 <span className={metric.trend === "up" ? "text-green-500" : "text-red-500"}>
-                  {metric.trend === "up" ? (
-                    <TrendingUp className="h-5 w-5" />
-                  ) : (
-                    <TrendingDown className="h-5 w-5" />
-                  )}
+                  {metric.trend === "up" ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
                 </span>
               )}
             </div>
           </CardHeader>
           <CardContent>
-            <div className="flex items-baseline">
-              <span className="text-3xl font-bold">
-                {typeof metric.value === "number" 
-                  ? metric.value.toLocaleString() 
-                  : metric.value}
-              </span>
-              {metric.changePercent !== undefined && (
-                <span 
-                  className={`ml-2 text-sm ${
-                    metric.trend === "up" ? "text-green-500" : 
-                    metric.trend === "down" ? "text-red-500" : 
-                    "text-gray-500"
-                  }`}
-                >
-                  {metric.changePercent > 0 ? "+" : ""}
-                  {metric.changePercent}%
-                </span>
-              )}
-            </div>
+            <div className="text-2xl font-bold">{metric.value}</div>
+            {metric.changePercent !== undefined && (
+              <p className={`text-xs ${metric.trend === "up" ? "text-green-500" : "text-red-500"}`}>
+                {metric.trend === "up" ? "+" : ""}{metric.changePercent}% from previous period
+              </p>
+            )}
           </CardContent>
         </Card>
       ))}
