@@ -1387,6 +1387,36 @@ export type Database = {
         }
         Relationships: []
       }
+      role_change_requests: {
+        Row: {
+          approved: boolean | null
+          created_at: string | null
+          id: string
+          reason: string | null
+          requested_role: string
+          reviewed_by: string | null
+          user_id: string | null
+        }
+        Insert: {
+          approved?: boolean | null
+          created_at?: string | null
+          id?: string
+          reason?: string | null
+          requested_role: string
+          reviewed_by?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          approved?: boolean | null
+          created_at?: string | null
+          id?: string
+          reason?: string | null
+          requested_role?: string
+          reviewed_by?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       strategies: {
         Row: {
           created_at: string | null
