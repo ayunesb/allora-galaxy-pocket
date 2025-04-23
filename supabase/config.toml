@@ -33,10 +33,19 @@ enabled = false
 [vector]
 enabled = true
 
-# Edge Functions Configuration
 [functions]
 [functions.manage-billing]
 verify_jwt = true
 
 [functions.billing-database-setup]
 verify_jwt = false
+
+[functions.dispatch-agent-task]
+verify_jwt = true
+
+[functions.retry-denied-tasks]
+verify_jwt = true
+
+[[cron]]
+job = "retry-denied-tasks"
+schedule = "*/15 * * * *"
