@@ -1,4 +1,3 @@
-
 export interface AgentMemoryLog {
   id: string;
   agent_name: string;
@@ -50,4 +49,17 @@ export interface PromptSwitchRecommendation {
   current_version: number;
   suggested_version: number;
   performance_delta: number;
+}
+
+export interface AgentMemory {
+  id: string;
+  agent_name: string;
+  tenant_id: string;
+  insight_id?: string;
+  summary: string;
+  tags: string[];
+  context: string;
+  type: string;
+  timestamp: string;
+  xp_delta: number;
 }
