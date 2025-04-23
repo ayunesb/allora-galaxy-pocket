@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -9,6 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useKpiMetrics } from "./hooks/useKpiMetrics";
 import KpiCard from "./components/KpiCard";
 import { exportToCSV } from "@/lib/export/exportCSV";
+import { supabase } from "@/integrations/supabase/client";
+import { useTenant } from "@/hooks/useTenant";
+import { toast } from "sonner";
 
 export default function KpiDashboardPage() {
   const [dateRange, setDateRange] = useState("30");
@@ -16,6 +18,7 @@ export default function KpiDashboardPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const { data: metrics, isLoading, error } = useKpiMetrics(dateRange, category, searchQuery);
+  const { tenant } = useTenant();
 
   const handleExportCSV = () => {
     if (metrics) {
@@ -32,13 +35,44 @@ export default function KpiDashboardPage() {
     }
   };
 
+  const fetchLiveGA4Metrics = async () => {
+    if (!tenant?.id) {
+      toast.error("No tenant selected");
+      return;
+    }
+
+    try {
+      const response = await supabase.functions.invoke('fetch-ga4-metrics', {
+        body: JSON.stringify({ tenant_id: tenant.id })
+      });
+
+      if (response.error) {
+        toast.error("Failed to fetch GA4 metrics", {
+          description: response.error.message
+        });
+      } else {
+        toast.success("GA4 metrics fetched and stored successfully!");
+        // Optionally, you can invalidate and refetch KPI metrics here
+      }
+    } catch (error) {
+      toast.error("Error fetching GA4 metrics", {
+        description: error instanceof Error ? error.message : String(error)
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">📊 KPI Dashboard</h1>
-        <Button onClick={handleExportCSV} variant="outline">
-          Export to CSV
-        </Button>
+        <div className="flex items-center space-x-4">
+          <Button onClick={fetchLiveGA4Metrics} variant="outline">
+            📈 Fetch Live GA4 Metrics
+          </Button>
+          <Button onClick={handleExportCSV} variant="outline">
+            Export to CSV
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
