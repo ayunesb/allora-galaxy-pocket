@@ -2403,6 +2403,18 @@ export type Database = {
           },
         ]
       }
+      pg_policies: {
+        Row: {
+          command: string | null
+          definition: string | null
+          permissive: string | null
+          policyname: unknown | null
+          roles: unknown | null
+          schemaname: unknown | null
+          tablename: unknown | null
+        }
+        Relationships: []
+      }
       strategy_approval_stats: {
         Row: {
           ai_approved: number | null
@@ -2420,6 +2432,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tables_without_rls: {
+        Row: {
+          table_name: unknown | null
+        }
+        Relationships: []
       }
       tenant_billing_summary: {
         Row: {
@@ -2469,6 +2487,13 @@ export type Database = {
           _action: string
         }
         Returns: boolean
+      }
+      check_rls_status: {
+        Args: { input_table_name: string }
+        Returns: {
+          table_name: string
+          rls_enabled: boolean
+        }[]
       }
       check_tenant_access: {
         Args: { requested_tenant_id: string }
@@ -2548,6 +2573,13 @@ export type Database = {
       is_tenant_admin: {
         Args: { tenant_id: string }
         Returns: boolean
+      }
+      list_tables_with_rls_status: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          table_name: string
+          rls_enabled: boolean
+        }[]
       }
       reset_billing_credits: {
         Args: Record<PropertyKey, never>

@@ -268,7 +268,7 @@ export default function RlsAuditReport() {
     }
     
     return (
-      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 flex items-center gap-1">
+      <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200 flex items-center gap-1">
         <CheckCircle className="h-3 w-3" />
         Secured
       </Badge>
@@ -278,14 +278,14 @@ export default function RlsAuditReport() {
   const getTestResultBadge = (result: AccessTestResult) => {
     if (result.status === 'allowed') {
       return (
-        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 flex items-center gap-1">
+        <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200 flex items-center gap-1">
           <CheckCircle className="h-3 w-3" />
           Allowed ({result.rowCount} rows)
         </Badge>
       );
     } else if (result.status === 'blocked') {
       return (
-        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 flex items-center gap-1">
+        <Badge variant="secondary" className="bg-amber-50 text-amber-700 border-amber-200 flex items-center gap-1">
           <XCircle className="h-3 w-3" />
           Blocked
         </Badge>
