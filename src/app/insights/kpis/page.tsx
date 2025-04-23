@@ -1,7 +1,11 @@
 
 import React from 'react';
-import KpiDashboard from './KpiDashboard';
+import { KpiTracker } from './KpiTracker';
 
-export default function KpiPage() {
-  return <KpiDashboard />;
+export default function KpiDashboardPage() {
+  return (
+    <div className="container mx-auto py-6">
+      <KpiTracker />
+    </div>
+  );
 }

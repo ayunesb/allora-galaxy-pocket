@@ -4,51 +4,84 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import type { KpiMetric } from "@/types/kpi";
 
-export function useKpiMetrics() {
+export function useKpiMetrics(dateRange = "30") {
   const { tenant } = useTenant();
   
   return useQuery({
-    queryKey: ['kpi-metrics-processed', tenant?.id],
+    queryKey: ['kpi-metrics-processed', tenant?.id, dateRange],
     queryFn: async () => {
       if (!tenant?.id) return [];
 
       try {
-        const { data, error } = await supabase
+        // Fetch current KPI data
+        const { data: currentData, error: currentError } = await supabase
           .from('kpi_metrics')
           .select('*')
           .eq('tenant_id', tenant.id)
           .order('recorded_at', { ascending: false });
+        
+        if (currentError) throw currentError;
+        
+        // Fetch historical data from kpi_metrics_history
+        const { data: historyData, error: historyError } = await supabase
+          .from('kpi_metrics_history')
+          .select('*')
+          .eq('tenant_id', tenant.id);
           
-        if (error) throw error;
+        if (historyError) throw historyError;
         
         // Group by metric name
-        const groupedByMetric: Record<string, any[]> = {};
+        const metricGroups: Record<string, any[]> = {};
         
-        // First ensure data is an array before trying to iterate
-        if (Array.isArray(data)) {
-          data.forEach((item: any) => {
-            if (!groupedByMetric[item.metric]) {
-              groupedByMetric[item.metric] = [];
+        // Process current metrics first
+        if (Array.isArray(currentData)) {
+          currentData.forEach(item => {
+            if (!metricGroups[item.metric]) {
+              metricGroups[item.metric] = [];
             }
-            groupedByMetric[item.metric].push(item);
+            metricGroups[item.metric].push(item);
           });
         }
         
-        // Process each metric group
-        const processedData = Object.entries(groupedByMetric).map(([metricName, values]) => {
-          // Sort by recorded_at
-          const sortedValues = [...values].sort(
-            (a, b) => new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime()
+        // Add historical data to the same groups
+        if (Array.isArray(historyData)) {
+          historyData.forEach(item => {
+            if (!metricGroups[item.metric]) {
+              metricGroups[item.metric] = [];
+            }
+            metricGroups[item.metric].push(item);
+          });
+        }
+        
+        // Process each metric group to calculate trends and prepare final data
+        const processedData = Object.entries(metricGroups).map(([metricName, values]) => {
+          // Sort by recorded_at descending to get latest first
+          const sortedValues = [...values].sort((a, b) => 
+            new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime()
           );
           
-          // Calculate trend
-          const latestValue = sortedValues[sortedValues.length - 1]?.value || 0;
-          const previousValue = sortedValues.length > 1 ? sortedValues[sortedValues.length - 2]?.value : latestValue;
-          const changePercent = previousValue === 0 ? 0 : ((latestValue - previousValue) / previousValue) * 100;
+          if (sortedValues.length === 0) return null;
           
-          // Explicitly type the trend as one of the allowed values
-          const trend: "up" | "down" | "neutral" = 
-            changePercent > 0 ? "up" : changePercent < 0 ? "down" : "neutral";
+          const latestValue = sortedValues[0];
+          const previousValue = sortedValues.length > 1 ? sortedValues[1] : null;
+          
+          // Calculate trend and change percentage
+          let trend: "up" | "down" | "neutral" = "neutral";
+          let changePercent = 0;
+          
+          if (previousValue) {
+            if (latestValue.value > previousValue.value) {
+              trend = "up";
+            } else if (latestValue.value < previousValue.value) {
+              trend = "down";
+            }
+            
+            if (previousValue.value !== 0) {
+              changePercent = Number(
+                (((latestValue.value - previousValue.value) / Math.abs(previousValue.value)) * 100).toFixed(1)
+              );
+            }
+          }
           
           // Create historical data for charts
           const historicalData = sortedValues.map(item => ({
@@ -58,14 +91,14 @@ export function useKpiMetrics() {
           
           return {
             label: metricName,
-            value: latestValue,
+            value: latestValue.value,
             trend,
-            changePercent: Number(changePercent.toFixed(1)),
+            changePercent,
             historicalData
           };
-        });
+        }).filter(Boolean) as KpiMetric[];
         
-        return processedData as KpiMetric[];
+        return processedData;
       } catch (err) {
         console.error("Error fetching KPI metrics:", err);
         throw err;

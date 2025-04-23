@@ -1,15 +1,13 @@
 
-import { Card } from "@/components/ui/card";
-import { AlertTriangle, TrendingUp, TrendingDown, Minus } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import type { KpiAlert } from "@/types/kpi";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { TrendingUp, TrendingDown } from "lucide-react";
 
-export interface MetricSummary {
-  title: string;
-  value: string;
+interface MetricSummary {
+  label: string;
+  value: string | number;
   trend: "up" | "down" | "neutral";
-  change: string;
-  alerts: KpiAlert[];
+  changePercent?: number;
+  hasAlert?: boolean;
 }
 
 interface KpiMetricSummaryGridProps {
@@ -17,58 +15,60 @@ interface KpiMetricSummaryGridProps {
 }
 
 export default function KpiMetricSummaryGrid({ metricSummaries }: KpiMetricSummaryGridProps) {
-  if (!metricSummaries || metricSummaries.length === 0) {
+  if (!metricSummaries?.length) {
     return (
-      <div className="text-center py-12 text-muted-foreground">
-        <p>No KPI metrics found. Start by creating some metrics in the settings page.</p>
+      <div className="p-8 bg-slate-50 rounded-lg text-center">
+        <h3 className="text-lg font-medium mb-2">No metrics available</h3>
+        <p className="text-muted-foreground">
+          Set up your KPIs in the settings to start tracking your performance.
+        </p>
       </div>
     );
   }
-  
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {metricSummaries.map((metric) => (
-        <Card key={metric.title} className="relative overflow-hidden border">
-          <div className="p-6">
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="font-medium text-sm text-muted-foreground">{metric.title}</h3>
-              <div className="flex items-center">
-                {metric.alerts.length > 0 && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="bg-red-100 dark:bg-red-900/30 p-1 rounded-full mr-1">
-                          <AlertTriangle className="h-4 w-4 text-red-500" />
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{metric.alerts.length} active alert{metric.alerts.length > 1 ? 's' : ''}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
-                <div className={`flex items-center ${
-                  metric.trend === 'up' 
-                    ? 'text-green-500' 
-                    : metric.trend === 'down' 
-                    ? 'text-red-500' 
-                    : 'text-gray-500'
-                }`}>
-                  {metric.trend === 'up' ? (
-                    <TrendingUp className="h-4 w-4" />
-                  ) : metric.trend === 'down' ? (
-                    <TrendingDown className="h-4 w-4" /> 
+        <Card 
+          key={metric.label} 
+          className={`overflow-hidden transition-shadow hover:shadow-md 
+            ${metric.hasAlert ? 'border-amber-300' : ''}`}
+        >
+          <CardHeader className="pb-2">
+            <div className="flex justify-between">
+              <CardTitle className="text-lg font-medium">{metric.label}</CardTitle>
+              {metric.trend !== "neutral" && (
+                <span className={metric.trend === "up" ? "text-green-500" : "text-red-500"}>
+                  {metric.trend === "up" ? (
+                    <TrendingUp className="h-5 w-5" />
                   ) : (
-                    <Minus className="h-4 w-4" />
+                    <TrendingDown className="h-5 w-5" />
                   )}
-                  <span className="ml-1 text-xs font-medium">
-                    {metric.change}%
-                  </span>
-                </div>
-              </div>
+                </span>
+              )}
             </div>
-            <div className="text-2xl font-bold">{metric.value}</div>
-          </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-baseline">
+              <span className="text-3xl font-bold">
+                {typeof metric.value === "number" 
+                  ? metric.value.toLocaleString() 
+                  : metric.value}
+              </span>
+              {metric.changePercent !== undefined && (
+                <span 
+                  className={`ml-2 text-sm ${
+                    metric.trend === "up" ? "text-green-500" : 
+                    metric.trend === "down" ? "text-red-500" : 
+                    "text-gray-500"
+                  }`}
+                >
+                  {metric.changePercent > 0 ? "+" : ""}
+                  {metric.changePercent}%
+                </span>
+              )}
+            </div>
+          </CardContent>
         </Card>
       ))}
     </div>
