@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { Label } from "@/components/ui/label"; // Import Label component
 
 export default function PromptTuner() {
   const [promptInputs, setPromptInputs] = React.useState({
@@ -55,22 +56,30 @@ export default function PromptTuner() {
     <div className="max-w-xl p-6">
       <h2 className="font-bold text-lg mb-3">Prompt Tuner / CEO_Agent Tester</h2>
       <div className="flex flex-col gap-2">
-        <Input
-          label="Founder Profile"
-          name="profile"
-          placeholder="e.g. Ex-Stripe PM building AI CRM"
-          value={promptInputs.profile}
-          onChange={handleChange}
-          className="mb-1"
-        />
-        <Input
-          label="Market"
-          name="market"
-          placeholder="e.g. B2B SaaS sales teams"
-          value={promptInputs.market}
-          onChange={handleChange}
-          className="mb-2"
-        />
+        <div className="space-y-1">
+          <Label htmlFor="profile">Founder Profile</Label>
+          <Input
+            id="profile"
+            name="profile"
+            placeholder="e.g. Ex-Stripe PM building AI CRM"
+            value={promptInputs.profile}
+            onChange={handleChange}
+            className="mb-1"
+          />
+        </div>
+        
+        <div className="space-y-1">
+          <Label htmlFor="market">Market</Label>
+          <Input
+            id="market"
+            name="market"
+            placeholder="e.g. B2B SaaS sales teams"
+            value={promptInputs.market}
+            onChange={handleChange}
+            className="mb-2"
+          />
+        </div>
+        
         <Button
           onClick={handleTest}
           className="bg-secondary text-white px-3 py-1 rounded"

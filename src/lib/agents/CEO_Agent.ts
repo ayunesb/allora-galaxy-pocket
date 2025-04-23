@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 // Slack and Email notification logic is included in the run method (as options)
 
 export const CEO_Agent = {
+  name: "CEO_Agent", // Add name property for consistency with other agents
   /**
    * Runs the CEO agent with the specified founder profile and market.
    * Accepts options to notify via Slack or email, and pass in user info for email.
@@ -81,4 +82,3 @@ export const CEO_Agent = {
     return { strategy };
   }
 };
-
