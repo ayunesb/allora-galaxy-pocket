@@ -33,25 +33,18 @@ export function ThemeProvider({
   storageKey = "vite-ui-theme",
   ...props
 }: ThemeProviderProps) {
-  const { tenant } = useTenant();
-  const [theme, setTheme] = useState<Theme>(
-    () => {
-      if (tenant?.theme_mode) {
-        return tenant.theme_mode as Theme;
-      }
-      
-      const storedTheme = localStorage.getItem(storageKey);
-      if (storedTheme === "dark" || storedTheme === "light") {
-        return storedTheme;
-      }
-      
-      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-    }
-  );
-  const [themeColor, setThemeColor] = useState(tenant?.theme_color || "indigo");
+  // Initialize with default values first
+  const [theme, setTheme] = useState<Theme>(defaultTheme);
+  const [themeColor, setThemeColor] = useState("indigo");
+  
+  // Try to get tenant data safely
+  const tenantContext = useContext(TenantContext);
+  const tenant = tenantContext?.tenant;
 
   // Update theme when tenant changes
   useEffect(() => {
+    if (!tenant) return;
+
     if (tenant?.theme_mode) {
       setTheme(tenant.theme_mode as Theme);
     }
@@ -60,6 +53,17 @@ export function ThemeProvider({
       setThemeColor(tenant.theme_color);
     }
   }, [tenant]);
+
+  // Load theme from localStorage or system preference on mount
+  useEffect(() => {
+    const storedTheme = localStorage.getItem(storageKey);
+    
+    if (storedTheme === "dark" || storedTheme === "light") {
+      setTheme(storedTheme);
+    } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      setTheme("dark");
+    }
+  }, [storageKey]);
 
   // Apply theme to document
   useEffect(() => {
@@ -111,6 +115,9 @@ export function ThemeProvider({
     </ThemeProviderContext.Provider>
   );
 }
+
+// Create a separate TenantContext to avoid circular dependencies
+const TenantContext = createContext<{tenant: any} | undefined>(undefined);
 
 export const useTheme = () => {
   const context = useContext(ThemeProviderContext);

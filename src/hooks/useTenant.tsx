@@ -1,17 +1,9 @@
 
-import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { useContext, useState, ReactNode, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tenant } from "@/types/tenant";
 import { toast } from "@/components/ui/sonner";
-
-interface TenantContextType {
-  tenant: Tenant | null;
-  setTenant: (tenant: Tenant | null) => void;
-  isLoading: boolean;
-  refreshTenant: () => Promise<void>;
-}
-
-const TenantContext = createContext<TenantContextType | undefined>(undefined);
+import { TenantContext } from "@/contexts/TenantContext";
 
 export function TenantProvider({ children }: { children: ReactNode }) {
   const [tenant, setTenant] = useState<Tenant | null>(null);
