@@ -2470,6 +2470,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      check_tenant_access: {
+        Args: { requested_tenant_id: string }
+        Returns: boolean
+      }
       check_tenant_role_permission: {
         Args: { _user_id: string; _tenant_id: string }
         Returns: boolean
@@ -2520,6 +2524,10 @@ export type Database = {
       get_user_role_for_tenant: {
         Args: { user_uuid: string; tenant_uuid: string }
         Returns: string
+      }
+      get_user_tenant_ids: {
+        Args: Record<PropertyKey, never>
+        Returns: string[]
       }
       grant_billing_credits: {
         Args: { p_user_id: string; p_amount: number }
