@@ -1,7 +1,8 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
-import { type ToastFunction } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
+import { ToastFunction } from "@/types/toast";
 
 export async function createDefaultWorkspace(
   toast: ToastFunction,
@@ -65,5 +66,3 @@ export async function createDefaultWorkspace(
     throw error;
   }
 }
-
-export type ToastFunction = ReturnType<typeof useToast>["toast"];
