@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from "recharts";
@@ -9,6 +9,7 @@ import { AgentProfile } from "./hooks/useAgentProfile";
  * Shows live metrics: task count, success %, XP and XP trend chart for this agent.
  */
 export default function AgentHealthMonitor({ agent }: { agent: AgentProfile | null }) {
+  const [filter, setFilter] = useState<"7d" | "30d" | "all">("7d");
   const agentName = agent?.agent_name || "";
 
   const { data: stats, isLoading } = useQuery({
@@ -22,31 +23,63 @@ export default function AgentHealthMonitor({ agent }: { agent: AgentProfile | nu
 
       if (error || !data) return null;
 
-      const success = data.filter((t) => t.status === "success").length;
-      const failed = data.filter((t) => t.status === "failed").length;
-      const total = data.length;
+      const now = new Date();
+      const daysAgo = (n: number) => {
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        d.setDate(d.getDate() - n);
+        return d;
+      };
+
+      // Filtering by executed_at based on filter
+      const filtered = data.filter((t) => {
+        if (!t.executed_at) return false;
+        const executed = new Date(t.executed_at);
+        executed.setHours(0, 0, 0, 0);
+        if (filter === "7d") return executed >= daysAgo(7);
+        if (filter === "30d") return executed >= daysAgo(30);
+        return true;
+      });
+
+      const success = filtered.filter((t) => t.status === "success").length;
+      const failed = filtered.filter((t) => t.status === "failed").length;
+      const total = filtered.length;
       const lastRun =
-        data.length > 0
-          ? data
+        filtered.length > 0
+          ? filtered
               .filter((t) => !!t.executed_at)
               .sort((a, b) => b.executed_at.localeCompare(a.executed_at))[0]?.executed_at
           : undefined;
 
       // XP history: group by day and count tasks
       const grouped: Record<string, number> = {};
-      for (const task of data) {
+      for (const task of filtered) {
         if (!task.executed_at) continue;
         const day = new Date(task.executed_at).toLocaleDateString();
         grouped[day] = (grouped[day] || 0) + 1;
       }
-      const history = Object.entries(grouped)
-        .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
-        .map(([date, xp]) => ({ date, xp }));
+
+      // Sort, compute daily and cumulative XP
+      const dates = Object.keys(grouped).sort(
+        (a, b) => new Date(a).getTime() - new Date(b).getTime()
+      );
+      let cumulative = 0;
+      const history = dates.map((date) => {
+        cumulative += grouped[date];
+        return { date, xp: grouped[date], cumulative };
+      });
 
       return { success, failed, total, lastRun, history };
     },
     enabled: !!agentName,
+    // The filter is now a dependency of the query
+    meta: { filter },
   });
+
+  // For refetching on filter change
+  React.useEffect(() => {
+    // nothing here, react-query will refetch because key (meta.filter) changes
+  }, [filter]);
 
   if (!agent) {
     return (
@@ -85,14 +118,33 @@ export default function AgentHealthMonitor({ agent }: { agent: AgentProfile | nu
         Last run: {lastRun ? new Date(lastRun).toLocaleString() : "N/A"}
       </p>
 
+      {/* Filter buttons */}
+      <div className="flex gap-2 mb-4">
+        {["7d", "30d", "all"].map((range) => (
+          <button
+            key={range}
+            onClick={() => setFilter(range as "7d" | "30d" | "all")}
+            className={`px-2 py-1 rounded text-sm transition-colors ${
+              filter === range
+                ? "bg-primary text-white"
+                : "bg-muted text-muted-foreground"
+            }`}
+            type="button"
+          >
+            {range.toUpperCase()}
+          </button>
+        ))}
+      </div>
+
       <h3 className="text-sm font-semibold mt-4 mb-2">📈 XP Over Time</h3>
-      <div className="w-full" style={{ minHeight: 200 }}>
-        <ResponsiveContainer width="100%" height={200}>
+      <div className="w-full" style={{ minHeight: 220 }}>
+        <ResponsiveContainer width="100%" height={220}>
           <LineChart data={history}>
             <XAxis dataKey="date" />
             <YAxis allowDecimals={false} />
             <Tooltip />
-            <Line type="monotone" dataKey="xp" stroke="#3b82f6" />
+            <Line type="monotone" dataKey="xp" stroke="#3b82f6" name="Daily XP" />
+            <Line type="monotone" dataKey="cumulative" stroke="#10b981" name="Cumulative XP" />
           </LineChart>
         </ResponsiveContainer>
       </div>
