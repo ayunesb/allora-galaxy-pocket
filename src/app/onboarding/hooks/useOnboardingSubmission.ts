@@ -1,91 +1,71 @@
+
 import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { OnboardingProfile } from "@/types/onboarding";
-import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/components/ui/sonner";
 import { useTenant } from "@/hooks/useTenant";
-import { generateInitialStrategy } from "@/lib/agents/CEO_Agent";
+import { useAuth } from "@/hooks/useAuth";
 
 /**
  * Returns: { isSubmitting, completeOnboarding }
  * `completeOnboarding(profile)` returns { success: boolean, error?: string }
  */
 export const useOnboardingSubmission = () => {
-  const { toast } = useToast();
-  const { user } = useAuth();
-  const { tenant } = useTenant();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { tenant } = useTenant();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
-  const completeOnboarding = async (finalProfile: OnboardingProfile): Promise<{ success: boolean; error?: string }> => {
-    if (!user || !tenant?.id) {
-      const errMsg = "We couldn't detect your login or workspace. Please refresh and try again.";
-      toast({
-        title: "Oops! Can't save your profile",
-        description: errMsg,
-        variant: "destructive"
-      });
-      return { success: false, error: errMsg };
+  const completeOnboarding = async (profile: OnboardingProfile): Promise<{ success: boolean; error?: string }> => {
+    if (!tenant?.id) {
+      console.error("Cannot complete onboarding: No tenant ID available");
+      return {
+        success: false,
+        error: "Workspace not selected. Please try again."
+      };
     }
+
+    if (!user) {
+      console.error("Cannot complete onboarding: No user available");
+      return {
+        success: false,
+        error: "User not authenticated. Please sign in again."
+      };
+    }
+
     setIsSubmitting(true);
-
     try {
-      console.log("[completeOnboarding] Starting onboarding completion for tenant:", tenant.id);
-
-      // Save company profile
-      const { error: companyError } = await supabase
-        .from('company_profiles')
+      const { error } = await supabase
+        .from("company_profiles")
         .upsert({
           tenant_id: tenant.id,
-          name: finalProfile.companyName || 'My Company',
-          industry: finalProfile.industry || 'Other',
-          team_size: finalProfile.teamSize || 'small',
-          revenue_tier: finalProfile.revenue || 'pre-revenue',
-          launch_mode: finalProfile.launch_mode || 'guided',
-          product_stage: finalProfile.productStage,
-          target_market: finalProfile.targetMarket
+          name: profile.companyName,
+          industry: profile.industry,
+          team_size: profile.teamSize,
+          revenue_tier: profile.revenue,
+          launch_mode: profile.launch_mode
         });
 
-      if (companyError) throw companyError;
-
-      // Save persona profile
-      const { error: personaError } = await supabase
-        .from('persona_profiles')
-        .upsert({
-          tenant_id: tenant.id,
-          user_id: user.id,
-          goal: Array.isArray(finalProfile.goals) && finalProfile.goals.length > 0 ? finalProfile.goals[0] : 'growth',
-          pain_points: finalProfile.challenges || [],
-          tone: finalProfile.tone || 'professional',
-          channels: finalProfile.channels || [],
-          tools: finalProfile.tools || [],
-          sell_type: finalProfile.sellType || 'b2b'
-        });
-
-      if (personaError) throw personaError;
-
-      // Generate initial strategy
-      const { success: strategySuccess, error: strategyError } = await generateInitialStrategy(finalProfile, tenant.id);
-      
-      if (!strategySuccess) {
-        console.warn("[completeOnboarding] Strategy generation warning:", strategyError);
-        // Continue with onboarding even if strategy generation fails
-      }
+      if (error) throw error;
 
       toast({
-        title: "Setup Complete!",
-        description: "Your Allora OS is now ready. We've generated your first strategies!",
+        title: "Setup complete!",
+        description: "Welcome to Allora OS"
       });
 
-      console.log("[completeOnboarding] Onboarding completed successfully");
       return { success: true };
     } catch (error: any) {
-      console.error("[completeOnboarding] Error saving onboarding data:", error);
+      console.error("Onboarding submission error:", error);
       toast({
-        title: "We're sorry, something went wrong.",
-        description: "Could not finish onboarding. Please check your internet and try again. If the problem continues, contact support.",
+        title: "Error",
+        description: error.message || "Failed to save onboarding data",
         variant: "destructive"
       });
-      return { success: false, error: error?.message || "Unknown error" };
+      return {
+        success: false,
+        error: error.message || "Failed to save onboarding data"
+      };
     } finally {
       setIsSubmitting(false);
     }
