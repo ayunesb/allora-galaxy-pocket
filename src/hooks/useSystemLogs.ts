@@ -1,119 +1,39 @@
-
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
-import { useTenant } from "@/hooks/useTenant";
-import { useAuth } from "@/hooks/useAuth";
 
-export interface LogActivityParams {
-  event_type: string;
+interface SystemLog {
+  timestamp: string;
+  level: 'info' | 'warn' | 'error';
   message: string;
-  meta?: Record<string, any>;
-}
-
-export interface FetchLogsParams {
-  dateRange?: number;
-  actionType?: string;
-  userId?: string;
-  search?: string;
 }
 
 export function useSystemLogs() {
-  const { tenant } = useTenant();
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
-  
-  const logActivity = useMutation({
-    mutationFn: async ({ event_type, message, meta = {} }: LogActivityParams) => {
-      if (!tenant?.id || !user?.id) return null;
+  const [logs, setLogs] = useState<SystemLog[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-      const { data, error } = await supabase
-        .from('system_logs')
-        .insert({
-          tenant_id: tenant.id,
-          user_id: user.id,
-          event_type,
-          message,
-          meta
-        });
+  useEffect(() => {
+    const fetchLogs = async () => {
+      try {
+        // Replace with actual Supabase query to fetch system logs
+        const { data, error } = await supabase
+          .from('system_logs')
+          .select('*')
+          .order('timestamp', { ascending: false })
+          .limit(100);
 
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      // Invalidate relevant queries when a new log is added
-      queryClient.invalidateQueries({ queryKey: ['system_logs'] });
-    }
-  });
+        if (error) throw error;
 
-  const fetchLogs = useQuery({
-    queryKey: ['system_logs', tenant?.id],
-    queryFn: async ({ queryKey, signal }) => {
-      const [_, tenantId] = queryKey as [string, string];
-      if (!tenantId) return [];
-      
-      const { data, error } = await supabase
-        .from('system_logs')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!tenant?.id
-  });
+        setLogs(data || []);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Unknown error'));
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  // Function to fetch logs with filters
-  const fetchFilteredLogs = async ({
-    dateRange = 7,
-    actionType,
-    userId,
-    search
-  }: FetchLogsParams = {}) => {
-    if (!tenant?.id) return [];
-    
-    // Calculate start date based on dateRange
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - dateRange);
-    
-    // Build query
-    let query = supabase
-      .from("system_logs")
-      .select('*')
-      .eq("tenant_id", tenant.id)
-      .gte("created_at", startDate.toISOString())
-      .order("created_at", { ascending: false });
-    
-    // Apply filters
-    if (actionType && actionType !== "all") {
-      query = query.eq("event_type", actionType);
-    }
-    
-    if (userId && userId !== "all") {
-      query = query.eq("user_id", userId);
-    }
-    
-    if (search) {
-      query = query.ilike("message", `%${search}%`);
-    }
-    
-    const { data, error } = await query;
-    
-    if (error) {
-      console.error("Error fetching filtered logs:", error);
-      throw error;
-    }
-    
-    return data || [];
-  };
+    fetchLogs();
+  }, []);
 
-  return {
-    logActivity: logActivity.mutate,
-    isLogging: logActivity.isPending,
-    logs: fetchLogs.data || [],
-    isLoadingLogs: fetchLogs.isLoading,
-    logsError: fetchLogs.error,
-    fetchFilteredLogs
-  };
+  return { logs, isLoading, error };
 }
