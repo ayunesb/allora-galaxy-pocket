@@ -2503,6 +2503,10 @@ export type Database = {
         Args: { _user_id: string; _tenant_id: string }
         Returns: boolean
       }
+      check_tenant_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       count_strategy_approvals: {
         Args: Record<PropertyKey, never>
         Returns: {

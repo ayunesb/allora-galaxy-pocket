@@ -38,68 +38,27 @@ export function useAvailableTenants() {
     setError(null);
 
     try {
-      // First try the current_user_tenant_roles view approach (non-recursive)
-      const viewResponse = await supabase
-        .from("current_user_tenant_roles")
-        .select("tenant_id")
-        .then(async (result) => {
-          if (result.error) {
-            console.warn("[useAvailableTenants] View query error:", result.error);
-            return null;
-          }
-          
-          if (!result.data || result.data.length === 0) {
-            console.log("[useAvailableTenants] No roles found via view");
-            return [];
-          }
-          
-          // Get tenant details for the found tenant IDs
-          const tenantIds = result.data.map(row => row.tenant_id);
-          console.log("[useAvailableTenants] Found tenant IDs:", tenantIds);
-          
-          const tenantsResponse = await supabase
-            .from("tenant_profiles")
-            .select("id, name, theme_color, theme_mode")
-            .in("id", tenantIds);
-            
-          if (tenantsResponse.error) {
-            console.error("[useAvailableTenants] Error fetching tenant details:", tenantsResponse.error);
-            return null;
-          }
-          
-          return tenantsResponse.data;
-        });
-
-      if (viewResponse !== null) {
-        console.log("[useAvailableTenants] View approach succeeded:", viewResponse);
-        setTenants(viewResponse);
-        setStatus("success");
-        setRetryCount(0);
-        return;
-      }
-
-      // Fallback to direct tenant profiles query if view approach fails
-      console.log("[useAvailableTenants] Falling back to direct tenant query...");
-      const directTenantResponse = await supabase
+      // Direct tenant profiles query with safe approach
+      const { data: directTenantResponse, error: tenantError } = await supabase
         .from("tenant_profiles")
-        .select("id, name, theme_color, theme_mode")
+        .select("id, name, theme_color, theme_mode, isDemo, enable_auto_approve")
         .limit(20);
 
-      if (directTenantResponse.error) {
-        console.error("[useAvailableTenants] Direct tenant query error:", directTenantResponse.error);
-        throw directTenantResponse.error;
+      if (tenantError) {
+        console.error("[useAvailableTenants] Tenant query error:", tenantError);
+        throw tenantError;
       }
 
-      if (directTenantResponse.data && directTenantResponse.data.length > 0) {
-        console.log("[useAvailableTenants] Direct tenant query succeeded:", directTenantResponse.data.length, "tenants");
-        setTenants(directTenantResponse.data);
+      if (directTenantResponse && directTenantResponse.length > 0) {
+        console.log("[useAvailableTenants] Tenant query succeeded:", directTenantResponse.length, "tenants");
+        setTenants(directTenantResponse);
         setStatus("success");
         setRetryCount(0);
         return;
       }
 
-      // No tenants found through any method
-      console.log("[useAvailableTenants] No tenants found through any method");
+      // If no tenants found or error occurred, return empty
+      console.log("[useAvailableTenants] No tenants found");
       setTenants([]);
       setStatus("success");
     } catch (err: any) {

@@ -1,6 +1,9 @@
 
-import { AlertCircle, Loader2, PlusCircle, RefreshCw } from "lucide-react";
+import React from "react";
 import { Button } from "@/components/ui/button";
+import { Loader2, RefreshCw, AlertCircle, PlusCircle } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface NoWorkspacesProps {
   isCreating: boolean;
@@ -10,51 +13,73 @@ interface NoWorkspacesProps {
   userExists: boolean;
 }
 
-export const NoWorkspaces = ({ 
-  isCreating, 
-  creationError, 
-  onCreateWorkspace, 
+export const NoWorkspaces: React.FC<NoWorkspacesProps> = ({
+  isCreating,
+  creationError,
+  onCreateWorkspace,
   onRefresh,
-  userExists 
-}: NoWorkspacesProps) => {
+  userExists
+}) => {
+  if (!userExists) {
+    return (
+      <Alert variant="destructive" className="mb-4">
+        <AlertCircle className="h-4 w-4 mr-2" />
+        <AlertTitle>Authentication required</AlertTitle>
+        <AlertDescription>
+          Please sign in to access or create workspaces.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
   return (
-    <div className="space-y-3 px-2">
-      <div className="px-2 text-muted-foreground text-sm">
-        No workspaces found. Create your first workspace to continue.
-      </div>
-      {creationError && (
-        <div className="text-red-500 py-2 px-2 text-sm flex items-center">
-          <AlertCircle className="h-4 w-4 mr-1" />
-          {creationError}
-        </div>
-      )}
-      <Button
-        size="sm"
-        className="w-full"
-        onClick={onCreateWorkspace}
-        disabled={isCreating || !userExists}
-      >
-        {isCreating ? (
-          <>
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            Creating workspace...
-          </>
-        ) : (
-          <>
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Create Workspace
-          </>
+    <Card className="w-full mt-2">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium">No workspaces found</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4 pt-0">
+        <p className="text-sm text-muted-foreground">
+          You don't have any workspaces yet. Create your first workspace to continue.
+        </p>
+        
+        {creationError && (
+          <Alert variant="destructive" className="py-2">
+            <AlertCircle className="h-4 w-4 mr-2" />
+            <AlertDescription className="text-xs">{creationError}</AlertDescription>
+          </Alert>
         )}
-      </Button>
-      <Button
-        size="sm"
-        variant="outline"
-        className="w-full"
-        onClick={onRefresh}
-      >
-        <RefreshCw className="h-4 w-4 mr-2" />
-        Refresh Page
-      </Button>
-    </div>
+        
+        <div className="flex flex-col gap-2">
+          <Button 
+            size="sm" 
+            onClick={onCreateWorkspace}
+            disabled={isCreating}
+            className="w-full"
+          >
+            {isCreating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              <>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Create Workspace
+              </>
+            )}
+          </Button>
+          
+          <Button 
+            size="sm"
+            variant="outline" 
+            onClick={onRefresh}
+            className="w-full"
+          >
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Refresh
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
