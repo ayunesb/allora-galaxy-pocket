@@ -17,13 +17,14 @@ export default function WorkspaceSwitcher({ highlight = false }) {
   const { tenants: availableTenants, loading, error, retryFetch, status } = useAvailableTenants();
   const { selected, setSelected, initialized } = useInitializeSelectedTenant(availableTenants, loading, error);
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const isOnboarding = location.pathname === "/onboarding";
   const [isCreating, setIsCreating] = useState(false);
   const [justCreated, setJustCreated] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [creationError, setCreationError] = useState<string | null>(null);
 
-  // Effect to handle post-creation transitions - wait a bit before redirecting to ensure all data is synced
+  // Effect to handle post-creation transitions
   useEffect(() => {
     if (justCreated && tenant && isOnboarding) {
       const timer = setTimeout(() => {
@@ -35,12 +36,12 @@ export default function WorkspaceSwitcher({ highlight = false }) {
 
   // Auto-retry once if no tenants are found and there's no error
   useEffect(() => {
-    if (!loading && availableTenants.length === 0 && !error && retryCount < 1 && user) {
+    if (!loading && !authLoading && availableTenants.length === 0 && !error && retryCount < 1 && user) {
       console.log("[WorkspaceSwitcher] No tenants found but user is logged in. Auto-retrying fetch...");
       setRetryCount(prev => prev + 1);
       retryFetch();
     }
-  }, [loading, availableTenants, error, retryCount, retryFetch, user]);
+  }, [loading, authLoading, availableTenants, error, retryCount, retryFetch, user]);
 
   const selectClasses = highlight || isOnboarding
     ? "ring-2 ring-primary ring-offset-2 transition-all duration-200"
@@ -51,6 +52,7 @@ export default function WorkspaceSwitcher({ highlight = false }) {
   };
 
   const handleCreateWorkspace = async () => {
+    setCreationError(null);
     if (!user) {
       toast({
         title: "Authentication required",
@@ -82,8 +84,9 @@ export default function WorkspaceSwitcher({ highlight = false }) {
           description: "You can now continue with onboarding.",
         });
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("[WorkspaceSwitcher] Error in workspace creation flow:", err);
+      setCreationError(err?.message || "Failed to create workspace");
       toast({
         title: "Workspace creation failed",
         description: "Please try again or contact support",
@@ -96,6 +99,7 @@ export default function WorkspaceSwitcher({ highlight = false }) {
 
   const handleRetry = () => {
     console.log("[WorkspaceSwitcher] Manual retry requested");
+    setCreationError(null);
     retryFetch();
   };
 
@@ -103,6 +107,15 @@ export default function WorkspaceSwitcher({ highlight = false }) {
   const handleFullRefresh = () => {
     window.location.reload();
   };
+
+  if (authLoading) {
+    return (
+      <div className="flex w-full items-center justify-center h-12 px-2">
+        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+        <span>Verifying login...</span>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -147,6 +160,12 @@ export default function WorkspaceSwitcher({ highlight = false }) {
         <div className="px-2 text-muted-foreground text-sm">
           No workspaces found. Create your first workspace to continue.
         </div>
+        {creationError && (
+          <div className="text-red-500 py-2 px-2 text-sm flex items-center">
+            <AlertCircle className="h-4 w-4 mr-1" />
+            {creationError}
+          </div>
+        )}
         <Button
           size="sm"
           className="w-full"
@@ -164,6 +183,15 @@ export default function WorkspaceSwitcher({ highlight = false }) {
               Create Workspace
             </>
           )}
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="w-full"
+          onClick={handleFullRefresh}
+        >
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh Page
         </Button>
       </div>
     );

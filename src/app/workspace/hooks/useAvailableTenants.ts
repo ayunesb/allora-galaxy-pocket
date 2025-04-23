@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -23,7 +24,7 @@ export function useAvailableTenants() {
 
   const fetchTenants = useCallback(async () => {
     // Enhanced logging for debugging
-    console.log("[useAvailableTenants] Fetching tenants - User:", user?.id);
+    console.log("[useAvailableTenants] Fetching tenants - User:", user?.id, "Retry count:", retryCount);
     
     if (!user) {
       console.warn("[useAvailableTenants] No user ID available for tenant fetch");
@@ -48,7 +49,14 @@ export function useAvailableTenants() {
 
       if (directTenantResponse.error) {
         console.error("[useAvailableTenants] Error in direct tenant query:", directTenantResponse.error);
-        throw directTenantResponse.error;
+        
+        // If this is an RLS error, try the alternative approach
+        if (directTenantResponse.error.message.includes("permission denied") || 
+            directTenantResponse.error.message.includes("policy")) {
+          console.log("[useAvailableTenants] Falling back to tenant_user_roles approach due to RLS");
+        } else {
+          throw directTenantResponse.error;
+        }
       }
 
       // If direct query works, use that data

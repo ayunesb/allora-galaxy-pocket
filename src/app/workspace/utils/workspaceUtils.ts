@@ -35,7 +35,17 @@ export async function createDefaultWorkspace(
     console.log("[createDefaultWorkspace] Starting workspace creation process");
     
     // Get current user
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError) {
+      console.error("[createDefaultWorkspace] Error getting user:", userError);
+      toast({
+        title: "Authentication error",
+        description: "Could not verify your login details. Try signing in again.",
+        variant: "destructive"
+      });
+      return null;
+    }
     
     if (!user) {
       console.error("[createDefaultWorkspace] No authenticated user found");
@@ -57,7 +67,8 @@ export async function createDefaultWorkspace(
           name: 'My Workspace',
           theme_color: 'indigo',
           theme_mode: 'light',
-          enable_auto_approve: true
+          enable_auto_approve: true,
+          isDemo: false
         }
       ])
       .select()
@@ -71,6 +82,12 @@ export async function createDefaultWorkspace(
         toast({
           title: "Workspace already exists",
           description: "Please try a different name.",
+          variant: "destructive"
+        });
+      } else if (error.code === '42501') { // Permission denied
+        toast({
+          title: "Permission denied",
+          description: "You don't have permission to create a workspace.",
           variant: "destructive"
         });
       } else {
