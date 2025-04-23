@@ -2,8 +2,8 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import ApiKeySettings from "./components/ApiKeySettings";
-import AutoApprovalSettings from "./components/AutoApprovalSettings";
+import { ApiKeySettings } from "./components/ApiKeySettings";
+import { AutoApprovalSettings } from "./components/AutoApprovalSettings";
 
 export default function AdminSettingsPage() {
   return (

@@ -13,6 +13,7 @@ import WeeklySummaryFeed from "@/app/admin/ai-decisions/weekly/page";
 import AdminLogsPage from "@/app/admin/logs/page";
 import SecurityAuditPage from "@/app/admin/security-audit/page";
 import AdminSettingsPage from "@/app/admin/settings/page";
+import AdminIntegrationsPage from "@/app/admin/integrations/page";
 
 export const adminRoutes: RouteObject[] = [
   { path: "/admin/agents/collaboration", element: <CollaborationPage /> },
@@ -24,7 +25,7 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/agents/memory", element: <AgentMemoryConsole /> },
   { path: "/admin/users", element: <UserManagementPage /> },
   { path: "/admin/users/role-requests", element: <RoleChangeRequestsPage /> },
-  { path: "/admin/integrations", element: <div>Admin Integrations</div> },
+  { path: "/admin/integrations", element: <AdminIntegrationsPage /> },
   { path: "/admin/logs", element: <AdminLogsPage /> },
   { path: "/admin/ai-decisions/weekly", element: <WeeklySummaryFeed /> },
   { path: "/admin/security-audit", element: <SecurityAuditPage /> }
