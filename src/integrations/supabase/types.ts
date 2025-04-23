@@ -1780,6 +1780,7 @@ export type Database = {
         Row: {
           approved_at: string | null
           assigned_agent: string | null
+          auto_approved: boolean | null
           created_at: string | null
           description: string | null
           diagnosis: Json | null
@@ -1798,6 +1799,7 @@ export type Database = {
         Insert: {
           approved_at?: string | null
           assigned_agent?: string | null
+          auto_approved?: boolean | null
           created_at?: string | null
           description?: string | null
           diagnosis?: Json | null
@@ -1816,6 +1818,7 @@ export type Database = {
         Update: {
           approved_at?: string | null
           assigned_agent?: string | null
+          auto_approved?: boolean | null
           created_at?: string | null
           description?: string | null
           diagnosis?: Json | null
@@ -2099,6 +2102,7 @@ export type Database = {
       tenant_profiles: {
         Row: {
           created_at: string | null
+          enable_auto_approve: boolean | null
           id: string
           is_demo: boolean | null
           name: string | null
@@ -2110,6 +2114,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          enable_auto_approve?: boolean | null
           id?: string
           is_demo?: boolean | null
           name?: string | null
@@ -2121,6 +2126,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          enable_auto_approve?: boolean | null
           id?: string
           is_demo?: boolean | null
           name?: string | null
