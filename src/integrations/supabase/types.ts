@@ -538,33 +538,46 @@ export type Database = {
       }
       kpi_insights: {
         Row: {
+          campaign_id: string | null
           created_at: string | null
           id: string
           impact_level: string | null
           insight: string
           kpi_name: string
+          outcome: string | null
           suggested_action: string | null
           tenant_id: string | null
         }
         Insert: {
+          campaign_id?: string | null
           created_at?: string | null
           id?: string
           impact_level?: string | null
           insight: string
           kpi_name: string
+          outcome?: string | null
           suggested_action?: string | null
           tenant_id?: string | null
         }
         Update: {
+          campaign_id?: string | null
           created_at?: string | null
           id?: string
           impact_level?: string | null
           insight?: string
           kpi_name?: string
+          outcome?: string | null
           suggested_action?: string | null
           tenant_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "kpi_insights_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "kpi_insights_tenant_id_fkey"
             columns: ["tenant_id"]

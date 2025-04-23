@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -60,7 +59,7 @@ export function AlertCard({
     }
   };
 
-  const handleGenerateCampaign = async (insight: { recommended_action?: string; tenant_id?: string }) => {
+  const handleGenerateCampaign = async (insight: { recommended_action?: string; tenant_id?: string; id: string }) => {
     if (!insight.recommended_action) {
       toast.error("No recovery plan available to generate a campaign.");
       return;
@@ -72,13 +71,20 @@ export function AlertCard({
           'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ plan: insight.recommended_action, tenant_id: insight.tenant_id })
+        body: JSON.stringify({ 
+          plan: insight.recommended_action, 
+          tenant_id: insight.tenant_id,
+          insight_id: insight.id 
+        })
       });
 
       const { campaign_data } = await response.json();
 
       if (campaign_data) {
-        navigate(`/campaigns/create?prefill=${encodeURIComponent(JSON.stringify(campaign_data))}`);
+        navigate(`/campaigns/create?prefill=${encodeURIComponent(JSON.stringify({
+          ...campaign_data,
+          insight_id: insight.id
+        }))}`);
       } else {
         toast.error("Failed to generate campaign data.");
       }
@@ -117,7 +123,11 @@ export function AlertCard({
                 </ReactMarkdown>
                 <Button
                   variant="default"
-                  onClick={() => handleGenerateCampaign({ recommended_action: planText, tenant_id })}
+                  onClick={() => handleGenerateCampaign({ 
+                    recommended_action: planText, 
+                    tenant_id,
+                    id 
+                  })}
                   className="w-fit"
                 >
                   <Rocket className="mr-1 h-4 w-4" />
