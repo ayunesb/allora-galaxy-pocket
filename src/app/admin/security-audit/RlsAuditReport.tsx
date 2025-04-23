@@ -327,7 +327,7 @@ export default function RlsAuditReport() {
           <tr key={`${table.tablename}`} className="bg-gray-50">
             <td className="p-3 border">{table.tablename}</td>
             <td className="p-3 border text-center">
-              <Badge variant="outline" className="bg-gray-50 text-gray-500">
+              <Badge variant="secondary" className="bg-gray-50 text-gray-500">
                 Disabled
               </Badge>
             </td>
@@ -344,7 +344,7 @@ export default function RlsAuditReport() {
           <tr key={`${table.tablename}`} className="bg-red-50">
             <td className="p-3 border">{table.tablename}</td>
             <td className="p-3 border text-center">
-              <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+              <Badge variant="destructive" className="bg-red-50 text-red-700 border-red-200">
                 Enabled
               </Badge>
             </td>
