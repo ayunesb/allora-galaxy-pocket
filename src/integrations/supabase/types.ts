@@ -1992,6 +1992,10 @@ export type Database = {
       }
     }
     Functions: {
+      add_billing_credits: {
+        Args: { p_user_id: string; p_amount: number }
+        Returns: undefined
+      }
       check_plugin_permission: {
         Args: {
           _tenant_id: string
@@ -2049,6 +2053,10 @@ export type Database = {
       update_agent_memory_score: {
         Args: { p_agent_id: string }
         Returns: number
+      }
+      use_billing_credits: {
+        Args: { p_user_id: string; p_amount: number }
+        Returns: boolean
       }
     }
     Enums: {
