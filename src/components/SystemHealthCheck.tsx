@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { AlertCircle, CheckCircle, RefreshCw } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +12,7 @@ interface SystemStatus {
   database: boolean;
   auth: boolean;
   edgeFunctions: boolean;
-  maintenance: boolean | null;
+  maintenance: null | boolean;
   tables: {
     system_config: boolean;
     user_roles: boolean;
@@ -260,7 +259,7 @@ export default function SystemHealthCheck() {
         </div>
 
         {!status.tables.system_config && (
-          <Alert variant="warning" className="mt-4">
+          <Alert variant="destructive" className="mt-4">
             <AlertTitle>System configuration table missing</AlertTitle>
             <AlertDescription>
               The system_config table required for maintenance mode is missing.
@@ -294,7 +293,7 @@ export default function SystemHealthCheck() {
           </div>
         ) : (
           <div className="w-full">
-            <Alert variant="success" className="bg-green-50 border-green-200">
+            <Alert variant="default" className="bg-green-50 border-green-200">
               <AlertTitle>All systems operational</AlertTitle>
               <AlertDescription>
                 Your Allora OS environment is properly configured and ready for use.
