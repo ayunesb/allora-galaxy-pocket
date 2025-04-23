@@ -9,7 +9,6 @@ import AddPluginPage from "@/app/admin/plugins/gallery/page";
 import AgentMemoryConsole from "@/app/admin/agents/memory/page";
 import RoleChangeRequestsPage from "@/app/admin/users/role-requests/page";
 import UserManagementPage from "@/app/admin/users/page";
-import AdminCronLogsPage from "@/pages/admin/logs/page";
 import WeeklySummaryFeed from "@/app/admin/ai-decisions/weekly/page";
 
 export const adminRoutes: RouteObject[] = [
@@ -23,6 +22,6 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/users", element: <UserManagementPage /> },
   { path: "/admin/users/role-requests", element: <RoleChangeRequestsPage /> },
   { path: "/admin/integrations", element: <div>Admin Integrations</div> },
-  { path: "/admin/logs", element: <AdminCronLogsPage /> },
+  { path: "/admin/logs", element: <div>Admin Logs</div> },
   { path: "/admin/ai-decisions/weekly", element: <WeeklySummaryFeed /> }
 ];
