@@ -2018,6 +2018,7 @@ export type Database = {
           created_at: string | null
           id: string
           name: string | null
+          slack_webhook_url: string | null
           theme_color: string | null
           theme_mode: string | null
           updated_at: string | null
@@ -2027,6 +2028,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           name?: string | null
+          slack_webhook_url?: string | null
           theme_color?: string | null
           theme_mode?: string | null
           updated_at?: string | null
@@ -2036,6 +2038,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           name?: string | null
+          slack_webhook_url?: string | null
           theme_color?: string | null
           theme_mode?: string | null
           updated_at?: string | null

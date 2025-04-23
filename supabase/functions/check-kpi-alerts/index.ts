@@ -1,24 +1,25 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.1"
+import { sendSlackAlert } from "../_shared/slack-alert.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const FUNCTION_NAME = 'check-kpi-alerts';
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
-  try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    )
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  )
 
-    // Fetch enabled alert rules
+  try {
     const { data: rules, error: rulesError } = await supabase
       .from('kpi_alert_rules')
       .select('*')
@@ -27,7 +28,6 @@ serve(async (req) => {
     if (rulesError) throw rulesError
 
     for (const rule of rules) {
-      // Get current KPI value
       const { data: kpiData, error: kpiError } = await supabase
         .from('kpi_metrics')
         .select('value')
@@ -38,7 +38,6 @@ serve(async (req) => {
 
       if (kpiError) continue
 
-      // Get historical value for comparison
       const { data: historicalData } = await supabase
         .from('kpi_metrics')
         .select('value')
@@ -81,11 +80,25 @@ serve(async (req) => {
       }
     }
 
+    await supabase.from('cron_job_logs').insert({
+      function_name: FUNCTION_NAME,
+      status: 'success',
+      message: 'KPI alerts checked successfully'
+    })
+
     return new Response(
       JSON.stringify({ success: true }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )
   } catch (error) {
+    await supabase.from('cron_job_logs').insert({
+      function_name: FUNCTION_NAME,
+      status: 'failed',
+      message: error.message
+    })
+
+    await sendSlackAlert(FUNCTION_NAME, error.message)
+
     return new Response(
       JSON.stringify({ error: error.message }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
