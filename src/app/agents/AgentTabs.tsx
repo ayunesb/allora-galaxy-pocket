@@ -9,6 +9,7 @@ import { AgentProfile } from "./hooks/useAgentProfile";
 
 export default function AgentTabs({ agent }: { agent: AgentProfile | null }) {
   // Create agent names array from the single agent for AgentHealthMonitor
+  // Ensure we only add the agent_name if agent exists
   const agentNames = agent ? [agent.agent_name] : [];
 
   return (

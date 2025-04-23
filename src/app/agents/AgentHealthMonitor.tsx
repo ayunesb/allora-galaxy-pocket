@@ -48,6 +48,16 @@ export default function AgentHealthMonitor({
 
   useEffect(() => {
     const fetchAll = async () => {
+      // If no agent names provided, don't attempt to fetch data
+      if (!agentNames || agentNames.length === 0) {
+        setHistoryData([]);
+        setXpByAgent({});
+        setBadgeByAgent({});
+        setAnimateAgents({});
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       const results = await Promise.all(
         agentNames.map(async (agent) => {
@@ -202,12 +212,14 @@ export default function AgentHealthMonitor({
           </LineChart>
         </ResponsiveContainer>
       </div>
-      <button
-        onClick={() => exportToCSV(historyData, agentNames)}
-        className="mt-4 px-4 py-1 bg-secondary text-white rounded hover-scale"
-      >
-        📤 Export XP to CSV
-      </button>
+      {agentNames.length > 0 && (
+        <button
+          onClick={() => exportToCSV(historyData, agentNames)}
+          className="mt-4 px-4 py-1 bg-secondary text-white rounded hover-scale"
+        >
+          📤 Export XP to CSV
+        </button>
+      )}
     </div>
   );
 }
