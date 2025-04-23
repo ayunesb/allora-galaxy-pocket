@@ -12,11 +12,12 @@ import UserManagementPage from "@/app/admin/users/page";
 import WeeklySummaryFeed from "@/app/admin/ai-decisions/weekly/page";
 import AdminLogsPage from "@/app/admin/logs/page";
 import SecurityAuditPage from "@/app/admin/security-audit/page";
+import AdminSettingsPage from "@/app/admin/settings/page";
 
 export const adminRoutes: RouteObject[] = [
   { path: "/admin/agents/collaboration", element: <CollaborationPage /> },
   { path: "/admin/plugins/earnings", element: <PluginEarningsPage /> },
-  { path: "/admin/settings", element: <div>Admin Settings</div> },
+  { path: "/admin/settings", element: <AdminSettingsPage /> },
   { path: "/admin/invite", element: <InviteUsersPage /> },
   { path: "/admin/plugins/review", element: <PluginReviewPage /> },
   { path: "/admin/plugins/gallery", element: <AddPluginPage /> },

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { createBrowserRouter, RouterProvider, Navigate, Outlet } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import RequireAuth from "@/guards/RequireAuth";
@@ -15,6 +15,11 @@ import { pluginRoutes } from '@/routes/pluginRoutes';
 // Auth Context Provider
 import { AuthProvider } from '@/hooks/useAuth';
 import { Toaster } from "@/components/ui/sonner";
+import { EnhancedErrorBoundary } from '@/components/EnhancedErrorBoundary';
+import { RouteDebugger } from '@/components/RouteDebugger';
+
+// Enable this for debugging routes in development
+const showRouteDebugger = process.env.NODE_ENV === 'development' && false;
 
 // Create a browser router with all routes
 const router = createBrowserRouter([
@@ -25,6 +30,7 @@ const router = createBrowserRouter([
         <Outlet />
       </AuthProvider>
     ),
+    errorElement: <NotFound />,
     children: [
       ...publicRoutes,
     ],
@@ -35,12 +41,16 @@ const router = createBrowserRouter([
     element: (
       <AuthProvider>
         <RequireAuth>
-          <Layout>
-            <Outlet />
-          </Layout>
+          <EnhancedErrorBoundary>
+            <Layout>
+              {showRouteDebugger && <RouteDebugger />}
+              <Outlet />
+            </Layout>
+          </EnhancedErrorBoundary>
         </RequireAuth>
       </AuthProvider>
     ),
+    errorElement: <NotFound />,
     children: [
       // Redirect from root to dashboard for authenticated users
       { path: "/", element: <Navigate to="/dashboard" replace /> },
