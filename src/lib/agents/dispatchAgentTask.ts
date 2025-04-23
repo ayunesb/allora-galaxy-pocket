@@ -24,7 +24,13 @@ export async function dispatchAgentTask({ user_id, agent, task_type, payload }: 
 
   if (!isAllowed) {
     // 1. Log denied task for retry queue (if you have this table - stub for now)
-    // await supabase.from("agent_denied_tasks").insert({ user_id, agent, task_type, payload });
+    await supabase.from("agent_denied_tasks").insert({ 
+      user_id, 
+      agent, 
+      task_type, 
+      payload,
+      status: "pending"
+    });
 
     // 2. Notify admin/user via agent_alerts
     await supabase.from("agent_alerts").insert({
