@@ -66,6 +66,7 @@ export type Database = {
           capabilities: string[]
           created_at: string
           id: string
+          last_prompt_id: string | null
           mission: string
           output_schema: string
           personas: string[]
@@ -77,6 +78,7 @@ export type Database = {
           capabilities: string[]
           created_at?: string
           id?: string
+          last_prompt_id?: string | null
           mission: string
           output_schema: string
           personas: string[]
@@ -88,6 +90,7 @@ export type Database = {
           capabilities?: string[]
           created_at?: string
           id?: string
+          last_prompt_id?: string | null
           mission?: string
           output_schema?: string
           personas?: string[]
@@ -286,6 +289,36 @@ export type Database = {
           prompt?: string
           tenant_id?: string
           version?: number
+        }
+        Relationships: []
+      }
+      agent_prompt_votes: {
+        Row: {
+          agent_name: string
+          created_at: string | null
+          id: string
+          tenant_id: string
+          version: number
+          vote: number
+          voter_agent: string
+        }
+        Insert: {
+          agent_name: string
+          created_at?: string | null
+          id?: string
+          tenant_id: string
+          version: number
+          vote: number
+          voter_agent: string
+        }
+        Update: {
+          agent_name?: string
+          created_at?: string | null
+          id?: string
+          tenant_id?: string
+          version?: number
+          vote?: number
+          voter_agent?: string
         }
         Relationships: []
       }

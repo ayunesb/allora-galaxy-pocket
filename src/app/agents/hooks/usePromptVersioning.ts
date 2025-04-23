@@ -1,9 +1,12 @@
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { useAuth } from "@/hooks/useAuth";
 
+// NOTE: To generate an explanation for the prompt using OpenAI, it's better handled in an edge function for securely accessing the API key.
+// See Lovable's documentation for OpenAI integration via edge functions.
 export function usePromptVersioning(agentName: string) {
   const { tenant } = useTenant();
   const { user } = useAuth();
@@ -26,50 +29,7 @@ export function usePromptVersioning(agentName: string) {
     }
   });
 
-  // Add a new mutation to generate an explanation for the prompt
-  const { mutateAsync: generatePromptExplanation } = useMutation({
-    mutationFn: async ({ prompt, versionId }: { prompt: string; versionId: string }) => {
-      // Check if OpenAI is configured
-      const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-      if (!openAIApiKey) {
-        console.warn('OpenAI API key not configured');
-        return null;
-      }
-
-      try {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${openAIApiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'gpt-4o-mini',
-            messages: [{
-              role: 'user',
-              content: `Explain this agent prompt as if you're the agent's product manager. Discuss its purpose, strategy, and expected outcomes.\n\nPrompt:\n${prompt}`
-            }],
-          }),
-        });
-
-        const data = await response.json();
-        const explanation = data.choices[0].message.content;
-
-        // Update the prompt version with the explanation
-        await supabase
-          .from('agent_prompt_versions')
-          .update({ explanation })
-          .eq('id', versionId);
-
-        return explanation;
-      } catch (error) {
-        console.error('Error generating prompt explanation:', error);
-        return null;
-      }
-    }
-  });
-
-  // Existing savePromptVersion mutation updated to generate explanation
+  // Save current prompt as new version (no explanation auto-generation here, recommend calling edge-function if desired)
   const { mutateAsync: savePromptVersion, isPending: isSaving } = useMutation({
     mutationFn: async ({ prompt }: { prompt: string }) => {
       if (!tenant?.id || !user?.id) throw new Error("Missing tenant or user id");
@@ -102,11 +62,7 @@ export function usePromptVersioning(agentName: string) {
       
       if (insertErr) throw insertErr;
 
-      // Generate explanation for the new version
-      await generatePromptExplanation({ 
-        prompt, 
-        versionId: insertedVersion.id 
-      });
+      // Optionally: call edge function to generate explanation automatically (not run here)
 
       // Update blueprint prompt
       const { error: updateErr } = await supabase
@@ -123,8 +79,30 @@ export function usePromptVersioning(agentName: string) {
     versions,
     isLoading,
     savePromptVersion,
-    restorePromptVersion,
     isSaving,
-    generatePromptExplanation
+    // generatePromptExplanation: not implemented here, should be on the server/edge-function
   };
 }
+
+/**
+ * --- Prompt Auto-Switch & Rollback Logic (DOCUMENTATION) ---
+ *
+ * // To auto-switch (when best version wins by 30% delta):
+ * await supabase.from("agent_blueprints").update({
+ *   prompt: newPrompt,
+ *   last_prompt_id: currentPromptId    // Save old version's ID for rollback
+ * }).eq("agent_name", agent);
+ *
+ * // To rollback (if new version underperforms by >15% but <30%):
+ * const { data: oldPrompt } = await supabase.from("agent_prompt_versions")
+ *   .select("prompt").eq("id", last_prompt_id).maybeSingle();
+ * await supabase.from("agent_blueprints").update({
+ *   prompt: oldPrompt.prompt
+ * }).eq("agent_name", agent);
+ * await supabase.from("agent_alerts").insert({
+ *   agent,
+ *   alert_type: "rollback",
+ *   message: `Auto-switched prompt underperformed. Rolled back.`
+ * });
+ */
+
