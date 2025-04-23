@@ -24,8 +24,8 @@ export default function AgentPromptEditor({
   const { toast } = useToast();
   const {
     savePromptVersion,
-    restorePromptVersion,
-    isSaving
+    isSaving,
+    versions
   } = usePromptVersioning(agentName);
 
   // Save current as a new version
