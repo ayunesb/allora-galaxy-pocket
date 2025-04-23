@@ -12,6 +12,7 @@ import {
   Legend
 } from "recharts";
 import { AgentFeedbackTable } from "./components/AgentFeedbackTable";
+import { ApprovalMetricsCard } from "./components/ApprovalMetricsCard";
 
 type Decision = {
   id: string;
@@ -166,6 +167,10 @@ export default function AIDecisionAudit() {
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">📜 AI Decision Log</h1>
+
+      <div className="grid gap-6 mb-6">
+        <ApprovalMetricsCard />
+      </div>
 
       {/* Add Agent Feedback Section */}
       <div className="mb-8">

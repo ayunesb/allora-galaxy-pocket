@@ -2336,6 +2336,14 @@ export type Database = {
         Args: { _user_id: string; _tenant_id: string }
         Returns: boolean
       }
+      count_strategy_approvals: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          total_approved: number
+          ai_approved: number
+          human_approved: number
+        }[]
+      }
       execute_sql: {
         Args: { sql_query: string }
         Returns: undefined
