@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRolePermissions } from "@/hooks/useRolePermissions";
 import { useTenant } from "@/hooks/useTenant";
@@ -8,6 +9,7 @@ import { useAgentProfile } from "./hooks/useAgentProfile";
 import AgentTabs from "./AgentTabs";
 import AgentDirectory from "./AgentDirectory";
 import InsertMissingBlueprints from "./InsertMissingBlueprints";
+import AgentBlueprintCount from "./AgentBlueprintCount";
 
 export default function AgentSpacePage() {
   const { isAdmin } = useRolePermissions();
@@ -26,10 +28,15 @@ export default function AgentSpacePage() {
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold mb-8">Agent Space</h1>
-      <InsertMissingBlueprints />
+      
+      <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <AgentBlueprintCount />
+        <InsertMissingBlueprints />
+      </div>
+      
       {/* Show agent directory above tabs */}
       <AgentDirectory />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
         <div>
           <div className="rounded-lg border bg-card shadow p-4 md:p-6">
             <AgentTabs agent={agent} />

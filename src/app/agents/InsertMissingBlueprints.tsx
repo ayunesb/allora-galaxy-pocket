@@ -1,6 +1,9 @@
 
 import React, { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Loader2, Upload } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 // List of imported agent blueprints' definitions
 import { CEO_Agent } from "@/lib/agents/CEO_Agent";
@@ -94,55 +97,89 @@ function formatAgent(a: any): AgentBlueprintInput {
 export default function InsertMissingBlueprints() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const insertMissing = async () => {
     setLoading(true);
     setResult(null);
 
-    // Fetch existing blueprints
-    const { data: existing, error } = await supabase
-      .from("agent_blueprints")
-      .select("agent_name");
+    try {
+      // Fetch existing blueprints
+      const { data: existing, error } = await supabase
+        .from("agent_blueprints")
+        .select("agent_name");
 
-    if (error) {
-      setResult("Failed to fetch existing blueprints.");
+      if (error) {
+        throw new Error(`Failed to fetch existing blueprints: ${error.message}`);
+      }
+      
+      const existingNames = (existing ?? []).map((a) => a.agent_name);
+
+      // Prepare only agents not present in DB
+      const missing = AGENTS.filter((a) => !existingNames.includes(a.name)).map(formatAgent);
+
+      if (missing.length === 0) {
+        setResult("No missing agents. All blueprints present!");
+        toast({
+          title: "Blueprint Check Complete",
+          description: "All 30 agent blueprints are already present in the database.",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Insert missing agents in batch
+      const { error: insertError, count } = await supabase
+        .from("agent_blueprints")
+        .insert(missing, { count: "exact" });
+
+      if (insertError) {
+        throw new Error(`Insert failed: ${insertError.message}`);
+      } 
+      
+      const message = `Successfully inserted ${missing.length} agent blueprints`;
+      setResult(message);
+      toast({
+        title: "Agents Added",
+        description: message,
+      });
+    } catch (error: any) {
+      const errorMessage = error.message || "An unknown error occurred";
+      setResult(`Error: ${errorMessage}`);
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
       setLoading(false);
-      return;
     }
-    const names = (existing ?? []).map((a) => a.agent_name);
-
-    // Prepare only agents not present in DB
-    const missing = AGENTS.filter((a) => !names.includes(a.name)).map(formatAgent);
-
-    if (missing.length === 0) {
-      setResult("No missing agents. All blueprints present!");
-      setLoading(false);
-      return;
-    }
-
-    // Insert missing agents in batch
-    const { error: insertError, count } = await supabase
-      .from("agent_blueprints")
-      .insert(missing, { count: "exact" });
-
-    if (insertError) {
-      setResult(`Insert failed: ${insertError.message}`);
-    } else {
-      setResult(`Inserted ${missing.length} missing agent blueprints.`);
-    }
-    setLoading(false);
   };
 
   return (
-    <div className="mb-5">
-      <button
-        className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded shadow"
+    <div>
+      <Button
         onClick={insertMissing}
         disabled={loading}
+        className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
       >
-        {loading ? "Inserting..." : "Insert Missing Agents"}
-      </button>
-      {result && <div className="mt-2 text-sm">{result}</div>}
+        {loading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Inserting...
+          </>
+        ) : (
+          <>
+            <Upload className="mr-2 h-4 w-4" />
+            Insert Missing Agents
+          </>
+        )}
+      </Button>
+      {result && (
+        <div className={`mt-2 text-sm ${result.includes("Error") ? "text-red-500" : "text-green-500"}`}>
+          {result}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,8 @@
 
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Badge } from "@/components/ui/badge";
+import { Zap } from "lucide-react";
 
 export default function AgentBlueprintCount() {
   const [count, setCount] = useState<number | null>(null);
@@ -25,18 +27,23 @@ export default function AgentBlueprintCount() {
     fetchCount();
   }, []);
 
-  if (loading) return <div className="text-muted-foreground">Checking agent blueprints count...</div>;
+  if (loading) return <div className="text-muted-foreground">Checking agent blueprints...</div>;
   if (error) return <div className="text-red-500">Error: {error}</div>;
 
   return (
-    <div className="mb-4">
-      <span className="font-semibold">Agent blueprints in DB:</span>{" "}
-      <span className="font-mono">{count}</span>
+    <div className="flex items-center gap-2">
+      <span className="font-semibold">Agent Blueprints:</span>
+      <Badge variant="outline" className="text-base font-mono">{count}</Badge>
       {count !== null && count < 30 && (
-        <span className="ml-3 text-yellow-600">({30 - count} more to add)</span>
+        <Badge variant="secondary" className="flex items-center gap-1">
+          <Zap className="h-3 w-3" />
+          <span>{30 - count} more to add</span>
+        </Badge>
       )}
       {count !== null && count >= 30 && (
-        <span className="ml-3 text-green-600">All 30 agents present!</span>
+        <Badge variant="success" className="bg-green-500 text-white">
+          All 30 agents present!
+        </Badge>
       )}
     </div>
   );
