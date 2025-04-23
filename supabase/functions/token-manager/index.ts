@@ -41,13 +41,15 @@ serve(async (req) => {
 
   try {
     const supabase = createClient(supabaseUrl, serviceRoleKey)
-    const { token, service, tenant_id } = await req.json()
+    const { token, refresh_token, service, tenant_id, expires_in } = await req.json()
 
     if (!token || !service || !tenant_id) {
       throw new Error('Missing required fields')
     }
 
     const encrypted = await encryptToken(token)
+    const encryptedRefresh = refresh_token ? await encryptToken(refresh_token) : null
+    const expiresAt = expires_in ? new Date(Date.now() + expires_in * 1000).toISOString() : null
     
     const { error } = await supabase
       .from('encrypted_tokens')
@@ -55,6 +57,9 @@ serve(async (req) => {
         tenant_id,
         service,
         encrypted_token: encrypted,
+        refresh_token: encryptedRefresh,
+        token_type: refresh_token ? 'both' : 'access',
+        expires_at: expiresAt,
         updated_at: new Date().toISOString()
       })
 

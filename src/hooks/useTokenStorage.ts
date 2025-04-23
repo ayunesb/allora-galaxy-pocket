@@ -3,12 +3,20 @@ import { useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useTenant } from '@/hooks/useTenant'
 import { toast } from 'sonner'
+import { SUPPORTED_SERVICES } from '@/config/supportedServices'
+
+type TokenStorageParams = {
+  token: string;
+  service: typeof SUPPORTED_SERVICES[keyof typeof SUPPORTED_SERVICES];
+  refresh_token?: string;
+  expires_in?: number;
+}
 
 export function useTokenStorage() {
   const { tenant } = useTenant()
   const [isStoring, setIsStoring] = useState(false)
 
-  const storeToken = async (service: string, token: string) => {
+  const storeToken = async ({ token, service, refresh_token, expires_in }: TokenStorageParams) => {
     if (!tenant?.id) {
       toast.error('No tenant selected')
       return false
@@ -17,7 +25,13 @@ export function useTokenStorage() {
     setIsStoring(true)
     try {
       const { error } = await supabase.functions.invoke('token-manager', {
-        body: { token, service, tenant_id: tenant.id }
+        body: { 
+          token, 
+          service, 
+          tenant_id: tenant.id,
+          refresh_token,
+          expires_in
+        }
       })
 
       if (error) throw error

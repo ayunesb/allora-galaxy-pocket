@@ -581,25 +581,34 @@ export type Database = {
         Row: {
           created_at: string | null
           encrypted_token: string
+          expires_at: string | null
           id: string
+          refresh_token: string | null
           service: string
           tenant_id: string | null
+          token_type: string
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
           encrypted_token: string
+          expires_at?: string | null
           id?: string
+          refresh_token?: string | null
           service: string
           tenant_id?: string | null
+          token_type?: string
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
           encrypted_token?: string
+          expires_at?: string | null
           id?: string
+          refresh_token?: string | null
           service?: string
           tenant_id?: string | null
+          token_type?: string
           updated_at?: string | null
         }
         Relationships: [
