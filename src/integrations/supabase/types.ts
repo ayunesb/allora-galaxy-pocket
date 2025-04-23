@@ -1055,16 +1055,20 @@ export type Database = {
       plugin_submissions: {
         Row: {
           description: string | null
+          earnings: number | null
           github_repo_url: string | null
           id: string
           install_script: string | null
           installs: number | null
           is_public: boolean | null
+          original_plugin_id: string | null
           plugin_name: string
           recommended_by_agent: string | null
           remix_count: number | null
+          revenue_generated: number | null
           schema_sql: string | null
           status: string | null
+          stripe_connect_id: string | null
           submitted_at: string | null
           tenant_id: string
           webhook_secret: string | null
@@ -1072,16 +1076,20 @@ export type Database = {
         }
         Insert: {
           description?: string | null
+          earnings?: number | null
           github_repo_url?: string | null
           id?: string
           install_script?: string | null
           installs?: number | null
           is_public?: boolean | null
+          original_plugin_id?: string | null
           plugin_name: string
           recommended_by_agent?: string | null
           remix_count?: number | null
+          revenue_generated?: number | null
           schema_sql?: string | null
           status?: string | null
+          stripe_connect_id?: string | null
           submitted_at?: string | null
           tenant_id: string
           webhook_secret?: string | null
@@ -1089,16 +1097,20 @@ export type Database = {
         }
         Update: {
           description?: string | null
+          earnings?: number | null
           github_repo_url?: string | null
           id?: string
           install_script?: string | null
           installs?: number | null
           is_public?: boolean | null
+          original_plugin_id?: string | null
           plugin_name?: string
           recommended_by_agent?: string | null
           remix_count?: number | null
+          revenue_generated?: number | null
           schema_sql?: string | null
           status?: string | null
+          stripe_connect_id?: string | null
           submitted_at?: string | null
           tenant_id?: string
           webhook_secret?: string | null
@@ -1384,6 +1396,36 @@ export type Database = {
           status?: string
           task?: string
           tenant_id?: string
+        }
+        Relationships: []
+      }
+      role_change_logs: {
+        Row: {
+          changed_at: string | null
+          changed_by: string | null
+          id: string
+          new_role: string
+          previous_role: string | null
+          reason: string | null
+          user_id: string | null
+        }
+        Insert: {
+          changed_at?: string | null
+          changed_by?: string | null
+          id?: string
+          new_role: string
+          previous_role?: string | null
+          reason?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          changed_at?: string | null
+          changed_by?: string | null
+          id?: string
+          new_role?: string
+          previous_role?: string | null
+          reason?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1729,18 +1771,21 @@ export type Database = {
           created_at: string
           id: string
           role: string
+          trust_score: number | null
           user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
           role: string
+          trust_score?: number | null
           user_id: string
         }
         Update: {
           created_at?: string
           id?: string
           role?: string
+          trust_score?: number | null
           user_id?: string
         }
         Relationships: []
