@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
 import { supabase } from "@/integrations/supabase/client"
+import { diffWords } from "diff"
 
 export default function PromptCompare() {
   const { agent } = useParams() as { agent: string }
@@ -57,6 +58,34 @@ export default function PromptCompare() {
           <pre className="bg-muted p-2 rounded text-xs">{rightVersion?.prompt || "—"}</pre>
         </div>
       </div>
+      
+      {leftVersion && rightVersion && (
+        <div className="mt-6">
+          <h2 className="text-lg font-semibold mb-2">Diff View</h2>
+          <DiffView oldText={leftVersion.prompt} newText={rightVersion.prompt} />
+        </div>
+      )}
     </div>
+  )
+}
+
+function DiffView({ oldText, newText }: { oldText: string; newText: string }) {
+  const diff = diffWords(oldText || "", newText || "")
+  
+  return (
+    <pre className="text-xs bg-muted p-2 rounded whitespace-pre-wrap">
+      {diff.map((part, i) => (
+        <span
+          key={i}
+          className={
+            part.added ? 'bg-green-100 text-green-800' :
+            part.removed ? 'bg-red-100 text-red-800 line-through' :
+            ''
+          }
+        >
+          {part.value}
+        </span>
+      ))}
+    </pre>
   )
 }
