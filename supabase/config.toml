@@ -19,5 +19,13 @@ enabled = true
 enabled = true
 
 [functions]
-[functions.generate-strategy]
+[functions.fetch-ga4-metrics]
 verify_jwt = true
+
+[functions.test-connection]
+verify_jwt = true
+
+# Add CRON schedule for GA4 metrics fetch
+[functions.fetch-ga4-metrics.cron]
+schedule = "0 4 * * *"  # Run at 4 AM daily
+

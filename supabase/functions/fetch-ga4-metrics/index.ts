@@ -50,7 +50,7 @@ serve(async (req) => {
       decode(tokenData.encrypted_token)
     )
 
-    // Fetch GA4 metrics
+    // Fetch GA4 metrics including MQL events
     const ga4Res = await fetch(
       `https://analyticsdata.googleapis.com/v1beta/properties/${ga4Config.property_id}:runReport`,
       {
@@ -63,8 +63,19 @@ serve(async (req) => {
           dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }],
           metrics: [
             { name: 'sessions' },
-            { name: 'bounceRate' }
-          ]
+            { name: 'bounceRate' },
+            { name: 'eventCount' }
+          ],
+          dimensions: [{ name: 'eventName' }],
+          dimensionFilter: {
+            filter: {
+              fieldName: 'eventName',
+              stringFilter: {
+                matchType: 'EXACT',
+                value: 'generate_lead'
+              }
+            }
+          }
         }),
       }
     )
@@ -78,6 +89,7 @@ serve(async (req) => {
     // Extract and format metrics
     const sessions = metricsData.rows?.[0]?.metricValues?.[0]?.value || 0
     const bounceRate = metricsData.rows?.[0]?.metricValues?.[1]?.value || 0
+    const mqlCount = metricsData.rows?.[0]?.metricValues?.[2]?.value || 0
 
     // Store metrics in KPI table
     const { error: kpiError } = await supabase.from('kpi_metrics').upsert([
@@ -92,6 +104,12 @@ serve(async (req) => {
         metric: 'Bounce Rate', 
         value: Number(bounceRate),
         recorded_at: new Date().toISOString()
+      },
+      {
+        tenant_id,
+        metric: 'Qualified Leads (7d)',
+        value: Number(mqlCount),
+        recorded_at: new Date().toISOString()
       }
     ])
 
@@ -100,7 +118,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ sessions, bounceRate }),
+      JSON.stringify({ sessions, bounceRate, mqlCount }),
       { 
         headers: { 
           ...corsHeaders, 
