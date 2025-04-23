@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -7,11 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useToast } from "@/hooks/use-toast";
+import { PromptPerformanceStats } from "../components/PromptPerformanceStats";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 export default function AgentPerformancePage() {
   const [stats, setStats] = useState<any[]>([]);
+  const [selectedAgent, setSelectedAgent] = useState<string>("");
   const { tenant } = useTenant();
   const { toast } = useToast();
+  const [alerts, setAlerts] = useState<any[]>([]);
 
   const adjustAgentXP = async (agent: string, delta: number) => {
     if (!tenant?.id) return;
@@ -114,13 +119,62 @@ export default function AgentPerformancePage() {
     fetchStats();
   }, []);
 
+  useEffect(() => {
+    const fetchAlerts = async () => {
+      if (!tenant?.id) return;
+      
+      const { data } = await supabase
+        .from("agent_alerts")
+        .select("*")
+        .eq("tenant_id", tenant.id)
+        .eq("alert_type", "prompt-switch-recommendation")
+        .order("triggered_at", { ascending: false });
+        
+      if (data) {
+        setAlerts(data);
+      }
+    };
+    
+    fetchAlerts();
+  }, [tenant?.id]);
+
   const uniqueAgents = [...new Set(stats.map((s) => s.agent))];
+  
+  // When we have stats but no selected agent, default to the first one
+  useEffect(() => {
+    if (uniqueAgents.length > 0 && !selectedAgent) {
+      setSelectedAgent(uniqueAgents[0]);
+    }
+  }, [uniqueAgents, selectedAgent]);
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">
         <span role="img" aria-label="Performance">📈</span> Agent Performance Dashboard
       </h1>
+
+      {alerts.length > 0 && (
+        <div className="mb-6">
+          <Alert variant="warning" className="bg-yellow-50 border-yellow-200">
+            <AlertTitle>Prompt Version Recommendations</AlertTitle>
+            <AlertDescription>
+              <ul className="mt-2 space-y-1">
+                {alerts.map((alert) => (
+                  <li key={alert.id} className="flex items-center justify-between">
+                    <span>{alert.message}</span>
+                    <a 
+                      href={`/agents/versions/compare/${alert.agent}`}
+                      className="text-primary hover:underline text-sm"
+                    >
+                      🔍 Compare Versions
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
 
       <div className="mb-6">
         <ResponsiveContainer width="100%" height={320}>
@@ -134,6 +188,27 @@ export default function AgentPerformancePage() {
           </LineChart>
         </ResponsiveContainer>
       </div>
+
+      {uniqueAgents.length > 0 && (
+        <div className="mb-6">
+          <label className="block text-sm font-medium mb-2">Select Agent:</label>
+          <select 
+            className="w-full max-w-xs border rounded p-2"
+            value={selectedAgent}
+            onChange={(e) => setSelectedAgent(e.target.value)}
+          >
+            {uniqueAgents.map((agent) => (
+              <option key={agent} value={agent}>{agent}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {selectedAgent && (
+        <div className="mb-6">
+          <PromptPerformanceStats agentName={selectedAgent} />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
         {uniqueAgents.map((agent) => {

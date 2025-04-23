@@ -26,3 +26,28 @@ export interface AgentPromptVersion {
   edited_by?: string;
   tenant_id?: string;
 }
+
+export interface AgentTask {
+  id: string;
+  agent: string;
+  task_type: string;
+  prompt_version?: number;
+  status: 'pending' | 'success' | 'failed';
+  executed_at?: string;
+  tenant_id: string;
+}
+
+export interface PromptPerformanceData {
+  agent: string;
+  version: number;
+  total: number;
+  success_count: number;
+  success_rate: number;
+}
+
+export interface PromptSwitchRecommendation {
+  agent: string;
+  current_version: number;
+  suggested_version: number;
+  performance_delta: number;
+}
