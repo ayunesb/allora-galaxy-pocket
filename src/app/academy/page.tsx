@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AgentMemoryFilter } from './components/AgentMemoryFilter';
 import { AgentMemoryList } from './components/AgentMemoryList';
+import { RemixLeaderboard } from '@/components/memory/RemixLeaderboard';
 import { AgentMemory } from '@/types/agent';
 
 export default function AcademyPage() {
@@ -49,6 +50,8 @@ export default function AcademyPage() {
           Learn from successful strategies and proven tactics
         </p>
       </header>
+
+      <RemixLeaderboard />
 
       <AgentMemoryFilter
         selectedAgent={selectedAgent}

@@ -1,4 +1,3 @@
-
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Award, Rocket } from "lucide-react";
 import { formatDistanceToNow } from 'date-fns';
 import { AgentMemory } from '@/types/agent';
+import { MemoryComments } from '@/components/memory/MemoryComments';
 
 interface AgentMemoryListProps {
   memories: AgentMemory[];
@@ -40,6 +40,11 @@ export function AgentMemoryList({ memories, isLoading }: AgentMemoryListProps) {
                   👥 User
                 </Badge>
               )}
+              {memory.ai_rating && (
+                <Badge variant="secondary" className="cursor-help">
+                  ⭐ {memory.ai_rating}/5
+                </Badge>
+              )}
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -65,6 +70,9 @@ export function AgentMemoryList({ memories, isLoading }: AgentMemoryListProps) {
               {memory.tags?.map((tag) => (
                 <Badge key={tag} variant="secondary">#{tag}</Badge>
               ))}
+            </div>
+            <div className="mt-4">
+              <MemoryComments memoryId={memory.id} />
             </div>
           </CardContent>
           

@@ -1,73 +1,8 @@
+
 project_id = "lxsuqqlfuftnvuvtctsx"
 
-[api]
-enabled = true
-port = 54321
-schemas = ["public", "storage", "graphql_public"]
-
-[db]
-port = 54322
-
-[studio]
-enabled = true
-port = 54323
-
-[inbucket]
-enabled = true
-port = 54324
-
-[auth]
-enabled = true
-port = 54325
-
-[storage]
-enabled = true
-port = 54326
-
-[realtime]
-enabled = true
-port = 54327
-
-[functions]
-[functions.trackCampaignOutcomes]
-verify_jwt = true
-schedule = "0 8 * * *"  # Daily at 8AM
-
-[functions.generate-campaign]
+[functions.grade-user-submissions]
 verify_jwt = true
 
-[functions.generate-tech-plan]
-verify_jwt = true
-
-[functions.generate-financials]
-verify_jwt = true
-
-[functions.generate-email-optimization]
-verify_jwt = true
-
-[functions.generate-retention-plan]
-verify_jwt = true
-
-[functions.generate-recovery-plan]
-verify_jwt = true
-
-[functions.generate-daily-digest]
-verify_jwt = true
-
-[functions.plugin-recommend]
-verify_jwt = true
-
-[functions.generate-outreach]
-verify_jwt = true
-
-[functions.strategy-scorecard]
-verify_jwt = true
-
-[functions.strategy-self-diagnose]
-verify_jwt = true
-
-[functions.analyze-risk]
-verify_jwt = true
-
-[functions.generate-investor-pitch]
-verify_jwt = true
+[functions.crons]
+grade_submissions = "0 19 * * *" # Run daily at 7 PM

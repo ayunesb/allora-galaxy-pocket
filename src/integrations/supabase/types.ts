@@ -170,6 +170,8 @@ export type Database = {
       agent_memory: {
         Row: {
           agent_name: string
+          ai_feedback: string | null
+          ai_rating: number | null
           context: string
           id: string
           is_user_submitted: boolean | null
@@ -181,6 +183,8 @@ export type Database = {
         }
         Insert: {
           agent_name: string
+          ai_feedback?: string | null
+          ai_rating?: number | null
           context: string
           id?: string
           is_user_submitted?: boolean | null
@@ -192,6 +196,8 @@ export type Database = {
         }
         Update: {
           agent_name?: string
+          ai_feedback?: string | null
+          ai_rating?: number | null
           context?: string
           id?: string
           is_user_submitted?: boolean | null
@@ -662,6 +668,45 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      memory_comments: {
+        Row: {
+          comment: string
+          created_at: string | null
+          id: string
+          memory_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          comment: string
+          created_at?: string | null
+          id?: string
+          memory_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          comment?: string
+          created_at?: string | null
+          id?: string
+          memory_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memory_comments_memory_id_fkey"
+            columns: ["memory_id"]
+            isOneToOne: false
+            referencedRelation: "agent_memory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memory_comments_memory_id_fkey"
+            columns: ["memory_id"]
+            isOneToOne: false
+            referencedRelation: "most_remixed_memories"
             referencedColumns: ["id"]
           },
         ]
@@ -1923,7 +1968,28 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      most_remixed_memories: {
+        Row: {
+          agent_name: string | null
+          context: string | null
+          id: string | null
+          is_user_submitted: boolean | null
+          remix_count: number | null
+          tenant_id: string | null
+          timestamp: string | null
+          type: string | null
+          xp_delta: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_tenant_id"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       check_plugin_permission: {
