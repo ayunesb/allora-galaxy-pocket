@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import StartupPage from "@/app/startup/page";
@@ -15,6 +14,7 @@ import CampaignDetailPage from "@/app/campaigns/[id]";
 import CampaignCenterPage from "@/app/campaigns/center/page";
 import AgentBlueprintGallery from "@/app/galaxy/agents/page";
 import NotificationsPage from "@/app/notifications/page";
+import VaultStrategyCreator from "@/app/vault/create/page";
 
 export const appRoutes: RouteObject[] = [
   { path: "/startup", element: <StartupPage /> },
@@ -30,5 +30,6 @@ export const appRoutes: RouteObject[] = [
   { path: "/galaxy/agents", element: <AgentBlueprintGallery /> },
   { path: "/campaigns/center", element: <CampaignCenterPage /> },
   { path: "/campaigns/:id", element: <CampaignDetailPage /> },
-  { path: "/notifications", element: <NotificationsPage /> }
+  { path: "/notifications", element: <NotificationsPage /> },
+  { path: "/vault/create", element: <VaultStrategyCreator /> }
 ];
