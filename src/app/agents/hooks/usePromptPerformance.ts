@@ -1,126 +1,65 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useTenant } from "@/hooks/useTenant";
-import { PromptPerformanceData } from "@/types/agent";
+import type { PromptPerformanceData } from "@/types/agent";
 
 export function usePromptPerformance(agentName: string) {
-  const { tenant } = useTenant();
-
   return useQuery({
-    queryKey: ["prompt-performance", agentName, tenant?.id],
+    queryKey: ["prompt-performance", agentName],
     queryFn: async () => {
-      if (!tenant?.id || !agentName) return [];
-
-      // Try to use the RPC function first
-      let result;
-      try {
-        result = await supabase.rpc('get_prompt_performance', {
-          p_agent_name: agentName,
-          p_tenant_id: tenant.id
-        });
-      } catch (error) {
-        // If the RPC call fails, fall back to direct query
-        result = await supabase
-          .from("agent_tasks")
-          .select("prompt_version, status")
-          .eq("agent", agentName)
-          .eq("tenant_id", tenant.id);
-      }
-
-      const { data, error } = result;
-      if (error) throw error;
-      if (!data || data.length === 0) return [];
-
-      // Process the data to get performance metrics
-      const performanceByVersion: Record<string, {
-        version: number;
-        total: number;
-        success_count: number;
-      }> = {};
-
-      // Group and count by version
-      data.forEach((task: any) => {
-        const version = task.prompt_version || 0;
-        if (!performanceByVersion[version]) {
-          performanceByVersion[version] = { 
-            version,
-            total: 0,
-            success_count: 0
-          };
-        }
-        performanceByVersion[version].total += 1;
-        if (task.status === 'success') {
-          performanceByVersion[version].success_count += 1;
-        }
-      });
-
-      // Calculate success rates and format results
-      const results: PromptPerformanceData[] = Object.values(performanceByVersion).map(v => ({
-        agent: agentName,
-        version: v.version,
-        total: v.total,
-        success_count: v.success_count,
-        success_rate: v.total > 0 ? v.success_count / v.total : 0
-      }));
-
-      return results;
-    },
-    enabled: !!tenant?.id && !!agentName,
-  });
-}
-
-export function usePromptRecommendations() {
-  const { tenant } = useTenant();
-
-  return useQuery({
-    queryKey: ["prompt-recommendations", tenant?.id],
-    queryFn: async () => {
-      if (!tenant?.id) return [];
-
       const { data, error } = await supabase
-        .from("agent_alerts")
-        .select("*")
-        .eq("tenant_id", tenant.id)
-        .eq("alert_type", "prompt-switch-recommendation")
-        .order("triggered_at", { ascending: false });
-
+        .from("agent_prompt_versions")
+        .select("version, prompt")
+        .eq("agent_name", agentName)
+        .order("version", { ascending: false });
+        
       if (error) throw error;
-      return data || [];
-    },
-    enabled: !!tenant?.id,
+      
+      // Calculate performance metrics for each version
+      const performanceData: PromptPerformanceData[] = await Promise.all(
+        data.map(async (version) => {
+          const { data: feedback } = await supabase
+            .from("agent_feedback")
+            .select("rating")
+            .eq("agent_name", agentName)
+            .eq("type", "prompt_feedback");
+            
+          const total = feedback?.length || 0;
+          const success_count = feedback?.filter(f => f.rating >= 4).length || 0;
+          
+          return {
+            agent: agentName,
+            version: version.version,
+            total,
+            success_count,
+            success_rate: total > 0 ? success_count / total : 0
+          };
+        })
+      );
+      
+      return performanceData;
+    }
   });
 }
 
-export function generatePromptRecommendations(
-  agentName: string,
-  performanceData: PromptPerformanceData[]
-) {
-  if (!performanceData || performanceData.length < 2) return null;
-  
-  // Find the current version (assume highest version number is current)
-  const currentVersion = Math.max(...performanceData.map(d => d.version));
-  const currentVersionData = performanceData.find(d => d.version === currentVersion);
-  
-  if (!currentVersionData) return null;
-  
-  // Find the best performing version
-  const bestPerformer = [...performanceData]
-    .filter(d => d.total >= 5) // Minimum sample size
-    .sort((a, b) => b.success_rate - a.success_rate)[0];
-    
-  if (!bestPerformer || bestPerformer.version === currentVersion) return null;
-  
-  // Only recommend if there's a significant difference (30%)
-  const delta = bestPerformer.success_rate - currentVersionData.success_rate;
-  if (delta >= 0.3) {
+export const generatePromptRecommendations = (agentName: string, performanceData: PromptPerformanceData[]) => {
+  if (performanceData.length < 2) return null;
+
+  const current = performanceData[0];
+  const previous = performanceData.slice(1).reduce((best, current) => 
+    current.success_rate > best.success_rate ? current : best
+  );
+
+  const performance_delta = previous.success_rate - current.success_rate;
+
+  if (performance_delta > 0.15) { // 15% worse than best performing version
     return {
-      agent: agentName,
-      current_version: currentVersion,
-      suggested_version: bestPerformer.version,
-      performance_delta: delta,
-      message: `Agent ${agentName} detected a significant performance improvement. Recommend switching to version ${bestPerformer.version}.`
+      current_version: current.version,
+      suggested_version: previous.version,
+      performance_delta,
+      message: `Version ${current.version} is underperforming compared to v${previous.version} by ${Math.round(performance_delta * 100)}%`
     };
   }
-  
+
   return null;
-}
+};

@@ -1,10 +1,10 @@
-
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { useState } from "react";
+import { PromptPerformanceStats } from "../components/PromptPerformanceStats";
 
 interface AgentSummaryCardProps {
   agent: string;
@@ -35,9 +35,7 @@ export function AgentSummaryCard({
   const [textarea, setTextarea] = useState("");
 
   return (
-    <div
-      className="border p-4 rounded-xl bg-background shadow space-y-2"
-    >
+    <div className="border p-4 rounded-xl bg-background shadow space-y-2">
       <h2 className="text-xl font-semibold">{agent}</h2>
       <p className="text-sm text-muted-foreground">
         Tasks: {total} • ✅ {success} • ❌ {failed}
@@ -76,6 +74,10 @@ export function AgentSummaryCard({
             <span className="text-xl">⭐</span>
           </Button>
         ))}
+      </div>
+
+      <div className="mt-4">
+        <PromptPerformanceStats agentName={agent} />
       </div>
 
       <Textarea
