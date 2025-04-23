@@ -14,42 +14,34 @@ serve(async (req) => {
   }
 
   try {
-    // Initialize Supabase client with anon key, since only reading user info
-    const supabase = createClient(
+    // Initialize Supabase client with anon key
+    const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? ""
     );
 
-    // Get token from bearer auth header
-    const authHeader = req.headers.get("authorization") ?? "";
+    const authHeader = req.headers.get("Authorization")!;
     const token = authHeader.replace("Bearer ", "");
+    const { data } = await supabaseClient.auth.getUser(token);
+    const user = data.user;
+    if (!user?.email) throw new Error("User not authenticated or email not available");
 
-    if (!token) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
-    }
-
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !user) {
-      console.error("User auth error:", userError);
-      return new Response(JSON.stringify({ error: "Invalid user session" }), { status: 401, headers: corsHeaders });
-    }
-
+    // Initialize Stripe
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
       apiVersion: "2023-10-16",
     });
 
-    // Get existing Stripe customer if exists
-    const customers = await stripe.customers.list({ email: user.email ?? "", limit: 1 });
-    let customerId: string | undefined = undefined;
+    // Check if a Stripe customer record exists for this user
+    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    let customerId;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
     }
 
-    // Create Stripe checkout session for subscription purchase
+    // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      customer_email: customerId ? undefined : user.email ?? undefined,
-      payment_method_types: ['card'],
+      customer_email: customerId ? undefined : user.email,
       line_items: [
         {
           price_data: {
