@@ -1,14 +1,21 @@
 
-import RequireAuth from "@/guards/RequireAuth";
+import React from "react";
 import Layout from "@/components/Layout";
-import { Outlet } from "react-router-dom";
+import { useRouteMonitoring } from "@/hooks/useRouteMonitoring";
+import { useTenantDataProtection } from "@/hooks/useTenantDataProtection";
 
-export default function AuthenticatedLayout() {
-  return (
-    <RequireAuth>
-      <Layout>
-        <Outlet />
-      </Layout>
-    </RequireAuth>
-  );
+interface AuthenticatedLayoutProps {
+  children: React.ReactNode;
 }
+
+const AuthenticatedLayout: React.FC<AuthenticatedLayoutProps> = ({ children }) => {
+  // Monitor route access for audit purposes
+  useRouteMonitoring();
+  
+  // Ensure tenant data isolation
+  useTenantDataProtection();
+  
+  return <Layout>{children}</Layout>;
+};
+
+export default AuthenticatedLayout;

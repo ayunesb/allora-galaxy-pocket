@@ -1,50 +1,35 @@
+import React from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { ThemeProvider } from "@/components/ui/theme-provider";
+import { AuthProvider } from "@/hooks/useAuth";
+import { TenantProvider } from "@/hooks/useTenant";
+import { RouterProvider, createBrowserRouter } from "react-router-dom";
+import routes from "./routes";
+import { Toaster } from "@/components/ui/toaster";
+import { useTenant } from "@/hooks/useTenant";
+import { useEffect } from "react";
+import { SecurityProvider } from './providers/SecurityProvider';
 
-import React, { useEffect } from 'react';
-import AppRoutes from './AppRoutes';
-import { TenantProvider } from './hooks/useTenant';
-import { ThemeProvider } from './components/ui/theme-provider';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MaintenanceMode } from './components/MaintenanceMode';
-import EnhancedErrorBoundary from './components/EnhancedErrorBoundary';
-import { AuthProvider } from './hooks/useAuth';
-import { Toaster } from "@/components/ui/sonner";
-import { useSystemInit } from './hooks/useSystemInit';
-import { toast } from "@/components/ui/sonner";
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false
-    },
-  },
-});
-
-export default function App() {
-  const { isInitializing, isInitialized, error } = useSystemInit();
-
-  useEffect(() => {
-    if (isInitialized) {
-      toast.success("System initialized successfully", {
-        description: "All required tables and configurations are ready."
-      });
-    }
-  }, [isInitialized]);
+function App() {
+  const queryClient = new QueryClient();
+  const router = createBrowserRouter(routes);
 
   return (
     <QueryClientProvider client={queryClient}>
-      <EnhancedErrorBoundary>
+      <ThemeProvider defaultTheme="light" storageKey="allora-theme-preference">
         <AuthProvider>
           <TenantProvider>
-            <ThemeProvider defaultTheme="light" storageKey="allora-theme-preference">
-              <MaintenanceMode>
-                <AppRoutes />
-                <Toaster position="top-right" />
-              </MaintenanceMode>
-            </ThemeProvider>
+            <SecurityProvider>
+              <RouterProvider router={router} />
+              <Toaster />
+            </SecurityProvider>
           </TenantProvider>
         </AuthProvider>
-      </EnhancedErrorBoundary>
+      </ThemeProvider>
+      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );
 }
+
+export default App;

@@ -1776,6 +1776,33 @@ export type Database = {
         }
         Relationships: []
       }
+      route_logs: {
+        Row: {
+          created_at: string
+          id: string
+          role: string | null
+          route: string
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: string | null
+          route: string
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: string | null
+          route?: string
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       strategies: {
         Row: {
           approved_at: string | null
@@ -2495,6 +2522,15 @@ export type Database = {
         Returns: {
           table_name: string
           rls_enabled: boolean
+        }[]
+      }
+      check_table_tenant_rls_status: {
+        Args: { table_name: string }
+        Returns: {
+          has_rls: boolean
+          has_tenant_id: boolean
+          has_auth_policy: boolean
+          policies: Json
         }[]
       }
       check_tenant_access: {
