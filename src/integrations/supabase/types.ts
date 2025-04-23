@@ -256,6 +256,36 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_prompt_versions: {
+        Row: {
+          agent_name: string
+          created_at: string | null
+          edited_by: string | null
+          id: string
+          prompt: string
+          tenant_id: string
+          version: number
+        }
+        Insert: {
+          agent_name: string
+          created_at?: string | null
+          edited_by?: string | null
+          id?: string
+          prompt: string
+          tenant_id: string
+          version: number
+        }
+        Update: {
+          agent_name?: string
+          created_at?: string | null
+          edited_by?: string | null
+          id?: string
+          prompt?: string
+          tenant_id?: string
+          version?: number
+        }
+        Relationships: []
+      }
       ai_memory: {
         Row: {
           content: string

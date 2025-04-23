@@ -23,6 +23,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useUpdateAgentProfile } from "../hooks/useUpdateAgentProfile";
 import { type AgentProfile } from "../hooks/useAgentProfile";
+import AgentPromptEditor from "./AgentPromptEditor";
 
 const agentFormSchema = z.object({
   agent_name: z.string().min(2).max(50),
@@ -61,6 +62,8 @@ export default function AgentProfileEditor({ initialData }: { initialData?: Agen
       model_provider: "openai",
     },
   });
+
+  const [mainPrompt, setMainPrompt] = useState(initialData?.prompt || "");
 
   async function onSubmit(data: AgentFormValues) {
     if (!tenant) return;
@@ -215,6 +218,13 @@ export default function AgentProfileEditor({ initialData }: { initialData?: Agen
           {isPending ? "Saving..." : "Save Changes"}
         </Button>
       </form>
+      <div className="mt-10">
+        <AgentPromptEditor
+          agentName={initialData?.agent_name || ""}
+          initialPrompt={mainPrompt}
+          onUpdate={setMainPrompt}
+        />
+      </div>
     </Form>
   );
 }
