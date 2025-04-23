@@ -6,7 +6,7 @@ import AgentSkillMatrix from "./AgentSkillMatrix";
 import AgentHealthMonitor from "./AgentHealthMonitor";
 // import AgentXPTracker from "./AgentXPTracker" // phase 2 if desired
 
-export default function AgentTabs({ agent }: { agent: any }) {
+export default function AgentTabs({ agentNames }: { agentNames: string[] }) {
   return (
     <Tabs defaultValue="overview">
       <TabsList className="mb-4">
@@ -16,13 +16,13 @@ export default function AgentTabs({ agent }: { agent: any }) {
         {/* <TabsTrigger value="xp">XP</TabsTrigger> */}
       </TabsList>
       <TabsContent value="overview">
-        <AgentPersonaOverview agent={agent} />
+        <AgentPersonaOverview agent={agentNames[0]} />
       </TabsContent>
       <TabsContent value="skills">
-        <AgentSkillMatrix agent={agent} />
+        <AgentSkillMatrix agent={agentNames[0]} />
       </TabsContent>
       <TabsContent value="health">
-        <AgentHealthMonitor agent={agent} />
+        <AgentHealthMonitor agentNames={agentNames} />
       </TabsContent>
       {/* <TabsContent value="xp">
         <AgentXPTracker agent={agent} />
