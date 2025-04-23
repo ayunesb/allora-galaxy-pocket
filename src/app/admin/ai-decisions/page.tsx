@@ -1,18 +1,11 @@
+
 import React, { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import PromptDiff from "./PromptDiff";
-import AgentChain from "@/components/AgentChain";
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Legend
-} from "recharts";
 import { AgentFeedbackTable } from "./components/AgentFeedbackTable";
 import { ApprovalMetricsCard } from "./components/ApprovalMetricsCard";
+import { DecisionFilters } from "./components/DecisionFilters";
+import { AuditAnalytics } from "./components/AuditAnalytics";
+import { DecisionList } from "./components/DecisionList";
 
 type Decision = {
   id: string;
@@ -50,7 +43,6 @@ export default function AIDecisionAudit() {
   const [auditData, setAuditData] = useState<AuditDataRow[]>([]);
 
   useEffect(() => {
-    // Fetch AI prompt decisions
     const fetchDecisions = async () => {
       const { data } = await supabase
         .from("ai_strategy_decisions")
@@ -62,7 +54,6 @@ export default function AIDecisionAudit() {
   }, []);
 
   useEffect(() => {
-    // Fetch all votes and aggregate in JS
     async function fetchVotes() {
       const agentNames = [...new Set(decisions.map(d => d.agent).filter(Boolean))] as string[];
       const versions = [...new Set(decisions.map(d => d.version))];
@@ -94,9 +85,28 @@ export default function AIDecisionAudit() {
     if (decisions.length) fetchVotes();
   }, [decisions]);
 
-  // ----- FILTERING LOGIC -----
+  useEffect(() => {
+    let versionRows: Record<number, AuditDataRow> = {};
+    for (const d of decisions) {
+      const vote = voteSummaries[d.version] || { upvotes: 0, downvotes: 0, total_votes: 0 };
+      versionRows[d.version] = {
+        version: d.version,
+        success_rate: 90 - (d.source_event === "rollback" ? 30 : 0),
+        rollback_count: d.source_event === "rollback" ? 1 : 0,
+        upvotes: vote.upvotes,
+      };
+    }
+    let chartData = Object.values(versionRows).sort((a, b) => a.version - b.version);
+    setAuditData(chartData);
+  }, [decisions, voteSummaries]);
+
   const uniqueAgents = useMemo(
     () => Array.from(new Set(decisions.map(d => d.agent).filter(Boolean) as string[])),
+    [decisions]
+  );
+
+  const uniqueStatus = useMemo(
+    () => Array.from(new Set(decisions.map(d => d.source_event).filter(Boolean))),
     [decisions]
   );
 
@@ -107,25 +117,6 @@ export default function AIDecisionAudit() {
     );
   }, [decisions, agentFilter, statusFilter]);
 
-  // ----- AUDIT CHART DATA -----
-  useEffect(() => {
-    // Mock: In real use, this should join with agent_tasks, rollbacks etc.
-    // Here, we simulate audit info using available decisions & votes.
-    let versionRows: Record<number, AuditDataRow> = {};
-    for (const d of decisions) {
-      const vote = voteSummaries[d.version] || { upvotes: 0, downvotes: 0, total_votes: 0 };
-      versionRows[d.version] = {
-        version: d.version,
-        success_rate: 90 - (d.source_event === "rollback" ? 30 : 0), // MOCK data
-        rollback_count: d.source_event === "rollback" ? 1 : 0,
-        upvotes: vote.upvotes,
-      };
-    }
-    let chartData = Object.values(versionRows).sort((a, b) => a.version - b.version);
-    setAuditData(chartData);
-  }, [decisions, voteSummaries]);
-
-  // Export audit log for a strategy as JSON
   const exportDecisionLog = async (strategyId: string | null) => {
     if (!strategyId) return;
     const { data } = await supabase
@@ -141,28 +132,20 @@ export default function AIDecisionAudit() {
     URL.revokeObjectURL(url);
   };
 
-  // Derive ordered agent chain per strategy
   function getAgentChainForStrategy(strategyId: string | null) {
     const byStrategy = decisions
       .filter(d => d.strategy_id === strategyId)
       .sort((a, b) => a.version - b.version);
-    // Chain of agent names, dedupe sequential
     const chain: string[] = [];
     let prev = "";
     for (const d of byStrategy) {
       if (d.agent && d.agent !== prev) {
-        chain.push(d.agent.replace(/_Agent$/, "")); // Remove _Agent for display
+        chain.push(d.agent.replace(/_Agent$/, ""));
         prev = d.agent;
       }
     }
     return chain;
   }
-
-  // Unique strategy-IDs in filtered data
-  const shownStrategies = Array.from(new Set(filteredDecisions.map(d => d.strategy_id)));
-
-  // Unique status/source events (for status filtering)
-  const uniqueStatus = Array.from(new Set(decisions.map(d => d.source_event).filter(Boolean)));
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -172,137 +155,28 @@ export default function AIDecisionAudit() {
         <ApprovalMetricsCard />
       </div>
 
-      {/* Add Agent Feedback Section */}
       <div className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Agent Feedback History</h2>
         <AgentFeedbackTable />
       </div>
 
-      {/* Keep existing decision audit content */}
-      <div className="mb-10 bg-muted rounded-lg p-3">
-        <h3 className="font-bold mb-1">Audit Analytics (by Version)</h3>
-        <ResponsiveContainer width="100%" height={200}>
-          <LineChart data={auditData}>
-            <XAxis dataKey="version" />
-            <YAxis domain={[0, 100]} />
-            <Tooltip />
-            <Legend />
-            <Line type="monotone" dataKey="success_rate" stroke="#10b981" name="Success %" />
-            <Line type="monotone" dataKey="upvotes" stroke="#3b82f6" name="Upvotes" />
-            <Line type="monotone" dataKey="rollback_count" stroke="#ef4444" name="Rollbacks" />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+      <AuditAnalytics auditData={auditData} />
 
-      <div className="flex flex-wrap gap-3 mb-6">
-        <select
-          onChange={e => setAgentFilter(e.target.value)}
-          value={agentFilter}
-          className="p-2 border rounded"
-        >
-          <option value="">All Agents</option>
-          {uniqueAgents.map(agent => (
-            <option key={agent} value={agent}>
-              {agent.replace(/_Agent$/, "")}
-            </option>
-          ))}
-        </select>
-        <select
-          onChange={e => setStatusFilter(e.target.value)}
-          value={statusFilter}
-          className="p-2 border rounded"
-        >
-          <option value="">All Types</option>
-          {uniqueStatus.map(st => (
-            <option key={st} value={st}>
-              {st}
-            </option>
-          ))}
-        </select>
-      </div>
+      <DecisionFilters
+        agentFilter={agentFilter}
+        statusFilter={statusFilter}
+        uniqueAgents={uniqueAgents}
+        uniqueStatus={uniqueStatus}
+        onAgentFilterChange={setAgentFilter}
+        onStatusFilterChange={setStatusFilter}
+      />
 
-      <div className="space-y-8">
-        {/* Group logs by filtered strategy */}
-        {shownStrategies.map((strategyId) => (
-          <section key={strategyId} className="mb-10">
-            <div className="flex items-center gap-4 mb-3">
-              <h2 className="text-xl font-semibold">
-                Strategy ID: <span className="font-mono">{strategyId}</span>
-              </h2>
-              <button
-                onClick={() => exportDecisionLog(strategyId)}
-                className="text-sm px-3 py-1 bg-secondary text-white rounded"
-              >
-                📤 Export Audit Log
-              </button>
-            </div>
-            <AgentChain agents={getAgentChainForStrategy(strategyId)} />
-            <div className="space-y-4 mt-3">
-              {filteredDecisions
-                .filter((d) => d.strategy_id === strategyId)
-                .sort((a, b) => b.version - a.version)
-                .map((d, i, arr) => {
-                  // Find previous prompt for diff; fallback to previous_prompt column if present
-                  const prevPrompt =
-                    (arr[i + 1]?.prompt && arr[i + 1].version === d.version - 1) ? arr[i + 1].prompt : d.previous_prompt || "";
-
-                  const voteSummary = voteSummaries[d.version];
-
-                  // Agent consensus label (optional)
-                  let consensus = "";
-                  if (voteSummary) {
-                    if (voteSummary.upvotes > voteSummary.downvotes) consensus = "📊 Agent consensus: Favorable";
-                    else if (voteSummary.downvotes > voteSummary.upvotes) consensus = "⚠️ Contested";
-                    else consensus = "";
-                  }
-
-                  return (
-                    <div key={d.id} className="border rounded-xl p-4 shadow-sm bg-background">
-                      <div className="flex justify-between">
-                        <h3 className="text-lg font-semibold">
-                          v{d.version} — {d.agent || ""}
-                        </h3>
-                        <p className="text-xs text-muted-foreground">
-                          {d.created_at && new Date(d.created_at).toLocaleString()}
-                        </p>
-                      </div>
-                      <p className="text-sm text-muted mb-2">
-                        Event: {d.source_event || "—"}
-                      </p>
-                      {/* Show human-readable diff */}
-                      <PromptDiff oldPrompt={prevPrompt} newPrompt={d.prompt} />
-                      {/* Agent votes per version */}
-                      {voteSummary && (
-                        <p className="text-xs mt-1 text-muted-foreground">
-                          🗳 {voteSummary.upvotes} 👍 / {voteSummary.downvotes} 👎 — Total: {voteSummary.total_votes}
-                        </p>
-                      )}
-                      {consensus && (
-                        <span
-                          className={
-                            consensus.includes("Favorable")
-                              ? "text-green-700"
-                              : consensus.includes("Contested")
-                              ? "text-orange-600"
-                              : ""
-                          }
-                        >
-                          {consensus}
-                        </span>
-                      )}
-                      <pre className="text-xs bg-muted p-2 rounded whitespace-pre-wrap mt-2">{d.prompt}</pre>
-                      {d.ai_reason && (
-                        <p className="text-sm mt-2 italic">
-                          🧠 {d.ai_reason}
-                        </p>
-                      )}
-                    </div>
-                  );
-                })}
-            </div>
-          </section>
-        ))}
-      </div>
+      <DecisionList
+        decisions={filteredDecisions}
+        voteSummaries={voteSummaries}
+        exportDecisionLog={exportDecisionLog}
+        getAgentChainForStrategy={getAgentChainForStrategy}
+      />
     </div>
   );
 }
