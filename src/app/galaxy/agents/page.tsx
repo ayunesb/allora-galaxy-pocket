@@ -16,6 +16,28 @@ interface AgentBlueprint {
   created_at: string;
 }
 
+const downloadAgentFile = (agent: AgentBlueprint) => {
+  const content = `// AUTO-GENERATED AGENT: ${agent.agent_name}
+export const ${agent.agent_name}_Agent = {
+  name: "${agent.agent_name}",
+  mission: "${agent.mission}",
+  personas: ${JSON.stringify(agent.personas)},
+  capabilities: ${JSON.stringify(agent.capabilities)},
+  task_type: "${agent.task_type}",
+  prompt: \`${agent.prompt}\`,
+  run: async (payload) => {
+    return ${agent.output_schema}
+  }
+}
+  `;
+  const blob = new Blob([content], { type: "text/javascript" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${agent.agent_name}_Agent.ts`;
+  link.click();
+};
+
 export default function AgentBlueprintGallery() {
   const [agents, setAgents] = useState<AgentBlueprint[]>([]);
   const [loading, setLoading] = useState(false);
@@ -66,6 +88,27 @@ export default function AgentBlueprintGallery() {
 
             <div className="text-xs text-muted-foreground">
               Created: {new Date(agent.created_at).toLocaleDateString()}
+            </div>
+
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={() => downloadAgentFile(agent)}
+                className="px-3 py-1 text-sm bg-muted rounded"
+              >
+                📄 Export .ts
+              </button>
+              <a
+                href={`/galaxy/agents/create?from=${agent.id}`}
+                className="px-3 py-1 text-sm bg-primary text-white rounded"
+              >
+                🔁 Remix
+              </a>
+              <a
+                href={`/galaxy/agents/${agent.id}`}
+                className="px-3 py-1 text-sm bg-accent text-accent-foreground rounded"
+              >
+                Details
+              </a>
             </div>
           </div>
         ))}
