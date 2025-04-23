@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { CampaignHeader } from "./components/CampaignHeader";
 import { ScriptCard } from "./components/ScriptCard";
@@ -15,6 +14,7 @@ import { useSystemLogs } from "@/hooks/useSystemLogs";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import type { Campaign } from "@/types/campaign";
+import { CreditCheck } from "@/components/billing/CreditCheck";
 
 export default function CampaignCenter() {
   const [approved, setApproved] = useState(false);
@@ -67,10 +67,8 @@ export default function CampaignCenter() {
     }
     
     try {
-      // Define the update payload conditionally
       const updatePayload = {
         status: 'active',
-        // Only add agent_id if an agent profile exists
         ...(agentProfile && { generated_by_agent_id: agentProfile.id })
       };
       
@@ -90,7 +88,6 @@ export default function CampaignCenter() {
         description: "AI system is deploying all tasks now..."
       });
       
-      // Log to system logs with agent information
       const agentInfo = agentProfile 
         ? { agent_id: agentProfile.id, agent_name: agentProfile.agent_name }
         : {};
@@ -105,7 +102,6 @@ export default function CampaignCenter() {
         }
       });
       
-      // Refresh related queries
       queryClient.invalidateQueries({ queryKey: ['campaigns'] });
     } catch (error) {
       console.error('Error approving campaign:', error);
@@ -161,24 +157,26 @@ export default function CampaignCenter() {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <AgentInfoCard />
-      <CampaignHeader title={campaignData.name} description={campaignData.description} />
-      
-      <div className="grid gap-4 md:grid-cols-2">
-        {Object.entries(campaignData.scripts || {}).map(([channel, script]) => (
-          <ScriptCard 
-            key={channel} 
-            channel={channel} 
-            script={String(script)}
-          />
-        ))}
-      </div>
+    <CreditCheck requiredCredits={10}>
+      <div className="container mx-auto p-6 space-y-6">
+        <AgentInfoCard />
+        <CampaignHeader title={campaignData.name} description={campaignData.description} />
+        
+        <div className="grid gap-4 md:grid-cols-2">
+          {Object.entries(campaignData.scripts || {}).map(([channel, script]) => (
+            <ScriptCard 
+              key={channel} 
+              channel={channel} 
+              script={String(script)}
+            />
+          ))}
+        </div>
 
-      <ActionButtons 
-        onApprove={handleApprove} 
-        approved={approved} 
-      />
-    </div>
+        <ActionButtons 
+          onApprove={handleApprove} 
+          approved={approved} 
+        />
+      </div>
+    </CreditCheck>
   );
 }
