@@ -1,20 +1,8 @@
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
 export async function sendSlackAlert(functionName: string, errorMessage: string) {
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const supabase = createClient(supabaseUrl, supabaseKey);
-
-  const slackWebhookUrl = Deno.env.get('ADMIN_SLACK_WEBHOOK') || '';
-
+  const slackWebhookUrl = Deno.env.get('SLACK_WEBHOOK_URL');
   if (!slackWebhookUrl) {
-    console.error('No Slack webhook URL configured');
+    console.log('No Slack webhook URL configured, skipping alert');
     return;
   }
 
@@ -26,11 +14,14 @@ export async function sendSlackAlert(functionName: string, errorMessage: string)
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text: message })
     });
-
+    
     if (!response.ok) {
-      console.error('Failed to send Slack alert', await response.text());
+      console.error(`Failed to send Slack alert: ${response.status} ${response.statusText}`);
     }
+    
+    return response.ok;
   } catch (error) {
     console.error('Error sending Slack alert:', error);
+    return false;
   }
 }

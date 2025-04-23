@@ -69,3 +69,5 @@ schedule = "0 */6 * * *"  # Run every 6 hours
 [functions.strategy-adjustments]
 schedule = "0 6 * * MON"  # Run at 6 AM every Monday
 
+[functions.token-manager]
+verify_jwt = true

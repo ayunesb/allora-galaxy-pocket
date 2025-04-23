@@ -1,9 +1,18 @@
 
 export const SUPPORTED_SERVICES = {
-  GA4: 'ga4',
-  HUBSPOT: 'hubspot',
-  STRIPE: 'stripe',
-  SENDGRID: 'sendgrid'
-} as const
+  GA4: 'GA4',
+  HUBSPOT: 'HUBSPOT',
+  STRIPE: 'STRIPE',
+  TWILIO: 'TWILIO',
+  ZAPIER: 'ZAPIER',
+} as const;
 
-export type SupportedService = typeof SUPPORTED_SERVICES[keyof typeof SUPPORTED_SERVICES]
+export type SupportedService = typeof SUPPORTED_SERVICES[keyof typeof SUPPORTED_SERVICES];
+
+export const SERVICE_DISPLAY_NAMES = {
+  [SUPPORTED_SERVICES.GA4]: 'Google Analytics 4',
+  [SUPPORTED_SERVICES.HUBSPOT]: 'HubSpot',
+  [SUPPORTED_SERVICES.STRIPE]: 'Stripe',
+  [SUPPORTED_SERVICES.TWILIO]: 'Twilio',
+  [SUPPORTED_SERVICES.ZAPIER]: 'Zapier',
+};
