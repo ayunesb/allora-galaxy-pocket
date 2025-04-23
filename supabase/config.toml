@@ -28,6 +28,9 @@ verify_jwt = true
 [functions.check-subscription]
 verify_jwt = true
 
+[functions.stripe-subscription-webhook]
+verify_jwt = false
+
 [functions.fetch-ga4-metrics]
 verify_jwt = true
 
