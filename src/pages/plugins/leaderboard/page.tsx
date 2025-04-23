@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -14,7 +15,7 @@ export default function PluginLeaderboardPage() {
         .from("plugin_submissions")
         .select("*")
         .eq("is_public", true)
-        .order("installs", { ascending: false });
+        .order("earnings", { ascending: false });
       setPlugins(data || []);
     };
     fetch();
@@ -23,7 +24,7 @@ export default function PluginLeaderboardPage() {
   const top3Ids =
     plugins
       .slice() // do not mutate
-      .sort((a, b) => (b.installs ?? 0) - (a.installs ?? 0))
+      .sort((a, b) => (b.earnings ?? 0) - (a.earnings ?? 0))
       .slice(0, 3)
       .map((p) => p.id);
 
@@ -39,6 +40,7 @@ export default function PluginLeaderboardPage() {
             p.created_at &&
             now - new Date(p.created_at).getTime() < 7 * 86400000;
           const isRemixed = (p.remix_count ?? 0) >= 3;
+          const isTopEarner = (p.earnings ?? 0) > 1000;
 
           return (
             <div
@@ -53,6 +55,11 @@ export default function PluginLeaderboardPage() {
                     Most Installed
                   </Badge>
                 )}
+                {isTopEarner && (
+                  <Badge variant="success" className="flex items-center gap-1">
+                    💸 Top Earner
+                  </Badge>
+                )}
                 {isNew && (
                   <Badge variant="outline" className="flex items-center gap-1">
                     <BadgeInfo className="w-4 h-4 text-blue-500" />
@@ -65,6 +72,11 @@ export default function PluginLeaderboardPage() {
                     Remixed
                   </Badge>
                 )}
+                {p.recommended_by_agent && (
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    🧠 Recommended by {p.recommended_by_agent}
+                  </Badge>
+                )}
               </div>
               <p className="text-sm text-muted-foreground">{p.description}</p>
               <div className="flex items-center gap-4 text-xs mt-2">
@@ -73,6 +85,9 @@ export default function PluginLeaderboardPage() {
                 </span>
                 <span>
                   Remixes: <b>{p.remix_count ?? 0}</b>
+                </span>
+                <span>
+                  Earnings: <b>${(p.earnings ?? 0).toFixed(2)}</b>
                 </span>
               </div>
               <a

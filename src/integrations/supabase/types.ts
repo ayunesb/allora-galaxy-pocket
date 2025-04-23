@@ -1061,6 +1061,7 @@ export type Database = {
           installs: number | null
           is_public: boolean | null
           plugin_name: string
+          recommended_by_agent: string | null
           remix_count: number | null
           schema_sql: string | null
           status: string | null
@@ -1077,6 +1078,7 @@ export type Database = {
           installs?: number | null
           is_public?: boolean | null
           plugin_name: string
+          recommended_by_agent?: string | null
           remix_count?: number | null
           schema_sql?: string | null
           status?: string | null
@@ -1093,6 +1095,7 @@ export type Database = {
           installs?: number | null
           is_public?: boolean | null
           plugin_name?: string
+          recommended_by_agent?: string | null
           remix_count?: number | null
           schema_sql?: string | null
           status?: string | null
