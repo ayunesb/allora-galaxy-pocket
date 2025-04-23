@@ -1533,6 +1533,27 @@ export type Database = {
           },
         ]
       }
+      system_config: {
+        Row: {
+          config: Json
+          created_at: string
+          key: string
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          key: string
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       system_logs: {
         Row: {
           created_at: string

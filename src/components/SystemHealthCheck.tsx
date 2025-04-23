@@ -7,6 +7,10 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/components/ui/sonner";
+import HealthStatusSection from "./system-health/HealthStatusSection";
+import TablesStatusGrid from "./system-health/TablesStatusGrid";
+import SystemConfigAlert from "./system-health/SystemConfigAlert";
+import SystemOverallAlert from "./system-health/SystemOverallAlert";
 
 interface SystemStatus {
   database: boolean;
@@ -180,127 +184,25 @@ export default function SystemHealthCheck() {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid gap-3">
-          <div className="flex items-center justify-between">
-            <span>Database Connection</span>
-            {status.database ? (
-              <Badge variant="success" className="bg-green-500">
-                <CheckCircle className="h-4 w-4 mr-1" /> Connected
-              </Badge>
-            ) : (
-              <Badge variant="destructive">
-                <AlertCircle className="h-4 w-4 mr-1" /> Failed
-              </Badge>
-            )}
-          </div>
+        <HealthStatusSection
+          database={status.database}
+          auth={status.auth}
+          edgeFunctions={status.edgeFunctions}
+          maintenance={status.maintenance}
+        />
 
-          <div className="flex items-center justify-between">
-            <span>Authentication</span>
-            {status.auth ? (
-              <Badge variant="success" className="bg-green-500">
-                <CheckCircle className="h-4 w-4 mr-1" /> Active
-              </Badge>
-            ) : (
-              <Badge variant="destructive">
-                <AlertCircle className="h-4 w-4 mr-1" /> Not Authenticated
-              </Badge>
-            )}
-          </div>
+        <TablesStatusGrid tables={status.tables} />
 
-          <div className="flex items-center justify-between">
-            <span>Edge Functions</span>
-            {status.edgeFunctions ? (
-              <Badge variant="success" className="bg-green-500">
-                <CheckCircle className="h-4 w-4 mr-1" /> Available
-              </Badge>
-            ) : (
-              <Badge variant="destructive">
-                <AlertCircle className="h-4 w-4 mr-1" /> Unavailable
-              </Badge>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span>Maintenance Mode</span>
-            {status.maintenance === null ? (
-              <Badge variant="outline">
-                <AlertCircle className="h-4 w-4 mr-1" /> Unknown
-              </Badge>
-            ) : status.maintenance ? (
-              <Badge variant="warning" className="bg-yellow-500 text-black">
-                <AlertCircle className="h-4 w-4 mr-1" /> Enabled
-              </Badge>
-            ) : (
-              <Badge variant="success" className="bg-green-500">
-                <CheckCircle className="h-4 w-4 mr-1" /> Disabled
-              </Badge>
-            )}
-          </div>
-        </div>
-
-        <div className="pt-3 border-t">
-          <h4 className="text-sm font-medium mb-3">Required Tables</h4>
-          <div className="grid grid-cols-2 gap-3">
-            {Object.entries(status.tables).map(([table, exists]) => (
-              <div key={table} className="flex items-center justify-between">
-                <span className="text-sm">{table}</span>
-                {exists ? (
-                  <Badge variant="success" className="bg-green-500 text-xs">
-                    <CheckCircle className="h-3 w-3 mr-1" /> Exists
-                  </Badge>
-                ) : (
-                  <Badge variant="destructive" className="text-xs">
-                    <AlertCircle className="h-3 w-3 mr-1" /> Missing
-                  </Badge>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {!status.tables.system_config && (
-          <Alert variant="destructive" className="mt-4">
-            <AlertTitle>System configuration table missing</AlertTitle>
-            <AlertDescription>
-              The system_config table required for maintenance mode is missing.
-              <Button 
-                onClick={createSystemConfigTable} 
-                variant="outline" 
-                size="sm" 
-                className="mt-2"
-              >
-                Create Table
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
+        <SystemConfigAlert 
+          show={!status.tables.system_config}
+          onCreateSystemConfig={createSystemConfigTable}
+        />
       </CardContent>
       <CardFooter className="border-t pt-4 flex-col items-start">
         <p className="text-sm text-muted-foreground mb-2">
           Last checked: {new Date().toLocaleString()}
         </p>
-        {Object.values(status).some(value => 
-          value === false || 
-          (typeof value === 'object' && Object.values(value).some(v => v === false))
-        ) ? (
-          <div className="w-full">
-            <Alert variant="destructive">
-              <AlertTitle>System issues detected</AlertTitle>
-              <AlertDescription>
-                Some components may not function correctly. Please fix the issues above before proceeding.
-              </AlertDescription>
-            </Alert>
-          </div>
-        ) : (
-          <div className="w-full">
-            <Alert variant="default" className="bg-green-50 border-green-200">
-              <AlertTitle>All systems operational</AlertTitle>
-              <AlertDescription>
-                Your Allora OS environment is properly configured and ready for use.
-              </AlertDescription>
-            </Alert>
-          </div>
-        )}
+        <SystemOverallAlert status={status} />
       </CardFooter>
     </Card>
   );
