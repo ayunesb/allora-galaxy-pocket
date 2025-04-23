@@ -1,186 +1,24 @@
 
-import React, { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { useTenant } from "@/hooks/useTenant";
+import React from "react";
 import { Table } from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "@/components/ui/sonner";
-import { AlertCircle, CheckCircle, XCircle, RefreshCw, ShieldAlert, Download } from "lucide-react";
+import { AlertCircle, RefreshCw, ShieldAlert, Download } from "lucide-react";
 import AdminOnly from "@/guards/AdminOnly";
-
-interface RlsPolicy {
-  policyname: string;
-  tablename: string;
-  command: string;
-  definition: string;
-  permissive: string;
-  roles: string[];
-}
-
-interface RlsTable {
-  tablename: string;
-  rlsEnabled: boolean;
-  policies: RlsPolicy[];
-}
-
-interface AccessTestResult {
-  tableName: string;
-  status: "allowed" | "blocked" | "error" | "untested";
-  errorMessage?: string;
-  rowCount?: number;
-}
+import { useAuth } from "@/hooks/useAuth";
+import { useTenant } from "@/hooks/useTenant";
+import { useRlsData } from "./hooks/useRlsData";
+import { useAccessTests } from "./hooks/useAccessTests";
+import { RlsTableRow } from "./components/RlsTableRow";
+import { SecurityAuditTips } from "./components/SecurityAuditTips";
 
 export default function RlsAuditReport() {
   const { user } = useAuth();
   const { tenant } = useTenant();
-  const [tables, setTables] = useState<RlsTable[]>([]);
-  const [testResults, setTestResults] = useState<AccessTestResult[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isRunningTests, setIsRunningTests] = useState<boolean>(false);
-  const [lastRun, setLastRun] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchRlsTables();
-  }, []);
-
-  const fetchRlsTables = async () => {
-    setIsLoading(true);
-    try {
-      // Get list of all tables in the public schema
-      const { data: allTables, error: tablesError } = await supabase
-        .from("pg_tables")
-        .select("tablename")
-        .eq("schemaname", "public");
-
-      if (tablesError) throw tablesError;
-      
-      const tableResults: RlsTable[] = [];
-      
-      // Check RLS status for each table
-      for (const table of allTables) {
-        const { data: rlsCheck, error: rlsError } = await supabase
-          .rpc("check_table_rls_status", { table_name: table.tablename });
-        
-        if (rlsError) {
-          console.error(`Error checking RLS status for ${table.tablename}:`, rlsError);
-          continue;
-        }
-        
-        const isRlsEnabled = rlsCheck?.[0]?.rls_enabled || false;
-        
-        // Get policies for this table if RLS is enabled
-        let policies: RlsPolicy[] = [];
-        if (isRlsEnabled) {
-          const { data: policyData, error: policyError } = await supabase
-            .from("pg_policies")
-            .select("*")
-            .eq("tablename", table.tablename)
-            .eq("schemaname", "public");
-            
-          if (policyError) {
-            console.error(`Error fetching policies for ${table.tablename}:`, policyError);
-          } else {
-            policies = policyData;
-          }
-        }
-        
-        tableResults.push({
-          tablename: table.tablename,
-          rlsEnabled: isRlsEnabled,
-          policies: policies
-        });
-      }
-      
-      setTables(tableResults);
-      setTestResults([]);
-      setLastRun(null);
-    } catch (error) {
-      console.error("Error fetching RLS tables:", error);
-      toast.error("Failed to fetch RLS information", {
-        description: "Check console for details"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const runAccessTests = async () => {
-    if (!user || !tenant) {
-      toast.warning("Authentication required", {
-        description: "You must be logged in with an active tenant to run access tests"
-      });
-      return;
-    }
-    
-    setIsRunningTests(true);
-    const results: AccessTestResult[] = [];
-    
-    try {
-      // Test access to each table with RLS enabled
-      for (const table of tables) {
-        if (!table.rlsEnabled) continue;
-        
-        try {
-          // Attempt to select from the table
-          const { data, error, count } = await supabase
-            .from(table.tablename)
-            .select("*", { count: "exact" })
-            .limit(1);
-          
-          if (error) {
-            results.push({
-              tableName: table.tablename,
-              status: "error",
-              errorMessage: error.message,
-            });
-          } else {
-            results.push({
-              tableName: table.tablename,
-              status: "allowed",
-              rowCount: count || 0
-            });
-          }
-        } catch (e: any) {
-          results.push({
-            tableName: table.tablename,
-            status: "blocked",
-            errorMessage: e.message
-          });
-        }
-      }
-      
-      setTestResults(results);
-      setLastRun(new Date().toLocaleString());
-      toast.success("Access tests completed", {
-        description: `Tested ${results.length} tables with RLS enabled`
-      });
-    } catch (error) {
-      console.error("Error running access tests:", error);
-      toast.error("Failed to complete access tests", {
-        description: "Check console for details"
-      });
-    } finally {
-      setIsRunningTests(false);
-    }
-  };
-
-  const checkPolicyAuthReference = (policy: RlsPolicy) => {
-    const definition = policy.definition.toLowerCase();
-    const hasAuthUid = definition.includes('auth.uid()');
-    const hasTenantReference = 
-      definition.includes('tenant_id') || 
-      definition.includes('user_id');
-    
-    if (!hasAuthUid) return false;
-    if (!hasTenantReference) return false;
-    
-    return true;
-  };
+  const { tables, isLoading, fetchRlsTables } = useRlsData();
+  const { testResults, isRunningTests, lastRun, runAccessTests } = useAccessTests();
 
   const downloadReport = () => {
     const rows = [
@@ -201,7 +39,6 @@ export default function RlsAuditReport() {
       }
       
       if (table.policies.length === 0) {
-        // Table has RLS but no policies
         rows.push([
           table.tablename,
           'Yes',
@@ -213,11 +50,15 @@ export default function RlsAuditReport() {
         return;
       }
       
-      // Find the test result for this table
       const testResult = testResults.find(r => r.tableName === table.tablename);
       
       table.policies.forEach(policy => {
-        const hasAuthReference = checkPolicyAuthReference(policy);
+        const definition = policy.definition.toLowerCase();
+        const hasAuthUid = definition.includes('auth.uid()');
+        const hasTenantReference = 
+          definition.includes('tenant_id') || 
+          definition.includes('user_id');
+        
         let testResultText = 'Not tested';
         
         if (testResult) {
@@ -235,16 +76,13 @@ export default function RlsAuditReport() {
           'Yes',
           policy.policyname,
           policy.command,
-          hasAuthReference ? 'Yes' : '🚨 NO AUTH REFERENCE',
+          hasAuthUid && hasTenantReference ? 'Yes' : '🚨 NO AUTH REFERENCE',
           testResultText
         ]);
       });
     });
     
-    // Create CSV content
     const csvContent = rows.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
-    
-    // Create and download the file
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -253,51 +91,6 @@ export default function RlsAuditReport() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
-
-  const getPolicyStatusBadge = (policy: RlsPolicy) => {
-    const hasAuthReference = checkPolicyAuthReference(policy);
-    
-    if (!hasAuthReference) {
-      return (
-        <Badge variant="destructive" className="flex items-center gap-1">
-          <ShieldAlert className="h-3 w-3" />
-          Insecure
-        </Badge>
-      );
-    }
-    
-    return (
-      <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200 flex items-center gap-1">
-        <CheckCircle className="h-3 w-3" />
-        Secured
-      </Badge>
-    );
-  };
-
-  const getTestResultBadge = (result: AccessTestResult) => {
-    if (result.status === 'allowed') {
-      return (
-        <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200 flex items-center gap-1">
-          <CheckCircle className="h-3 w-3" />
-          Allowed ({result.rowCount} rows)
-        </Badge>
-      );
-    } else if (result.status === 'blocked') {
-      return (
-        <Badge variant="secondary" className="bg-amber-50 text-amber-700 border-amber-200 flex items-center gap-1">
-          <XCircle className="h-3 w-3" />
-          Blocked
-        </Badge>
-      );
-    } else {
-      return (
-        <Badge variant="destructive" className="flex items-center gap-1">
-          <AlertCircle className="h-3 w-3" />
-          Error: {result.errorMessage}
-        </Badge>
-      );
-    }
   };
 
   const renderTableRows = () => {
@@ -311,103 +104,15 @@ export default function RlsAuditReport() {
       ));
     }
 
-    // Flat map of all tables with their policies
-    const tableRows: JSX.Element[] = [];
-    
-    tables.sort((a, b) => {
-      if (a.rlsEnabled === b.rlsEnabled) {
-        return a.tablename.localeCompare(b.tablename);
-      }
-      return a.rlsEnabled ? -1 : 1; // Show tables with RLS enabled first
-    }).forEach(table => {
-      const testResult = testResults.find(r => r.tableName === table.tablename);
-      
-      if (!table.rlsEnabled) {
-        tableRows.push(
-          <tr key={`${table.tablename}`} className="bg-gray-50">
-            <td className="p-3 border">{table.tablename}</td>
-            <td className="p-3 border text-center">
-              <Badge variant="secondary" className="bg-gray-50 text-gray-500">
-                Disabled
-              </Badge>
-            </td>
-            <td className="p-3 border" colSpan={3}>No RLS protection</td>
-            <td className="p-3 border text-center">N/A</td>
-          </tr>
-        );
-        return;
-      }
-      
-      if (table.policies.length === 0) {
-        // Critical: RLS enabled but no policies (effectively denies all access)
-        tableRows.push(
-          <tr key={`${table.tablename}`} className="bg-red-50">
-            <td className="p-3 border">{table.tablename}</td>
-            <td className="p-3 border text-center">
-              <Badge variant="destructive" className="bg-red-50 text-red-700 border-red-200">
-                Enabled
-              </Badge>
-            </td>
-            <td className="p-3 border text-red-700" colSpan={3}>
-              <div className="flex items-center gap-1">
-                <ShieldAlert className="h-4 w-4" />
-                <span className="font-semibold">CRITICAL: RLS enabled but no policies (denies all access)</span>
-              </div>
-            </td>
-            <td className="p-3 border text-center">
-              {testResult && getTestResultBadge(testResult)}
-            </td>
-          </tr>
-        );
-        return;
-      }
-      
-      // Add rows for each policy
-      table.policies.forEach((policy, policyIndex) => {
-        const hasAuthRef = checkPolicyAuthReference(policy);
-        
-        tableRows.push(
-          <tr 
-            key={`${table.tablename}-${policy.policyname}`}
-            className={!hasAuthRef ? "bg-red-50" : (policyIndex % 2 === 0 ? "bg-white" : "bg-gray-50")}
-          >
-            {policyIndex === 0 ? (
-              <td className="p-3 border" rowSpan={table.policies.length}>
-                {table.tablename}
-              </td>
-            ) : null}
-            
-            {policyIndex === 0 ? (
-              <td className="p-3 border text-center" rowSpan={table.policies.length}>
-                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                  Enabled
-                </Badge>
-              </td>
-            ) : null}
-            
-            <td className="p-3 border">{policy.policyname}</td>
-            <td className="p-3 border">{policy.command}</td>
-            <td className="p-3 border">
-              {getPolicyStatusBadge(policy)}
-            </td>
-            
-            {policyIndex === 0 ? (
-              <td className="p-3 border text-center" rowSpan={table.policies.length}>
-                {testResult ? (
-                  getTestResultBadge(testResult)
-                ) : (
-                  <Badge variant="outline" className="bg-gray-100 text-gray-500">
-                    Not Tested
-                  </Badge>
-                )}
-              </td>
-            ) : null}
-          </tr>
-        );
-      });
-    });
-    
-    return tableRows;
+    return tables.map(table => (
+      <RlsTableRow
+        key={table.tablename}
+        tableName={table.tablename}
+        rlsEnabled={table.rlsEnabled}
+        policies={table.policies}
+        testResult={testResults.find(r => r.tableName === table.tablename)}
+      />
+    ));
   };
 
   return (
@@ -434,7 +139,7 @@ export default function RlsAuditReport() {
                 </Button>
                 <Button
                   variant="default"
-                  onClick={runAccessTests}
+                  onClick={() => runAccessTests(tables)}
                   disabled={isRunningTests || isLoading || !tables.length}
                   className="flex items-center gap-1"
                 >
@@ -502,31 +207,7 @@ export default function RlsAuditReport() {
           </CardContent>
         </Card>
         
-        <div className="mt-6 space-y-4">
-          <h3 className="text-xl font-semibold">Security Audit Tips</h3>
-          <div className="grid md:grid-cols-2 gap-4">
-            <Alert>
-              <ShieldAlert className="h-4 w-4" />
-              <AlertTitle>Critical Issues</AlertTitle>
-              <AlertDescription className="text-sm space-y-1">
-                <p>• Tables with RLS enabled but no policies (denies all access)</p>
-                <p>• Policies with no auth.uid() reference (potential data leakage)</p>
-                <p>• Policies with no tenant isolation (cross-tenant data access)</p>
-              </AlertDescription>
-            </Alert>
-            
-            <Alert variant="outline">
-              <CheckCircle className="h-4 w-4" />
-              <AlertTitle>Best Practices</AlertTitle>
-              <AlertDescription className="text-sm space-y-1">
-                <p>• All tables should have RLS enabled</p>
-                <p>• Each policy should reference auth.uid()</p>
-                <p>• Each policy should reference tenant_id for isolation</p>
-                <p>• Default service role policies should exist for system operations</p>
-              </AlertDescription>
-            </Alert>
-          </div>
-        </div>
+        <SecurityAuditTips />
       </div>
     </AdminOnly>
   );
