@@ -580,6 +580,30 @@ export type Database = {
           },
         ]
       }
+      cron_job_logs: {
+        Row: {
+          function_name: string
+          id: string
+          message: string | null
+          ran_at: string | null
+          status: string
+        }
+        Insert: {
+          function_name: string
+          id?: string
+          message?: string | null
+          ran_at?: string | null
+          status: string
+        }
+        Update: {
+          function_name?: string
+          id?: string
+          message?: string | null
+          ran_at?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       encrypted_tokens: {
         Row: {
           created_at: string | null
