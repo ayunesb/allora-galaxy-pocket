@@ -417,6 +417,7 @@ export type Database = {
           price_id: string | null
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
+          stripe_subscription_item_id: string | null
           updated_at: string
           user_id: string
         }
@@ -428,6 +429,7 @@ export type Database = {
           price_id?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          stripe_subscription_item_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -439,6 +441,7 @@ export type Database = {
           price_id?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          stripe_subscription_item_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -588,6 +591,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      credit_usage_logs: {
+        Row: {
+          agent: string | null
+          created_at: string
+          credits_used: number
+          id: string
+          operation: string
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          agent?: string | null
+          created_at?: string
+          credits_used: number
+          id?: string
+          operation: string
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          agent?: string | null
+          created_at?: string
+          credits_used?: number
+          id?: string
+          operation?: string
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       cron_job_logs: {
         Row: {
@@ -1950,6 +1983,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      stripe_usage_reports: {
+        Row: {
+          created_at: string
+          credits_used: number
+          id: string
+          status: string
+          stripe_usage_record_id: string | null
+          subscription_item_id: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          credits_used: number
+          id?: string
+          status: string
+          stripe_usage_record_id?: string | null
+          subscription_item_id: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          credits_used?: number
+          id?: string
+          status?: string
+          stripe_usage_record_id?: string | null
+          subscription_item_id?: string
+          tenant_id?: string
+        }
+        Relationships: []
       }
       subscribers: {
         Row: {

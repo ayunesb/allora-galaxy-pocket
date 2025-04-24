@@ -11,6 +11,9 @@ export interface Plugin {
   category?: string;
   icon_url?: string;
   badge?: string;
+  tags?: string[];
+  label?: string;
+  icon?: string;
 }
 
 export interface PluginConfig {

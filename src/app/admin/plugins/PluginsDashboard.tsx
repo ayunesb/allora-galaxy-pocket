@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useTenant } from "@/hooks/useTenant";
 import { usePlugins } from "@/hooks/usePlugins";
@@ -9,11 +8,11 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Plugin } from "@/types/plugin";
 
 const allPlugins: Plugin[] = [
-  { key: "stripe", label: "Stripe", description: "Billing, plans, usage" },
-  { key: "hubspot", label: "HubSpot", description: "CRM & contacts sync" },
-  { key: "shopify", label: "Shopify", description: "Product + order sync" },
-  { key: "ga4", label: "Google Analytics", description: "Traffic & funnel data" },
-  { key: "twilio", label: "Twilio", description: "SMS & voice actions" }
+  { id: "1", key: "stripe", name: "Stripe", description: "Billing, plans, usage", version: "1.0.0" },
+  { id: "2", key: "hubspot", name: "HubSpot", description: "CRM & contacts sync", version: "1.0.0" },
+  { id: "3", key: "shopify", name: "Shopify", description: "Product + order sync", version: "1.0.0" },
+  { id: "4", key: "ga4", name: "Google Analytics", description: "Traffic & funnel data", version: "1.0.0" },
+  { id: "5", key: "twilio", name: "Twilio", description: "SMS & voice actions", version: "1.0.0" }
 ];
 
 export default function PluginsDashboard() {
@@ -98,7 +97,7 @@ export default function PluginsDashboard() {
             <Card key={plugin.key}>
               <CardHeader>
                 <CardTitle className="flex justify-between items-center text-lg">
-                  <span>{plugin.label}</span>
+                  <span>{plugin.name}</span>
                   <Switch
                     checked={enabled.includes(plugin.key)}
                     onCheckedChange={() => toggle(plugin.key)}

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -13,8 +12,9 @@ import { Plugin } from "@/types/plugin";
 // Define available plugins
 const availablePlugins: Plugin[] = [
   { 
+    id: "1",
     key: "stripe", 
-    label: "Stripe", 
+    name: "Stripe", 
     description: "Payment processing, billing and subscription management",
     category: "billing",
     tags: ["payments", "subscriptions", "billing"],
@@ -22,8 +22,9 @@ const availablePlugins: Plugin[] = [
     icon: "💳"
   },
   { 
+    id: "2",
     key: "hubspot", 
-    label: "HubSpot", 
+    name: "HubSpot", 
     description: "CRM integration for contact and lead management",
     category: "crm",
     tags: ["crm", "marketing", "contacts"],
@@ -31,8 +32,9 @@ const availablePlugins: Plugin[] = [
     icon: "📊"
   },
   { 
+    id: "3",
     key: "shopify", 
-    label: "Shopify", 
+    name: "Shopify", 
     description: "E-commerce platform integration for product and order management",
     category: "ecommerce",
     tags: ["ecommerce", "products", "orders"],
@@ -40,8 +42,9 @@ const availablePlugins: Plugin[] = [
     icon: "🛍️"
   },
   { 
+    id: "4",
     key: "ga4", 
-    label: "Google Analytics", 
+    name: "Google Analytics", 
     description: "Web analytics and reporting integration",
     category: "analytics",
     tags: ["analytics", "tracking", "reporting"],
@@ -49,8 +52,9 @@ const availablePlugins: Plugin[] = [
     icon: "📈"
   },
   { 
+    id: "5",
     key: "twilio", 
-    label: "Twilio", 
+    name: "Twilio", 
     description: "SMS and voice communication integration",
     category: "communications",
     tags: ["sms", "notifications", "messaging"],
@@ -152,7 +156,7 @@ export default function PluginMarketplace() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="text-2xl">{plugin.icon}</span>
-                          <CardTitle>{plugin.label}</CardTitle>
+                          <CardTitle>{plugin.name}</CardTitle>
                         </div>
                         <Badge variant={isActive ? "default" : "outline"}>
                           {isActive ? "Active" : "Available"}
