@@ -1,40 +1,19 @@
 
-import { useSystemLogs } from "./useSystemLogs";
 import { useLogFilters } from "./logs/useLogFilters";
 import { useFilteredLogs } from "./logs/useFilteredLogs";
 import { useLogPagination } from "./logs/useLogPagination";
 
 export function useSystemLogsWithFilters() {
-  const { logs: allLogs, isLoading, getRecentLogs } = useSystemLogs();
   const { filters, updateFilters } = useLogFilters();
-  
-  const filteredLogs = useFilteredLogs(allLogs, filters);
-  const {
-    currentPage,
-    totalPages,
-    currentLogs,
-    goToNextPage,
-    goToPrevPage,
-    goToPage,
-    resetPage
-  } = useLogPagination(filteredLogs, { logsPerPage: 15 });
+  const { data: logs, isLoading, error } = useFilteredLogs(filters);
+  const pagination = useLogPagination(logs?.length || 0);
 
   return {
-    logs: currentLogs,
+    logs,
     isLoading,
+    error,
     filters,
-    setFilters: updateFilters,
-    currentPage,
-    totalPages,
-    allLogs,
-    getRecentLogs,
-    pagination: {
-      goToNextPage,
-      goToPrevPage,
-      goToPage,
-      currentPage,
-      totalPages,
-      resetPage
-    }
+    updateFilters,
+    pagination
   };
 }

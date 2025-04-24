@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/hooks/useTenant';
@@ -23,12 +22,10 @@ export function useAgentCollaborationSystem() {
   const { sessionId, logMessage, initializeCollaboration } = useAgentCollaboration();
   const [tasks, setTasks] = useState<AgentTask[]>([]);
   
-  /**
-   * Start a new collaboration session between agents
-   */
   const startCollaboration = async (agents: string[], initialPrompt?: string) => {
     if (!tenant?.id) {
       toast({
+        title: "Error",
         description: "No active workspace"
       });
       return null;
@@ -36,10 +33,8 @@ export function useAgentCollaborationSystem() {
     
     setIsLoading(true);
     try {
-      // Initialize a new collaboration session
       const newSessionId = initializeCollaboration();
       
-      // Log the session start
       await logActivity({
         event_type: 'AGENT_COLLABORATION_STARTED',
         message: `Agent collaboration session started with ${agents.join(', ')}`,
@@ -49,12 +44,10 @@ export function useAgentCollaborationSystem() {
         }
       });
       
-      // If there's an initial prompt, add it to the collaboration
       if (initialPrompt && agents.length > 0) {
         await logMessage(agents[0], initialPrompt);
       }
       
-      // Log to automation metrics
       await supabase.rpc('log_automation_metric', {
         p_tenant_id: tenant.id,
         p_metric_name: 'agent_collaboration_session',
@@ -73,9 +66,6 @@ export function useAgentCollaborationSystem() {
     }
   };
   
-  /**
-   * Add a task for agents to complete
-   */
   const addTask = async (
     agentName: string,
     taskType: string,
@@ -95,7 +85,6 @@ export function useAgentCollaborationSystem() {
     setTasks(prev => [...prev, newTask]);
     
     try {
-      // Log task creation to system logs
       await logActivity({
         event_type: 'AGENT_TASK_CREATED',
         message: `Task assigned to ${agentName}: ${taskType}`,
@@ -107,7 +96,6 @@ export function useAgentCollaborationSystem() {
         }
       });
       
-      // Add message to collaboration if a session is active
       if (sessionId) {
         await logMessage('System', `Task assigned to ${agentName}: ${description}`);
       }
@@ -119,9 +107,6 @@ export function useAgentCollaborationSystem() {
     }
   };
   
-  /**
-   * Update the status of a task
-   */
   const updateTaskStatus = async (
     taskId: string,
     status: 'pending' | 'in_progress' | 'completed' | 'failed',
@@ -134,11 +119,9 @@ export function useAgentCollaborationSystem() {
     ));
     
     try {
-      // Find the task
       const task = tasks.find(t => t.taskId === taskId);
       if (!task) return false;
       
-      // Log task update to system logs
       await logActivity({
         event_type: 'AGENT_TASK_UPDATED',
         message: `Task ${taskId} status updated to ${status}`,
@@ -152,7 +135,6 @@ export function useAgentCollaborationSystem() {
         }
       });
       
-      // Add message to collaboration if a session is active
       if (sessionId) {
         const message = status === 'completed'
           ? `Task completed by ${task.assignedTo}: ${task.description}`
@@ -170,19 +152,14 @@ export function useAgentCollaborationSystem() {
     }
   };
   
-  /**
-   * End the collaboration session
-   */
   const endCollaboration = async (summary?: string) => {
     if (!tenant?.id || !sessionId) return false;
     
     try {
-      // Add a summary message if provided
       if (summary) {
         await logMessage('System', `Collaboration summary: ${summary}`);
       }
       
-      // Log the session end
       await logActivity({
         event_type: 'AGENT_COLLABORATION_ENDED',
         message: 'Agent collaboration session ended',
@@ -194,7 +171,6 @@ export function useAgentCollaborationSystem() {
         }
       });
       
-      // Reset tasks
       setTasks([]);
       
       return true;

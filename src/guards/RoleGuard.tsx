@@ -1,4 +1,3 @@
-
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
@@ -41,7 +40,6 @@ export default function RoleGuard({
         if (!hasAccess && !redirectedRef.current) {
           redirectedRef.current = true;
           
-          // Log unauthorized access attempt
           if (user?.id && tenant?.id) {
             await supabase.from('system_logs').insert({
               event_type: 'SECURITY_UNAUTHORIZED_ACCESS',
@@ -56,7 +54,9 @@ export default function RoleGuard({
           }
           
           toast({
-            description: "You don't have permission to access this page"
+            title: "Access Denied",
+            description: "You don't have permission to access this page",
+            variant: "destructive"
           });
           
           navigate(fallbackPath, { replace: true });
@@ -66,7 +66,9 @@ export default function RoleGuard({
       } catch (error) {
         console.error("Role validation error:", error);
         toast({
-          description: "There was a problem verifying your permissions"
+          title: "Error",
+          description: "There was a problem verifying your permissions",
+          variant: "destructive"
         });
         navigate(fallbackPath, { replace: true });
       } finally {
