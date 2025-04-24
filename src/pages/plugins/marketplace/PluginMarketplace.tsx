@@ -1,4 +1,6 @@
 
+import { useState } from "react";
+import { Card } from "@/components/ui/card";
 import { usePlugins } from "@/hooks/usePlugins";
 import { usePluginManager } from "@/hooks/usePluginManager";
 import { useIsMobile } from "@/hooks/use-mobile";
