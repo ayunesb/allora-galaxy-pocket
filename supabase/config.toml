@@ -38,6 +38,16 @@ retry-runner = { verify_jwt = true }
 send-alert-digest = { verify_jwt = true }
 update-mql-metrics = { verify_jwt = true }
 reset-demo-tenant = { verify_jwt = true }
+stripe-usage-reporter = { verify_jwt = true }
+stripe-invoice-webhook = { verify_jwt = false }
+stripe-subscription-webhook = { verify_jwt = false }
+stripe-payout-webhook = { verify_jwt = false }
+send-webhook-notification = { verify_jwt = true }
+send-webhook-alert = { verify_jwt = true }
+send-credit-digest = { verify_jwt = true }
+decrementCredits = { verify_jwt = true }
+generate-alert-suggestions = { verify_jwt = true }
+manage-billing = { verify_jwt = true }
 
 [storage]
 file_size_limit = "50MiB"

@@ -14,162 +14,208 @@ serve(async (req) => {
   }
 
   try {
+    const { tenant_id } = await req.json();
+    
+    if (!tenant_id) {
+      throw new Error("Missing required tenant_id parameter");
+    }
+    
+    // Initialize Supabase client with service role key to bypass RLS
     const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') as string,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') as string
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
-
-    console.log('Starting KPI alert check...');
-
-    // Get tenant parameter from request if available
-    let tenantId: string | null = null;
-    try {
-      const body = await req.json();
-      tenantId = body?.tenant_id;
-    } catch {
-      // No body or invalid JSON, continue with all tenants
-    }
-
-    // 1. Get all active KPI insights with campaigns and their targets
-    let kpiQuery = supabase
-      .from('kpi_insights')
-      .select(`
-        id, 
-        kpi_name,
-        tenant_id,
-        campaign_id,
-        target,
-        outcome
-      `)
-      .eq('outcome', 'pending')
-      .not('campaign_id', 'is', null)
-      .not('target', 'is', null);
     
-    // Filter by tenant if provided
-    if (tenantId) {
-      kpiQuery = kpiQuery.eq('tenant_id', tenantId);
-    }
-
-    const { data: insights, error: insightsError } = await kpiQuery;
-
-    if (insightsError) {
-      console.error('Error fetching insights:', insightsError);
-      throw insightsError;
-    }
-
-    console.log(`Found ${insights?.length || 0} KPI insights to check`);
+    console.log(`Starting KPI alert check for tenant ${tenant_id}`);
     
-    if (!insights || insights.length === 0) {
-      return new Response(JSON.stringify({ message: 'No insights to check' }), {
+    // Step 1: Get all active alert rules for the tenant
+    const { data: rules, error: rulesError } = await supabase
+      .from('kpi_alert_rules')
+      .select('*')
+      .eq('tenant_id', tenant_id)
+      .eq('active', true);
+    
+    if (rulesError) throw rulesError;
+    
+    if (!rules || rules.length === 0) {
+      console.log(`No active alert rules found for tenant ${tenant_id}`);
+      return new Response(JSON.stringify({ message: "No active alert rules found" }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-
-    // Process each insight
-    const promises = insights.map(async (insight) => {
-      try {
-        // Get latest metric value for this KPI
-        const { data: latestMetric, error: metricError } = await supabase
-          .from('kpi_metrics')
-          .select('value')
-          .eq('tenant_id', insight.tenant_id)
-          .eq('metric', insight.kpi_name)
-          .order('recorded_at', { ascending: false })
-          .limit(1)
-          .single();
-
-        if (metricError) {
-          console.error(`Error fetching metric for insight ${insight.id}:`, metricError);
-          return null;
-        }
-
-        if (!latestMetric) {
-          console.log(`No metric found for insight ${insight.id}, skipping...`);
-          return null;
-        }
-
-        // Evaluate if target is met
-        const targetMet = latestMetric.value >= insight.target!;
-        console.log(`Insight ${insight.id} evaluation: Target=${insight.target}, Current=${latestMetric.value}, Success=${targetMet}`);
-
-        // Update outcome based on evaluation
-        const { error: updateError } = await supabase
-          .from('kpi_insights')
-          .update({ 
-            outcome: targetMet ? 'success' : 'failed',
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', insight.id);
-
-        if (updateError) {
-          console.error(`Error updating insight ${insight.id}:`, updateError);
-          return null;
-        }
-
-        // Create notification
-        await supabase
-          .from('notifications')
-          .insert({
-            tenant_id: insight.tenant_id,
-            event_type: targetMet ? 'kpi_target_achieved' : 'kpi_target_missed',
-            description: targetMet 
-              ? `Campaign KPI "${insight.kpi_name}" has achieved its target of ${insight.target}`
-              : `Campaign KPI "${insight.kpi_name}" has missed its target of ${insight.target}`
-          });
-
-        // Update campaign status if needed
-        if (targetMet) {
-          const { error: campaignError } = await supabase
-            .from('campaigns')
-            .update({ status: 'completed' })
-            .eq('id', insight.campaign_id);
-            
-          if (campaignError) {
-            console.error(`Error updating campaign ${insight.campaign_id}:`, campaignError);
-          }
-        }
-
-        return {
-          insight_id: insight.id,
-          success: true,
-          target_met: targetMet
-        };
-      } catch (error) {
-        console.error(`Error processing insight ${insight.id}:`, error);
-        return {
-          insight_id: insight.id,
-          success: false,
-          error: error.message
-        };
+    
+    console.log(`Found ${rules.length} active alert rules`);
+    
+    // Step 2: Process each rule and check metric conditions
+    const alerts = [];
+    
+    for (const rule of rules) {
+      console.log(`Processing rule for KPI: ${rule.kpi_name}`);
+      
+      // Get current value of the KPI metric
+      const { data: currentMetric, error: metricError } = await supabase
+        .from('kpi_metrics')
+        .select('value, updated_at')
+        .eq('tenant_id', tenant_id)
+        .eq('metric', rule.kpi_name)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (metricError) {
+        console.error(`Error fetching metric ${rule.kpi_name}:`, metricError);
+        continue;
       }
-    });
-
-    const results = await Promise.all(promises);
-
-    // Log execution
+      
+      if (!currentMetric) {
+        console.log(`No data found for metric ${rule.kpi_name}`);
+        continue;
+      }
+      
+      // Get previous value based on comparison period
+      let previousDate = new Date();
+      if (rule.compare_period === '1d') {
+        previousDate.setDate(previousDate.getDate() - 1);
+      } else if (rule.compare_period === '7d') {
+        previousDate.setDate(previousDate.getDate() - 7);
+      } else if (rule.compare_period === '30d') {
+        previousDate.setDate(previousDate.getDate() - 30);
+      }
+      
+      const { data: previousMetric, error: prevError } = await supabase
+        .from('kpi_metrics_history')
+        .select('value, recorded_at')
+        .eq('tenant_id', tenant_id)
+        .eq('metric', rule.kpi_name)
+        .lt('recorded_at', previousDate.toISOString())
+        .order('recorded_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (prevError) {
+        console.error(`Error fetching previous metric for ${rule.kpi_name}:`, prevError);
+        continue;
+      }
+      
+      // Calculate percentage change if we have previous data
+      let percentChange = 0;
+      if (previousMetric && previousMetric.value > 0) {
+        percentChange = ((currentMetric.value - previousMetric.value) / previousMetric.value) * 100;
+      }
+      
+      // Check if alert condition is met
+      let alertTriggered = false;
+      let alertReason = '';
+      
+      switch (rule.condition) {
+        case '<':
+          alertTriggered = currentMetric.value < rule.threshold;
+          alertReason = `Value (${currentMetric.value}) is below threshold (${rule.threshold})`;
+          break;
+        case '>':
+          alertTriggered = currentMetric.value > rule.threshold;
+          alertReason = `Value (${currentMetric.value}) is above threshold (${rule.threshold})`;
+          break;
+        case 'falls_by_%':
+          alertTriggered = percentChange < -Math.abs(rule.threshold);
+          alertReason = `Value decreased by ${Math.abs(percentChange).toFixed(1)}% which exceeds threshold of ${rule.threshold}%`;
+          break;
+        case 'rises_by_%':
+          alertTriggered = percentChange > rule.threshold;
+          alertReason = `Value increased by ${percentChange.toFixed(1)}% which exceeds threshold of ${rule.threshold}%`;
+          break;
+      }
+      
+      if (alertTriggered) {
+        console.log(`Alert triggered for ${rule.kpi_name}: ${alertReason}`);
+        
+        // Check if we already have an active alert for this KPI
+        const { data: existingAlert, error: alertError } = await supabase
+          .from('kpi_insights')
+          .select('id')
+          .eq('tenant_id', tenant_id)
+          .eq('kpi_name', rule.kpi_name)
+          .eq('outcome', 'pending')
+          .limit(1);
+        
+        if (alertError) {
+          console.error(`Error checking existing alerts:`, alertError);
+          continue;
+        }
+        
+        // Only create a new alert if there isn't an existing one
+        if (!existingAlert || existingAlert.length === 0) {
+          // Create new alert
+          const { data: newAlert, error: insertError } = await supabase
+            .from('kpi_insights')
+            .insert({
+              tenant_id: tenant_id,
+              kpi_name: rule.kpi_name,
+              description: alertReason,
+              current_value: currentMetric.value,
+              previous_value: previousMetric?.value || null,
+              target: rule.threshold,
+              percent_change: percentChange,
+              severity: rule.severity || 'medium',
+              outcome: 'pending',
+              campaign_id: rule.campaign_id
+            })
+            .select()
+            .single();
+          
+          if (insertError) {
+            console.error(`Error creating alert:`, insertError);
+            continue;
+          }
+          
+          alerts.push(newAlert);
+          
+          // Also create a notification
+          const { error: notifError } = await supabase
+            .from('notifications')
+            .insert({
+              tenant_id: tenant_id,
+              event_type: `KPI Alert: ${rule.kpi_name}`,
+              description: alertReason,
+              is_read: false
+            });
+          
+          if (notifError) {
+            console.error(`Error creating notification:`, notifError);
+          }
+        } else {
+          console.log(`Alert for ${rule.kpi_name} already exists, skipping creation`);
+        }
+      } else {
+        console.log(`No alert triggered for ${rule.kpi_name}`);
+      }
+    }
+    
+    // Log run in cron_job_logs
     await supabase
       .from('cron_job_logs')
       .insert({
         function_name: 'check-kpi-alerts',
         status: 'success',
-        message: `Processed ${insights.length} KPI insights`
+        message: `Processed ${rules.length} rules, generated ${alerts.length} alerts`,
+        meta: { tenant_id, alerts_count: alerts.length }
       });
-
-    return new Response(JSON.stringify({ 
-      success: true, 
-      processed: insights.length,
-      results 
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-
+    
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        alerts_created: alerts.length,
+        alerts
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   } catch (error) {
-    console.error('Error in check-kpi-alerts function:', error);
+    console.error("Error in check-kpi-alerts:", error.message);
     
     // Log error
     const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') as string,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') as string
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
     
     await supabase
@@ -180,9 +226,12 @@ serve(async (req) => {
         message: `Error: ${error.message}`
       });
     
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
   }
 });

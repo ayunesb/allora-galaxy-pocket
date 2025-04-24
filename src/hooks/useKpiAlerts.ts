@@ -76,6 +76,7 @@ export function useKpiAlerts(options: { days?: number; activeOnly?: boolean } = 
     queryClient.invalidateQueries({ queryKey: ['campaign-insights'] });
   };
 
+  // New: Trigger a KPI check via the edge function
   const triggerKpiCheck = async () => {
     if (!tenant?.id) return;
     
