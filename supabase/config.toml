@@ -49,6 +49,10 @@ additional_redirect_urls = ["https://localhost:3000"]
 jwt_expiry = 3600
 # Allow/disallow new user signups to your project.
 enable_signup = true
+
+[auth.email]
+# Allow/disallow new user signups via email to your project.
+enable_signup = true
 # If enabled, a user will be required to confirm any email change on both the old, and new email
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
@@ -58,7 +62,7 @@ enable_confirmations = false
 # Use an external OAuth provider. The full list of providers are: `apple`, `azure`, `bitbucket`,
 # `discord`, `facebook`, `github`, `gitlab`, `google`, `keycloak`, `linkedin`, `notion`, `twitch`,
 # `twitter`, `slack`, `spotify`, `workos`, `zoom`.
-[auth.external.github]
+[auth.external.apple]
 enabled = false
 client_id = ""
 secret = ""
@@ -73,30 +77,22 @@ enabled = false
 port = 54327
 vector_port = 54328
 # Setup BigQuery project to enable log viewer on local development stack.
-# See: https://supabase.com/docs/guides/getting-started/local-development#enabling-local-logging
-gcp_project_id = ""
-gcp_project_number = ""
-gcp_jwt_path = "supabase/gcloud.json"
+big_query_project = ""
 
-# Configure your Edge Functions
+# Auto-generated secrets, do not edit.
+[auth.email.template.invite]
+subject = ""
+
+[auth.sms]
+enable_signup = true
+enable_confirmations = false
+
 [functions]
-[functions.report-stripe-usage]
-verify_jwt = true
-[functions.create-checkout]
-verify_jwt = true
-[functions.check-subscription]
-verify_jwt = true
-[functions.stripe-invoice-webhook]
-verify_jwt = false
-[functions.stripe-subscription-webhook]
-verify_jwt = false
-[functions.customer-portal]
-verify_jwt = true
-[functions.manage-billing]
-verify_jwt = true
-[functions.generate-invoice-pdf]
+[functions.auto-recover]
 verify_jwt = true
 
-# Configure Postgres functions to run on table changes
-[realtime]
-enabled = true
+[functions.generate-kpi-recommendations]
+verify_jwt = true
+
+[functions.predict-campaign-performance]
+verify_jwt = true
