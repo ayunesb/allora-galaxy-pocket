@@ -19,14 +19,31 @@ Deno.serve(async (req) => {
 
   try {
     console.log("[RetryRunner] Starting retry cycle");
+    
+    // Check if a specific job ID was requested for retry
+    let jobId;
+    try {
+      const body = await req.json();
+      jobId = body.job_id;
+    } catch (err) {
+      // No body or invalid JSON - will process all pending jobs
+    }
 
-    const { data: jobs, error } = await supabase
+    const jobQuery = supabase
       .from("retry_queue")
       .select("*")
       .lt("retry_count", "max_attempts")
       .eq("status", "pending")
-      .order("created_at", { ascending: true })
-      .limit(10);
+      .order("created_at", { ascending: true });
+
+    // If specific job ID provided, only retry that job
+    if (jobId) {
+      jobQuery.eq("id", jobId);
+    } else {
+      jobQuery.limit(10); // Otherwise process a batch of jobs
+    }
+
+    const { data: jobs, error } = await jobQuery;
 
     if (error) throw error;
 
@@ -46,9 +63,19 @@ Deno.serve(async (req) => {
 
         // Execute the task based on task type
         switch (job.task) {
-          // Add task handlers here as needed
+          case "update_metrics":
+            await processMqlMetricsUpdate(job);
+            break;
+          case "ga4_metrics_fetch":
+            await processGa4MetricsFetch(job);
+            break;
+          case "send_weekly_summary":
+            await processWeeklySummary(job);
+            break;
+          // Add more task handlers here as needed
           default:
             console.warn(`[RetryRunner] Unknown task type: ${job.task}`);
+            throw new Error(`Unsupported task type: ${job.task}`);
         }
 
         // On success, mark as completed
@@ -56,6 +83,15 @@ Deno.serve(async (req) => {
           .from("retry_queue")
           .update({ status: "completed" })
           .eq("id", job.id);
+
+        // Log successful execution
+        await supabase
+          .from("cron_job_logs")
+          .insert({
+            function_name: `retry-runner:${job.task}`,
+            status: "success",
+            message: `Successfully retried ${job.task}`
+          });
 
         results.push({ id: job.id, status: "success" });
 
@@ -67,11 +103,20 @@ Deno.serve(async (req) => {
           .from("retry_queue")
           .update({ 
             retry_count: job.retry_count + 1,
-            status: "pending",
+            status: job.retry_count + 1 >= job.max_attempts ? "failed" : "pending",
             error_message: err.message,
             next_attempt_at: new Date(Date.now() + 1800000).toISOString() // 30 min delay
           })
           .eq("id", job.id);
+
+        // Log failed execution
+        await supabase
+          .from("cron_job_logs")
+          .insert({
+            function_name: `retry-runner:${job.task}`,
+            status: "error",
+            message: `Error retrying ${job.task}: ${err.message}`
+          });
 
         results.push({ id: job.id, status: "error", message: err.message });
       }
@@ -81,6 +126,7 @@ Deno.serve(async (req) => {
       JSON.stringify({ 
         status: "success", 
         message: "Retry cycle completed", 
+        jobs_processed: results.length,
         results 
       }), 
       { 
@@ -102,3 +148,46 @@ Deno.serve(async (req) => {
     );
   }
 });
+
+// Task processing functions
+async function processMqlMetricsUpdate(job) {
+  const { tenant_id } = job.payload;
+  
+  if (!tenant_id) {
+    throw new Error("Missing tenant_id in job payload");
+  }
+  
+  const { error } = await supabase.functions.invoke("update-mql-metrics", {
+    body: { tenant_id }
+  });
+  
+  if (error) throw error;
+}
+
+async function processGa4MetricsFetch(job) {
+  const { tenant_id } = job.payload;
+  
+  if (!tenant_id) {
+    throw new Error("Missing tenant_id in job payload");
+  }
+  
+  const { error } = await supabase.functions.invoke("fetch-ga4-metrics", {
+    body: { tenant_id }
+  });
+  
+  if (error) throw error;
+}
+
+async function processWeeklySummary(job) {
+  const { tenant_id } = job.payload;
+  
+  if (!tenant_id) {
+    throw new Error("Missing tenant_id in job payload");
+  }
+  
+  const { error } = await supabase.functions.invoke("process-weekly-summaries", {
+    body: { tenant_id }
+  });
+  
+  if (error) throw error;
+}

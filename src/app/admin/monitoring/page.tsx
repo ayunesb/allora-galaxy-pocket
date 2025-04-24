@@ -3,6 +3,7 @@ import React from 'react';
 import { SystemMetricsPanel } from './SystemMetricsPanel';
 import { SystemAlertsPanel } from './SystemAlertsPanel';
 import { PerformancePanel } from './PerformancePanel';
+import { JobMonitoringPanel } from './JobMonitoringPanel';
 import AdminOnly from '@/guards/AdminOnly';
 
 export default function SystemMonitoringPage() {
@@ -13,6 +14,7 @@ export default function SystemMonitoringPage() {
         
         <div className="grid gap-6">
           <SystemAlertsPanel />
+          <JobMonitoringPanel />
           <SystemMetricsPanel />
           <PerformancePanel />
         </div>
