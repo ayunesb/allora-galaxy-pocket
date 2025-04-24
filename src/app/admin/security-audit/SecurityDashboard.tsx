@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
@@ -6,7 +7,6 @@ import { SecurityScoreCard } from "./components/dashboard/SecurityScoreCard";
 import { TablesAnalyzedCard } from "./components/dashboard/TablesAnalyzedCard";
 import { SecurityEventsCard } from "./components/dashboard/SecurityEventsCard";
 import { SecurityDistributionChart } from "./components/dashboard/SecurityDistributionChart";
-import { SecurityAuditTable } from "./components/SecurityAuditTable";
 import { useSecurityDashboard } from "./hooks/useSecurityDashboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./components/ui/Card";
 import { Badge } from "./components/ui/Badge";
@@ -32,7 +32,7 @@ export default function SecurityDashboard() {
       header: "Security Score", 
       accessorKey: "securityScore",
       cell: (value) => (
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2">
           <Progress value={value} className="w-20 h-2" />
           <span className="text-sm">{value}%</span>
         </div>
@@ -90,17 +90,17 @@ export default function SecurityDashboard() {
   ];
 
   return (
-    <div className="container max-w-7xl mx-auto py-6 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="container max-w-7xl mx-auto py-4 md:py-6 space-y-4 md:space-y-6">
+      <div className="flex justify-between items-center flex-wrap gap-2">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Security Dashboard</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-xl md:text-2xl font-bold tracking-tight">Security Dashboard</h1>
+          <p className="text-sm text-muted-foreground">
             Monitor and improve your application's security posture
           </p>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         <SecurityScoreCard score={overallScore} />
         <TablesAnalyzedCard 
           totalTables={results.length} 
@@ -125,19 +125,20 @@ export default function SecurityDashboard() {
 
       <SecurityDistributionChart securityScores={securityScores} />
 
-      <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="tables">Table Security</TabsTrigger>
-          <TabsTrigger value="logs">Security Logs</TabsTrigger>
-          <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
+      <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}
+            className="w-full">
+        <TabsList className="mb-4 w-full flex overflow-x-auto space-x-1 md:w-auto">
+          <TabsTrigger value="overview" className="flex-1 md:flex-none">Overview</TabsTrigger>
+          <TabsTrigger value="tables" className="flex-1 md:flex-none">Table Security</TabsTrigger>
+          <TabsTrigger value="logs" className="flex-1 md:flex-none">Security Logs</TabsTrigger>
+          <TabsTrigger value="recommendations" className="flex-1 md:flex-none">Recommendations</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="overview" className="space-y-4 mt-6">
+        <TabsContent value="overview" className="space-y-4 mt-4 md:mt-6">
           
         </TabsContent>
         
-        <TabsContent value="tables" className="space-y-4 mt-6">
+        <TabsContent value="tables" className="space-y-4 mt-4 md:mt-6">
           <Card>
             <CardHeader>
               <CardTitle>Table Security Analysis</CardTitle>
@@ -155,7 +156,7 @@ export default function SecurityDashboard() {
           </Card>
         </TabsContent>
         
-        <TabsContent value="logs" className="space-y-4 mt-6">
+        <TabsContent value="logs" className="space-y-4 mt-4 md:mt-6">
           <Card>
             <CardHeader>
               <CardTitle>Security Event Logs</CardTitle>
@@ -173,7 +174,7 @@ export default function SecurityDashboard() {
           </Card>
         </TabsContent>
         
-        <TabsContent value="recommendations" className="space-y-4 mt-6">
+        <TabsContent value="recommendations" className="space-y-4 mt-4 md:mt-6">
           <Card>
             <CardHeader>
               <CardTitle>Security Recommendations</CardTitle>
@@ -184,16 +185,16 @@ export default function SecurityDashboard() {
             <CardContent>
               <div className="space-y-4">
                 {results
-                  .filter(item => item.recommendations.length > 0)
+                  .filter(item => item.recommendations?.length > 0)
                   .map((item, i) => (
                     <Alert key={i} variant={item.securityScore < 40 ? "destructive" : "default"}>
-                      <AlertTitle className="flex items-center gap-2">
+                      <AlertTitle className="flex items-center flex-wrap gap-2">
                         {item.tableName}
                         <Badge>Score: {item.securityScore}%</Badge>
                       </AlertTitle>
                       <AlertDescription>
                         <ul className="list-disc pl-5 mt-2">
-                          {item.recommendations.map((rec, j) => (
+                          {item.recommendations?.map((rec, j) => (
                             <li key={j}>{rec}</li>
                           ))}
                         </ul>
@@ -201,7 +202,7 @@ export default function SecurityDashboard() {
                     </Alert>
                   ))}
                 
-                {results.filter(item => item.recommendations.length > 0).length === 0 && (
+                {results.filter(item => item.recommendations?.length > 0).length === 0 && (
                   <p className="text-center py-4 text-muted-foreground">
                     No recommendations available. Run a security audit first.
                   </p>

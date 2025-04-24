@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Sidebar from "./Sidebar";
@@ -23,8 +24,9 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         <Button
           variant="outline"
           size="icon"
-          className="h-10 w-10 rounded-full bg-background shadow-lg"
+          className="h-10 w-10 rounded-full bg-background shadow-lg border"
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          aria-label={isSidebarOpen ? "Close menu" : "Open menu"}
         >
           {isSidebarOpen ? (
             <X className="h-4 w-4" />
@@ -39,6 +41,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         <div 
           className="fixed inset-0 bg-black/50 z-40 md:hidden"
           onClick={() => setIsSidebarOpen(false)}
+          aria-hidden="true"
         />
       )}
       
@@ -57,7 +60,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       
       {/* Main Content */}
       <main className={`pt-16 ${isMobile ? 'px-4' : 'md:pl-64'} min-h-screen`}>
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-7xl mx-auto py-6">
           {children}
         </div>
       </main>

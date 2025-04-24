@@ -8,6 +8,7 @@ import {
   TableRow,
   TableCell
 } from "@/components/ui/table";
+import * as React from "react";
 
 export interface Column {
   header: string;
@@ -34,13 +35,13 @@ export function ResponsiveTable<T>({ columns, data, emptyMessage = "No data avai
           data.map((row, rowIndex) => (
             <div 
               key={rowIndex} 
-              className="border rounded-lg p-4 shadow-sm bg-card space-y-2"
+              className="border rounded-lg p-4 shadow-sm bg-card space-y-3"
             >
               {columns.map((column, columnIndex) => {
                 const value = (row as any)[column.accessorKey];
                 return (
-                  <div key={columnIndex} className="flex justify-between items-center gap-2">
-                    <div className="font-medium text-sm">{column.header}</div>
+                  <div key={columnIndex} className="grid grid-cols-[1fr,2fr] gap-3">
+                    <div className="font-medium text-sm text-muted-foreground">{column.header}</div>
                     <div className="text-sm">
                       {column.cell ? column.cell(value) : value}
                     </div>
@@ -56,7 +57,7 @@ export function ResponsiveTable<T>({ columns, data, emptyMessage = "No data avai
 
   // Desktop table view
   return (
-    <div className="border rounded-md">
+    <div className="border rounded-md w-full overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow>

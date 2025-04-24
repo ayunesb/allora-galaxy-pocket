@@ -10,7 +10,7 @@ interface SecurityScores {
 }
 
 export function useSecurityDashboard() {
-  const { runSecurityAudit, results, isScanning } = useSecurityAudit();
+  const { runSecurityAudit, isLoading: isScanning, issues: results } = useSecurityAudit();
   const { logs } = useSystemLogs();
   
   // Filter for security-related logs only
