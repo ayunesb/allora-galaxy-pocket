@@ -10,6 +10,7 @@ import SystemHealthCheck from "@/components/SystemHealthCheck";
 import CampaignPerformancePage from "@/app/admin/campaign-performance/page";
 import FeedbackLoopDashboard from "@/app/admin/feedback-loop/page";
 import AdminDashboardPage from "@/app/admin/dashboard/page";
+import AnalyticsPage from "@/app/admin/analytics/page";
 
 export const adminRoutes: RouteObject[] = [
   { path: "/admin/dashboard", element: <AdminDashboardPage /> },
@@ -18,5 +19,6 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/rls-audit", element: <RlsAuditReport /> },
   { path: "/admin/system-health", element: <SystemHealthCheck /> },
   { path: "/admin/campaign-performance", element: <CampaignPerformancePage /> },
-  { path: "/admin/feedback-loop", element: <FeedbackLoopDashboard /> }
+  { path: "/admin/feedback-loop", element: <FeedbackLoopDashboard /> },
+  { path: "/admin/analytics", element: <AnalyticsPage /> }
 ];
