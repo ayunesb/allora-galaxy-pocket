@@ -143,6 +143,25 @@ export function useCreditsManager() {
   };
   
   /**
+   * Check if tenant has enough credits for an operation
+   * @param amount Number of credits required
+   * @returns boolean indicating if tenant has enough credits
+   */
+  const hasEnoughCredits = (amount: number): boolean => {
+    if (!tenant?.id) return false;
+    
+    return getRemainingCredits() >= amount;
+  };
+  
+  /**
+   * Get the remaining credits for the current tenant
+   * @returns number of remaining credits
+   */
+  const getRemainingCredits = (): number => {
+    return tenant?.usage_credits || 0;
+  };
+  
+  /**
    * Get credit usage by module
    */
   const getCreditUsageByModule = async (): Promise<{module: string, credits: number}[]> => {
@@ -178,5 +197,7 @@ export function useCreditsManager() {
     addCredits,
     getCreditUsageByModule,
     isLoading,
+    hasEnoughCredits,
+    getRemainingCredits
   };
 }

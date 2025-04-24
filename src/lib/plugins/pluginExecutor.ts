@@ -185,7 +185,7 @@ export const getPluginStatus = async (pluginKey: string, tenantId: string) => {
         id, 
         enabled, 
         plugin_key,
-        tenant_plugin_configs!inner(config)
+        tenant_plugin_configs(config)
       `)
       .eq("tenant_id", tenantId)
       .eq("plugin_key", pluginKey)
@@ -196,7 +196,7 @@ export const getPluginStatus = async (pluginKey: string, tenantId: string) => {
     return {
       success: true,
       enabled: data?.enabled || false,
-      config: data?.tenant_plugin_configs?.config || {}
+      config: data?.tenant_plugin_configs?.[0]?.config || {}
     };
   } catch (error: any) {
     console.error(`Error getting plugin status for ${pluginKey}:`, error);

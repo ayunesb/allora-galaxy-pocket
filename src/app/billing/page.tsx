@@ -131,7 +131,7 @@ export default function BillingDashboard() {
   const availableCredits = getRemainingCredits();
   const creditStatus = React.useMemo(() => {
     const planCredits = profile?.plan === 'standard' ? 100 : 
-                         profile?.plan === 'growth' ? 500 : 1000;
+                       profile?.plan === 'growth' ? 500 : 1000;
     const percent = availableCredits / planCredits;
     
     if (percent < 0.1) return 'critical';
