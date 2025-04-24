@@ -207,7 +207,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // If there's an auth error during initial setup, still render children but show error state
   return (
     <AuthContext.Provider value={{ 
       user, 

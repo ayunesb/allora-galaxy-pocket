@@ -24,7 +24,7 @@ import { useOnboardingSubmission } from "./hooks/useOnboardingSubmission";
 import { useStepNavigation } from "./components/StepNavigator";
 import WorkspaceSwitcher from "@/app/workspace/WorkspaceSwitcher";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, RefreshCw } from "lucide-react";
+import { ArrowRight, RefreshCw, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getFirstInvalidStep } from "./components/StepValidation";
 import LiveSystemVerification from "@/components/LiveSystemVerification";
@@ -55,6 +55,7 @@ export default function OnboardingWizard() {
   const [formError, setFormError] = useState<string | null>(null);
   const [workspaceError, setWorkspaceError] = useState<boolean>(false);
   const navigate = useNavigate();
+  const [creatingWorkspace, setCreatingWorkspace] = useState(false);
 
   const { isSubmitting, completeOnboarding } = useOnboardingSubmission();
 
@@ -68,6 +69,9 @@ export default function OnboardingWizard() {
         description: "Please select or create a workspace to continue.",
         variant: "destructive"
       });
+    } else if (tenant) {
+      // Clear workspace error if tenant is selected
+      setWorkspaceError(false);
     }
   }, [tenant, tenantLoading, authLoading, toast]);
 
@@ -80,6 +84,11 @@ export default function OnboardingWizard() {
 
   const handleOnboardingCompletion = async (finalProfile: OnboardingProfile) => {
     try {
+      if (!tenant) {
+        setFormError("Please select a workspace before completing onboarding.");
+        return;
+      }
+      
       const result = await completeOnboarding(finalProfile);
       if (result.success) {
         setTimeout(() => {
@@ -121,6 +130,21 @@ export default function OnboardingWizard() {
       ...commonProps,
       back
     };
+  };
+
+  const handleContinue = () => {
+    if (!tenant) {
+      setWorkspaceError(true);
+      toast({
+        title: "Workspace required",
+        description: "Please select or create a workspace above.",
+        variant: "destructive"
+      });
+      return;
+    }
+    // If we have a tenant and we're on the onboarding page with an error,
+    // simply reload the page to clear any error states
+    window.location.reload();
   };
 
   if (tenantLoading || authLoading) {
@@ -181,23 +205,15 @@ export default function OnboardingWizard() {
             
             {workspaceError && (
               <p className="text-sm text-destructive mt-2">
-                You must select a workspace to continue with onboarding.
+                You must select or create a workspace to continue with onboarding.
               </p>
             )}
             
             <div className="mt-6">
               <Button 
                 className="w-full" 
-                onClick={() => {
-                  if (!tenant) {
-                    setWorkspaceError(true);
-                    toast({
-                      title: "Workspace required",
-                      description: "Please select or create a workspace above.",
-                      variant: "destructive"
-                    });
-                  }
-                }}
+                onClick={handleContinue}
+                disabled={!tenant}
               >
                 Continue to Onboarding <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -224,6 +240,18 @@ export default function OnboardingWizard() {
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-foreground dark:text-white">Setup your Allora OS</h1>
           <OnboardingProgressIndicator currentStep={step} totalSteps={steps.length} />
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            Workspace: <span className="font-medium text-foreground">{tenant.name}</span>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => navigate("/workspace")}
+          >
+            Change
+          </Button>
         </div>
         <BillingPreview />
         <OnboardingError error={formError} />

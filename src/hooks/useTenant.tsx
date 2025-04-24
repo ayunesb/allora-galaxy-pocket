@@ -25,18 +25,15 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       
       if (storedId) {
         console.log("Attempting to restore tenant from localStorage:", storedId);
-        // Fetch the tenant details from the view
+        // Fetch the tenant details directly with minimal fields
         const { data, error } = await supabase
-          .from("tenant_profiles_view")
-          .select("*")
+          .from("tenant_profiles")
+          .select("id, name, theme_mode, theme_color, enable_auto_approve")
           .eq("id", storedId)
           .maybeSingle();
         
         if (data && !error) {
-          console.log("Tenant loaded with theme settings:", {
-            theme_mode: data.theme_mode,
-            theme_color: data.theme_color
-          });
+          console.log("Tenant loaded with details:", data);
           handleSetTenant(data);
         } else {
           // If the stored tenant doesn't exist anymore, clear localStorage
@@ -60,9 +57,10 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     
     try {
       setIsLoading(true);
+      // Use direct tenant_profiles table query with minimal fields
       const { data, error } = await supabase
-        .from("tenant_profiles_view")
-        .select("*")
+        .from("tenant_profiles")
+        .select("id, name, theme_mode, theme_color, enable_auto_approve")
         .eq("id", tenant.id)
         .maybeSingle();
       
@@ -87,10 +85,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     if (newTenant?.id) {
       localStorage.setItem("tenant_id", newTenant.id);
       updateTenantHeader(newTenant.id);
-      console.log("Tenant set with theme:", {
-        theme_mode: newTenant.theme_mode || 'light',
-        theme_color: newTenant.theme_color
-      });
+      console.log("Tenant set:", newTenant);
     } else {
       localStorage.removeItem("tenant_id");
       updateTenantHeader(null);

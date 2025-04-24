@@ -9,6 +9,8 @@ export interface TenantOption {
   name: string;
   theme_color?: string;
   theme_mode?: string;
+  isDemo?: boolean;
+  enable_auto_approve?: boolean;
 }
 
 type Status = "idle" | "loading" | "error" | "success";
@@ -38,10 +40,10 @@ export function useAvailableTenants() {
     setError(null);
 
     try {
-      // Direct tenant profiles query with safe approach
+      // Direct tenant profiles query with safer column selection
       const { data: directTenantResponse, error: tenantError } = await supabase
         .from("tenant_profiles")
-        .select("id, name, theme_color, theme_mode, isDemo, enable_auto_approve")
+        .select("id, name, theme_color, theme_mode, enable_auto_approve")
         .limit(20);
 
       if (tenantError) {
@@ -51,7 +53,13 @@ export function useAvailableTenants() {
 
       if (directTenantResponse && directTenantResponse.length > 0) {
         console.log("[useAvailableTenants] Tenant query succeeded:", directTenantResponse.length, "tenants");
-        setTenants(directTenantResponse);
+        setTenants(directTenantResponse.map(tenant => ({
+          id: tenant.id,
+          name: tenant.name || 'Unnamed Workspace',
+          theme_color: tenant.theme_color,
+          theme_mode: tenant.theme_mode,
+          enable_auto_approve: tenant.enable_auto_approve
+        })));
         setStatus("success");
         setRetryCount(0);
         return;

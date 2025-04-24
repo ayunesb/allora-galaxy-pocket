@@ -29,7 +29,7 @@ export default function WorkspaceSwitcher({ highlight = false }) {
   useEffect(() => {
     if (justCreated && tenant && isOnboarding) {
       const timer = setTimeout(() => {
-        window.location.reload();
+        window.location.href = "/onboarding";
       }, 1000);
       return () => clearTimeout(timer);
     }
@@ -103,6 +103,13 @@ export default function WorkspaceSwitcher({ highlight = false }) {
         title: "Workspace changed",
         description: `Now working in "${selectedTenant.name}"`,
       });
+      
+      // If on onboarding page, refresh to apply tenant change properly
+      if (isOnboarding) {
+        setTimeout(() => {
+          window.location.href = "/onboarding";
+        }, 500);
+      }
     }
   };
 
