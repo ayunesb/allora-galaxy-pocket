@@ -69,7 +69,7 @@ export function CampaignExecutionTracker({ campaign, onUpdate }: CampaignExecuti
   const getProgressPercent = () => {
     if (!metrics?.execution_metrics) return 0;
     
-    // This is a simplified calculation - in a real app you'd use actual metrics
+    // Simple calculation based on metrics
     const { views, clicks, conversions } = metrics.execution_metrics;
     if (views === 0) return 5; // Just started
     if (clicks === 0) return 25; // Has views but no clicks

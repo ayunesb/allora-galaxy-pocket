@@ -15,6 +15,19 @@ interface CampaignInput {
   strategyId?: string;
 }
 
+interface CampaignScript {
+  channel: string;
+  content: string;
+  headline?: string;
+  cta?: string;
+}
+
+interface GeneratedCampaign {
+  name: string;
+  description: string;
+  scripts: CampaignScript[];
+}
+
 export function useCampaignIntegration() {
   const [isLoading, setIsLoading] = useState(false);
   const { tenant } = useTenant();
@@ -30,7 +43,7 @@ export function useCampaignIntegration() {
       
       setIsLoading(true);
       
-      // Deduct credits
+      // Deduct credits for campaign generation
       const creditsUsed = await useCredits(3, "Campaign Generation", "Campaign_Agent");
       
       if (!creditsUsed) {
@@ -70,7 +83,7 @@ export function useCampaignIntegration() {
               acc[curr.channel] = curr.content;
               return acc;
             }, {}),
-            execution_status: "pending", // Initialize execution status
+            execution_status: "pending",
             execution_metrics: {
               views: 0,
               clicks: 0,
@@ -83,9 +96,8 @@ export function useCampaignIntegration() {
         
         if (saveError) throw saveError;
         
-        // Link campaign to strategy by updating the strategy
+        // Create KPI insight
         if (input.strategy.id) {
-          // Create KPI insight to track campaign effectiveness
           await supabase.from("kpi_insights").insert({
             tenant_id: tenant.id,
             campaign_id: savedCampaign.id,
@@ -93,19 +105,12 @@ export function useCampaignIntegration() {
             insight: `Campaign "${savedCampaign.name}" launched based on strategy "${input.strategy.title}"`,
             impact_level: "medium",
             outcome: "pending",
-            target: 5.0, // Setting a default target value of 5% conversion
+            target: 5.0,
             suggested_action: `Monitor performance of campaign "${savedCampaign.name}" derived from strategy "${input.strategy.title}"`
-          });
-          
-          // Add feedback collection for the strategy
-          await supabase.from("strategy_feedback").insert({
-            tenant_id: tenant.id,
-            strategy_title: input.strategy.title,
-            action: `Created campaign "${savedCampaign.name}" with channels: ${input.channels.join(', ')}`
           });
         }
         
-        // Send notification about new campaign
+        // Send notification
         await sendNotification({
           event_type: "campaign_created",
           description: `New campaign "${savedCampaign.name}" has been created and is ready for review`,
@@ -141,78 +146,7 @@ export function useCampaignIntegration() {
     }
   };
 
-  const trackCampaignOutcome = useMutation({
-    mutationFn: async (campaignId: string) => {
-      if (!tenant?.id) {
-        throw new Error("No workspace selected");
-      }
-      
-      try {
-        // Call the edge function to trigger KPI tracking for this campaign
-        const { error } = await supabase.functions.invoke("trackCampaignOutcomes", {
-          body: { campaign_id: campaignId, tenant_id: tenant.id }
-        });
-        
-        if (error) throw error;
-        
-        // Invalidate KPI metrics queries
-        queryClient.invalidateQueries({ queryKey: ["kpi-metrics"] });
-        queryClient.invalidateQueries({ queryKey: ["kpi-alerts"] });
-        queryClient.invalidateQueries({ queryKey: ["campaign-insights"] });
-        
-        return true;
-      } catch (error) {
-        console.error("Error tracking campaign outcome:", error);
-        throw error;
-      }
-    }
-  });
-  
-  // Capture feedback on campaign performance to improve future strategies
-  const captureCampaignFeedback = useMutation({
-    mutationFn: async (input: { 
-      campaignId: string, 
-      strategyId: string, 
-      feedback: string, 
-      performanceRating: number 
-    }) => {
-      if (!tenant?.id) {
-        throw new Error("No workspace selected");
-      }
-      
-      try {
-        // Log feedback for strategy improvement
-        await supabase.from("agent_feedback").insert({
-          tenant_id: tenant.id,
-          agent: "Campaign_Agent",
-          feedback: input.feedback,
-          rating: input.performanceRating,
-          type: "campaign_performance_feedback",
-          task_id: input.strategyId
-        });
-        
-        // Add status update to the strategy
-        await supabase.from("strategy_feedback").insert({
-          tenant_id: tenant.id,
-          strategy_title: "Strategy ID: " + input.strategyId,
-          action: `Campaign performance feedback: ${input.feedback} (Rating: ${input.performanceRating}/5)`
-        });
-        
-        // Notify about feedback
-        await sendNotification({
-          event_type: "campaign_feedback",
-          description: `New feedback recorded for campaign performance (${input.performanceRating}/5)`
-        });
-        
-        return true;
-      } catch (error) {
-        console.error("Error capturing campaign feedback:", error);
-        throw error;
-      }
-    }
-  });
-
-  // Add the missing methods for campaign execution tracking
+  // Add campaign execution tracking
   const updateCampaignExecutionStatus = async (campaignId: string, status: string, metrics?: Record<string, any>) => {
     if (!tenant?.id || !campaignId) {
       return { success: false, error: "Missing required information" };
@@ -249,16 +183,6 @@ export function useCampaignIntegration() {
         .eq("tenant_id", tenant.id);
       
       if (error) throw error;
-      
-      // Log status change
-      await supabase
-        .from('system_logs')
-        .insert({
-          tenant_id: tenant.id,
-          event_type: 'CAMPAIGN_STATUS_UPDATED',
-          message: `Campaign status updated to "${status}"`,
-          meta: { campaign_id: campaignId, status }
-        });
         
       return { success: true };
     } catch (err: any) {
@@ -291,10 +215,8 @@ export function useCampaignIntegration() {
   };
 
   return {
-    isLoading: isLoading || generateCampaign.isPending || trackCampaignOutcome.isPending || captureCampaignFeedback.isPending,
+    isLoading: isLoading || generateCampaign.isPending,
     convertStrategyToCampaign,
-    trackCampaignOutcome: trackCampaignOutcome.mutate,
-    captureCampaignFeedback: captureCampaignFeedback.mutate,
     updateCampaignExecutionStatus,
     getCampaignExecutionMetrics
   };

@@ -471,40 +471,62 @@ export type Database = {
         Row: {
           created_at: string | null
           description: string | null
+          execution_metrics: Json | null
+          execution_start_date: string | null
+          execution_status: string | null
+          generated_by_agent_id: string | null
           id: string
           last_metrics_update: string | null
           metrics: Json | null
           name: string
           scripts: Json | null
           status: string
+          strategy_id: string | null
           tenant_id: string | null
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
           description?: string | null
+          execution_metrics?: Json | null
+          execution_start_date?: string | null
+          execution_status?: string | null
+          generated_by_agent_id?: string | null
           id?: string
           last_metrics_update?: string | null
           metrics?: Json | null
           name: string
           scripts?: Json | null
           status: string
+          strategy_id?: string | null
           tenant_id?: string | null
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
           description?: string | null
+          execution_metrics?: Json | null
+          execution_start_date?: string | null
+          execution_status?: string | null
+          generated_by_agent_id?: string | null
           id?: string
           last_metrics_update?: string | null
           metrics?: Json | null
           name?: string
           scripts?: Json | null
           status?: string
+          strategy_id?: string | null
           tenant_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "campaigns_strategy_id_fkey"
+            columns: ["strategy_id"]
+            isOneToOne: false
+            referencedRelation: "strategies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "campaigns_tenant_id_fkey"
             columns: ["tenant_id"]

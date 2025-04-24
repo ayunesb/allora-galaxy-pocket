@@ -8,4 +8,8 @@ export interface Campaign {
   scripts?: Record<string, string>;
   created_at: string;
   generated_by_agent_id?: string;
+  execution_status?: string;
+  execution_start_date?: string;
+  execution_metrics?: Record<string, any>;
+  strategy_id?: string;
 }

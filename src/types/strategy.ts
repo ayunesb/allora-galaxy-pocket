@@ -15,4 +15,5 @@ export interface Strategy {
   generated_by?: string | null;
   retry_prompt?: string | null;
   approved_at?: string | null;
+  metrics_baseline?: Record<string, any> | null;
 }
