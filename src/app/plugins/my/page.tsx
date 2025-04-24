@@ -10,7 +10,7 @@ import { usePluginManager } from "@/hooks/usePluginManager";
 import { Plugin } from "@/types/plugin";
 
 // Plugin metadata for rendering
-const pluginMetadata: Record<Plugin['key'], { icon: string, description: string }> = {
+const pluginMetadata: Record<Plugin['key'], { icon: string; description: string }> = {
   'stripe': { 
     icon: '💳',
     description: 'Payment processing, billing and subscription management'
@@ -31,6 +31,18 @@ const pluginMetadata: Record<Plugin['key'], { icon: string, description: string 
     icon: '📱',
     description: 'SMS and voice communication integration'
   },
+  'openai': {
+    icon: '🤖',
+    description: 'Advanced AI capabilities with GPT models'
+  },
+  'slack': {
+    icon: '💬',
+    description: 'Team communication and notifications'
+  },
+  'zapier': {
+    icon: '⚡',
+    description: 'Connect with thousands of apps and automate workflows'
+  }
 };
 
 export default function MyPluginsPage() {
