@@ -42,26 +42,28 @@ export function SecurityAuditTable({ tables, testResults, isLoading }: SecurityA
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="font-medium">{table.tablename}</h3>
-                    <PolicyStatusBadge status={table.has_rls ? "enabled" : "disabled"} />
+                    <PolicyStatusBadge hasAuthReference={table.rlsEnabled} />
                   </div>
-                  <AccessTestBadge result={testResult?.status || "pending"} />
+                  {testResult && <AccessTestBadge testResult={testResult} />}
                 </div>
                 
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
                     <span className="text-muted-foreground">Policy:</span>
-                    <div>{table.policy_name || "No policy"}</div>
+                    <div>{table.policies.length > 0 ? table.policies[0].policyname : "No policy"}</div>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Command:</span>
-                    <div>{table.command}</div>
+                    <div>{table.policies.length > 0 ? table.policies[0].command : "N/A"}</div>
                   </div>
                 </div>
                 
                 <div className="text-sm">
                   <span className="text-muted-foreground">Auth Reference:</span>
                   <div className="font-mono text-xs bg-muted p-1 rounded mt-1">
-                    {table.auth_reference || "None"}
+                    {table.policies.length > 0 
+                      ? (table.policies[0].definition.includes('auth.uid()') ? "Contains auth.uid()" : "No auth.uid() reference") 
+                      : "N/A"}
                   </div>
                 </div>
               </CardContent>

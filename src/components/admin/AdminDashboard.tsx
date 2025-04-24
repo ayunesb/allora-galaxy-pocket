@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ResponsiveCardGrid } from "@/components/ui/responsive-card-grid";
@@ -11,7 +11,7 @@ import { CronJobStatus } from "../system-health/CronJobStatus";
 import { ApprovalStatsTable } from "../../app/admin/ai-decisions/components/ApprovalStatsTable";
 import { PluginAnalytics } from "../../app/admin/plugins/PluginAnalytics";
 import { useKpiMetrics } from "@/hooks/useKpiMetrics";
-import { ArrowRight, BarChart2, Cpu, Database, Shield, Users } from "lucide-react";
+import { ArrowRight, BarChart2, Cpu, Database, Loader2, Settings, Shield, Users, Layers } from "lucide-react";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
