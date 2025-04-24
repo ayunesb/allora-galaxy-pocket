@@ -1,74 +1,103 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+};
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    )
-
-    // If this is a scheduled invocation, process all tenants
-    // Process all tenants
-    const { data: tenants, error: tenantsError } = await supabase
-      .from('tenant_profiles')
-      .select('id');
-
-    if (tenantsError) {
-      throw new Error('Failed to fetch tenants: ' + tenantsError.message);
-    }
-
-    const results = [];
+    const { tenant_id, metric_name, days = 30 } = await req.json();
     
-    for (const tenant of tenants || []) {
-      try {
-        const result = await processKpiTrends(supabase, tenant.id);
-        results.push(result);
-      } catch (tenantError) {
-        console.error(`Error processing KPI trends for tenant ${tenant.id}:`, tenantError);
-        
-        // Log failure for this tenant
-        await supabase
-          .from('cron_job_logs')
-          .insert({
-            function_name: 'fetch-kpi-trend',
-            status: 'error',
-            message: `Error processing tenant ${tenant.id}: ${tenantError.message}`
-          });
+    if (!tenant_id || !metric_name) {
+      throw new Error("Missing required parameters: tenant_id and metric_name");
+    }
+    
+    // Initialize Supabase client with service role key to bypass RLS
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+    
+    // Calculate start date based on days parameter
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    
+    // Fetch historical data from kpi_metrics_history
+    const { data: historyData, error: historyError } = await supabase
+      .from('kpi_metrics_history')
+      .select('value, recorded_at')
+      .eq('tenant_id', tenant_id)
+      .eq('metric', metric_name)
+      .gte('recorded_at', startDate.toISOString())
+      .order('recorded_at', { ascending: true });
+    
+    if (historyError) throw historyError;
+    
+    // Also get the current value from kpi_metrics
+    const { data: currentData, error: currentError } = await supabase
+      .from('kpi_metrics')
+      .select('value, updated_at')
+      .eq('tenant_id', tenant_id)
+      .eq('metric', metric_name)
+      .limit(1)
+      .single();
+    
+    if (currentError && currentError.code !== 'PGRST116') { // Don't throw if no results were found
+      throw currentError;
+    }
+    
+    // Combine historical and current data
+    const trendData = [
+      ...(historyData || []).map(item => ({
+        value: Number(item.value),
+        date: new Date(item.recorded_at).toISOString().split('T')[0]
+      }))
+    ];
+    
+    // Add current value if it exists
+    if (currentData) {
+      const currentDate = new Date(currentData.updated_at).toISOString().split('T')[0];
+      
+      // Check if we already have data for today
+      const hasTodayData = trendData.some(item => item.date === currentDate);
+      
+      if (!hasTodayData) {
+        trendData.push({
+          value: Number(currentData.value),
+          date: currentDate
+        });
       }
     }
-
-    // Log overall success
+    
+    // Log the operation in cron_job_logs
     await supabase
       .from('cron_job_logs')
       .insert({
         function_name: 'fetch-kpi-trend',
         status: 'success',
-        message: `Processed KPI trends for ${results.length} tenants successfully`
+        message: `Fetched trend data for ${metric_name} over ${days} days`,
+        meta: { tenant_id, metric_name, days, data_points: trendData.length }
       });
-
+    
     return new Response(
-      JSON.stringify({ success: true, processed: results.length }),
+      JSON.stringify(trendData),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('KPI Trend Analysis Error:', error);
+    console.error("Error in fetch-kpi-trend:", error.message);
     
-    // Log the overall function failure
+    // Log error
     const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
     
     await supabase
@@ -79,121 +108,12 @@ serve(async (req) => {
         message: `Error: ${error.message}`
       });
     
-    // Try to send Slack alert if configured
-    try {
-      await sendSlackAlert('fetch-kpi-trend', error.message);
-    } catch (slackError) {
-      console.error('Failed to send Slack alert:', slackError);
-    }
-    
     return new Response(
       JSON.stringify({ error: error.message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
     );
   }
 });
-
-async function processKpiTrends(supabase, tenant_id: string) {
-  // Get KPI metrics from the last 30 days
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  
-  const { data: kpiData, error: kpiError } = await supabase
-    .from('kpi_metrics')
-    .select('*')
-    .eq('tenant_id', tenant_id)
-    .gte('recorded_at', thirtyDaysAgo.toISOString())
-    .order('recorded_at', { ascending: false });
-
-  if (kpiError) {
-    throw new Error(`Failed to fetch KPI metrics: ${kpiError.message}`);
-  }
-
-  if (!kpiData || kpiData.length === 0) {
-    console.log(`No KPI metrics found for tenant ${tenant_id}`);
-    return { tenant_id, metrics_analyzed: 0, trends_detected: 0 };
-  }
-
-  // Group metrics by metric name
-  const metricsByName = kpiData.reduce((acc, metric) => {
-    if (!acc[metric.metric]) {
-      acc[metric.metric] = [];
-    }
-    acc[metric.metric].push(metric);
-    return acc;
-  }, {});
-
-  // Calculate trends for each metric
-  const trends = [];
-  let trendsDetected = 0;
-
-  for (const [metricName, metrics] of Object.entries(metricsByName)) {
-    // Sort by date ascending to analyze trend properly
-    const sortedMetrics = metrics.sort((a, b) => 
-      new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime()
-    );
-    
-    if (sortedMetrics.length < 2) continue; // Need at least 2 points for a trend
-    
-    // Calculate simple trend (is it going up or down?)
-    const firstValue = Number(sortedMetrics[0].value);
-    const lastValue = Number(sortedMetrics[sortedMetrics.length - 1].value);
-    
-    // Calculate percentage change
-    const change = lastValue - firstValue;
-    const percentChange = firstValue !== 0 ? (change / firstValue) * 100 : 0;
-    
-    // Determine trend direction
-    let trendDirection = 'neutral';
-    if (percentChange > 5) trendDirection = 'up';
-    if (percentChange < -5) trendDirection = 'down';
-    
-    if (trendDirection !== 'neutral') {
-      trendsDetected++;
-      
-      // Store trend data in the database
-      await supabase.from('kpi_metrics').upsert({
-        tenant_id,
-        metric: `${metricName} Trend`, 
-        value: percentChange,
-        recorded_at: new Date().toISOString()
-      });
-      
-      trends.push({
-        metric: metricName,
-        change_percent: percentChange,
-        trend: trendDirection
-      });
-    }
-  }
-  
-  // Log success
-  await supabase.from('cron_job_logs').insert({
-    function_name: 'fetch-kpi-trend',
-    status: 'success',
-    message: `Analyzed ${Object.keys(metricsByName).length} KPI metrics for tenant ${tenant_id}, detected ${trendsDetected} trends`
-  });
-
-  return {
-    tenant_id,
-    metrics_analyzed: Object.keys(metricsByName).length,
-    trends_detected: trendsDetected,
-    trends
-  };
-}
-
-async function sendSlackAlert(functionName: string, errorMessage: string) {
-  const slackWebhookUrl = Deno.env.get('SLACK_WEBHOOK_URL');
-  if (!slackWebhookUrl) {
-    console.log('No Slack webhook URL configured, skipping alert');
-    return;
-  }
-
-  const message = `🚨 CRON job failed: *${functionName}*\nError: \`${errorMessage}\`\nTime: ${new Date().toISOString()}`;
-
-  await fetch(slackWebhookUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text: message })
-  });
-}

@@ -7,7 +7,7 @@ export interface KpiMetric {
   last_value?: number;
   trend_direction?: 'up' | 'down' | 'neutral';
   category?: string;
-  status?: 'success' | 'warning';
+  status?: 'success' | 'warning' | 'error' | 'info';
   updated_at: string;
   tenant_id: string;
   
@@ -15,7 +15,11 @@ export interface KpiMetric {
   label?: string;
   trend?: 'up' | 'down' | 'neutral';
   changePercent?: number;
-  historicalData?: Array<{ value: number; recorded_at: string }>;
+  historicalData?: Array<{ value: number; date: string }>;
+  
+  // GA4 specific fields
+  source?: string;
+  last_sync?: string;
 }
 
 export interface KpiFilter {
@@ -26,11 +30,33 @@ export interface KpiFilter {
 
 export interface KpiAlert {
   id: string;
-  metric: string;
-  threshold: number;
-  condition: 'above' | 'below';
-  status: 'active' | 'triggered' | 'resolved';
-  triggered_at?: string;
-  tenant_id: string;
+  kpi_name: string;
+  description: string;
+  severity: 'low' | 'medium' | 'high';
+  current_value?: number;
+  previous_value?: number;
+  target?: number;
+  percent_change?: number;
+  outcome: 'pending' | 'success' | 'failed' | 'resolved';
   created_at: string;
+  tenant_id: string;
+  campaign_id?: string;
+}
+
+export interface KpiAlertRule {
+  id: string;
+  tenant_id: string;
+  kpi_name: string;
+  condition: '<' | '>' | 'falls_by_%' | 'rises_by_%';
+  threshold: number;
+  compare_period: '1d' | '7d' | '30d';
+  severity: 'low' | 'medium' | 'high';
+  created_at: string;
+  active: boolean;
+  campaign_id?: string;
+}
+
+export interface KpiTrendPoint {
+  value: number;
+  date: string;
 }
