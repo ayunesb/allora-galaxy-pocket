@@ -2,9 +2,11 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
+import { Plugin } from "@/types/plugin";
+import { toast } from "sonner";
 
 type PluginContextType = {
-  activePlugins: string[];
+  activePlugins: Plugin['key'][];
   refreshPlugins: () => Promise<void>;
   isLoading: boolean;
 };
@@ -13,7 +15,7 @@ const PluginContext = createContext<PluginContextType | undefined>(undefined);
 
 export function PluginProvider({ children }: { children: ReactNode }) {
   const { tenant } = useTenant();
-  const [activePlugins, setActivePlugins] = useState<string[]>([]);
+  const [activePlugins, setActivePlugins] = useState<Plugin['key'][]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshPlugins = async () => {
@@ -32,7 +34,7 @@ export function PluginProvider({ children }: { children: ReactNode }) {
 
       if (error) throw error;
       
-      setActivePlugins(data.map((p) => p.plugin_key));
+      setActivePlugins(data.map((p) => p.plugin_key) as Plugin['key'][]);
     } catch (error) {
       console.error("[PluginContext] Error:", error);
       setActivePlugins([]);

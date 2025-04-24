@@ -1,80 +1,150 @@
 
-import React from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
-import { Plug, Plus, BarChart3, Code, TrendingUp } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { usePlugins } from "@/hooks/usePlugins";
+import { Package, Activity, Settings, Database, TrendingUp } from "lucide-react";
 
 export default function PluginsDashboard() {
+  const { activePlugins, isLoading } = usePlugins();
+  const navigate = useNavigate();
+
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Plugin Management</h1>
-        <p className="text-muted-foreground">Build, discover, and manage plugins for your workspace</p>
+    <div className="container mx-auto py-8 space-y-8">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Plugins</h1>
+          <p className="text-muted-foreground">
+            Manage and configure plugins to extend your workspace
+          </p>
+        </div>
+        <Button onClick={() => navigate("/plugins/marketplace")}>
+          <Package className="mr-2 h-4 w-4" />
+          Browse Marketplace
+        </Button>
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card className="hover:shadow-md transition-shadow">
-          <CardHeader>
-            <Plug className="h-8 w-8 mb-2 text-primary" />
-            <CardTitle>Plugin Builder</CardTitle>
-            <CardDescription>Create and submit custom plugins</CardDescription>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Active Plugins</CardTitle>
           </CardHeader>
           <CardContent>
-            <Link to="/plugins/builder">
-              <Button className="w-full">
-                <Code className="mr-2 h-4 w-4" />
-                Open Builder
-              </Button>
-            </Link>
+            <div className="text-3xl font-bold">
+              {isLoading ? "..." : activePlugins.length}
+            </div>
           </CardContent>
         </Card>
-        
+      </div>
+
+      <h2 className="text-2xl font-bold pt-4">Quick Actions</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader>
-            <BarChart3 className="h-8 w-8 mb-2 text-primary" />
-            <CardTitle>Plugin Leaderboard</CardTitle>
-            <CardDescription>View top performing plugins</CardDescription>
+            <Package className="h-8 w-8 mb-2 text-primary" />
+            <CardTitle>Marketplace</CardTitle>
+            <CardDescription>Browse and install plugins</CardDescription>
           </CardHeader>
-          <CardContent>
-            <Link to="/plugins/leaderboard">
-              <Button className="w-full" variant="outline">
-                View Leaderboard
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-        
-        <Card className="hover:shadow-md transition-shadow">
-          <CardHeader>
-            <Plus className="h-8 w-8 mb-2 text-primary" />
-            <CardTitle>Submit Plugin</CardTitle>
-            <CardDescription>Submit a new plugin to the marketplace</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link to="/plugins/submit">
-              <Button className="w-full" variant="outline">
-                Submit Plugin
-              </Button>
-            </Link>
-          </CardContent>
+          <CardFooter>
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => navigate("/plugins/marketplace")}
+            >
+              View Marketplace
+            </Button>
+          </CardFooter>
         </Card>
 
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader>
-            <TrendingUp className="h-8 w-8 mb-2 text-primary" />
-            <CardTitle>Plugin Performance</CardTitle>
-            <CardDescription>View plugin ROI and earnings metrics</CardDescription>
+            <Activity className="h-8 w-8 mb-2 text-primary" />
+            <CardTitle>Analytics</CardTitle>
+            <CardDescription>View plugin usage statistics</CardDescription>
           </CardHeader>
-          <CardContent>
-            <Link to="/plugins/performance">
-              <Button className="w-full" variant="outline">
-                View Performance
-              </Button>
-            </Link>
-          </CardContent>
+          <CardFooter>
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => navigate("/plugins/analytics")}
+            >
+              View Analytics
+            </Button>
+          </CardFooter>
+        </Card>
+
+        <Card className="hover:shadow-md transition-shadow">
+          <CardHeader>
+            <Settings className="h-8 w-8 mb-2 text-primary" />
+            <CardTitle>Settings</CardTitle>
+            <CardDescription>Configure global plugin settings</CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => navigate("/plugins/settings")}
+            >
+              Plugin Settings
+            </Button>
+          </CardFooter>
+        </Card>
+
+        <Card className="hover:shadow-md transition-shadow">
+          <CardHeader>
+            <Database className="h-8 w-8 mb-2 text-primary" />
+            <CardTitle>My Plugins</CardTitle>
+            <CardDescription>Manage your installed plugins</CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => navigate("/plugins/my")}
+            >
+              View My Plugins
+            </Button>
+          </CardFooter>
         </Card>
       </div>
+
+      <h2 className="text-2xl font-bold pt-4">Active Plugins</h2>
+      {isLoading ? (
+        <div className="flex justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      ) : activePlugins.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Package className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium">No active plugins</h3>
+            <p className="text-muted-foreground mb-4">Get started by installing plugins from the marketplace</p>
+            <Button onClick={() => navigate("/plugins/marketplace")}>
+              Browse Marketplace
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {activePlugins.map(plugin => (
+            <Card key={plugin} className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <CardTitle>{plugin}</CardTitle>
+                <CardDescription>Active</CardDescription>
+              </CardHeader>
+              <CardFooter>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => navigate(`/plugins/config/${plugin}`)}
+                >
+                  Configure
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
