@@ -12,7 +12,7 @@ import {
 import { RefreshCw, Search, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AdminSystemLogsTable } from './AdminSystemLogsTable';
-import LogSecurityAlert from '@/app/admin/logs/LogSecurityAlert';
+import { LogSecurityAlert } from '@/app/admin/logs/LogSecurityAlert';
 import { useAuth } from '@/hooks/useAuth';
 import { useTenant } from '@/hooks/useTenant';
 
@@ -21,7 +21,7 @@ export function AdminSystemLogs() {
     logs, 
     isLoading, 
     filters, 
-    setFilters, 
+    setFilters,
     getRecentLogs,
     pagination: {
       currentPage,

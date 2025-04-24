@@ -21,7 +21,7 @@ export default function CampaignDetail({ id }: CampaignDetailProps) {
   const { tenant } = useTenant();
   const [activeTab, setActiveTab] = useState("overview");
   const { agentProfile } = useAgentContext();
-  const { startCampaignExecution, pauseCampaignExecution } = useCampaignExecution();
+  const { execute, status, progress, startCampaignExecution, pauseCampaignExecution } = useCampaignExecution();
   
   const { data: campaign, isLoading, error, refetch } = useQuery({
     queryKey: ['campaign', id],

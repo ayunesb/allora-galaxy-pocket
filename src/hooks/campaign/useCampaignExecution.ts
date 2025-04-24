@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/hooks/useTenant';
@@ -14,7 +15,6 @@ export function useCampaignExecution() {
     try {
       if (!tenant?.id) {
         toast({
-          title: "Error",
           description: "No active workspace"
         });
         return;
@@ -47,7 +47,6 @@ export function useCampaignExecution() {
       setProgress(100);
 
       toast({
-        title: "Success",
         description: "Campaign executed successfully"
       });
 
@@ -61,9 +60,72 @@ export function useCampaignExecution() {
     } catch (error) {
       console.error('Campaign execution error:', error);
       toast({
-        title: "Error",
         description: "Failed to execute campaign",
         variant: "destructive"
+      });
+    }
+  };
+  
+  // Add methods for CampaignDetail.tsx
+  const startCampaignExecution = async (campaignId: string) => {
+    try {
+      if (!tenant?.id) {
+        toast({
+          description: "No active workspace"
+        });
+        return;
+      }
+      
+      toast({
+        description: "Starting campaign execution..."
+      });
+      
+      // Update campaign status in database
+      const { error } = await supabase
+        .from('campaigns')
+        .update({
+          execution_status: 'in_progress',
+          execution_start_date: new Date().toISOString()
+        })
+        .eq('id', campaignId)
+        .eq('tenant_id', tenant.id);
+        
+      if (error) throw error;
+      
+      // Execute the campaign
+      execute();
+      
+    } catch (error) {
+      console.error('Failed to start campaign:', error);
+      toast({
+        description: "Failed to start campaign execution"
+      });
+    }
+  };
+  
+  const pauseCampaignExecution = async (campaignId: string) => {
+    try {
+      if (!tenant?.id) return;
+      
+      // Update campaign status in database
+      const { error } = await supabase
+        .from('campaigns')
+        .update({
+          execution_status: 'paused'
+        })
+        .eq('id', campaignId)
+        .eq('tenant_id', tenant.id);
+        
+      if (error) throw error;
+      
+      toast({
+        description: "Campaign paused successfully"
+      });
+      
+    } catch (error) {
+      console.error('Failed to pause campaign:', error);
+      toast({
+        description: "Failed to pause campaign"
       });
     }
   };
@@ -72,5 +134,7 @@ export function useCampaignExecution() {
     execute,
     status,
     progress,
+    startCampaignExecution,
+    pauseCampaignExecution
   };
 }
