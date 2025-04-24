@@ -1,7 +1,7 @@
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Download, Check, Star, Info } from "lucide-react";
+import { Download, Check, Star, Info, Loader } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -83,9 +83,7 @@ export function PluginCard({ plugin, isActive, onAction, isLoading, showDetails 
           >
             {isLoading ? (
               <div className="flex items-center">
-                <div className="animate-spin mr-2">
-                  <loader className="h-4 w-4" />
-                </div>
+                <Loader className="animate-spin mr-2 h-4 w-4" />
                 {isMobile ? '' : 'Processing...'}
               </div>
             ) : isActive ? (

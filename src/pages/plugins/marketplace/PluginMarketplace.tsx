@@ -1,21 +1,19 @@
 
 import { useState } from "react";
-import { Card } from "@/components/ui/card";
 import { usePlugins } from "@/hooks/usePlugins";
 import { usePluginManager } from "@/hooks/usePluginManager";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePluginFilters } from "@/hooks/usePluginFilters";
 import { availablePlugins, categories } from "./data";
 import { Plugin } from "@/types/plugin";
-import { EmptyPluginState } from "./components/EmptyPluginState";
-import { CategoryFilter } from "./components/CategoryFilter";
-import { SortPlugins } from "./components/SortPlugins";
+import { LoadingState } from "./components/LoadingState";
+import { ErrorState } from "./components/ErrorState";
+import { FilterSection } from "./components/FilterSection";
+import { DesktopFilters } from "./components/DesktopFilters";
 import { MarketplaceHeader } from "./components/MarketplaceHeader";
 import { PluginList } from "./components/PluginList";
 import { PluginDetails } from "./components/PluginDetails";
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { SortPlugins } from "./components/SortPlugins";
 import { toast } from "sonner";
 
 export default function PluginMarketplace() {
@@ -63,12 +61,7 @@ export default function PluginMarketplace() {
   };
 
   if (error) {
-    return (
-      <Alert variant="destructive" className="mb-4">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
-    );
+    return <ErrorState message={error} />;
   }
 
   return (
@@ -82,28 +75,21 @@ export default function PluginMarketplace() {
 
       <div className="flex flex-col md:flex-row gap-4">
         {isMobile && showFilters && (
-          <Card className="p-4 w-full md:hidden space-y-4">
-            <CategoryFilter 
-              categories={categories}
-              activeCategory={activeCategory}
-              onCategoryChange={setActiveCategory}
-              isMobile={true}
-            />
-            <div>
-              <h3 className="text-sm font-medium mb-2">Sort By</h3>
-              <SortPlugins value={sortOrder} onChange={setSortOrder} />
-            </div>
-          </Card>
-        )}
-
-        <div className="hidden md:block w-48">
-          <CategoryFilter 
+          <FilterSection
             categories={categories}
             activeCategory={activeCategory}
             onCategoryChange={setActiveCategory}
-            isMobile={false}
+            sortOrder={sortOrder}
+            onSortChange={setSortOrder}
+            isMobile={isMobile}
           />
-        </div>
+        )}
+
+        <DesktopFilters
+          categories={categories}
+          activeCategory={activeCategory}
+          onCategoryChange={setActiveCategory}
+        />
         
         <div className="flex-1">
           <div className="hidden md:flex justify-between items-center mb-4">
@@ -115,18 +101,14 @@ export default function PluginMarketplace() {
             <SortPlugins value={sortOrder} onChange={setSortOrder} />
           </div>
 
-          {filteredPlugins.length === 0 ? (
-            <EmptyPluginState onReset={resetFilters} />
-          ) : (
-            <PluginList
-              plugins={filteredPlugins}
-              activePlugins={activePlugins}
-              isInstalling={isInstalling}
-              onInstall={handlePluginAction}
-              onShowDetails={setSelectedPlugin}
-              processingPluginKey={isProcessing}
-            />
-          )}
+          <PluginList
+            plugins={filteredPlugins}
+            activePlugins={activePlugins}
+            isInstalling={isInstalling}
+            onInstall={handlePluginAction}
+            onShowDetails={setSelectedPlugin}
+            processingPluginKey={isProcessing}
+          />
         </div>
       </div>
       
