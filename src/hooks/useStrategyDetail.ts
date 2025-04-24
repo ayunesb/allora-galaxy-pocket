@@ -1,17 +1,22 @@
 
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import { useSystemLogs } from "@/hooks/useSystemLogs";
 import { toast } from "sonner";
 import type { Strategy } from "@/types/strategy";
+import { useStrategySystem } from "./useStrategySystem";
 
 export function useStrategyDetail(id: string | undefined) {
   const { tenant } = useTenant();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { logActivity } = useSystemLogs();
+  const [comparisonData, setComparisonData] = useState<any>(null);
+  const { createStrategyVersion, versions, compareVersions } = useStrategySystem();
 
   const { data: strategy, isLoading, error } = useQuery({
     queryKey: ['strategy', id],
@@ -65,7 +70,6 @@ export function useStrategyDetail(id: string | undefined) {
         .eq('id', id);
 
       toast({
-        title: "Strategy approved",
         description: "The strategy has been approved and is now active"
       });
 
@@ -77,12 +81,111 @@ export function useStrategyDetail(id: string | undefined) {
 
     } catch (error) {
       toast({
-        title: "Error approving strategy",
-        description: "Could not approve the strategy. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
+        description: "Could not approve the strategy. Please try again."
       });
     }
   };
+
+  const handleDecline = () => {
+    if (!tenant?.id || !user?.id || !strategy) return;
+
+    const saveFeedback = async () => {
+      await supabase
+        .from('strategy_feedback')
+        .insert({
+          tenant_id: tenant.id,
+          user_id: user.id,
+          strategy_title: strategy.title,
+          action: 'dismissed'
+        });
+
+      queryClient.invalidateQueries({ queryKey: ['strategies'] });
+      queryClient.invalidateQueries({ queryKey: ['strategy-feedback', id] });
+      
+      toast({
+        description: 'Strategy has been declined'
+      });
+      
+      logActivity({
+        event_type: 'strategy_declined',
+        message: `Declined strategy: ${strategy.title}`,
+        meta: {
+          strategy_id: id,
+          action: 'dismissed'
+        }
+      });
+    };
+
+    saveFeedback();
+  };
+
+  const handleRegenerate = () => {
+    if (!strategy) return;
+    
+    toast({
+      description: "The AI is creating a new version of this strategy"
+    });
+    
+    logActivity({ 
+      event_type: 'strategy_regenerated',
+      message: `Requested regeneration of strategy: ${strategy.title}`,
+      meta: { strategy_id: id }
+    });
+  };
+
+  const handleCreateVersion = async () => {
+    if (!strategy) return;
+    
+    await createStrategyVersion({
+      strategyId: strategy.id,
+      changes: strategy.description || ''
+    });
+    
+    toast({
+      description: "A new version of this strategy has been saved"
+    });
+  };
+
+  const handleCompareVersions = async (v1: number, v2: number) => {
+    if (!strategy) return;
+    
+    try {
+      const comparison = await compareVersions(strategy.id, v1, v2);
+      if (comparison) {
+        setComparisonData(comparison);
+      }
+    } catch (error) {
+      console.error("Error comparing versions:", error);
+      toast({
+        variant: "destructive",
+        description: "Failed to compare strategy versions"
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (!tenant?.id || !strategy?.title) return;
+    
+    const channel = supabase
+      .channel('strategy_feedback_changes')
+      .on('postgres_changes', 
+        {
+          event: '*', 
+          schema: 'public', 
+          table: 'strategy_feedback',
+          filter: `tenant_id=eq.${tenant.id}` 
+        }, 
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['strategy-feedback', id] });
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [tenant?.id, strategy?.title, id, queryClient]);
 
   return {
     strategy,
@@ -90,6 +193,11 @@ export function useStrategyDetail(id: string | undefined) {
     error,
     feedbackItems,
     isLoadingFeedback,
-    handleApprove
+    comparisonData,
+    handleApprove,
+    handleDecline,
+    handleRegenerate,
+    handleCreateVersion,
+    handleCompareVersions
   };
 }
