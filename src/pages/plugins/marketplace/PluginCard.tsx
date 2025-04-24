@@ -1,5 +1,5 @@
 
-import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Download, Check, Star, Info } from "lucide-react";
@@ -108,3 +108,4 @@ export function PluginCard({ plugin, isActive, onAction, isLoading, showDetails 
     </Card>
   );
 }
+
