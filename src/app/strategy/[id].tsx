@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -17,10 +18,10 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator } from 
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { StrategyErrorBoundary } from "./components/StrategyErrorBoundary";
-const { useStrategySystem } = require("@/hooks/useStrategySystem");
-const { StrategyFeedbackForm } = require("@/components/StrategyFeedbackForm");
-const { StrategyPerformanceTracker } = require("@/components/StrategyPerformanceTracker");
-const { StrategyVersionComparison } = require("@/components/StrategyVersionComparison");
+import { useStrategySystem } from "@/hooks/useStrategySystem";
+import { StrategyFeedbackForm } from "@/components/StrategyFeedbackForm";
+import { StrategyPerformanceTracker } from "@/components/StrategyPerformanceTracker";
+import { StrategyVersionComparison } from "@/components/StrategyVersionComparison";
 
 function StrategyDetailContent() {
   const { id } = useParams();
