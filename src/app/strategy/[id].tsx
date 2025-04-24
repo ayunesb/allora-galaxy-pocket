@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -8,20 +7,16 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useSystemLogs } from "@/hooks/useSystemLogs";
 import type { Strategy } from "@/types/strategy";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardContent, CardFooter, CardTitle } from "@/components/ui/card";
-import { Loader2, ThumbsUp, ThumbsDown, RefreshCw, MessageSquare, ClipboardList, Eye } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
-import { format } from "date-fns";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 import { StrategyErrorBoundary } from "./components/StrategyErrorBoundary";
 import { useStrategySystem } from "@/hooks/useStrategySystem";
 import { StrategyFeedbackForm } from "@/components/StrategyFeedbackForm";
 import { StrategyPerformanceTracker } from "@/components/StrategyPerformanceTracker";
-import { StrategyVersionComparison } from "@/components/StrategyVersionComparison";
+import { StrategyHeader } from "./components/StrategyHeader";
+import { StrategyActions } from "./components/StrategyActions";
+import { StrategyTabs } from "./components/StrategyTabs";
+import { StrategyVersions } from "./components/StrategyVersions";
 
 function StrategyDetailContent() {
   const { id } = useParams();
@@ -33,8 +28,6 @@ function StrategyDetailContent() {
   const { logActivity } = useSystemLogs();
   const [note, setNote] = useState("");
   const [showRawFeedback, setShowRawFeedback] = useState(false);
-  const [showVersionComparison, setShowVersionComparison] = useState(false);
-  const [selectedVersions, setSelectedVersions] = useState<{v1: number, v2: number} | null>(null);
   const [comparisonData, setComparisonData] = useState<any>(null);
   const { createStrategyVersion, versions, compareVersions } = useStrategySystem();
 
@@ -147,8 +140,35 @@ function StrategyDetailContent() {
     }
   }, [strategy, tenant?.id, user?.id, id]);
 
-  const handleApprove = () => {
-    saveFeedback({ action: 'used' });
+  const handleApprove = async () => {
+    try {
+      await supabase
+        .from('vault_strategies')
+        .update({
+          status: 'approved',
+          approved_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      toast({
+        title: "Strategy approved",
+        description: "The strategy has been approved and is now active"
+      });
+
+      logActivity({
+        event_type: 'strategy_approved',
+        message: `Approved strategy: ${strategy?.title}`,
+        meta: { strategy_id: id }
+      });
+
+      navigate('/dashboard');
+    } catch (error) {
+      toast({
+        title: "Error approving strategy",
+        description: "Could not approve the strategy. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleDecline = () => {
@@ -168,45 +188,6 @@ function StrategyDetailContent() {
       message: `Requested regeneration of strategy: ${strategy.title}`,
       meta: { strategy_id: id }
     });
-  };
-
-  const handleAddNote = () => {
-    if (!note.trim() || !tenant?.id || !user?.id || !strategy) return;
-    
-    supabase
-      .from('strategy_feedback')
-      .insert({
-        tenant_id: tenant.id,
-        user_id: user.id,
-        strategy_title: strategy.title,
-        action: 'note',
-        note: note.trim()
-      })
-      .then(({ error }) => {
-        if (error) {
-          toast({
-            title: "Failed to save note",
-            description: error.message,
-            variant: "destructive"
-          });
-          return;
-        }
-        
-        queryClient.invalidateQueries({ queryKey: ['strategy-feedback', id] });
-        
-        toast({
-          title: "Note added",
-          description: "Your note has been saved"
-        });
-        
-        logActivity({ 
-          event_type: 'strategy_note_added',
-          message: `Added note to strategy: ${strategy.title}`,
-          meta: { strategy_id: id, note: note.trim() }
-        });
-        
-        setNote("");
-      });
   };
 
   const handleCreateVersion = async () => {
@@ -230,7 +211,6 @@ function StrategyDetailContent() {
       const comparison = await compareVersions(strategy.id, v1, v2);
       if (comparison) {
         setComparisonData(comparison);
-        setShowVersionComparison(true);
       }
     } catch (error) {
       console.error("Error comparing versions:", error);
@@ -262,223 +242,47 @@ function StrategyDetailContent() {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <Breadcrumb className="mb-4">
-        <BreadcrumbItem>
-          <BreadcrumbLink onClick={() => navigate('/dashboard')}>Dashboard</BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator />
-        <BreadcrumbItem>
-          <BreadcrumbLink onClick={() => navigate('/vault')}>Strategies</BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator />
-        <BreadcrumbItem isCurrentPage>
-          {strategy.title}
-        </BreadcrumbItem>
-      </Breadcrumb>
-      
       <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">{strategy.title}</CardTitle>
-          <div className="text-sm text-muted-foreground">
-            Created: {strategy.created_at && format(new Date(strategy.created_at), 'PPP')}
-            {strategy.industry && ` • Industry: ${strategy.industry}`}
-          </div>
-        </CardHeader>
+        <StrategyHeader 
+          strategy={strategy}
+          onNavigate={navigate}
+        />
+        
         <CardContent>
-          <Tabs defaultValue="overview">
-            <TabsList>
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="goals">Goals</TabsTrigger>
-              <TabsTrigger value="performance">Performance</TabsTrigger>
-              <TabsTrigger value="versions">Versions</TabsTrigger>
-              <TabsTrigger value="feedback" className="flex items-center gap-1">
-                <ClipboardList className="h-4 w-4" /> Feedback
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="overview" className="mt-4">
-              <p>{strategy.description}</p>
-            </TabsContent>
-            <TabsContent value="goals" className="mt-4">
-              <p>{strategy.goal || "No specific goals defined for this strategy."}</p>
-            </TabsContent>
-            
-            <TabsContent value="performance" className="mt-4">
-              <StrategyPerformanceTracker 
-                strategyId={strategy.id} 
-                initialMetrics={strategy.metrics_baseline || {}}
-              />
-            </TabsContent>
-            
-            <TabsContent value="versions" className="mt-4">
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="font-medium">Version History</h3>
-                  <Button variant="outline" size="sm" onClick={handleCreateVersion}>
-                    Save Current Version
-                  </Button>
-                </div>
-                
-                {versions && versions.length > 0 ? (
-                  <div className="space-y-2">
-                    {versions.map((version, index) => (
-                      <div key={version.id} className="border rounded-lg p-3">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <span className="font-medium">Version {version.version}</span>
-                            <span className="text-sm text-muted-foreground ml-2">
-                              {format(new Date(version.created_at), 'PPp')}
-                            </span>
-                          </div>
-                          {index > 0 && (
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleCompareVersions(versions[index].version, versions[index-1].version)}
-                            >
-                              Compare with V{versions[index-1].version}
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-4 text-muted-foreground">
-                    No versions saved yet. Click "Save Current Version" to create the first version.
-                  </div>
-                )}
-                
-                {showVersionComparison && comparisonData && (
-                  <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-background rounded-lg w-full max-w-4xl overflow-hidden">
-                      <div className="p-4 border-b flex justify-between items-center">
-                        <h3 className="font-semibold text-lg">Version Comparison</h3>
-                        <Button variant="ghost" size="sm" onClick={() => setShowVersionComparison(false)}>
-                          Close
-                        </Button>
-                      </div>
-                      <div className="p-4">
-                        <StrategyVersionComparison
-                          olderVersion={comparisonData.older}
-                          newerVersion={comparisonData.newer}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="feedback" className="mt-4">
-              <div className="mb-4">
+          <StrategyTabs strategy={strategy}>
+            {{
+              overview: <p>{strategy.description}</p>,
+              goals: <p>{strategy.goal || "No specific goals defined for this strategy."}</p>,
+              performance: (
+                <StrategyPerformanceTracker 
+                  strategyId={strategy.id} 
+                  initialMetrics={strategy.metrics_baseline || {}}
+                />
+              ),
+              versions: (
+                <StrategyVersions
+                  strategy={strategy}
+                  versions={versions}
+                  onCreateVersion={handleCreateVersion}
+                  onCompareVersions={handleCompareVersions}
+                  comparisonData={comparisonData}
+                />
+              ),
+              feedback: (
                 <StrategyFeedbackForm 
                   strategyId={strategy.id}
                   onFeedbackSubmitted={() => queryClient.invalidateQueries({ queryKey: ['strategy-feedback', id] })}
                 />
-              </div>
-              
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="font-medium">Feedback History</h3>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="show-raw"
-                    checked={showRawFeedback}
-                    onCheckedChange={setShowRawFeedback}
-                  />
-                  <Label htmlFor="show-raw">Show raw feedback</Label>
-                </div>
-              </div>
-              
-              {isLoadingFeedback ? (
-                <div className="flex justify-center py-4">
-                  <Loader2 className="animate-spin h-5 w-5" />
-                </div>
-              ) : feedbackItems && feedbackItems.length > 0 ? (
-                <div className="space-y-4">
-                  {feedbackItems.map((item: any) => (
-                    <div key={item.id} className="border rounded-lg p-3 bg-muted/20">
-                      <div className="flex justify-between items-start">
-                        <div className="flex items-center">
-                          {item.action === 'used' && <ThumbsUp className="h-4 w-4 text-green-500 mr-2" />}
-                          {item.action === 'dismissed' && <ThumbsDown className="h-4 w-4 text-red-500 mr-2" />}
-                          {item.action === 'note' && <MessageSquare className="h-4 w-4 text-amber-500 mr-2" />}
-                          <span className="font-medium">
-                            {item.action === 'used' && 'Approved'}
-                            {item.action === 'dismissed' && 'Declined'}
-                            {item.action === 'note' && 'Note'}
-                          </span>
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {format(new Date(item.created_at), 'PPp')}
-                        </div>
-                      </div>
-                      
-                      {item.action === 'note' && item.note && (
-                        <div className="mt-2 pl-6 text-sm">
-                          {item.note}
-                        </div>
-                      )}
-                      
-                      {showRawFeedback && (
-                        <div className="mt-2 pt-2 border-t text-xs font-mono">
-                          <pre className="whitespace-pre-wrap break-all">
-                            {JSON.stringify({
-                              user_id: item.user_id,
-                              action: item.action,
-                              created_at: item.created_at
-                            }, null, 2)}
-                          </pre>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-4 text-muted-foreground">
-                  No feedback recorded for this strategy yet.
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
-
-          <div className="mt-8">
-            <h3 className="font-medium mb-2">Add Note</h3>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Type your note here..."
-                className="flex-1 border rounded p-2"
-              />
-              <Button 
-                onClick={handleAddNote}
-                size="sm"
-                disabled={!note.trim()}
-              >
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Add
-              </Button>
-            </div>
-          </div>
+              )
+            }}
+          </StrategyTabs>
         </CardContent>
-        <CardFooter className="flex justify-between">
-          <div className="flex gap-2">
-            <Button onClick={handleApprove} variant="default">
-              <ThumbsUp className="h-4 w-4 mr-2" />
-              Approve
-            </Button>
-            <Button onClick={handleDecline} variant="outline">
-              <ThumbsDown className="h-4 w-4 mr-2" />
-              Decline
-            </Button>
-          </div>
-          <Button onClick={handleRegenerate} variant="secondary">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Regenerate
-          </Button>
-        </CardFooter>
+
+        <StrategyActions
+          onApprove={handleApprove}
+          onDecline={handleDecline}
+          onRegenerate={handleRegenerate}
+        />
       </Card>
     </div>
   );
