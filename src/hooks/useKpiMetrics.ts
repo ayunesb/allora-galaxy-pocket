@@ -1,3 +1,4 @@
+
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
@@ -27,7 +28,7 @@ export function useKpiMetrics(dateRange = "30", category?: string, searchQuery?:
           .from('kpi_metrics')
           .select('*')
           .eq('tenant_id', tenant.id)
-          .order('recorded_at', { ascending: false });
+          .order('created_at', { ascending: false });
         
         if (category && category !== 'all') {
           query = query.eq('category', category);
@@ -42,12 +43,12 @@ export function useKpiMetrics(dateRange = "30", category?: string, searchQuery?:
           id: metric.id,
           kpi_name: metric.metric || 'Unnamed Metric',
           value: Number(metric.value) || 0,
-          trend: metric.value > 0 ? 'up' : 'down',
+          trend: (metric.value > 0 ? "up" : "down") as "up" | "down",
           changePercent: calculateChangePercent(metric.value, summaryData),
           updated_at: metric.updated_at || metric.created_at || new Date().toISOString(),
           tenant_id: tenant.id,
           label: metric.metric || 'Unnamed Metric'
-        })) || [];
+        }) as KpiMetric) || [];
       } catch (err) {
         console.error("Error fetching KPI metrics:", err);
         throw err;
@@ -55,7 +56,7 @@ export function useKpiMetrics(dateRange = "30", category?: string, searchQuery?:
     },
     enabled: !!tenant?.id,
     staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
-    cacheTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
+    gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes (renamed from cacheTime)
     refetchOnWindowFocus: false, // Don't refetch on window focus
     refetchInterval: 5 * 60 * 1000 // Refetch every 5 minutes
   });
@@ -203,7 +204,7 @@ async function fetchKPIMetrics(tenantId: string, range: string, category?: strin
       id: metric.id,
       kpi_name: metric.metric || 'Unnamed Metric',
       value: Number(metric.value) || 0,
-      trend: metric.value > 0 ? 'up' : 'down',
+      trend: (metric.value > 0 ? "up" : "down") as "up" | "down",
       changePercent: calculateChangePercent(metric.value, summaryData),
       updated_at: metric.updated_at || metric.created_at || new Date().toISOString(),
       tenant_id: tenantId,
