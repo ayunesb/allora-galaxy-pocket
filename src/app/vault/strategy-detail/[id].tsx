@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Strategy } from "@/types/strategy";
@@ -8,6 +7,9 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import FeedbackTimeline from "./FeedbackTimeline";
+import { StrategyKPIEvaluation } from "@/app/strategy/components/StrategyKPIEvaluation";
+import { StrategyRecommendations } from "@/app/strategy/components/StrategyRecommendations";
+import { StrategyTabs } from "@/app/strategy/components/StrategyTabs";
 
 export default function StrategyDetail() {
   const { id } = useParams();
@@ -130,6 +132,13 @@ export default function StrategyDetail() {
           </Button>
         </CardFooter>
       </Card>
+      
+      <div className="mt-8">
+        <StrategyTabs strategy={strategy}>
+          evaluation={<StrategyKPIEvaluation strategyId={strategy.id} />}
+          recommendations={<StrategyRecommendations strategyId={strategy.id} />}
+        </StrategyTabs>
+      </div>
       
       <FeedbackTimeline strategyTitle={strategy.title} />
     </div>
