@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Table } from "@/components/ui/table";
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
@@ -119,7 +118,6 @@ export default function RlsAuditReport() {
     ));
   };
 
-  // Render security audit issues
   const renderSecurityIssues = () => {
     if (issues.length === 0) {
       return (
@@ -233,7 +231,6 @@ export default function RlsAuditReport() {
                 </Alert>
               ) : null}
               
-              {/* Security Audit Issues Section */}
               {renderSecurityIssues()}
               
               {testResults.length > 0 && (
