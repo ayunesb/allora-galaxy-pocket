@@ -1,91 +1,107 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { useTenant } from '@/hooks/useTenant';
 import { supabase } from '@/integrations/supabase/client';
-import { useTenant } from './useTenant';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-interface LogBookmark {
+export interface LogBookmark {
   id: string;
   log_id: string;
-  note: string;
+  user_id: string;
+  tenant_id: string;
+  note: string | null;
   created_at: string;
 }
 
 export function useLogBookmarks() {
-  const [bookmarks, setBookmarks] = useState<LogBookmark[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
   const { tenant } = useTenant();
-
-  const fetchBookmarks = async () => {
-    if (!tenant?.id) return;
-    
-    try {
+  const queryClient = useQueryClient();
+  const [selectedLogId, setSelectedLogId] = useState<string | null>(null);
+  
+  const { data: bookmarks, isLoading } = useQuery({
+    queryKey: ['log-bookmarks', tenant?.id],
+    queryFn: async () => {
+      if (!user || !tenant) return [];
+      
       const { data, error } = await supabase
         .from('log_bookmarks')
         .select('*')
+        .eq('user_id', user.id)
         .eq('tenant_id', tenant.id)
         .order('created_at', { ascending: false });
-
+        
       if (error) throw error;
-      setBookmarks(data || []);
-    } catch (error) {
-      console.error('Error fetching bookmarks:', error);
-      toast.error('Failed to fetch bookmarks');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const addBookmark = async (logId: string, note?: string) => {
-    if (!tenant?.id) return;
-    
-    try {
-      const { error } = await supabase
+      return data as LogBookmark[];
+    },
+    enabled: !!user && !!tenant,
+  });
+  
+  const addBookmark = useMutation({
+    mutationFn: async ({ logId, note }: { logId: string; note?: string }) => {
+      if (!user || !tenant) {
+        throw new Error('User or tenant not available');
+      }
+      
+      const { data, error } = await supabase
         .from('log_bookmarks')
         .insert({
           log_id: logId,
+          user_id: user.id,
           tenant_id: tenant.id,
-          note
-        });
-
+          note: note || null
+        })
+        .select()
+        .single();
+        
       if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['log-bookmarks'] });
       toast.success('Log bookmarked successfully');
-      fetchBookmarks();
-    } catch (error) {
-      console.error('Error adding bookmark:', error);
-      toast.error('Failed to bookmark log');
+    },
+    onError: (error) => {
+      toast.error('Failed to bookmark log', { description: error.message });
     }
-  };
-
-  const removeBookmark = async (logId: string) => {
-    if (!tenant?.id) return;
-    
-    try {
+  });
+  
+  const deleteBookmark = useMutation({
+    mutationFn: async (bookmarkId: string) => {
       const { error } = await supabase
         .from('log_bookmarks')
         .delete()
-        .eq('log_id', logId)
-        .eq('tenant_id', tenant.id);
-
+        .eq('id', bookmarkId);
+        
       if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['log-bookmarks'] });
       toast.success('Bookmark removed');
-      fetchBookmarks();
-    } catch (error) {
-      console.error('Error removing bookmark:', error);
-      toast.error('Failed to remove bookmark');
+    },
+    onError: (error) => {
+      toast.error('Failed to remove bookmark', { description: error.message });
     }
+  });
+  
+  const isLogBookmarked = (logId: string): boolean => {
+    return !!bookmarks?.some(bookmark => bookmark.log_id === logId);
   };
-
-  useEffect(() => {
-    if (tenant?.id) {
-      fetchBookmarks();
-    }
-  }, [tenant?.id]);
-
+  
+  const getBookmarkForLog = (logId: string): LogBookmark | undefined => {
+    return bookmarks?.find(bookmark => bookmark.log_id === logId);
+  };
+  
   return {
     bookmarks,
     isLoading,
     addBookmark,
-    removeBookmark
+    deleteBookmark,
+    isLogBookmarked,
+    getBookmarkForLog,
+    selectedLogId,
+    setSelectedLogId
   };
 }
