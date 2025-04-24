@@ -29,9 +29,9 @@ export function StrategyKPIEvaluation({ strategyId }: StrategyKPIEvaluationProps
     },
   });
 
-  const chartData = evaluations?.map(eval => ({
-    date: new Date(eval.evaluation_date).toLocaleDateString(),
-    value: Number(eval.actual_value)
+  const chartData = evaluations?.map(evaluation => ({
+    date: new Date(evaluation.evaluation_date).toLocaleDateString(),
+    value: Number(evaluation.actual_value)
   })) || [];
 
   return (
@@ -51,20 +51,20 @@ export function StrategyKPIEvaluation({ strategyId }: StrategyKPIEvaluationProps
               height={200}
             />
             <div className="mt-4 space-y-2">
-              {evaluations.map(eval => (
+              {evaluations.map(evaluation => (
                 <div 
-                  key={eval.id}
+                  key={evaluation.id}
                   className={`p-3 rounded-lg ${
-                    eval.status === 'exceeded' ? 'bg-green-100' :
-                    eval.status === 'met' ? 'bg-blue-100' :
+                    evaluation.status === 'exceeded' ? 'bg-green-100' :
+                    evaluation.status === 'met' ? 'bg-blue-100' :
                     'bg-amber-100'
                   }`}
                 >
-                  <p className="font-medium">{eval.kpi_name}</p>
+                  <p className="font-medium">{evaluation.kpi_name}</p>
                   <div className="text-sm">
-                    <span>Target: {eval.target_value}</span>
+                    <span>Target: {evaluation.target_value}</span>
                     <span className="mx-2">|</span>
-                    <span>Actual: {eval.actual_value}</span>
+                    <span>Actual: {evaluation.actual_value}</span>
                   </div>
                 </div>
               ))}

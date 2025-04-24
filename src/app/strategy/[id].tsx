@@ -17,6 +17,8 @@ import { StrategyHeader } from "./components/StrategyHeader";
 import { StrategyActions } from "./components/StrategyActions";
 import { StrategyTabs } from "./components/StrategyTabs";
 import { StrategyVersions } from "./components/StrategyVersions";
+import { StrategyKPIEvaluation } from "./components/StrategyKPIEvaluation";
+import { StrategyRecommendations } from "./components/StrategyRecommendations";
 
 function StrategyDetailContent() {
   const { id } = useParams();
@@ -273,6 +275,12 @@ function StrategyDetailContent() {
                   strategyId={strategy.id}
                   onFeedbackSubmitted={() => queryClient.invalidateQueries({ queryKey: ['strategy-feedback', id] })}
                 />
+              ),
+              evaluation: (
+                <StrategyKPIEvaluation strategyId={strategy.id} />
+              ),
+              recommendations: (
+                <StrategyRecommendations strategyId={strategy.id} />
               )
             }}
           </StrategyTabs>
