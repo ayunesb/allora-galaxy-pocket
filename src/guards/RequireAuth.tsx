@@ -1,3 +1,4 @@
+
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
@@ -75,7 +76,8 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
       onboardingLoading,
       onboardingComplete,
       shouldCheckOnboarding,
-      redirected: redirectedRef.current
+      redirected: redirectedRef.current,
+      skipOnboardingCheck
     });
   }, [location.pathname, user, tenant, authLoading, tenantLoading, onboardingLoading, onboardingComplete, shouldCheckOnboarding]);
   
@@ -96,6 +98,12 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
         <LoadingSpinner size={40} label={showLoading ? "Loading..." : "Preparing application..."} />
       </div>
     );
+  }
+  
+  // Allow access to workspace page even without login for certain paths
+  if (location.pathname === "/workspace") {
+    // If already on workspace page, just show it
+    return <>{children}</>;
   }
   
   // If not logged in, redirect to auth page

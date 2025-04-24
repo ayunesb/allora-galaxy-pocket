@@ -23,6 +23,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       const storedId = localStorage.getItem("tenant_id");
       
       if (storedId) {
+        console.log("Attempting to restore tenant from localStorage:", storedId);
         // Fetch the tenant details from the view
         const { data, error } = await supabase
           .from("tenant_profiles_view")
@@ -41,6 +42,8 @@ export function TenantProvider({ children }: { children: ReactNode }) {
           localStorage.removeItem("tenant_id");
           console.warn("Stored tenant not found, reset to null:", error?.message);
         }
+      } else {
+        console.log("No tenant ID found in localStorage");
       }
     } catch (err) {
       console.error("Error initializing tenant:", err);
