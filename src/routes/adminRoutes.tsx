@@ -1,6 +1,6 @@
-
-import React from "react";
-import { RouteObject } from "react-router-dom";
+import React from 'react';
+import { RouteObject } from 'react-router-dom';
+import AdminLogsPage from '@/app/admin/logs/page';
 
 // Import admin pages
 import SecurityAuditPage from "@/app/admin/security-audit/page";
@@ -27,7 +27,7 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/campaign-performance", element: <CampaignPerformancePage /> },
   { path: "/admin/feedback-loop", element: <FeedbackLoopDashboard /> },
   { path: "/admin/analytics", element: <AnalyticsPage /> },
-  { path: "/admin/logs", element: <LogsPage /> },
+  { path: "/admin/logs", element: <AdminLogsPage /> },
   { path: "/admin/invite", element: <InviteUsersPage /> },
   { path: "/admin/integrations", element: <IntegrationsPage /> },
   { path: "/admin/agents/memory", element: <AgentMemoryConsole /> },

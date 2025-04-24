@@ -17,6 +17,7 @@ export const publicRoutes: RouteObject[] = [
   { path: '/auth/signup', element: <Signup /> },
   { path: '/auth/reset-password', element: <PasswordReset /> },
   { path: '/marketing', element: <Index /> },
+  { path: '/', element: <Index /> },
   { path: '/pricing', element: <Pricing /> },
   { path: '/explore', element: <Explore /> },
   { path: '/docs', element: <Docs /> },
