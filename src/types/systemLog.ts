@@ -10,10 +10,12 @@ export interface SystemLog {
 }
 
 export interface SystemLogFilter {
-  dateRange?: number;
-  eventType?: string;
-  userId?: string;
-  search?: string;
+  dateRange: number;
+  eventType: string;
+  userId: string;
+  search: string;
+  severity?: 'low' | 'medium' | 'high';
+  status?: 'success' | 'error' | 'warning';
 }
 
 export interface LogActivityParams {
