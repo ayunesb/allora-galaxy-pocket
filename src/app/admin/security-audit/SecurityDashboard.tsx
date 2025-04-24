@@ -91,7 +91,7 @@ export default function SecurityDashboard() {
   ];
 
   return (
-    <div className="container max-w-7xl mx-auto py-4 md:py-6 space-y-4 md:space-y-6">
+    <div className="container max-w-7xl mx-auto py-4 md:py-6 px-4 md:px-6 space-y-4 md:space-y-6">
       <div className="flex justify-between items-center flex-wrap gap-2">
         <div>
           <h1 className="text-xl md:text-2xl font-bold tracking-tight">Security Dashboard</h1>

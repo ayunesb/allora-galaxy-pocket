@@ -59,8 +59,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       </div>
       
       {/* Main Content */}
-      <main className={`pt-16 ${isMobile ? 'px-4' : 'md:pl-64'} min-h-screen`}>
-        <div className="max-w-7xl mx-auto py-6">
+      <main className={`pt-16 ${isMobile ? 'px-4 py-4' : 'md:pl-64 py-6'} min-h-screen`}>
+        <div className="max-w-7xl mx-auto">
           {children}
         </div>
       </main>

@@ -5,11 +5,11 @@ import { ArrowRight } from "lucide-react";
 
 export const HeroSection = () => {
   return (
-    <section className="bg-gradient-to-b from-background to-muted py-20 text-center">
-      <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-4">
+    <section className="bg-gradient-to-b from-background to-muted py-12 md:py-20 px-4 md:px-6 text-center">
+      <h1 className="text-3xl md:text-4xl lg:text-6xl font-bold tracking-tight mb-4">
         Your AI executive team is ready.
       </h1>
-      <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+      <p className="text-md md:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto">
         Allora OS is the first 90% AI-powered business platform. From strategy to execution, 
         let your company run itself—with just your approval.
       </p>

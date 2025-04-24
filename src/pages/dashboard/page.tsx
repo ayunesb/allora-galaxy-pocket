@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function DashboardPage() {
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="container mx-auto p-4 md:p-6">
       <Card>
         <CardHeader>
           <CardTitle>🚀 Dashboard</CardTitle>

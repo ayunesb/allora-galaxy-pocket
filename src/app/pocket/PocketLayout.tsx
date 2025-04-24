@@ -10,7 +10,7 @@ interface PocketLayoutProps {
 const PocketLayout = ({ children, className }: PocketLayoutProps) => {
   return (
     <div className={cn(
-      "min-h-screen w-full bg-background dark:bg-gray-900 text-foreground dark:text-white flex items-center justify-center p-4",
+      "min-h-screen w-full bg-background dark:bg-gray-900 text-foreground dark:text-white flex items-center justify-center p-4 md:p-6",
       className
     )}>
       <div className="w-full max-w-md">{children}</div>

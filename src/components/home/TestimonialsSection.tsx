@@ -12,13 +12,13 @@ export const TestimonialsSection = () => {
   ];
 
   return (
-    <div className="mt-16 grid gap-6 md:grid-cols-2 max-w-4xl">
+    <div className="mt-12 md:mt-16 grid gap-6 md:grid-cols-2 max-w-4xl mx-auto px-4 md:px-0">
       {testimonials.map((testimonial, index) => (
-        <div key={index} className="p-6 bg-card rounded-lg border">
+        <div key={index} className="p-4 md:p-6 bg-card rounded-lg border">
           <p className="text-muted-foreground italic">
             "{testimonial.quote}"
           </p>
-          <p className="mt-2 text-sm font-medium">
+          <p className="mt-3 text-sm font-medium">
             — {testimonial.author}
           </p>
         </div>

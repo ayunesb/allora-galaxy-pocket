@@ -8,9 +8,11 @@ interface CreativeLayoutProps {
 
 export function CreativeLayout({ title, children }: CreativeLayoutProps) {
   return (
-    <Card className="bg-white p-4 rounded shadow">
+    <Card className="bg-white p-4 md:p-6 rounded shadow">
       <h3 className="font-semibold mb-3">{title}</h3>
-      {children}
+      <div className="mt-4">
+        {children}
+      </div>
     </Card>
   );
 }
