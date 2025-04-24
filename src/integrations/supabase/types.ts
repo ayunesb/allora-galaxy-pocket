@@ -418,6 +418,8 @@ export type Database = {
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           stripe_subscription_item_id: string | null
+          subscription_end_date: string | null
+          subscription_status: string | null
           updated_at: string
           user_id: string
         }
@@ -430,6 +432,8 @@ export type Database = {
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           stripe_subscription_item_id?: string | null
+          subscription_end_date?: string | null
+          subscription_status?: string | null
           updated_at?: string
           user_id: string
         }
@@ -442,6 +446,8 @@ export type Database = {
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           stripe_subscription_item_id?: string | null
+          subscription_end_date?: string | null
+          subscription_status?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -2050,6 +2056,74 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_history: {
+        Row: {
+          change_type: string
+          changed_at: string
+          id: string
+          new_tier: string | null
+          old_tier: string | null
+          tenant_id: string
+        }
+        Insert: {
+          change_type: string
+          changed_at?: string
+          id?: string
+          new_tier?: string | null
+          old_tier?: string | null
+          tenant_id: string
+        }
+        Update: {
+          change_type?: string
+          changed_at?: string
+          id?: string
+          new_tier?: string | null
+          old_tier?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_history_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscription_tiers: {
+        Row: {
+          created_at: string
+          features: Json
+          id: string
+          monthly_credits: number
+          name: string
+          price_id: string
+          price_usd: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          features?: Json
+          id?: string
+          monthly_credits: number
+          name: string
+          price_id: string
+          price_usd: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          features?: Json
+          id?: string
+          monthly_credits?: number
+          name?: string
+          price_id?: string
+          price_usd?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       system_config: {
         Row: {
           config: Json
@@ -2710,6 +2784,15 @@ export type Database = {
       update_agent_memory_score: {
         Args: { p_agent_id: string }
         Returns: number
+      }
+      update_subscription_status: {
+        Args: {
+          p_user_id: string
+          p_status: string
+          p_subscription_id: string
+          p_end_date: string
+        }
+        Returns: undefined
       }
       use_billing_credits: {
         Args: { p_user_id: string; p_amount: number }

@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@15.3.0";
+import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -14,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    // Initialize Supabase client with anon key
+    // Initialize Supabase client
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? ""
@@ -26,6 +26,13 @@ serve(async (req) => {
     const user = data.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
 
+    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { apiVersion: "2023-10-16" });
+    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    let customerId;
+    if (customers.data.length > 0) {
+      customerId = customers.data[0].id;
+    }
+
     // Parse request body
     let plan = 'standard';
     try {
@@ -34,24 +41,10 @@ serve(async (req) => {
         plan = body.plan;
       }
     } catch (e) {
-      // If parsing fails, use default plan
       console.log("No plan specified in request body, using default");
     }
 
-    // Initialize Stripe
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
-      apiVersion: "2023-10-16",
-    });
-
-    // Check if a Stripe customer record exists for this user
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    let customerId;
-    if (customers.data.length > 0) {
-      customerId = customers.data[0].id;
-    }
-
     // Set pricing based on plan
-    let priceId;
     let unitAmount;
     switch (plan) {
       case 'growth':
