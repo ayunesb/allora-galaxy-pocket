@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "./useTenant";
 import { toast } from "sonner";
@@ -7,6 +7,7 @@ import { toast } from "sonner";
 export function useCreditsManager() {
   const { tenant } = useTenant();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [currentCredits, setCurrentCredits] = useState<number>(0);
   
   // Get remaining credits
   const getRemainingCredits = async () => {
@@ -21,12 +22,19 @@ export function useCreditsManager() {
       
       if (error) throw error;
       
-      return data?.credits || 0;
+      const credits = data?.credits || 0;
+      setCurrentCredits(credits);
+      return credits;
     } catch (err) {
       console.error("Error retrieving credits:", err);
       return 0;
     }
   };
+  
+  // Check if user has enough credits
+  const hasEnoughCredits = useCallback((requiredAmount: number) => {
+    return currentCredits >= requiredAmount;
+  }, [currentCredits]);
   
   // Use credits for a feature or operation
   const useCredits = async (amount: number, module: string, agentName: string = "System") => {
@@ -54,6 +62,8 @@ export function useCreditsManager() {
           credits_used: amount
         });
         
+        // Update local credits state
+        setCurrentCredits(prev => Math.max(0, prev - amount));
         return true;
       } else {
         toast.error("Insufficient credits");
@@ -68,9 +78,18 @@ export function useCreditsManager() {
     }
   };
 
+  // Fetch initial credits when tenant changes
+  useEffect(() => {
+    if (tenant?.id) {
+      getRemainingCredits();
+    }
+  }, [tenant?.id]);
+
   return {
     getRemainingCredits,
     useCredits,
+    hasEnoughCredits,
+    currentCredits,
     isProcessing
   };
 }
