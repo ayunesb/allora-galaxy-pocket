@@ -1,114 +1,105 @@
 
 import * as React from "react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Card, CardContent } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Card, CardContent } from "./card";
+import { Skeleton } from "./skeleton";
 
-export interface Column<T = any> {
-  header: React.ReactNode;
-  accessorKey: keyof T | string;
-  cell?: (value: any, row?: T) => React.ReactNode;
+interface Column {
+  header: string;
+  accessorKey: string;
+  cell?: (value: any, row?: any) => React.ReactNode;
 }
 
-interface ResponsiveTableProps<T> {
-  columns: Column<T>[];
+interface ResponsiveTableProps<T extends Record<string, any>> {
+  columns: Column[];
   data: T[];
-  isLoading?: boolean;
   emptyMessage?: string;
+  isLoading?: boolean;
+  skeletonRows?: number;
 }
 
-export function ResponsiveTable<T>({
+export function ResponsiveTable<T extends Record<string, any>>({
   columns,
   data,
+  emptyMessage = "No data available",
   isLoading = false,
-  emptyMessage = "No data available"
+  skeletonRows = 5
 }: ResponsiveTableProps<T>) {
-  const getNestedValue = (obj: any, path: string) => {
-    return path.split('.').reduce((acc, part) => acc && acc[part], obj);
-  };
-
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center py-8">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="space-y-4">
+        {Array.from({ length: skeletonRows }).map((_, idx) => (
+          <Card key={idx} className="overflow-hidden">
+            <CardContent className="p-4">
+              <div className="space-y-3">
+                <Skeleton className="h-5 w-1/3" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-2/3" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     );
   }
 
-  if (!data?.length) {
-    return (
-      <div className="text-center py-8 text-muted-foreground">
-        {emptyMessage}
-      </div>
-    );
+  if (!data.length) {
+    return <p className="text-center py-8 text-muted-foreground">{emptyMessage}</p>;
   }
-
-  // Desktop view (standard table)
-  const renderDesktopTable = () => (
-    <div className="hidden md:block overflow-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            {columns.map((column, i) => (
-              <TableHead key={i}>{column.header}</TableHead>
-            ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {data.map((row, i) => (
-            <TableRow key={i}>
-              {columns.map((column, j) => {
-                const value = typeof column.accessorKey === 'string' 
-                  ? getNestedValue(row, column.accessorKey)
-                  : row[column.accessorKey];
-                  
-                return (
-                  <TableCell key={j}>
-                    {column.cell ? column.cell(value, row) : value}
-                  </TableCell>
-                );
-              })}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
-  );
-
-  // Mobile view (cards)
-  const renderMobileCards = () => (
-    <div className="md:hidden space-y-4">
-      {data.map((row, i) => (
-        <Card key={i}>
-          <CardContent className="p-4">
-            <dl className="space-y-2">
-              {columns.map((column, j) => {
-                const value = typeof column.accessorKey === 'string' 
-                  ? getNestedValue(row, column.accessorKey)
-                  : row[column.accessorKey];
-                  
-                return (
-                  <div key={j} className="grid grid-cols-3 gap-1">
-                    <dt className="font-semibold text-sm col-span-1">
-                      {column.header}:
-                    </dt>
-                    <dd className="text-sm col-span-2">
-                      {column.cell ? column.cell(value, row) : value}
-                    </dd>
-                  </div>
-                );
-              })}
-            </dl>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
 
   return (
     <>
-      {renderDesktopTable()}
-      {renderMobileCards()}
+      {/* Desktop view (table) */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b">
+              {columns.map((column) => (
+                <th key={column.accessorKey} className="text-left p-3 font-medium">
+                  {column.header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((row, rowIndex) => (
+              <tr key={rowIndex} className="border-b hover:bg-muted/50">
+                {columns.map((column) => (
+                  <td key={`${rowIndex}-${column.accessorKey}`} className="p-3">
+                    {column.cell 
+                      ? column.cell(row[column.accessorKey], row)
+                      : row[column.accessorKey]
+                    }
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile view (cards) */}
+      <div className="md:hidden space-y-4">
+        {data.map((row, rowIndex) => (
+          <Card key={rowIndex} className="overflow-hidden">
+            <CardContent className="p-4">
+              {columns.map((column) => (
+                <div key={`${rowIndex}-${column.accessorKey}`} className="py-2 border-b last:border-b-0">
+                  <div className="font-medium text-sm">{column.header}</div>
+                  <div className="mt-1">
+                    {column.cell 
+                      ? column.cell(row[column.accessorKey], row)
+                      : row[column.accessorKey]
+                    }
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </>
   );
 }
+
+export type { Column };

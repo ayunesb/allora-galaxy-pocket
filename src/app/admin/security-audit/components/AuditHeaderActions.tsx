@@ -1,7 +1,8 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, ShieldAlert, Download } from "lucide-react";
+import { DownloadCloud, RefreshCw, Play, Shield } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface AuditHeaderActionsProps {
   onRefresh: () => void;
@@ -21,34 +22,57 @@ export function AuditHeaderActions({
   hasData
 }: AuditHeaderActionsProps) {
   return (
-    <div className="flex gap-2">
-      <Button
-        variant="outline"
-        onClick={onRefresh}
-        disabled={isLoading}
-        className="flex items-center gap-1"
-      >
-        <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-        Refresh Audit
-      </Button>
-      <Button
-        variant="default"
-        onClick={onRunTests}
-        disabled={isRunningTests || isLoading || !hasData}
-        className="flex items-center gap-1"
-      >
-        <ShieldAlert className="h-4 w-4" />
-        Run Access Tests
-      </Button>
-      <Button
-        variant="outline"
-        onClick={onExport}
-        disabled={!hasData}
-        className="flex items-center gap-1"
-      >
-        <Download className="h-4 w-4" />
-        Export CSV
-      </Button>
+    <div className="flex flex-wrap gap-2">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onRefresh}
+            disabled={isLoading}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            {isLoading ? 'Loading...' : 'Refresh'}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Refresh RLS data from database</p>
+        </TooltipContent>
+      </Tooltip>
+      
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={onRunTests}
+            disabled={isRunningTests || isLoading || !hasData}
+          >
+            <Play className="h-4 w-4 mr-2" />
+            {isRunningTests ? 'Testing...' : 'Run Access Tests'}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Test actual database access with current user</p>
+        </TooltipContent>
+      </Tooltip>
+      
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={onExport}
+            disabled={!hasData}
+          >
+            <DownloadCloud className="h-4 w-4 mr-2" />
+            Export Report
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Download as CSV</p>
+        </TooltipContent>
+      </Tooltip>
     </div>
   );
 }

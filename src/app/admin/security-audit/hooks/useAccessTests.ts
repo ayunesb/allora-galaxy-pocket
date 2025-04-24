@@ -14,7 +14,7 @@ export interface AccessTestResult {
 export function useAccessTests() {
   const [testResults, setTestResults] = useState<AccessTestResult[]>([]);
   const [isRunningTests, setIsRunningTests] = useState(false);
-  const [lastRun, setLastRun] = useState<string>('');
+  const [lastRun, setLastRun] = useState<string>("");
 
   const runAccessTests = async (tables: RlsTable[]) => {
     setIsRunningTests(true);
@@ -23,14 +23,14 @@ export function useAccessTests() {
     try {
       for (const table of tables) {
         try {
-          // Attempt to select data from the table
+          // Try to select from the table
           const { data, error, count } = await supabase
             .from(table.tablename)
             .select('*', { count: 'exact' })
-            .limit(5);
+            .limit(1);
 
           if (error) {
-            // Policy blocked access
+            // Access denied
             results.push({
               tableName: table.tablename,
               status: 'blocked',
@@ -44,12 +44,12 @@ export function useAccessTests() {
               rowCount: count || 0
             });
           }
-        } catch (err) {
+        } catch (e: any) {
           // Unexpected error
           results.push({
             tableName: table.tablename,
             status: 'error',
-            errorMessage: (err as Error).message
+            errorMessage: e.message
           });
         }
       }
@@ -57,14 +57,25 @@ export function useAccessTests() {
       setTestResults(results);
       setLastRun(new Date().toLocaleString());
       
-      // Show result summary
-      const allowedCount = results.filter(r => r.status === 'allowed').length;
-      const blockedCount = results.filter(r => r.status === 'blocked').length;
+      // Log security audit run
+      try {
+        await supabase.from('system_logs').insert({
+          event_type: 'SECURITY_AUDIT',
+          message: 'Security access tests executed',
+          meta: {
+            total_tests: results.length,
+            allowed: results.filter(r => r.status === 'allowed').length,
+            blocked: results.filter(r => r.status === 'blocked').length,
+            errors: results.filter(r => r.status === 'error').length
+          }
+        });
+      } catch (err) {
+        console.error("Error logging security audit:", err);
+      }
       
       toast.success("Access tests completed", {
-        description: `${allowedCount} tables accessible, ${blockedCount} tables blocked`
+        description: `Tested ${results.length} tables`
       });
-      
     } catch (error) {
       console.error("Error running access tests:", error);
       toast.error("Failed to run access tests");
