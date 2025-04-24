@@ -1,7 +1,7 @@
 
 import { ReactNode, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useUserRole } from '@/hooks/useUserRole';
+import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { toast } from "@/hooks/use-toast";
 
 interface RoleGuardProps {
@@ -10,38 +10,34 @@ interface RoleGuardProps {
   fallbackPath?: string;
 }
 
-// Maps allowedRoles to the canonical role values in user_roles
 export default function RoleGuard({ 
   children, 
-  allowedRoles, 
-  fallbackPath = '/startup'
+  allowedRoles,
+  fallbackPath = '/dashboard'
 }: RoleGuardProps) {
-  const { role, isLoading } = useUserRole();
+  const { checkAccess } = useRoleAccess();
   const navigate = useNavigate();
   const redirectedRef = useRef(false);
 
   useEffect(() => {
-    // If role is loaded, user is not allowed, and we haven't redirected yet
-    if (!isLoading && role && !allowedRoles.includes(role) && !redirectedRef.current) {
-      redirectedRef.current = true;
-      toast({
-        title: "Access denied. Redirecting to dashboard.",
-        variant: "destructive"
-      });
-      setTimeout(() => {
-        navigate("/dashboard", { replace: true });
-      }, 1500);
-    }
-  }, [isLoading, role, allowedRoles, navigate]);
+    const validateAccess = async () => {
+      const hasAccess = await Promise.all(
+        allowedRoles.map(role => checkAccess(role))
+      );
 
-  if (isLoading) {
-    return null; // Optionally render a loading spinner
-  }
+      if (!hasAccess.some(access => access) && !redirectedRef.current) {
+        redirectedRef.current = true;
+        toast({
+          title: "Access denied",
+          description: "You don't have permission to access this page",
+          variant: "destructive"
+        });
+        navigate(fallbackPath, { replace: true });
+      }
+    };
 
-  // If user is not allowed, render nothing while redirecting
-  if (!role || !allowedRoles.includes(role)) {
-    return null;
-  }
-  
+    validateAccess();
+  }, [allowedRoles, checkAccess, navigate, fallbackPath]);
+
   return <>{children}</>;
 }
