@@ -8,6 +8,7 @@ interface PluginListProps {
   isInstalling: boolean;
   onInstall: (plugin: Plugin) => Promise<void>;
   onShowDetails: (plugin: Plugin) => void;
+  processingPluginKey?: string | null;
 }
 
 export function PluginList({ 
@@ -15,7 +16,8 @@ export function PluginList({
   activePlugins, 
   isInstalling, 
   onInstall, 
-  onShowDetails 
+  onShowDetails,
+  processingPluginKey 
 }: PluginListProps) {
   if (plugins.length === 0) {
     return null;
@@ -29,7 +31,7 @@ export function PluginList({
           plugin={plugin}
           isActive={activePlugins.includes(plugin.key)}
           onAction={() => onInstall(plugin)}
-          isLoading={isInstalling}
+          isLoading={isInstalling || processingPluginKey === plugin.key}
           showDetails={() => onShowDetails(plugin)}
         />
       ))}

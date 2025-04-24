@@ -13,6 +13,10 @@ import { SortPlugins } from "./components/SortPlugins";
 import { MarketplaceHeader } from "./components/MarketplaceHeader";
 import { PluginList } from "./components/PluginList";
 import { PluginDetails } from "./components/PluginDetails";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 
 export default function PluginMarketplace() {
   const { activePlugins } = usePlugins();
@@ -20,6 +24,8 @@ export default function PluginMarketplace() {
   const isMobile = useIsMobile();
   const [selectedPlugin, setSelectedPlugin] = useState<Plugin | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [isProcessing, setIsProcessing] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const {
     searchQuery,
@@ -34,13 +40,36 @@ export default function PluginMarketplace() {
 
   const handlePluginAction = async (plugin: Plugin) => {
     const isActive = activePlugins.includes(plugin.key);
+    setIsProcessing(plugin.key);
+    setError(null);
     
-    if (isActive) {
-      await uninstallPlugin(plugin.key);
-    } else {
-      await installPlugin(plugin.key);
+    try {
+      if (isActive) {
+        await uninstallPlugin(plugin.key);
+        toast.success(`${plugin.name} has been disabled`);
+      } else {
+        await installPlugin(plugin.key);
+        toast.success(`${plugin.name} has been installed successfully`);
+      }
+    } catch (err) {
+      const errorMessage = isActive 
+        ? `Failed to disable ${plugin.name}`
+        : `Failed to install ${plugin.name}`;
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setIsProcessing(null);
     }
   };
+
+  if (error) {
+    return (
+      <Alert variant="destructive" className="mb-4">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
     <div className="container mx-auto py-6 px-4 lg:px-8 space-y-6">
@@ -95,6 +124,7 @@ export default function PluginMarketplace() {
               isInstalling={isInstalling}
               onInstall={handlePluginAction}
               onShowDetails={setSelectedPlugin}
+              processingPluginKey={isProcessing}
             />
           )}
         </div>
@@ -106,7 +136,7 @@ export default function PluginMarketplace() {
         onClose={() => setSelectedPlugin(null)}
         onAction={handlePluginAction}
         isActive={selectedPlugin ? activePlugins.includes(selectedPlugin.key) : false}
-        isInstalling={isInstalling}
+        isInstalling={isInstalling || (selectedPlugin ? isProcessing === selectedPlugin.key : false)}
       />
     </div>
   );

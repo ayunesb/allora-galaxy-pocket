@@ -1,4 +1,3 @@
-
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,17 +17,7 @@ interface PluginCardProps {
 }
 
 export function PluginCard({ plugin, isActive, onAction, isLoading, showDetails }: PluginCardProps) {
-  const [isInstalling, setIsInstalling] = useState(false);
   const isMobile = useIsMobile();
-  
-  const handleAction = async () => {
-    try {
-      setIsInstalling(true);
-      await onAction(plugin);
-    } finally {
-      setIsInstalling(false);
-    }
-  };
   
   return (
     <Card className="overflow-hidden h-full flex flex-col transition-all hover:shadow-md">
@@ -75,6 +64,7 @@ export function PluginCard({ plugin, isActive, onAction, isLoading, showDetails 
                   size="icon" 
                   onClick={showDetails} 
                   className="h-8 w-8"
+                  disabled={isLoading}
                 >
                   <Info className="h-4 w-4" />
                   <span className="sr-only">Details</span>
@@ -87,11 +77,18 @@ export function PluginCard({ plugin, isActive, onAction, isLoading, showDetails 
           <Button 
             size="sm" 
             variant={isActive ? "outline" : "default"}
-            onClick={handleAction}
-            disabled={isInstalling || isLoading}
-            className="min-w-[80px]"
+            onClick={() => onAction(plugin)}
+            disabled={isLoading}
+            className="min-w-[80px] relative"
           >
-            {isActive ? (
+            {isLoading ? (
+              <div className="flex items-center">
+                <div className="animate-spin mr-2">
+                  <loader className="h-4 w-4" />
+                </div>
+                {isMobile ? '' : 'Processing...'}
+              </div>
+            ) : isActive ? (
               <>
                 <Check className="mr-1 h-4 w-4" />
                 {isMobile ? '' : 'Enabled'}
@@ -108,4 +105,3 @@ export function PluginCard({ plugin, isActive, onAction, isLoading, showDetails 
     </Card>
   );
 }
-
