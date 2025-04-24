@@ -1,4 +1,3 @@
-
 import { Card, CardContent } from "@/components/ui/card";
 import { KPITrackerWithData } from "@/components/KPITracker";
 import { KpiCampaignTracker } from "@/components/KpiCampaignTracker";
@@ -11,6 +10,10 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { KPIChart } from "@/components/KPIChart";
 import { format, subDays } from "date-fns";
+
+type KPITrendsData = {
+  [metricName: string]: Array<{ date: string; value: number }>;
+};
 
 export function KPISection() {
   const { tenant } = useTenant();
@@ -37,7 +40,7 @@ export function KPISection() {
     enabled: !!tenant?.id,
   });
 
-  const { data: kpiTrends } = useQuery({
+  const { data: kpiTrends } = useQuery<KPITrendsData>({
     queryKey: ['kpi-trends', tenant?.id, trendTimeframe],
     queryFn: async () => {
       if (!tenant?.id) return {};
@@ -54,7 +57,7 @@ export function KPISection() {
       if (error) throw error;
       
       // Group metrics by name for trend visualization
-      const groupedMetrics = {};
+      const groupedMetrics: KPITrendsData = {};
       
       if (data) {
         data.forEach(metric => {
@@ -97,9 +100,8 @@ export function KPISection() {
     }
   };
 
-  // Get the top-performing metric
   const getTopMetric = () => {
-    if (!kpiTrends) return null;
+    if (!kpiTrends || Object.keys(kpiTrends).length === 0) return null;
     
     let bestMetric = null;
     let highestGrowth = -Infinity;
