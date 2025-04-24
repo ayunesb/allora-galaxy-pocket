@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
-import { Plugin } from "@/types/plugin";
+import { PluginKey } from "@/types/plugin";
 
 /**
  * Log plugin usage to track metrics and plugin effectiveness
@@ -15,7 +15,7 @@ export async function logPluginUsage({
   metadata = {}
 }: {
   tenant_id: string;
-  plugin_key: Plugin['key'];
+  plugin_key: PluginKey;
   event: string;
   page?: string | null;
   count?: number;
@@ -47,7 +47,7 @@ export async function logPluginUsage({
 export function usePluginLogger() {
   const { tenant } = useTenant();
   
-  const logUsage = async (plugin_key: Plugin['key'], event: string, page?: string, count: number = 1) => {
+  const logUsage = async (plugin_key: PluginKey, event: string, page?: string, count: number = 1) => {
     if (!tenant?.id) return;
     
     await logPluginUsage({
@@ -59,19 +59,19 @@ export function usePluginLogger() {
     });
   };
 
-  const logConfiguration = async (plugin_key: Plugin['key']) => {
+  const logConfiguration = async (plugin_key: PluginKey) => {
     if (!tenant?.id) return;
     
     await logUsage(plugin_key, 'configured', 'settings');
   };
   
-  const logActivation = async (plugin_key: Plugin['key']) => {
+  const logActivation = async (plugin_key: PluginKey) => {
     if (!tenant?.id) return;
     
     await logUsage(plugin_key, 'activated', 'settings');
   };
   
-  const logDeactivation = async (plugin_key: Plugin['key']) => {
+  const logDeactivation = async (plugin_key: PluginKey) => {
     if (!tenant?.id) return;
     
     await logUsage(plugin_key, 'deactivated', 'settings');

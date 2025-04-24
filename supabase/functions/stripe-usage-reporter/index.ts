@@ -1,4 +1,6 @@
 
+// Complete the stripe-usage-reporter function to report usage to Stripe
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@15.3.0";
@@ -20,7 +22,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get the request parameters
+    // Get request parameters
     const { tenant_id, credits_used, timestamp } = await req.json();
     
     if (!tenant_id || credits_used === undefined) {
@@ -29,30 +31,22 @@ serve(async (req) => {
     
     console.log(`Reporting ${credits_used} credits for tenant ${tenant_id}`);
     
-    // Get the tenant's billing profile
-    const { data: tenant, error: tenantError } = await supabase
-      .from('tenant_profiles')
-      .select('billing_profile_id, name')
-      .eq('id', tenant_id)
-      .single();
-    
-    if (tenantError) {
-      throw new Error(`Error fetching tenant: ${tenantError.message}`);
-    }
-    
-    if (!tenant?.billing_profile_id) {
-      throw new Error("Tenant has no associated billing profile");
-    }
-    
-    // Get the stripe subscription info
+    // Get the billing profile for the tenant
     const { data: billing, error: billingError } = await supabase
       .from('billing_profiles')
       .select('stripe_subscription_item_id')
-      .eq('id', tenant.billing_profile_id)
+      .eq('user_id', tenant_id)
       .single();
     
     if (billingError || !billing?.stripe_subscription_item_id) {
-      throw new Error("No active Stripe subscription found");
+      console.error("No subscription item found:", billingError);
+      return new Response(JSON.stringify({ 
+        error: "No active subscription item found for tenant",
+        details: billingError?.message 
+      }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
     
     // Initialize Stripe
@@ -72,7 +66,7 @@ serve(async (req) => {
     
     console.log(`Reported usage to Stripe: ${JSON.stringify(usageRecord)}`);
     
-    // Log the usage in our own system
+    // Log the usage in our system
     await supabase
       .from('stripe_usage_reports')
       .insert({
@@ -89,8 +83,8 @@ serve(async (req) => {
       .insert({
         function_name: 'stripe-usage-reporter',
         status: 'success',
-        message: `Reported ${credits_used} credits for tenant ${tenant.name}`,
-        meta: { tenant_id, credits_used, stripe_usage_record_id: usageRecord.id }
+        message: `Reported ${credits_used} credits for tenant ${tenant_id}`,
+        meta: { tenant_id, credits_used, usage_record_id: usageRecord.id }
       });
     
     return new Response(

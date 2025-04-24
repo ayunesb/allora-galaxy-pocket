@@ -1,31 +1,18 @@
 
+export type PluginKey = 'stripe' | 'hubspot' | 'shopify' | 'ga4' | 'twilio';
+
 export interface Plugin {
-  key: 'stripe' | 'hubspot' | 'shopify' | 'ga4' | 'twilio';
-  label: string;
+  id: string;
+  key: PluginKey;
+  name: string;
   description: string;
+  version: string;
+  author?: string;
   category?: string;
-  tags?: string[];
-  icon?: string;
-  version?: string;
-  enabled?: boolean;
+  icon_url?: string;
+  badge?: string;
 }
 
-export interface PluginInstallation {
-  id: string;
-  tenant_id: string;
-  plugin_key: string;
-  enabled: boolean;
-  installed_at: string;
-}
-
-export interface PluginConfiguration {
-  id: string;
-  tenant_id: string;
-  plugin_key: string;
-  config: Record<string, any>;
-}
-
-export interface PluginMetric {
-  pluginKey: string;
-  usageCount: number;
+export interface PluginConfig {
+  [key: string]: any;
 }

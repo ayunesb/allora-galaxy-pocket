@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePlugins } from "@/hooks/usePlugins";
 import { toast } from "sonner";
 import PluginConfigEditor from "@/app/admin/plugins/PluginConfigEditor";
-import { Plugin } from "@/types/plugin";
+import { PluginKey } from "@/types/plugin";
 import { usePluginLogger } from "@/lib/plugins/logPluginUsage";
 import { useEffect } from "react";
 
@@ -81,7 +81,7 @@ export default function PluginDetail() {
   const { logUsage } = usePluginLogger();
   
   // Ensure pluginKey is a valid key for our plugin system
-  const isValidPluginKey = (key: string | undefined): key is Plugin['key'] => {
+  const isValidPluginKey = (key: string | undefined): key is PluginKey => {
     return !!key && ['stripe', 'hubspot', 'shopify', 'ga4', 'twilio'].includes(key);
   };
 

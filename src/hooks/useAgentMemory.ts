@@ -158,7 +158,7 @@ export function useAgentMemory(agentName?: string) {
   }) => {
     try {
       await createMemoryMutation.mutateAsync({
-        agent_name: params.agentName, // Fix: Changed agentName to agent_name
+        agent_name: params.agentName, // Converting agentName to agent_name
         context: params.context,
         type: params.type,
         ai_feedback: params.ai_feedback,
