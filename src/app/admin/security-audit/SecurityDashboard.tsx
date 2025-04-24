@@ -1,6 +1,4 @@
 import React, { useState } from "react";
-import { useSecurityAudit } from "@/hooks/useSecurityAudit";
-import { useSystemLogs } from "@/hooks/useSystemLogs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,40 +7,24 @@ import { TablesAnalyzedCard } from "./components/dashboard/TablesAnalyzedCard";
 import { SecurityEventsCard } from "./components/dashboard/SecurityEventsCard";
 import { SecurityDistributionChart } from "./components/dashboard/SecurityDistributionChart";
 import { SecurityAuditTable } from "./components/SecurityAuditTable";
+import { useSecurityDashboard } from "./hooks/useSecurityDashboard";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./components/ui/Card";
+import { Badge } from "./components/ui/Badge";
+import { Progress } from "./components/ui/Progress";
 import { ResponsiveTable, Column } from "@/components/ui/responsive-table";
 
 export default function SecurityDashboard() {
-  const { runSecurityAudit, results, isScanning } = useSecurityAudit();
-  const { logs, filters, setFilters } = useSystemLogs();
   const [activeTab, setActiveTab] = useState("overview");
-
-  // Filter for security-related logs only
-  const securityLogs = logs.filter(log => 
-    log.event_type.startsWith('SECURITY_') || 
-    log.event_type.includes('AUTH_') ||
-    log.event_type.includes('ACCESS_')
-  );
-
-  // Calculate overall security score
-  const calculateOverallScore = () => {
-    if (!results.length) return 0;
-    const sum = results.reduce((total, item) => total + item.securityScore, 0);
-    return Math.round(sum / results.length);
-  };
-
-  // Count tables by security level
-  const countBySecurityLevel = () => {
-    const counts = { high: 0, medium: 0, low: 0 };
-    results.forEach(item => {
-      if (item.securityScore >= 80) counts.high++;
-      else if (item.securityScore >= 40) counts.medium++;
-      else counts.low++;
-    });
-    return counts;
-  };
-
-  const securityScores = countBySecurityLevel();
-  const overallScore = calculateOverallScore();
+  const { 
+    overallScore,
+    securityScores,
+    securityLogs,
+    lastEventDate,
+    hasCriticalIssues,
+    criticalIssuesCount,
+    results,
+    isScanning
+  } = useSecurityDashboard();
 
   const tableColumns: Column[] = [
     { header: "Table Name", accessorKey: "tableName" },
@@ -126,16 +108,16 @@ export default function SecurityDashboard() {
         />
         <SecurityEventsCard 
           eventsCount={securityLogs.length}
-          lastEventDate={securityLogs[0]?.created_at && new Date(securityLogs[0].created_at).toLocaleString()}
+          lastEventDate={lastEventDate}
         />
       </div>
 
-      {results.some(r => r.securityScore < 40) && (
+      {hasCriticalIssues && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Critical Security Issues Detected</AlertTitle>
           <AlertDescription>
-            {results.filter(r => r.securityScore < 40).length} tables have critical security issues that need immediate attention.
+            {criticalIssuesCount} tables have critical security issues that need immediate attention.
             Switch to the Tables tab for details.
           </AlertDescription>
         </Alert>
