@@ -1,5 +1,5 @@
 
-import { UseQueryResult } from "@tanstack/react-query";
+import { UseQueryResult, useQuery } from "@tanstack/react-query";
 import { toast } from "@/components/ui/sonner";
 import { useState, useEffect } from "react";
 

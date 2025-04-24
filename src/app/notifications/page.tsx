@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Bell, ChartLine, CheckCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { useNotifications } from "@/hooks/useNotifications";
 import NotificationItem from "./NotificationItem";
-import GrowthPanel from "./GrowthPanel";
+import { GrowthPanel } from "./GrowthPanel";
 import type { Notification } from "@/types/notification";
 
 export default function NotificationsPage() {
@@ -20,7 +19,6 @@ export default function NotificationsPage() {
   const queryClient = useQueryClient();
   const { markAsRead, markAllAsRead } = useNotifications();
   
-  // Fetch notifications from the database
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ["notifications", tenant?.id],
     queryFn: async () => {
