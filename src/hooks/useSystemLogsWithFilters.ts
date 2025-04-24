@@ -8,8 +8,9 @@ export function useSystemLogsWithFilters() {
   const [currentPage, setCurrentPage] = useState(1);
   const [filteredLogs, setFilteredLogs] = useState<SystemLog[]>([]);
   const [filters, setFilters] = useState({
+    user: "all",
+    actionType: "all",
     dateRange: "7",
-    eventType: "all",
     search: "",
   });
 
@@ -22,10 +23,13 @@ export function useSystemLogsWithFilters() {
         log.message.toLowerCase().includes(filters.search.toLowerCase()) ||
         log.event_type.toLowerCase().includes(filters.search.toLowerCase());
         
-      const matchesEventType = filters.eventType === "all" || 
-        log.event_type === filters.eventType;
+      const matchesEventType = filters.actionType === "all" || 
+        log.event_type === filters.actionType;
+        
+      const matchesUser = filters.user === "all" || 
+        (log.user_id && log.user_id === filters.user);
 
-      return matchesSearch && matchesEventType;
+      return matchesSearch && matchesEventType && matchesUser;
     });
 
     setFilteredLogs(filtered);
