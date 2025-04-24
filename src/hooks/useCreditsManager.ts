@@ -1,177 +1,182 @@
 
-import { useState } from 'react';
-import { useBillingProfile } from './useBillingProfile';
-import { useStripeUsageReporting } from './useStripeUsageReporting';
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useTenant } from './useTenant';
 import { toast } from "sonner";
+import { useTenant } from "@/hooks/useTenant";
+import { useAuth } from "@/hooks/useAuth";
+
+interface CreditUsage {
+  module: string;
+  agent: string;
+  credits: number;
+  description?: string;
+}
 
 export function useCreditsManager() {
-  const { profile, isLoading, error, refetch } = useBillingProfile();
-  const { reportCreditUsage } = useStripeUsageReporting();
   const { tenant } = useTenant();
-  const [isProcessing, setIsProcessing] = useState(false);
-
+  const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  
   /**
-   * Use credits for a specific feature
-   * 
+   * Use credits from the tenant's balance
    * @param amount Number of credits to use
-   * @param feature Feature using the credits
-   * @param agent Optional agent name
-   * @returns boolean Success status
+   * @param description Description of what the credits are used for
+   * @param agent Name of the agent consuming the credits
+   * @returns boolean indicating if credits were successfully used
    */
-  const useCredits = async (amount: number, feature: string, agent?: string): Promise<boolean> => {
-    if (isLoading || !profile || !tenant?.id) {
-      toast.error("Unable to use credits", {
-        description: "Your billing profile is loading or not available"
+  const useCredits = async (
+    amount: number, 
+    description: string,
+    agent: string = "System"
+  ): Promise<boolean> => {
+    if (!tenant?.id) {
+      toast.error("Cannot use credits", {
+        description: "No active workspace found"
       });
       return false;
     }
     
-    if (profile.credits < amount) {
-      toast.error("Not enough credits", {
-        description: `You need ${amount} credits for this operation but only have ${profile.credits} left`
-      });
-      return false;
-    }
-    
-    setIsProcessing(true);
-    
+    setIsLoading(true);
     try {
-      // 1. Use credits via the manage-billing edge function
-      const { error: usageError } = await supabase.functions.invoke("manage-billing", {
-        body: {
-          action: "use_credits",
-          user_id: profile.user_id,
-          amount: amount
-        }
-      });
+      // First check if tenant has enough credits
+      const { data: tenantData, error: tenantError } = await supabase
+        .from("tenant_profiles")
+        .select("usage_credits")
+        .eq("id", tenant.id)
+        .single();
       
-      if (usageError) {
-        throw usageError;
+      if (tenantError) throw tenantError;
+      
+      const currentCredits = tenantData?.usage_credits || 0;
+      
+      if (currentCredits < amount) {
+        toast.error("Not enough credits", {
+          description: `This operation requires ${amount} credits. Your workspace has ${currentCredits} credits.`
+        });
+        return false;
       }
       
-      // 2. Log credit usage
-      const { error: logError } = await supabase.from("credit_usage_log").insert({
-        tenant_id: tenant.id,
-        credits_used: amount,
-        module: feature,
-        agent_name: agent || "System",
-        details: {
-          timestamp: new Date().toISOString(),
-          feature: feature
-        }
-      });
+      // Update tenant credits
+      const { error: updateError } = await supabase
+        .from("tenant_profiles")
+        .update({ usage_credits: currentCredits - amount })
+        .eq("id", tenant.id);
+      
+      if (updateError) throw updateError;
+      
+      // Log credit usage
+      const { error: logError } = await supabase
+        .from("credit_usage_log")
+        .insert({
+          tenant_id: tenant.id,
+          agent_name: agent,
+          module: description,
+          credits_used: amount,
+          details: {
+            user_id: user?.id,
+            timestamp: new Date().toISOString()
+          }
+        });
       
       if (logError) {
         console.error("Error logging credit usage:", logError);
+        // We don't throw here to avoid reversing the credit deduction
       }
       
-      // 3. Report to Stripe for metering (optional, only if connected)
-      if (profile?.stripe_subscription_id) {
-        await reportCreditUsage(amount);
-      }
+      return true;
       
-      // 4. Invalidate the billing profile to update the UI
-      refetch();
+    } catch (error: any) {
+      console.error("Error using credits:", error);
+      toast.error("Failed to use credits", {
+        description: error.message || "An unexpected error occurred"
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  /**
+   * Add credits to the tenant's balance
+   * @param amount Number of credits to add
+   */
+  const addCredits = async (amount: number): Promise<boolean> => {
+    if (!tenant?.id) {
+      toast.error("Cannot add credits", {
+        description: "No active workspace found"
+      });
+      return false;
+    }
+    
+    try {
+      // Get current credit balance
+      const { data: tenantData, error: tenantError } = await supabase
+        .from("tenant_profiles")
+        .select("usage_credits")
+        .eq("id", tenant.id)
+        .single();
       
-      toast.success(`${amount} credits used`, {
-        description: `Used for ${feature}`
+      if (tenantError) throw tenantError;
+      
+      const currentCredits = tenantData?.usage_credits || 0;
+      
+      // Update tenant credits
+      const { error: updateError } = await supabase
+        .from("tenant_profiles")
+        .update({ usage_credits: currentCredits + amount })
+        .eq("id", tenant.id);
+      
+      if (updateError) throw updateError;
+      
+      toast.success(`Added ${amount} credits`, {
+        description: `Your workspace now has ${currentCredits + amount} credits.`
       });
       
       return true;
-    } catch (err) {
-      console.error("Error using credits:", err);
-      
-      toast.error("Failed to use credits", {
-        description: "Please try again or contact support"
+    } catch (error: any) {
+      console.error("Error adding credits:", error);
+      toast.error("Failed to add credits", {
+        description: error.message || "An unexpected error occurred"
       });
-      
       return false;
-    } finally {
-      setIsProcessing(false);
     }
   };
   
   /**
-   * Check if a user has enough credits for an operation
-   * 
-   * @param requiredAmount Number of credits required
-   * @returns boolean Whether the user has enough credits
+   * Get credit usage by module
    */
-  const hasEnoughCredits = (requiredAmount: number): boolean => {
-    if (isLoading || !profile) return false;
-    return profile.credits >= requiredAmount;
-  };
-  
-  /**
-   * Get the remaining credits for the user
-   * 
-   * @returns number The number of credits remaining
-   */
-  const getRemainingCredits = (): number => {
-    return profile?.credits || 0;
-  };
-  
-  /**
-   * Get credit usage summary for the current tenant
-   */
-  const getCreditUsageSummary = async () => {
-    if (!tenant?.id) return null;
-    
-    try {
-      const { data, error } = await supabase
-        .from('tenant_billing_summary')
-        .select('*')
-        .eq('tenant_id', tenant.id)
-        .single();
-        
-      if (error) {
-        console.error("Error fetching credit usage summary:", error);
-        return null;
-      }
-      
-      return data;
-    } catch (err) {
-      console.error("Error in getCreditUsageSummary:", err);
-      return null;
-    }
-  };
-  
-  /**
-   * Get detailed credit usage by module
-   */
-  const getCreditUsageByModule = async () => {
+  const getCreditUsageByModule = async (): Promise<{module: string, credits: number}[]> => {
     if (!tenant?.id) return [];
     
     try {
+      // Using SQL aggregate function in the query to get sum of credits by module
       const { data, error } = await supabase
         .from('credit_usage_log')
-        .select('module, sum(credits_used)')
+        .select(`
+          module,
+          sum:credits_used
+        `)
         .eq('tenant_id', tenant.id)
-        .group('module')
-        .order('sum', { ascending: false });
-        
-      if (error) {
-        console.error("Error fetching credit usage by module:", error);
-        return [];
-      }
+        .order('module');
       
-      return data || [];
-    } catch (err) {
-      console.error("Error in getCreditUsageByModule:", err);
+      if (error) throw error;
+      
+      // Transform data into required format
+      return (data || []).map(item => ({
+        module: item.module,
+        credits: item.sum
+      }));
+      
+    } catch (error) {
+      console.error("Error fetching credit usage by module:", error);
       return [];
     }
   };
-
+  
   return {
     useCredits,
-    hasEnoughCredits,
-    getRemainingCredits,
-    getCreditUsageSummary,
+    addCredits,
     getCreditUsageByModule,
     isLoading,
-    isProcessing,
-    error
   };
 }

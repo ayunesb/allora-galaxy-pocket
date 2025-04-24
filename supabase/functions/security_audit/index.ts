@@ -2,6 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
+import { validateAllTables, checkTableRlsStatus } from "../_shared/rls-validator.ts";
 
 serve(async (req) => {
   // Handle CORS preflight request
@@ -15,8 +16,6 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Perform comprehensive security audit
-    
     // 1. Check for tables without RLS enabled
     const { data: tablesWithoutRLS, error: rlsError } = await supabase
       .rpc("get_tables_without_rls");
@@ -80,12 +79,54 @@ serve(async (req) => {
       }
     }
 
+    // 5. Run complete RLS validator on all tables
+    const allTableResults = await validateAllTables();
+
+    // 6. Identify critical security issues
+    const criticalIssues = [];
+
+    // Tables without RLS
+    for (const table of tablesWithoutRLS || []) {
+      criticalIssues.push({
+        type: "rls_disabled",
+        table: table.table_name,
+        severity: "high",
+        description: `The table "${table.table_name}" does not have Row Level Security enabled`,
+        recommendation: `Enable RLS with: ALTER TABLE public.${table.table_name} ENABLE ROW LEVEL SECURITY;`
+      });
+    }
+
+    // Tables with incomplete policies
+    for (const policy of incompleteRLSPolicies || []) {
+      criticalIssues.push({
+        type: "incomplete_policy",
+        table: policy.tablename,
+        policy: policy.policyname,
+        severity: "medium",
+        description: `Policy "${policy.policyname}" on table "${policy.tablename}" lacks proper auth.uid() or tenant_id references`,
+        recommendation: `Update the policy to include proper auth.uid() and tenant_id checks`
+      });
+    }
+
+    // Security definer views (potential security risk)
+    for (const view of securityDefinerViews || []) {
+      criticalIssues.push({
+        type: "security_definer",
+        view: view.viewname,
+        severity: "medium",
+        description: `View "${view.viewname}" uses SECURITY DEFINER which can be a security risk if not carefully implemented`,
+        recommendation: `Review the SECURITY DEFINER implementation in the view or consider using SECURITY INVOKER instead`
+      });
+    }
+
     // Consolidate all security issues
     const securityAuditResults = {
       tablesWithoutRLS: tablesWithoutRLS || [],
       incompleteRLSPolicies: incompleteRLSPolicies || [],
       securityDefinerViews: securityDefinerViews || [],
       tablesWithoutTenantId: tablesWithoutTenantId,
+      tableAnalysis: allTableResults,
+      criticalIssues,
       timestamp: new Date().toISOString(),
     };
 

@@ -43,3 +43,15 @@ verify_jwt = true
 
 [functions.check-rls-policies]
 verify_jwt = true
+
+[functions.generate-strategy]
+verify_jwt = true
+
+[functions.generate-campaign]
+verify_jwt = true
+
+[functions.check-subscription]
+verify_jwt = false
+
+[functions.strategy-init]
+verify_jwt = true
