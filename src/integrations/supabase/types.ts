@@ -1265,6 +1265,57 @@ export type Database = {
           },
         ]
       }
+      performance_logs: {
+        Row: {
+          component: string
+          created_at: string | null
+          duration_ms: number
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          operation: string
+          success: boolean
+          tenant_id: string | null
+        }
+        Insert: {
+          component: string
+          created_at?: string | null
+          duration_ms: number
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          operation: string
+          success: boolean
+          tenant_id?: string | null
+        }
+        Update: {
+          component?: string
+          created_at?: string | null
+          duration_ms?: number
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          operation?: string
+          success?: boolean
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_logs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performance_logs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       persona_profiles: {
         Row: {
           channels: string[] | null
@@ -2416,6 +2467,60 @@ export type Database = {
         }
         Relationships: []
       }
+      system_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string | null
+          id: string
+          message: string
+          metadata: Json | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          status: string
+          tenant_id: string | null
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string | null
+          id?: string
+          message: string
+          metadata?: Json | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity: string
+          status?: string
+          tenant_id?: string | null
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string | null
+          id?: string
+          message?: string
+          metadata?: Json | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          status?: string
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_alerts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_alerts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_config: {
         Row: {
           config: Json
@@ -2514,6 +2619,48 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      system_metrics: {
+        Row: {
+          id: string
+          metadata: Json | null
+          metric_name: string
+          recorded_at: string | null
+          tenant_id: string | null
+          value: number
+        }
+        Insert: {
+          id?: string
+          metadata?: Json | null
+          metric_name: string
+          recorded_at?: string | null
+          tenant_id?: string | null
+          value: number
+        }
+        Update: {
+          id?: string
+          metadata?: Json | null
+          metric_name?: string
+          recorded_at?: string | null
+          tenant_id?: string | null
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_metrics_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_metrics_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles_view"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       team_invites: {
         Row: {
@@ -3052,6 +3199,34 @@ export type Database = {
           },
         ]
       }
+      system_health_overview: {
+        Row: {
+          active_alerts: number | null
+          avg_response_time: number | null
+          critical_alerts: number | null
+          error_rate: number | null
+          high_alerts: number | null
+          last_alert_time: string | null
+          last_performance_log: string | null
+          tenant_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_alerts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_alerts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tables_without_rls: {
         Row: {
           table_name: unknown | null
@@ -3196,6 +3371,16 @@ export type Database = {
           human_approved: number
         }[]
       }
+      create_system_alert: {
+        Args: {
+          p_tenant_id: string
+          p_alert_type: string
+          p_severity: string
+          p_message: string
+          p_metadata?: Json
+        }
+        Returns: string
+      }
       execute_sql: {
         Args: { sql_query: string }
         Returns: undefined
@@ -3289,6 +3474,15 @@ export type Database = {
           p_event_type: string
           p_source: string
           p_target: string
+          p_metadata?: Json
+        }
+        Returns: string
+      }
+      record_system_metric: {
+        Args: {
+          p_tenant_id: string
+          p_metric_name: string
+          p_value: number
           p_metadata?: Json
         }
         Returns: string

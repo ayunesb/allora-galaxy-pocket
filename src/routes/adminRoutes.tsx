@@ -1,8 +1,6 @@
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import AdminLogsPage from '@/app/admin/logs/page';
-
-// Import admin pages
 import SecurityAuditPage from "@/app/admin/security-audit/page";
 import SecurityDashboard from "@/app/admin/security-audit/SecurityDashboard";
 import RlsAuditReport from "@/app/admin/security-audit/RlsAuditReport";
@@ -17,6 +15,7 @@ import AgentMemoryConsole from "@/app/admin/agents/memory/page";
 import CollaborationPage from "@/app/admin/agents/collaboration/page";
 import AdminSettingsPage from "@/pages/admin/settings/page";
 import TenantsManagementPage from '@/app/admin/tenants/page';
+import SystemMonitoringPage from '@/app/admin/monitoring/page';
 
 export const adminRoutes: RouteObject[] = [
   { path: "/admin/dashboard", element: <AdminDashboardPage /> },
@@ -33,5 +32,6 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/agents/memory", element: <AgentMemoryConsole /> },
   { path: "/admin/agents/collaboration", element: <CollaborationPage /> },
   { path: "/admin/settings", element: <AdminSettingsPage /> },
-  { path: "/admin/tenants", element: <TenantsManagementPage /> }
+  { path: "/admin/tenants", element: <TenantsManagementPage /> },
+  { path: "/admin/monitoring", element: <SystemMonitoringPage /> }
 ];
