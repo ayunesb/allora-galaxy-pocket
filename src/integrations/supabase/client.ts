@@ -11,8 +11,21 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     detectSessionInUrl: true,
     flowType: 'implicit' // Use implicit flow for browser environments
+  },
+  global: {
+    headers: {
+      'x-tenant-id': localStorage.getItem('tenant_id') || ''
+    }
   }
 });
+
+// Update headers whenever tenant ID changes
+export const updateTenantHeader = (tenantId: string | null) => {
+  supabase.headers = {
+    ...supabase.headers,
+    'x-tenant-id': tenantId || ''
+  };
+};
 
 // Monitor auth status
 supabase.auth.onAuthStateChange((event, session) => {

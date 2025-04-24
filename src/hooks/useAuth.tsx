@@ -96,7 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<void> => {
     try {
       setIsLoading(true);
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -130,7 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signup = async (email: string, password: string) => {
+  const signup = async (email: string, password: string): Promise<void> => {
     try {
       setIsLoading(true);
       
@@ -153,7 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       
       // Proceed with signup
-      const { error, data } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -166,8 +166,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast.success("Signup successful", {
         description: "Please check your email to confirm your account"
       });
-      
-      return data;
     } catch (error) {
       const e = error as Error;
       toast.error("Signup failed", {
@@ -179,7 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const logout = async () => {
+  const logout = async (): Promise<void> => {
     try {
       setIsLoading(true);
       const { error } = await supabase.auth.signOut();

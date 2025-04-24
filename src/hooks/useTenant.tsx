@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tenant } from "@/types/tenant";
 import { toast } from "@/components/ui/sonner";
 import { TenantContext } from "@/contexts/TenantContext";
+import { updateTenantHeader } from "@/integrations/supabase/client";
 
 export function TenantProvider({ children }: { children: ReactNode }) {
   const [tenant, setTenant] = useState<Tenant | null>(null);
@@ -36,7 +37,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
             theme_mode: data.theme_mode,
             theme_color: data.theme_color
           });
-          setTenant(data);
+          handleSetTenant(data);
         } else {
           // If the stored tenant doesn't exist anymore, clear localStorage
           localStorage.removeItem("tenant_id");
@@ -85,12 +86,14 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     setTenant(newTenant);
     if (newTenant?.id) {
       localStorage.setItem("tenant_id", newTenant.id);
+      updateTenantHeader(newTenant.id);
       console.log("Tenant set with theme:", {
         theme_mode: newTenant.theme_mode || 'light',
         theme_color: newTenant.theme_color
       });
     } else {
       localStorage.removeItem("tenant_id");
+      updateTenantHeader(null);
       console.log("Tenant cleared");
     }
   };
