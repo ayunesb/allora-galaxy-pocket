@@ -69,7 +69,14 @@ export function useCampaignIntegration() {
             scripts: campaignData.scripts.reduce((acc: Record<string, string>, curr: any) => {
               acc[curr.channel] = curr.content;
               return acc;
-            }, {})
+            }, {}),
+            execution_status: "pending", // Initialize execution status
+            execution_metrics: {
+              views: 0,
+              clicks: 0,
+              conversions: 0,
+              last_tracked: new Date().toISOString()
+            }
           })
           .select()
           .single();
@@ -205,10 +212,90 @@ export function useCampaignIntegration() {
     }
   });
 
+  // Add the missing methods for campaign execution tracking
+  const updateCampaignExecutionStatus = async (campaignId: string, status: string, metrics?: Record<string, any>) => {
+    if (!tenant?.id || !campaignId) {
+      return { success: false, error: "Missing required information" };
+    }
+    
+    try {
+      const updatePayload: any = {
+        execution_status: status,
+      };
+      
+      if (status === "in_progress" && !metrics?.execution_start_date) {
+        updatePayload.execution_start_date = new Date().toISOString();
+      }
+      
+      if (metrics) {
+        // Get current metrics to merge with new ones
+        const { data: currentCampaign } = await supabase
+          .from("campaigns")
+          .select("execution_metrics")
+          .eq("id", campaignId)
+          .single();
+          
+        updatePayload.execution_metrics = {
+          ...currentCampaign?.execution_metrics || {},
+          ...metrics,
+          last_tracked: new Date().toISOString()
+        };
+      }
+      
+      const { error } = await supabase
+        .from("campaigns")
+        .update(updatePayload)
+        .eq("id", campaignId)
+        .eq("tenant_id", tenant.id);
+      
+      if (error) throw error;
+      
+      // Log status change
+      await supabase
+        .from('system_logs')
+        .insert({
+          tenant_id: tenant.id,
+          event_type: 'CAMPAIGN_STATUS_UPDATED',
+          message: `Campaign status updated to "${status}"`,
+          meta: { campaign_id: campaignId, status }
+        });
+        
+      return { success: true };
+    } catch (err: any) {
+      console.error("Error updating campaign execution status:", err);
+      return { success: false, error: err.message };
+    }
+  };
+  
+  // Get campaign execution metrics
+  const getCampaignExecutionMetrics = async (campaignId: string) => {
+    if (!tenant?.id || !campaignId) {
+      return { success: false, error: "Missing required information" };
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from("campaigns")
+        .select("execution_metrics, execution_status, execution_start_date")
+        .eq("id", campaignId)
+        .eq("tenant_id", tenant.id)
+        .single();
+      
+      if (error) throw error;
+      
+      return { success: true, data };
+    } catch (err: any) {
+      console.error("Error fetching campaign execution metrics:", err);
+      return { success: false, error: err.message };
+    }
+  };
+
   return {
     isLoading: isLoading || generateCampaign.isPending || trackCampaignOutcome.isPending || captureCampaignFeedback.isPending,
     convertStrategyToCampaign,
     trackCampaignOutcome: trackCampaignOutcome.mutate,
-    captureCampaignFeedback: captureCampaignFeedback.mutate
+    captureCampaignFeedback: captureCampaignFeedback.mutate,
+    updateCampaignExecutionStatus,
+    getCampaignExecutionMetrics
   };
 }

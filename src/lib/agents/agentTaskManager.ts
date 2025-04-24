@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useCreditsManager } from "@/hooks/useCreditsManager";
+import { logAgentMemory } from "./memoryLogger";
 
 type AgentTask = {
   agent: string;
@@ -14,19 +15,20 @@ type TaskExecutionResult = {
   success: boolean;
   result?: any;
   error?: string;
+  xp_delta?: number;
 };
 
 export const executeAgentTask = async (task: AgentTask): Promise<TaskExecutionResult> => {
   try {
     // Log task to agent_tasks table
-    const { error: logError } = await supabase.from("agent_tasks").insert({
+    const { data: taskRecord, error: logError } = await supabase.from("agent_tasks").insert({
       agent: task.agent,
       task_type: task.task_type,
       payload: task.payload,
       status: "pending",
       tenant_id: task.tenant_id,
       created_at: new Date().toISOString()
-    });
+    }).select().single();
     
     if (logError) {
       console.error("Error logging agent task:", logError);
@@ -38,7 +40,8 @@ export const executeAgentTask = async (task: AgentTask): Promise<TaskExecutionRe
         user_id: (await supabase.auth.getUser()).data.user?.id,
         agent: task.agent,
         task_type: task.task_type,
-        payload: task.payload
+        payload: task.payload,
+        task_id: taskRecord?.id
       }
     });
     
@@ -54,19 +57,83 @@ export const executeAgentTask = async (task: AgentTask): Promise<TaskExecutionRe
       };
     }
     
+    // Calculate XP based on task complexity and outcome
+    const xp_delta = calculateTaskXP(task.task_type, data?.complexity || 'normal', true);
+    
+    // Update task with result and XP
+    await supabase.from("agent_tasks").update({
+      status: "success",
+      result: data,
+      xp_delta,
+      executed_at: new Date().toISOString()
+    }).eq("id", taskRecord?.id);
+    
+    // Log to agent memory for learning
+    if (task.tenant_id) {
+      await logAgentMemory({
+        tenantId: task.tenant_id,
+        agentName: task.agent,
+        context: `Successfully executed ${task.task_type} task: ${JSON.stringify(task.payload).substring(0, 200)}...`,
+        type: 'history'
+      });
+      
+      // Update agent memory scores - this helps optimize future responses
+      await supabase.rpc('update_agent_memory_score', { p_agent_id: data?.agent_id });
+    }
+    
     return {
       success: true,
-      result: data
+      result: data,
+      xp_delta
     };
     
   } catch (err: any) {
     console.error(`Agent task execution error (${task.agent}/${task.task_type}):`, err);
+    
+    // Calculate negative XP for failed task
+    const xp_delta = -5; // Negative XP for failures
+    
+    // Update task as failed
+    if (task.tenant_id) {
+      // Log failure to agent memory for learning
+      await logAgentMemory({
+        tenantId: task.tenant_id,
+        agentName: task.agent,
+        context: `Failed to execute ${task.task_type} task: ${err.message}`,
+        type: 'feedback'
+      });
+    }
+    
     return {
       success: false,
-      error: err.message || "Unknown error executing agent task"
+      error: err.message || "Unknown error executing agent task",
+      xp_delta
     };
   }
 };
+
+// Helper function to calculate XP based on task complexity and outcome
+function calculateTaskXP(taskType: string, complexity: string, success: boolean): number {
+  // Base XP values
+  const baseXP = {
+    simple: 5,
+    normal: 10,
+    complex: 20,
+    critical: 30
+  }[complexity] || 10;
+  
+  // Task type multipliers
+  const typeMultiplier = {
+    'execution': 1.0,
+    'analysis': 1.2,
+    'creation': 1.5,
+    'optimization': 1.3,
+    'recovery': 1.8
+  }[taskType] || 1.0;
+  
+  // Calculate final XP
+  return success ? Math.round(baseXP * typeMultiplier) : -5;
+}
 
 // React hook for executing agent tasks with billing integration
 export const useAgentTaskExecution = () => {
@@ -84,7 +151,16 @@ export const useAgentTaskExecution = () => {
       }
       
       // Execute the task after billing check
-      return await executeAgentTask(task);
+      const result = await executeAgentTask(task);
+      
+      // Show XP notification if available
+      if (result.success && result.xp_delta) {
+        toast.success(`${task.agent} gained ${result.xp_delta} XP`, {
+          description: "Agent performance is improving!"
+        });
+      }
+      
+      return result;
       
     } catch (err: any) {
       toast.error("Task execution failed", {
