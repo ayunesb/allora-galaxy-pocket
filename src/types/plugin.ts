@@ -1,5 +1,5 @@
 
-export type PluginKey = 'stripe' | 'hubspot' | 'shopify' | 'ga4' | 'twilio';
+export type PluginKey = 'stripe' | 'hubspot' | 'shopify' | 'ga4' | 'twilio' | 'openai' | 'slack' | 'zapier';
 
 export interface Plugin {
   id: string;

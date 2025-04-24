@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Download, Check, Star, Info } from "lucide-react";
 import { useState } from "react";
-import { Toast } from "sonner";
+import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { Plugin } from "@/types/plugin";
 import { useIsMobile } from "@/hooks/use-mobile";
