@@ -3079,6 +3079,32 @@ export type Database = {
         }
         Relationships: []
       }
+      kpi_metrics_summary: {
+        Row: {
+          avg_value: number | null
+          max_value: number | null
+          metric: string | null
+          min_value: number | null
+          tenant_id: string | null
+          total_records: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kpi_metrics_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kpi_metrics_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kpi_trends: {
         Row: {
           data_points: number | null

@@ -1,9 +1,9 @@
-
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import type { KpiMetric } from "@/types/kpi";
 import { toast } from "sonner";
+import React from "react";
 
 export function useKpiMetrics(dateRange = "30", category?: string, searchQuery?: string) {
   const { tenant } = useTenant();
@@ -16,52 +16,48 @@ export function useKpiMetrics(dateRange = "30", category?: string, searchQuery?:
       if (!tenant?.id) return [];
 
       try {
-        // Build the query with filters
+        // Use the new materialized view for better performance
+        const { data: summaryData } = await supabase
+          .from('kpi_metrics_summary')
+          .select('*')
+          .eq('tenant_id', tenant.id);
+        
+        // Get detailed metrics if needed
         let query = supabase
           .from('kpi_metrics')
           .select('*')
           .eq('tenant_id', tenant.id)
           .order('recorded_at', { ascending: false });
         
-        // Add category filter if provided
         if (category && category !== 'all') {
           query = query.eq('category', category);
         }
         
-        // Execute the query
         const { data, error } = await query;
         
         if (error) throw error;
         
-        // Transform and format the metrics data
-        const processedMetrics = data?.map(metric => {
-          // Calculate trend based on historical data (simplified here)
-          const trend = metric.value > 0 ? 'up' : 'down';
-          
-          return {
-            id: metric.id,
-            kpi_name: metric.metric || 'Unnamed Metric',
-            value: Number(metric.value) || 0,
-            trend: trend as 'up' | 'down' | 'neutral',
-            changePercent: Math.floor(Math.random() * 10), // Simplified for now
-            updated_at: metric.updated_at || metric.created_at || new Date().toISOString(),
-            tenant_id: tenant.id,
-            label: metric.metric || 'Unnamed Metric'
-          } as KpiMetric;
-        }) || [];
-        
-        // Filter out metrics that don't match search query if provided
-        return searchQuery 
-          ? processedMetrics.filter(metric => 
-              metric.kpi_name.toLowerCase().includes(searchQuery.toLowerCase())
-            )
-          : processedMetrics;
+        // Process and return the metrics
+        return data?.map(metric => ({
+          id: metric.id,
+          kpi_name: metric.metric || 'Unnamed Metric',
+          value: Number(metric.value) || 0,
+          trend: metric.value > 0 ? 'up' : 'down',
+          changePercent: calculateChangePercent(metric.value, summaryData),
+          updated_at: metric.updated_at || metric.created_at || new Date().toISOString(),
+          tenant_id: tenant.id,
+          label: metric.metric || 'Unnamed Metric'
+        })) || [];
       } catch (err) {
         console.error("Error fetching KPI metrics:", err);
         throw err;
       }
     },
     enabled: !!tenant?.id,
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    cacheTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+    refetchInterval: 5 * 60 * 1000 // Refetch every 5 minutes
   });
 
   // Function to manually trigger GA4 sync
@@ -146,10 +142,75 @@ export function useKpiMetrics(dateRange = "30", category?: string, searchQuery?:
     }
   };
 
+  // Add prefetching for other date ranges
+  React.useEffect(() => {
+    if (tenant?.id) {
+      const otherRanges = ['7', '14', '90'];
+      otherRanges.forEach(range => {
+        if (range !== dateRange) {
+          queryClient.prefetchQuery({
+            queryKey: ['kpi-metrics', tenant.id, range, category, searchQuery],
+            queryFn: () => fetchKPIMetrics(tenant.id, range, category)
+          });
+        }
+      });
+    }
+  }, [tenant?.id, dateRange, category, searchQuery, queryClient]);
+
   return {
     ...query,
     syncWithGA4,
     updateMQLMetrics,
     fetchHistoricalData
   };
+}
+
+// Helper function to calculate change percent
+function calculateChangePercent(currentValue: number, summaryData: any[]) {
+  if (!summaryData?.length) return 0;
+  const avgValue = summaryData[0]?.avg_value || 0;
+  if (avgValue === 0) return 0;
+  return Math.round(((currentValue - avgValue) / avgValue) * 100);
+}
+
+async function fetchKPIMetrics(tenantId: string, range: string, category?: string) {
+  // Implementation of the fetch logic for prefetching
+  // ... similar to the main queryFn logic
+  try {
+    // Use the new materialized view for better performance
+    const { data: summaryData } = await supabase
+      .from('kpi_metrics_summary')
+      .select('*')
+      .eq('tenant_id', tenantId);
+    
+    // Get detailed metrics if needed
+    let query = supabase
+      .from('kpi_metrics')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .order('recorded_at', { ascending: false });
+    
+    if (category && category !== 'all') {
+      query = query.eq('category', category);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    
+    // Process and return the metrics
+    return data?.map(metric => ({
+      id: metric.id,
+      kpi_name: metric.metric || 'Unnamed Metric',
+      value: Number(metric.value) || 0,
+      trend: metric.value > 0 ? 'up' : 'down',
+      changePercent: calculateChangePercent(metric.value, summaryData),
+      updated_at: metric.updated_at || metric.created_at || new Date().toISOString(),
+      tenant_id: tenantId,
+      label: metric.metric || 'Unnamed Metric'
+    })) || [];
+  } catch (err) {
+    console.error("Error fetching KPI metrics:", err);
+    throw err;
+  }
 }
