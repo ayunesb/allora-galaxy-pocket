@@ -472,6 +472,8 @@ export type Database = {
           created_at: string | null
           description: string | null
           id: string
+          last_metrics_update: string | null
+          metrics: Json | null
           name: string
           scripts: Json | null
           status: string
@@ -482,6 +484,8 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          last_metrics_update?: string | null
+          metrics?: Json | null
           name: string
           scripts?: Json | null
           status: string
@@ -492,6 +496,8 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          last_metrics_update?: string | null
+          metrics?: Json | null
           name?: string
           scripts?: Json | null
           status?: string
@@ -733,6 +739,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      data_pipeline_events: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          event_type: string
+          id: string
+          metadata: Json | null
+          source: string
+          status: string
+          target: string
+          tenant_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          source: string
+          status?: string
+          target: string
+          tenant_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          source?: string
+          status?: string
+          target?: string
+          tenant_id?: string
+        }
+        Relationships: []
       }
       demo_analytics: {
         Row: {
@@ -2050,6 +2092,8 @@ export type Database = {
           id: string
           impact_score: number | null
           is_public: boolean | null
+          metrics_baseline: Json | null
+          onboarding_data: Json | null
           retry_prompt: string | null
           status: string | null
           tags: string[] | null
@@ -2070,6 +2114,8 @@ export type Database = {
           id?: string
           impact_score?: number | null
           is_public?: boolean | null
+          metrics_baseline?: Json | null
+          onboarding_data?: Json | null
           retry_prompt?: string | null
           status?: string | null
           tags?: string[] | null
@@ -2090,6 +2136,8 @@ export type Database = {
           id?: string
           impact_score?: number | null
           is_public?: boolean | null
+          metrics_baseline?: Json | null
+          onboarding_data?: Json | null
           retry_prompt?: string | null
           status?: string | null
           tags?: string[] | null
@@ -2846,6 +2894,19 @@ export type Database = {
           },
         ]
       }
+      kpi_calculations: {
+        Row: {
+          active_campaigns: number | null
+          approved_strategies: number | null
+          executed_strategies: number | null
+          strategy_approval_rate: number | null
+          strategy_to_campaign_rate: number | null
+          tenant_id: string | null
+          total_campaigns: number | null
+          total_strategies: number | null
+        }
+        Relationships: []
+      }
       kpi_trends: {
         Row: {
           data_points: number | null
@@ -3196,6 +3257,16 @@ export type Database = {
           table_name: string
           rls_enabled: boolean
         }[]
+      }
+      log_pipeline_event: {
+        Args: {
+          p_tenant_id: string
+          p_event_type: string
+          p_source: string
+          p_target: string
+          p_metadata?: Json
+        }
+        Returns: string
       }
       reset_billing_credits: {
         Args: Record<PropertyKey, never>

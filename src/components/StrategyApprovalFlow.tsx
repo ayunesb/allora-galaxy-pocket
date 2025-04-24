@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Check, X, ArrowRight } from "lucide-react";
@@ -14,6 +13,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useKpiAlerts } from "@/hooks/useKpiAlerts";
+import { useDataPipeline } from "@/hooks/useDataPipeline";
+import { useKpiTracking } from "@/hooks/useKpiTracking";
 
 interface StrategyApprovalFlowProps {
   strategyId: string;
@@ -27,6 +28,8 @@ export function StrategyApprovalFlow({ strategyId, onApproved, onDeclined }: Str
   const { convertStrategyToCampaign } = useCampaignIntegration();
   const { sendNotification } = useNotifications();
   const { triggerKpiCheck } = useKpiAlerts();
+  const { logPipelineEvent } = useDataPipeline();
+  const { trackMetric } = useKpiTracking();
   const [isApproving, setIsApproving] = useState(false);
   const [isDeclining, setIsDeclining] = useState(false);
   const [showCampaignPrompt, setShowCampaignPrompt] = useState(false);
@@ -65,6 +68,27 @@ export function StrategyApprovalFlow({ strategyId, onApproved, onDeclined }: Str
       
       if (error) throw error;
       
+      // Log pipeline event
+      await logPipelineEvent({
+        event_type: "strategy_approved",
+        source: "strategy",
+        target: "campaign",
+        metadata: {
+          strategy_id: strategy.id,
+          strategy_title: strategy.title
+        }
+      });
+
+      // Track KPI metric
+      await trackMetric({
+        name: "strategies_approved",
+        value: 1,
+        metadata: {
+          strategy_id: strategy.id,
+          industry: strategy.industry
+        }
+      });
+
       // Log approval in notifications
       await sendNotification({
         event_type: 'strategy_approval',

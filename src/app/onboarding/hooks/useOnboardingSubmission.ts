@@ -5,11 +5,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { OnboardingProfile } from "@/types/onboarding";
 import { toast } from "sonner";
 import { useTenant } from "@/hooks/useTenant";
+import { useDataPipeline } from "@/hooks/useDataPipeline";
 
 export function useOnboardingSubmission() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { tenant } = useTenant();
   const navigate = useNavigate();
+  const { logPipelineEvent } = useDataPipeline();
 
   const completeOnboarding = async (profile: OnboardingProfile) => {
     if (!tenant?.id) {
@@ -23,6 +25,7 @@ export function useOnboardingSubmission() {
 
     setIsSubmitting(true);
     try {
+      // Save company profile
       const { error } = await supabase
         .from("company_profiles")
         .upsert({
@@ -35,6 +38,17 @@ export function useOnboardingSubmission() {
         });
 
       if (error) throw error;
+
+      // Log pipeline event
+      logPipelineEvent({
+        event_type: "onboarding_completed",
+        source: "onboarding",
+        target: "strategy",
+        metadata: {
+          profile_type: profile.launch_mode,
+          industry: profile.industry
+        }
+      });
 
       toast.success("Setup complete!", {
         description: "Welcome to Allora OS"
