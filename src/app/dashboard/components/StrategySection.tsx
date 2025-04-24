@@ -2,9 +2,12 @@
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BarChart, ArrowRight, Sparkles } from "lucide-react";
+import { BarChart, ArrowRight, Sparkles, PlayCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useCampaignIntegration } from "@/hooks/useCampaignIntegration";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 import type { Strategy } from "@/types/strategy";
 
 interface StrategySectionProps {
@@ -13,9 +16,47 @@ interface StrategySectionProps {
 
 export function StrategySection({ strategies }: StrategySectionProps) {
   const { convertStrategyToCampaign, isLoading } = useCampaignIntegration();
+  const [creatingCampaignId, setCreatingCampaignId] = useState<string | null>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const handleConvert = async (strategy: Strategy) => {
-    await convertStrategyToCampaign(strategy);
+    setCreatingCampaignId(strategy.id);
+    try {
+      const result = await convertStrategyToCampaign(strategy);
+      
+      if (result) {
+        // Invalidate relevant queries to refresh data
+        queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+        queryClient.invalidateQueries({ queryKey: ['kpi-metrics'] });
+        
+        toast({
+          title: "Campaign created successfully",
+          description: "View it in the Campaign Center",
+          variant: "default",
+        });
+      }
+    } finally {
+      setCreatingCampaignId(null);
+    }
+  };
+  
+  const handleExecuteCampaign = async (strategy: Strategy) => {
+    // Create the campaign if it doesn't exist
+    const result = await convertStrategyToCampaign(strategy);
+    
+    if (result) {
+      // Forward to campaign execution page
+      toast({
+        title: "Campaign ready for execution",
+        description: "You'll be redirected to the campaign execution center",
+      });
+      
+      // In a real implementation, you'd navigate to the campaign execution page
+      // For now, we'll invalidate relevant queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+      queryClient.invalidateQueries({ queryKey: ['kpi-metrics'] });
+    }
   };
 
   return (
@@ -47,17 +88,44 @@ export function StrategySection({ strategies }: StrategySectionProps) {
                   {strategy.description}
                 </p>
                 
-                <div className="mt-3 flex justify-end">
+                <div className="mt-3 flex justify-end gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => handleExecuteCampaign(strategy)}
+                    disabled={isLoading || strategy.status !== 'approved'}
+                  >
+                    <PlayCircle className="mr-2 h-4 w-4" />
+                    Execute
+                  </Button>
                   <Button 
                     size="sm" 
                     variant="secondary"
                     onClick={() => handleConvert(strategy)}
-                    disabled={isLoading || strategy.status !== 'approved'}
+                    disabled={isLoading || strategy.status !== 'approved' || creatingCampaignId === strategy.id}
                   >
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Create Campaign
+                    {creatingCampaignId === strategy.id ? (
+                      <>Creating...</>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Create Campaign
+                      </>
+                    )}
                   </Button>
                 </div>
+                
+                {/* Campaign execution status indicators could be added here */}
+                {strategy.status === 'approved' && (
+                  <div className="mt-2 pt-2 border-t border-dashed flex justify-between items-center">
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(strategy.created_at || '').toLocaleDateString()}
+                    </span>
+                    <Link to={`/strategy/${strategy.id}`} className="text-xs text-blue-600 hover:underline">
+                      View Details
+                    </Link>
+                  </div>
+                )}
               </div>
             ))}
           </div>
