@@ -1,10 +1,12 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from './useTenant';
-import { useToast } from './use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { useAuth } from './useAuth';
 import { useSystemLogs } from './useSystemLogs';
 import type { Strategy } from '@/types/strategy';
+import { toast as sonnerToast } from 'sonner';
 
 export function useCampaignIntegration() {
   const [isLoading, setIsLoading] = useState(false);
@@ -43,7 +45,14 @@ export function useCampaignIntegration() {
           status: 'draft',
           tenant_id: tenant.id,
           scripts,
-          strategy_id: strategy.id
+          strategy_id: strategy.id,
+          execution_status: 'pending',
+          execution_metrics: {
+            views: 0,
+            clicks: 0,
+            conversions: 0,
+            last_updated: new Date().toISOString()
+          }
         })
         .select()
         .single();
@@ -86,12 +95,36 @@ export function useCampaignIntegration() {
     if (!tenant?.id) return false;
 
     try {
+      // Get current metrics before updating
+      const { data: campaignData, error: fetchError } = await supabase
+        .from('campaigns')
+        .select('execution_metrics')
+        .eq('id', campaignId)
+        .eq('tenant_id', tenant.id)
+        .single();
+        
+      if (fetchError) throw fetchError;
+      
+      // Merge existing metrics with new metrics
+      const existingMetrics = campaignData.execution_metrics || {};
+      const updatedMetrics = {
+        ...existingMetrics,
+        ...(metrics || {}),
+        last_updated: new Date().toISOString()
+      };
+      
+      // Add execution start date if starting campaign
+      const executionStartDate = status === 'running' && !campaignData.execution_start_date
+        ? { execution_start_date: new Date().toISOString() }
+        : {};
+        
+      // Update campaign with new status and metrics
       const { error } = await supabase
         .from('campaigns')
         .update({ 
           execution_status: status, 
-          execution_start_date: status === 'running' ? new Date().toISOString() : undefined,
-          execution_metrics: metrics || undefined
+          execution_metrics: updatedMetrics,
+          ...executionStartDate
         })
         .eq('id', campaignId)
         .eq('tenant_id', tenant.id);
@@ -111,6 +144,7 @@ export function useCampaignIntegration() {
       return true;
     } catch (err) {
       console.error('Error updating campaign status:', err);
+      sonnerToast.error('Error updating campaign status');
       return false;
     }
   };
@@ -121,14 +155,14 @@ export function useCampaignIntegration() {
     try {
       const { data, error } = await supabase
         .from('campaigns')
-        .select('execution_metrics')
+        .select('execution_metrics, execution_status, execution_start_date')
         .eq('id', campaignId)
         .eq('tenant_id', tenant.id)
         .single();
 
       if (error) throw error;
       
-      return data.execution_metrics;
+      return data;
     } catch (err) {
       console.error('Error fetching campaign metrics:', err);
       return null;
@@ -144,6 +178,36 @@ export function useCampaignIntegration() {
     if (!tenant?.id) return false;
     
     try {
+      // First update the campaign's execution metrics
+      const { data: campaign, error: fetchError } = await supabase
+        .from('campaigns')
+        .select('execution_metrics')
+        .eq('id', campaignId)
+        .eq('tenant_id', tenant.id)
+        .single();
+        
+      if (fetchError) throw fetchError;
+      
+      // Create new metrics object with updated values
+      const currentMetrics = campaign.execution_metrics || {};
+      const updatedMetrics = {
+        ...currentMetrics,
+        [outcomeType]: (currentMetrics[outcomeType] || 0) + outcomeValue,
+        last_updated: new Date().toISOString()
+      };
+      
+      // Update campaign metrics
+      const { error: updateError } = await supabase
+        .from('campaigns')
+        .update({
+          execution_metrics: updatedMetrics
+        })
+        .eq('id', campaignId)
+        .eq('tenant_id', tenant.id);
+        
+      if (updateError) throw updateError;
+      
+      // Insert record into campaign_outcomes table
       const { error } = await supabase
         .from('campaign_outcomes')
         .insert({
@@ -178,12 +242,50 @@ export function useCampaignIntegration() {
       return false;
     }
   };
+  
+  // New method for generating a report on campaign performance
+  const generateCampaignReport = async (campaignId: string) => {
+    if (!tenant?.id) {
+      toast({
+        title: "Error",
+        description: "Missing tenant information",
+        variant: "destructive"
+      });
+      return null;
+    }
+    
+    setIsLoading(true);
+    try {
+      // Use the predict-campaign-performance function
+      const { data, error } = await supabase.functions.invoke('predict-campaign-performance', {
+        body: {
+          campaign_id: campaignId,
+          tenant_id: tenant.id
+        }
+      });
+      
+      if (error) throw error;
+      
+      return data;
+    } catch (err) {
+      console.error('Error generating campaign report:', err);
+      toast({
+        title: "Error", 
+        description: "Failed to generate campaign report",
+        variant: "destructive"
+      });
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return {
     isLoading,
     convertStrategyToCampaign,
     updateCampaignExecutionStatus,
     getCampaignExecutionMetrics,
-    trackCampaignOutcome
+    trackCampaignOutcome,
+    generateCampaignReport
   };
 }
