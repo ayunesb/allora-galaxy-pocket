@@ -31,7 +31,8 @@ export function useSystemLogsWithFilters() {
       goToNextPage,
       goToPrevPage,
       currentPage,
-      totalPages
+      totalPages,
+      resetPage
     }
   };
 }

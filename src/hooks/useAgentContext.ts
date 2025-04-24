@@ -1,50 +1,55 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { useTenant } from "@/hooks/useTenant";
-import { AgentProfile } from "@/app/agents/hooks/useAgentProfile";
+import type { AgentProfile } from "@/app/agents/hooks/useAgentProfile";
 
 export function useAgentContext() {
+  const [agentProfile, setAgentProfile] = useState<AgentProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const { tenant } = useTenant();
+  const { toast } = useToast();
 
-  const { data: agentProfile, isLoading } = useQuery({
-    queryKey: ["agent-profile", tenant?.id],
-    queryFn: async () => {
-      if (!tenant?.id) return null;
+  useEffect(() => {
+    if (!tenant?.id) return;
 
-      const { data, error } = await supabase
-        .from("agent_profiles")
-        .select("*")
-        .eq("tenant_id", tenant.id)
-        .single();
+    const fetchActiveAgent = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("agent_profiles")
+          .select("*")
+          .eq("tenant_id", tenant.id)
+          .order("last_memory_update", { ascending: false })
+          .limit(1)
+          .single();
 
-      if (error) {
-        if (error.code === "PGRST116") {
-          // No agent profile found
-          return null;
-        }
-        throw error;
+        if (error) throw error;
+        setAgentProfile(data);
+      } catch (err) {
+        console.error("Error fetching agent profile:", err);
+      } finally {
+        setIsLoading(false);
       }
+    };
 
-      return data as AgentProfile;
-    },
-    enabled: !!tenant?.id,
-  });
+    fetchActiveAgent();
+  }, [tenant?.id]);
 
-  // Format the agent system prompt
   const getAgentSystemPrompt = () => {
     if (!agentProfile) return "";
     
-    const channels = agentProfile.channels && agentProfile.channels.length > 0 
-      ? agentProfile.channels.join(", ") 
-      : "all channels";
-    
-    return `You are ${agentProfile.agent_name}, an AI ${agentProfile.role}. Your tone is ${agentProfile.tone}. Your preferred channels are ${channels}.`;
+    return `You are ${agentProfile.agent_name}, an AI ${agentProfile.role} assistant.
+Tone: ${agentProfile.tone || "professional"}
+Language: ${agentProfile.language || "English"}
+Tools available: ${agentProfile.enabled_tools?.join(", ") || "None"}
+${agentProfile.memory_scope?.length ? `Memory scope: ${agentProfile.memory_scope.join(", ")}` : ""}`;
   };
 
   return {
     agentProfile,
     isLoading,
-    getAgentSystemPrompt,
+    getAgentSystemPrompt
   };
 }
