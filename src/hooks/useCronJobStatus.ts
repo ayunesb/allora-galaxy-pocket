@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
+import { CronJobLog } from "@/types/cron";
 
 export function useCronJobStatus() {
   const { tenant } = useTenant();
@@ -16,7 +17,7 @@ export function useCronJobStatus() {
         .limit(20);
 
       if (error) throw error;
-      return data;
+      return data as CronJobLog[];
     },
     refetchInterval: 60000, // Refresh every 60 seconds
     enabled: !!tenant?.id,

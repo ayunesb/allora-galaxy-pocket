@@ -1,10 +1,10 @@
-
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useCronJobStatus } from "@/hooks/useCronJobStatus";
 import { CheckCircle, XCircle, Clock, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
+import { CronJobLog } from "@/types/cron";
 
 export function CronJobStatus() {
   const { data: cronJobs, isLoading } = useCronJobStatus();
@@ -31,7 +31,7 @@ export function CronJobStatus() {
       acc[job.function_name] = job;
     }
     return acc;
-  }, {} as Record<string, typeof cronJobs[0]>) || {};
+  }, {} as Record<string, CronJobLog>) || {};
   
   // Get the list of unique functions
   const uniqueFunctions = Object.values(functionGroups);
