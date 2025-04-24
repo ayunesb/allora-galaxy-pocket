@@ -422,6 +422,51 @@ export type Database = {
           },
         ]
       }
+      automation_metrics: {
+        Row: {
+          ai_count: number | null
+          created_at: string | null
+          human_count: number | null
+          id: string
+          metric_name: string
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          ai_count?: number | null
+          created_at?: string | null
+          human_count?: number | null
+          id?: string
+          metric_name: string
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          ai_count?: number | null
+          created_at?: string | null
+          human_count?: number | null
+          id?: string
+          metric_name?: string
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_metrics_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_metrics_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       billing_profiles: {
         Row: {
           created_at: string
@@ -3027,6 +3072,32 @@ export type Database = {
       }
     }
     Views: {
+      automation_ratios: {
+        Row: {
+          ai_count: number | null
+          ai_percentage: number | null
+          human_count: number | null
+          metric_name: string | null
+          tenant_id: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_metrics_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_metrics_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       current_user_tenant_roles: {
         Row: {
           created_at: string | null
@@ -3509,6 +3580,10 @@ export type Database = {
           table_name: string
           rls_enabled: boolean
         }[]
+      }
+      log_automation_metric: {
+        Args: { p_tenant_id: string; p_metric_name: string; p_is_ai: boolean }
+        Returns: undefined
       }
       log_pipeline_event: {
         Args: {
