@@ -29,6 +29,7 @@ import { useNavigate } from "react-router-dom";
 import { getFirstInvalidStep } from "./components/StepValidation";
 import LiveSystemVerification from "@/components/LiveSystemVerification";
 import { useTheme } from "@/components/ui/theme-provider";
+import { useAuth } from "@/hooks/useAuth";
 
 const steps = [
   Step1Company,
@@ -46,6 +47,7 @@ const steps = [
 
 export default function OnboardingWizard() {
   const { tenant, isLoading: tenantLoading } = useTenant();
+  const { user, isLoading: authLoading } = useAuth();
   const { theme } = useTheme();
   const { toast } = useToast();
   const [step, setStep] = useState(0);
@@ -59,7 +61,7 @@ export default function OnboardingWizard() {
   const CurrentStep = steps[step];
 
   useEffect(() => {
-    if (!tenantLoading && !tenant) {
+    if (!tenantLoading && !tenant && !authLoading) {
       setWorkspaceError(true);
       toast({
         title: "Workspace required",
@@ -67,7 +69,7 @@ export default function OnboardingWizard() {
         variant: "destructive"
       });
     }
-  }, [tenant, tenantLoading, toast]);
+  }, [tenant, tenantLoading, authLoading, toast]);
 
   const next = (data: Partial<OnboardingProfile>) => {
     setProfile((prev) => ({ ...prev, ...data }));
@@ -121,10 +123,42 @@ export default function OnboardingWizard() {
     };
   };
 
-  if (tenantLoading) {
+  if (tenantLoading || authLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background dark:bg-gray-900 p-4">
         <LoadingOverlay show={true} label="Loading your workspace..." />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background dark:bg-gray-900 p-4">
+        <Card className="w-full max-w-2xl p-6 space-y-6 bg-card dark:bg-gray-800 border border-border dark:border-gray-700 relative">
+          <LiveSystemVerification />
+          <Alert variant="destructive">
+            <AlertTitle>Authentication Required</AlertTitle>
+            <AlertDescription>
+              Please sign in before continuing with onboarding.
+            </AlertDescription>
+          </Alert>
+          
+          <div className="flex flex-col gap-4">
+            <Button 
+              className="w-full" 
+              onClick={() => navigate("/auth/login", { state: { from: "/onboarding" } })}
+            >
+              Sign In <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+            <Button 
+              variant="outline"
+              className="w-full"
+              onClick={() => navigate("/auth/signup", { state: { from: "/onboarding" } })}
+            >
+              Create Account
+            </Button>
+          </div>
+        </Card>
       </div>
     );
   }

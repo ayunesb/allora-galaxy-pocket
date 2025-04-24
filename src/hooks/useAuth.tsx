@@ -23,30 +23,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Handle auth state changes
-    const handleAuthStateChange = (event: string, currentSession: Session | null) => {
-      // Synchronously update state first
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      setIsLoading(false);
+    const setUpAuthStateChange = async () => {
+      // Handle auth state changes
+      const handleAuthStateChange = (event: string, currentSession: Session | null) => {
+        // Synchronously update state first
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+        setIsLoading(false);
 
-      // Handle auth events
-      if (event === 'SIGNED_OUT') {
-        toast.success("Logged out successfully");
-      } else if (event === 'SIGNED_IN') {
-        toast.success("Logged in successfully");
-      } else if (event === 'TOKEN_REFRESHED') {
-        console.log('Session token refreshed successfully');
-      } else if (event === 'USER_UPDATED') {
-        console.log('User profile updated');
-      }
-    };
+        // Handle auth events
+        if (event === 'SIGNED_OUT') {
+          toast.success("Logged out successfully");
+        } else if (event === 'SIGNED_IN') {
+          toast.success("Logged in successfully");
+        } else if (event === 'TOKEN_REFRESHED') {
+          console.log('Session token refreshed successfully');
+        } else if (event === 'USER_UPDATED') {
+          console.log('User profile updated');
+        }
+      };
 
-    // Set up the auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
+      // Set up the auth state listener
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
 
-    // Check for existing session
-    const initializeAuth = async () => {
+      // Check for existing session
       try {
         const { data: { session: currentSession }, error } = await supabase.auth.getSession();
         if (error) {
@@ -62,14 +62,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } finally {
         setIsLoading(false);
       }
+      
+      // Cleanup subscription
+      return () => {
+        subscription.unsubscribe();
+      };
     };
 
     // Initialize auth
-    initializeAuth();
+    const cleanup = setUpAuthStateChange();
     
-    // Cleanup subscription
     return () => {
-      subscription.unsubscribe();
+      // Cleanup auth state change subscription
+      cleanup.then(unsubscribe => {
+        if (typeof unsubscribe === 'function') {
+          unsubscribe();
+        }
+      });
     };
   }, []);
 
@@ -198,6 +207,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // If there's an auth error during initial setup, still render children but show error state
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -208,18 +218,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading,
       refreshSession
     }}>
-      {authError ? (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-md">
-          <h3 className="text-red-800 font-medium">Authentication Error</h3>
-          <p className="text-red-600">{authError}</p>
-          <button 
-            onClick={() => refreshSession()}
-            className="mt-2 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-md"
-          >
-            Retry
-          </button>
-        </div>
-      ) : children}
+      {children}
     </AuthContext.Provider>
   );
 }

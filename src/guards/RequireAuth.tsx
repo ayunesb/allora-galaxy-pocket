@@ -6,6 +6,9 @@ import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState, useRef } from "react";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, session, isLoading: authLoading, refreshSession } = useAuth();
@@ -17,10 +20,12 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   const stableStateRef = useRef(false);
   const lastRefreshAttemptRef = useRef<number>(0);
   const [authAttempts, setAuthAttempts] = useState(0);
+  const [authError, setAuthError] = useState<string | null>(null);
   
   // Special cases where we don't need to check onboarding
   const skipOnboardingCheck = location.pathname === "/onboarding" || 
-                             location.pathname === "/workspace";
+                             location.pathname === "/workspace" ||
+                             location.pathname.startsWith("/auth/");
   
   // Handle session refresh if token is close to expiry (30 minutes)
   useEffect(() => {
@@ -68,7 +73,16 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     const attemptReauth = async () => {
       console.log(`Auth attempt ${authAttempts + 1}: Trying to refresh session...`);
       setAuthAttempts(prev => prev + 1);
-      await refreshSession();
+      try {
+        const success = await refreshSession();
+        if (!success && authAttempts >= 2) {
+          setAuthError("Unable to authenticate. Please try logging in again.");
+        }
+      } catch (err) {
+        if (authAttempts >= 2) {
+          setAuthError("Authentication error. Please try logging in again.");
+        }
+      }
     };
     
     if (authAttempts < 3) {
@@ -150,17 +164,40 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     return <>{children}</>;
   }
 
+  // Show auth error if we've tried multiple times
+  if (authError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+        <Alert variant="destructive" className="max-w-md">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Authentication Error</AlertTitle>
+          <AlertDescription className="space-y-4">
+            <p>{authError}</p>
+            <div className="flex space-x-2 mt-2">
+              <Button size="sm" variant="outline" onClick={() => refreshSession()}>
+                Retry
+              </Button>
+              <Button size="sm" onClick={() => window.location.href = "/auth/login"}>
+                Login
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
   // Don't redirect while checking auth status or before state is stable
   if (showLoading || !stableStateRef.current) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-screen bg-background">
         <LoadingSpinner size={40} label={showLoading ? "Loading authentication..." : "Preparing application..."} />
       </div>
     );
   }
   
   // Allow access to workspace page even without login for certain paths
-  if (location.pathname === "/workspace") {
+  if (location.pathname === "/workspace" || location.pathname.startsWith("/auth/")) {
     // If already on workspace page, just show it
     return <>{children}</>;
   }

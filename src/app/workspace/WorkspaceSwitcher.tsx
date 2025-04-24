@@ -11,6 +11,7 @@ import { LoadingState } from "./components/LoadingState";
 import { ErrorState } from "./components/ErrorState";
 import { NoWorkspaces } from "./components/NoWorkspaces";
 import { WorkspaceSelector } from "./components/WorkspaceSelector";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function WorkspaceSwitcher({ highlight = false }) {
   const { tenant, setTenant } = useTenant();
@@ -106,11 +107,21 @@ export default function WorkspaceSwitcher({ highlight = false }) {
   };
 
   if (authLoading) {
-    return <LoadingState message="Verifying login..." />;
+    return (
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-32 mb-2" />
+        <Skeleton className="h-9 w-full" />
+      </div>
+    );
   }
 
   if (loading) {
-    return <LoadingState message="Loading workspaces..." />;
+    return (
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-32 mb-2" />
+        <Skeleton className="h-9 w-full" />
+      </div>
+    );
   }
 
   if (error) {
