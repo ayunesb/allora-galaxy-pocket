@@ -1,20 +1,51 @@
 
 import { useLocation } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Home } from "lucide-react";
+import { ArrowLeft, Home, RefreshCw } from "lucide-react";
+import { useRouteAccess } from "@/hooks/useRouteAccess";
 
 const NotFound = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { canAccessRoute } = useRouteAccess();
+  const [suggestedRoutes, setSuggestedRoutes] = useState<string[]>([]);
 
   useEffect(() => {
     console.error(
       "404 Error: User attempted to access non-existent route:",
       location.pathname
     );
-  }, [location.pathname]);
+
+    // Generate suggested routes based on the current path
+    const path = location.pathname;
+    const suggestions: string[] = [];
+    
+    // Check if it's an admin route with a typo
+    if (path.startsWith('/admin/')) {
+      const commonAdminRoutes = [
+        '/admin/dashboard',
+        '/admin/analytics',
+        '/admin/security-audit',
+        '/admin/system-health',
+        '/admin/logs',
+        '/admin/campaign-performance'
+      ];
+      
+      suggestions.push(...commonAdminRoutes);
+    } else if (path.includes('campaign')) {
+      suggestions.push('/campaigns/center', '/dashboard/insights');
+    } else if (path.includes('plugin')) {
+      suggestions.push('/plugins', '/plugins/marketplace');
+    } else {
+      suggestions.push('/dashboard', '/strategy', '/assistant');
+    }
+    
+    // Filter to only routes the user can access
+    const accessibleSuggestions = suggestions.filter(route => canAccessRoute(route));
+    setSuggestedRoutes(accessibleSuggestions.slice(0, 3)); // Limit to 3 suggestions
+  }, [location.pathname, canAccessRoute]);
 
   const goToStartup = () => {
     navigate("/dashboard");
@@ -22,6 +53,10 @@ const NotFound = () => {
 
   const goBack = () => {
     navigate(-1);
+  };
+
+  const tryAgain = () => {
+    window.location.reload();
   };
 
   return (
@@ -34,6 +69,25 @@ const NotFound = () => {
           <br />
           <code className="text-sm bg-muted p-1 rounded mt-2 inline-block">{location.pathname}</code>
         </p>
+        
+        {suggestedRoutes.length > 0 && (
+          <div className="mb-6">
+            <p className="text-sm font-medium mb-2">Did you mean to visit:</p>
+            <div className="space-y-2">
+              {suggestedRoutes.map((route) => (
+                <Button 
+                  key={route}
+                  variant="outline" 
+                  className="w-full text-left"
+                  onClick={() => navigate(route)}
+                >
+                  {route}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+        
         <div className="space-y-4">
           <Button 
             onClick={goBack}
@@ -50,6 +104,14 @@ const NotFound = () => {
           >
             <Home size={16} />
             Go to Dashboard
+          </Button>
+          <Button
+            onClick={tryAgain}
+            className="w-full flex items-center justify-center gap-2"
+            variant="ghost"
+          >
+            <RefreshCw size={16} />
+            Reload Page
           </Button>
         </div>
       </div>
