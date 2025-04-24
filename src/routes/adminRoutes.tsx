@@ -12,7 +12,6 @@ import BillingPanel from '@/app/admin/billing/BillingPanel';
 import AnalyticsDashboard from '@/app/admin/analytics/page';
 import SecurityAuditPage from '@/app/admin/security-audit/page';
 import AIDecisionsPage from '@/app/admin/ai-decisions/page';
-import SystemLogsPage from '@/app/admin/logs/page';
 
 export const adminRoutes: RouteObject[] = [
   {
@@ -49,6 +48,6 @@ export const adminRoutes: RouteObject[] = [
   },
   {
     path: 'logs',
-    element: <SystemLogsPage />
+    element: <AdminLogsPage />
   }
 ];
