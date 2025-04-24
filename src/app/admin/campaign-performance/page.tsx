@@ -1,6 +1,6 @@
-
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,9 +11,10 @@ import { format } from "date-fns";
 import { Loader2, ArrowRight, RefreshCw } from "lucide-react";
 import { useCampaignIntegration } from "@/hooks/useCampaignIntegration";
 import { useKpiAlerts } from "@/hooks/useKpiAlerts";
+import { toast } from "sonner";
 
 export default function CampaignPerformancePage() {
-  const queryClient = React.useQueryClient();
+  const queryClient = useQueryClient();
   const { trackCampaignOutcome, captureCampaignFeedback } = useCampaignIntegration();
   const { triggerKpiCheck } = useKpiAlerts();
   const [isRefreshing, setIsRefreshing] = React.useState(false);
