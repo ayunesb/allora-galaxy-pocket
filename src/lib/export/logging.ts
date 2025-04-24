@@ -1,6 +1,6 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { ExportFilters } from './types';
+import { getReportTypeName } from './utils';
 
 export async function logExportEvent(filters: ExportFilters, fileName: string): Promise<void> {
   try {
@@ -51,4 +51,3 @@ export async function saveExportLog(filters: ExportFilters, fileName: string, fi
     console.error('Error saving export log:', error);
   }
 }
-
