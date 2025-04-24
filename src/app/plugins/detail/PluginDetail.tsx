@@ -5,6 +5,8 @@ import { usePlugins } from "@/hooks/usePlugins";
 import { toast } from "sonner";
 import PluginConfigEditor from "@/app/admin/plugins/PluginConfigEditor";
 import { Plugin } from "@/types/plugin";
+import { usePluginLogger } from "@/lib/plugins/logPluginUsage";
+import { useEffect } from "react";
 
 const pluginDocs = {
   stripe: {
@@ -76,11 +78,19 @@ const pluginDocs = {
 export default function PluginDetail() {
   const { pluginKey } = useParams();
   const { activePlugins } = usePlugins();
+  const { logUsage } = usePluginLogger();
   
   // Ensure pluginKey is a valid key for our plugin system
   const isValidPluginKey = (key: string | undefined): key is Plugin['key'] => {
     return !!key && ['stripe', 'hubspot', 'shopify', 'ga4', 'twilio'].includes(key);
   };
+
+  // Log page view when component mounts
+  useEffect(() => {
+    if (isValidPluginKey(pluginKey)) {
+      logUsage(pluginKey, 'viewed_details', 'plugin_detail');
+    }
+  }, [pluginKey]);
 
   if (!isValidPluginKey(pluginKey)) {
     return (
@@ -131,7 +141,7 @@ export default function PluginDetail() {
               currentConfig={plugin.fields}
               onSave={async (key, config) => {
                 try {
-                  // Implementation handled by PluginConfigEditor
+                  await logUsage(key, 'configured', 'plugin_detail');
                   toast.success("Plugin configuration saved");
                 } catch (error) {
                   toast.error("Failed to save configuration");

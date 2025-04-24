@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { usePlugins } from "@/hooks/usePlugins";
 import { Plugin } from "@/types/plugin";
+import { usePluginLogger } from "@/lib/plugins/logPluginUsage";
+import { toast } from "sonner";
 
 // Define plugins with proper typing
 const plugins: Array<{
@@ -47,7 +49,14 @@ const plugins: Array<{
 
 export default function PluginGallery() {
   const navigate = useNavigate();
-  const { activePlugins } = usePlugins();
+  const { activePlugins, refreshPlugins } = usePlugins();
+  const { logUsage } = usePluginLogger();
+
+  const handlePluginClick = async (pluginKey: Plugin['key']) => {
+    // Log that user viewed plugin details
+    await logUsage(pluginKey, 'viewed_details', 'gallery');
+    navigate(`/admin/plugins/${pluginKey}`);
+  };
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -57,7 +66,7 @@ export default function PluginGallery() {
       
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
         {plugins.map((plugin) => (
-          <Card key={plugin.key}>
+          <Card key={plugin.key} className="transition-all hover:shadow-md">
             <CardHeader>
               <CardTitle className="text-lg">{plugin.label}</CardTitle>
             </CardHeader>
@@ -75,7 +84,7 @@ export default function PluginGallery() {
               <div className="flex justify-end">
                 <Button 
                   variant="secondary"
-                  onClick={() => navigate(`/admin/plugins/${plugin.key}`)}
+                  onClick={() => handlePluginClick(plugin.key)}
                 >
                   {activePlugins.includes(plugin.key) ? 'Configure' : 'Learn More'}
                 </Button>

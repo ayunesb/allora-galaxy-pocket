@@ -1,22 +1,25 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
+import { Plugin } from "@/types/plugin";
 
 /**
- * Log plugin usage to help track metrics
+ * Log plugin usage to track metrics and plugin effectiveness
  */
 export async function logPluginUsage({
   tenant_id,
   plugin_key,
   event,
   page = null,
-  count = 1
+  count = 1,
+  metadata = {}
 }: {
   tenant_id: string;
-  plugin_key: string;
+  plugin_key: Plugin['key'];
   event: string;
   page?: string | null;
   count?: number;
+  metadata?: Record<string, any>;
 }) {
   try {
     const { error } = await supabase
@@ -26,7 +29,8 @@ export async function logPluginUsage({
         plugin_key,
         event,
         page,
-        count
+        count,
+        event_type: 'usage'
       });
 
     if (error) {
@@ -38,12 +42,12 @@ export async function logPluginUsage({
 }
 
 /**
- * React hook for logging plugin usage
+ * React hook for logging plugin usage in components
  */
 export function usePluginLogger() {
   const { tenant } = useTenant();
   
-  const logUsage = async (plugin_key: string, event: string, page?: string, count: number = 1) => {
+  const logUsage = async (plugin_key: Plugin['key'], event: string, page?: string, count: number = 1) => {
     if (!tenant?.id) return;
     
     await logPluginUsage({
@@ -54,6 +58,29 @@ export function usePluginLogger() {
       count
     });
   };
+
+  const logConfiguration = async (plugin_key: Plugin['key']) => {
+    if (!tenant?.id) return;
+    
+    await logUsage(plugin_key, 'configured', 'settings');
+  };
   
-  return { logUsage };
+  const logActivation = async (plugin_key: Plugin['key']) => {
+    if (!tenant?.id) return;
+    
+    await logUsage(plugin_key, 'activated', 'settings');
+  };
+  
+  const logDeactivation = async (plugin_key: Plugin['key']) => {
+    if (!tenant?.id) return;
+    
+    await logUsage(plugin_key, 'deactivated', 'settings');
+  };
+  
+  return { 
+    logUsage,
+    logConfiguration,
+    logActivation,
+    logDeactivation
+  };
 }
