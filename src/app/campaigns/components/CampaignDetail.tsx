@@ -56,7 +56,7 @@ export default function CampaignDetail({ id }: CampaignDetailProps) {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6 flex items-center justify-center">
+      <div className="container mx-auto p-4 lg:p-6 flex items-center justify-center">
         <Loader2 className="animate-spin h-6 w-6 mr-2" />
         <span>Loading campaign details...</span>
       </div>
@@ -65,7 +65,7 @@ export default function CampaignDetail({ id }: CampaignDetailProps) {
 
   if (error) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="container mx-auto p-4 lg:p-6">
         <Alert variant="destructive" className="mb-4">
           <AlertTitle>Error loading campaign</AlertTitle>
           <AlertDescription>
@@ -85,7 +85,7 @@ export default function CampaignDetail({ id }: CampaignDetailProps) {
 
   if (!campaign) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="container mx-auto p-4 lg:p-6">
         <Alert className="mb-4">
           <AlertTitle>Campaign not found</AlertTitle>
           <AlertDescription>
@@ -104,9 +104,9 @@ export default function CampaignDetail({ id }: CampaignDetailProps) {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-4 lg:p-6 space-y-6">
       {/* Breadcrumb Navigation */}
-      <Breadcrumb>
+      <Breadcrumb className="overflow-x-auto whitespace-nowrap">
         <BreadcrumbItem>
           <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
         </BreadcrumbItem>
@@ -114,26 +114,28 @@ export default function CampaignDetail({ id }: CampaignDetailProps) {
           <BreadcrumbLink href="/campaigns">Campaigns</BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbItem>
-          <BreadcrumbLink>{campaign.name}</BreadcrumbLink>
+          <BreadcrumbLink>{campaign?.name || 'Loading...'}</BreadcrumbLink>
         </BreadcrumbItem>
       </Breadcrumb>
       
       {/* Campaign Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold">{campaign.name}</h1>
-            <Badge variant={campaign.status === 'active' ? 'default' : 'outline'}>
-              {campaign.status}
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-2xl font-bold truncate">{campaign?.name}</h1>
+            <Badge variant={campaign?.status === 'active' ? 'default' : 'outline'} className="whitespace-nowrap">
+              {campaign?.status}
             </Badge>
           </div>
-          <p className="text-muted-foreground mt-1">{campaign.description}</p>
+          <p className="text-muted-foreground mt-1 line-clamp-2 md:line-clamp-1">
+            {campaign?.description}
+          </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm">
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" size="sm" className="w-full sm:w-auto">
             <PencilLine className="h-4 w-4 mr-2" /> Edit
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" className="w-full sm:w-auto">
             <Settings className="h-4 w-4 mr-2" /> Settings
           </Button>
         </div>

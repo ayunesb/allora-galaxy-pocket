@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink } from "@/components/ui/breadcrumb";
@@ -12,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 
-interface StrategyHeaderProps {
+export interface StrategyHeaderProps {
   strategy: Strategy;
   onShare?: () => void;
   onExport?: () => void;
@@ -29,7 +30,7 @@ export function StrategyHeader({
 
   return (
     <div className="mb-6">
-      <Breadcrumb className="mb-2">
+      <Breadcrumb className="mb-2 overflow-x-auto">
         <BreadcrumbItem>
           <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
         </BreadcrumbItem>
@@ -42,21 +43,22 @@ export function StrategyHeader({
       </Breadcrumb>
       
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold">{strategy?.title}</h1>
-            <Badge variant={strategy?.status === "published" ? "default" : "outline"}>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-2xl font-bold truncate">{strategy?.title}</h1>
+            <Badge variant={strategy?.status === "published" ? "default" : "outline"} className="whitespace-nowrap">
               {strategy?.status || "Draft"}
             </Badge>
           </div>
-          <p className="text-muted-foreground mt-1">{strategy?.description}</p>
+          <p className="text-muted-foreground mt-1 line-clamp-2">{strategy?.description}</p>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button 
             variant="outline" 
             size="sm" 
             onClick={() => navigate(-1)}
+            className="w-full sm:w-auto"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
@@ -66,6 +68,7 @@ export function StrategyHeader({
             variant="outline" 
             size="sm"
             onClick={onShare}
+            className="w-full sm:w-auto"
           >
             <Share2 className="h-4 w-4 mr-2" />
             Share
@@ -75,6 +78,7 @@ export function StrategyHeader({
             variant="outline" 
             size="sm"
             onClick={onExport}
+            className="w-full sm:w-auto"
           >
             <Download className="h-4 w-4 mr-2" />
             Export
