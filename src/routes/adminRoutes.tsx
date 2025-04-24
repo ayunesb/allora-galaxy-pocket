@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import AdminLogsPage from '@/app/admin/logs/page';
@@ -17,6 +16,7 @@ import IntegrationsPage from "@/app/admin/integrations/page";
 import AgentMemoryConsole from "@/app/admin/agents/memory/page";
 import CollaborationPage from "@/app/admin/agents/collaboration/page";
 import AdminSettingsPage from "@/pages/admin/settings/page";
+import TenantsManagementPage from '@/app/admin/tenants/page';
 
 export const adminRoutes: RouteObject[] = [
   { path: "/admin/dashboard", element: <AdminDashboardPage /> },
@@ -32,5 +32,6 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/integrations", element: <IntegrationsPage /> },
   { path: "/admin/agents/memory", element: <AgentMemoryConsole /> },
   { path: "/admin/agents/collaboration", element: <CollaborationPage /> },
-  { path: "/admin/settings", element: <AdminSettingsPage /> }
+  { path: "/admin/settings", element: <AdminSettingsPage /> },
+  { path: "/admin/tenants", element: <TenantsManagementPage /> }
 ];
