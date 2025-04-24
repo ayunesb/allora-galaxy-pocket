@@ -1,11 +1,10 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { BarChart3, TrendingUp, Users, MousePointer } from "lucide-react";
 import { Campaign } from "@/types/campaign";
-import { CalendarDateRangePicker } from "@/components/ui/date-range-picker";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -66,7 +65,6 @@ const MetricCard = ({
 };
 
 export function CampaignExecutionMetrics({ campaign, isLoading = false }: CampaignExecutionMetricsProps) {
-  // Calculate metrics from campaign.execution_metrics or use placeholder data
   const metrics = campaign?.execution_metrics || {
     views: 0,
     clicks: 0, 
@@ -88,7 +86,7 @@ export function CampaignExecutionMetrics({ campaign, isLoading = false }: Campai
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">Campaign Performance</h2>
         <div>
-          <CalendarDateRangePicker />
+          <DateRangePicker />
         </div>
       </div>
       

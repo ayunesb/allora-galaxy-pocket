@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from './useTenant';
@@ -89,12 +90,13 @@ export function useCampaignIntegration() {
   };
 
   const updateCampaignExecution = async (campaignId: string, data: any) => {
+    // Note: execution_start_date added to update
     const { error } = await supabase
       .from('campaigns')
       .update({
         execution_metrics: data.metrics,
         execution_status: data.status,
-        execution_start_date: new Date().toISOString()
+        execution_start_date: data.execution_start_date || new Date().toISOString()
       })
       .eq('id', campaignId);
 
@@ -116,7 +118,7 @@ export function useCampaignIntegration() {
       // Get current metrics before updating
       const { data: campaignData, error: fetchError } = await supabase
         .from('campaigns')
-        .select('execution_metrics')
+        .select('execution_metrics, execution_start_date')
         .eq('id', campaignId)
         .eq('tenant_id', tenant.id)
         .single();

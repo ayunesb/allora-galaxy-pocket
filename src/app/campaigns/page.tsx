@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,6 +36,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import type { Campaign } from "@/types/campaign";
+import { cn } from "@/lib/utils";
 
 export default function CampaignsPage() {
   const navigate = useNavigate();
@@ -62,7 +62,6 @@ export default function CampaignsPage() {
     enabled: !!tenant?.id
   });
 
-  // Filter campaigns based on search and status
   const filteredCampaigns = campaigns.filter(campaign => {
     const matchesSearch = searchTerm === "" || 
       campaign.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -73,7 +72,6 @@ export default function CampaignsPage() {
     return matchesSearch && matchesStatus;
   });
 
-  // Campaign stats
   const totalCampaigns = campaigns.length;
   const activeCampaigns = campaigns.filter(c => c.status === "active").length;
   const draftCampaigns = campaigns.filter(c => c.status === "draft").length;
@@ -87,12 +85,11 @@ export default function CampaignsPage() {
     if (campaign.execution_status === 'completed') return 100;
     if (campaign.execution_status === 'pending' || !campaign.execution_start_date) return 0;
     
-    // Calculate based on metrics
     const metrics = campaign.execution_metrics || {};
-    if (!metrics.views) return 5; // Just started
-    if (!metrics.clicks) return 25; // Has views but no clicks
-    if (!metrics.conversions) return 60; // Has clicks but no conversions
-    return 90; // Has conversions
+    if (!metrics.views) return 5;
+    if (!metrics.clicks) return 25;
+    if (!metrics.conversions) return 60;
+    return 90;
   };
 
   const getCampaignStatusColor = (status: string) => {
@@ -106,8 +103,7 @@ export default function CampaignsPage() {
   };
 
   return (
-    <div className="container mx-auto p-6">
-      {/* Header */}
+    <div className={cn("container mx-auto p-6")}>
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold">Campaigns</h1>
@@ -122,7 +118,6 @@ export default function CampaignsPage() {
         </div>
       </div>
       
-      {/* Campaign Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardContent className="pt-6">
@@ -181,7 +176,6 @@ export default function CampaignsPage() {
         </Card>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-col md:flex-row gap-4 mb-6 md:items-center md:justify-between">
         <div className="w-full md:w-1/3">
           <Input
@@ -233,7 +227,6 @@ export default function CampaignsPage() {
         </div>
       </div>
 
-      {/* Campaigns List/Grid */}
       {isLoading ? (
         <div className="flex justify-center items-center h-60">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

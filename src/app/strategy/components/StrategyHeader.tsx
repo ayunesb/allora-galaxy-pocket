@@ -1,39 +1,99 @@
-
-import { Link } from "react-router-dom";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
-import { CardHeader, CardTitle } from "@/components/ui/card";
-import { format } from "date-fns";
-import type { Strategy } from "@/types/strategy";
+import React from 'react';
+import { Button } from "@/components/ui/button";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink } from "@/components/ui/breadcrumb";
+import { Strategy } from "@/types/strategy";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Share2, MoreHorizontal, Download } from "lucide-react";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 
 interface StrategyHeaderProps {
   strategy: Strategy;
-  onNavigate: (path: string) => void;
+  onShare?: () => void;
+  onExport?: () => void;
+  onDelete?: () => void;
 }
 
-export function StrategyHeader({ strategy, onNavigate }: StrategyHeaderProps) {
+export function StrategyHeader({ 
+  strategy, 
+  onShare, 
+  onExport, 
+  onDelete 
+}: StrategyHeaderProps) {
+  const navigate = useNavigate();
+
   return (
-    <>
-      <Breadcrumb className="mb-4">
+    <div className="mb-6">
+      <Breadcrumb className="mb-2">
         <BreadcrumbItem>
-          <BreadcrumbLink onClick={() => onNavigate('/dashboard')}>Dashboard</BreadcrumbLink>
+          <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
         </BreadcrumbItem>
-        <BreadcrumbSeparator />
         <BreadcrumbItem>
-          <BreadcrumbLink onClick={() => onNavigate('/vault')}>Strategies</BreadcrumbLink>
+          <BreadcrumbLink href="/strategy">Strategies</BreadcrumbLink>
         </BreadcrumbItem>
-        <BreadcrumbSeparator />
-        <BreadcrumbItem isCurrentPage>
-          {strategy.title}
+        <BreadcrumbItem>
+          <BreadcrumbLink>{strategy?.title || "Strategy Details"}</BreadcrumbLink>
         </BreadcrumbItem>
       </Breadcrumb>
       
-      <CardHeader>
-        <CardTitle className="text-2xl">{strategy.title}</CardTitle>
-        <div className="text-sm text-muted-foreground">
-          Created: {strategy.created_at && format(new Date(strategy.created_at), 'PPP')}
-          {strategy.industry && ` • Industry: ${strategy.industry}`}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold">{strategy?.title}</h1>
+            <Badge variant={strategy?.status === "published" ? "default" : "outline"}>
+              {strategy?.status || "Draft"}
+            </Badge>
+          </div>
+          <p className="text-muted-foreground mt-1">{strategy?.description}</p>
         </div>
-      </CardHeader>
-    </>
+        
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={onShare}
+          >
+            <Share2 className="h-4 w-4 mr-2" />
+            Share
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={onExport}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={onDelete}>Delete</DropdownMenuItem>
+              <DropdownMenuItem>Duplicate</DropdownMenuItem>
+              <DropdownMenuItem>Archive</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </div>
   );
 }

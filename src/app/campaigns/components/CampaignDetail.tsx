@@ -108,10 +108,10 @@ export default function CampaignDetail({ id }: CampaignDetailProps) {
       {/* Breadcrumb Navigation */}
       <Breadcrumb>
         <BreadcrumbItem>
-          <BreadcrumbLink as={Link} to="/dashboard">Dashboard</BreadcrumbLink>
+          <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbItem>
-          <BreadcrumbLink as={Link} to="/campaigns">Campaigns</BreadcrumbLink>
+          <BreadcrumbLink href="/campaigns">Campaigns</BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbItem>
           <BreadcrumbLink>{campaign.name}</BreadcrumbLink>

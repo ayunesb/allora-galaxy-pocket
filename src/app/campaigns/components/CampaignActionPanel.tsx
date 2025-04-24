@@ -52,8 +52,8 @@ export function CampaignActionPanel({ campaign, onRefresh }: CampaignActionPanel
       }
       
       // Invalidate queries to refresh data elsewhere
-      queryClient.invalidateQueries(['campaigns']);
-      queryClient.invalidateQueries(['campaign', campaign.id]);
+      queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+      queryClient.invalidateQueries({ queryKey: ['campaign', campaign.id] });
       
     } catch (error) {
       console.error("Failed to update campaign status:", error);
@@ -161,4 +161,13 @@ export function CampaignActionPanel({ campaign, onRefresh }: CampaignActionPanel
       </CardContent>
     </Card>
   );
+}
+
+function formatDate(dateString?: string) {
+  if (!dateString) return "Not started";
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
 }

@@ -1,3 +1,4 @@
+
 import * as React from "react";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
@@ -14,12 +15,19 @@ import {
 export interface DateRangePickerProps extends React.HTMLAttributes<HTMLDivElement> {
   dateRange?: DateRange;
   onDateRangeChange?: (range: DateRange | undefined) => void;
+  // Add support for simple string value selection
+  value?: string;
+  onValueChange?: (value: string) => void;
+  options?: { value: string; label: string }[];
 }
 
 export function DateRangePicker({
   dateRange,
   onDateRangeChange,
   className,
+  value,
+  onValueChange,
+  options,
 }: DateRangePickerProps) {
   const [date, setDate] = React.useState<DateRange | undefined>(
     dateRange || {
@@ -35,6 +43,25 @@ export function DateRangePicker({
       onDateRangeChange(newDate);
     }
   };
+  
+  // If we're using the simpler value/onValueChange API with predefined options
+  if (value !== undefined && onValueChange && options) {
+    return (
+      <div className={cn("grid gap-2", className)}>
+        <select 
+          value={value}
+          onChange={(e) => onValueChange(e.target.value)}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+        >
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  }
 
   return (
     <div className={cn("grid gap-2", className)}>
@@ -72,9 +99,13 @@ export function DateRangePicker({
             selected={date}
             onSelect={handleDateChange}
             numberOfMonths={2}
+            className="pointer-events-auto"
           />
         </PopoverContent>
       </Popover>
     </div>
   );
 }
+
+// This component is for backward compatibility with code expecting CalendarDateRangePicker
+export const CalendarDateRangePicker = DateRangePicker;

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -26,8 +25,8 @@ export function CampaignExecutionTracker({ campaign, onUpdate }: CampaignExecuti
     setLoading(true);
     try {
       const result = await getCampaignExecutionMetrics(campaign.id);
-      if (result.success) {
-        setMetrics(result.data);
+      if (result) {
+        setMetrics(result);
       }
     } finally {
       setLoading(false);

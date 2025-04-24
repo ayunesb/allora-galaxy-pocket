@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRolePermissions } from "@/hooks/useRolePermissions";
@@ -8,11 +9,11 @@ import { useAgentProfile } from "./hooks/useAgentProfile";
 import { AgentCollaborationHub } from "./components/AgentCollaborationHub";
 import AgentBlueprintCount from "./AgentBlueprintCount";
 import InsertMissingBlueprints from "./InsertMissingBlueprints";
-import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AgentMemoryLog } from "@/types/agent";
 import { Button } from "@/components/ui/button";
 import { MemoryScoreIndicator } from "./components/MemoryScoreIndicator";
+import AgentTabs from "./AgentTabs";
 
 export default function AgentSpacePage() {
   const { isAdmin } = useRolePermissions();
@@ -179,7 +180,7 @@ export default function AgentSpacePage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
             <div className="rounded-lg border bg-card shadow p-4 md:p-6">
-              <AgentTabs agent={agent} />
+              {agent && <AgentTabs agent={agent} />}
             </div>
           </div>
           <Card>
