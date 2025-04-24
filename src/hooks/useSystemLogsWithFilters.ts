@@ -4,11 +4,11 @@ import { useFilteredLogs } from "./logs/useFilteredLogs";
 import { useLogPagination } from "./logs/useLogPagination";
 
 export function useSystemLogsWithFilters() {
-  const { filters, updateFilters } = useLogFilters();
+  const { filters, updateFilters, clearFilters } = useLogFilters();
   const { data: logs, isLoading, error, getRecentLogs } = useFilteredLogs(filters);
   const pagination = useLogPagination(logs?.length || 0);
-
-  // Create a setFilters method for compatibility
+  
+  // Create a setFilters method for backwards compatibility
   const setFilters = updateFilters;
 
   return {
@@ -18,6 +18,7 @@ export function useSystemLogsWithFilters() {
     filters,
     setFilters,
     updateFilters,
+    clearFilters,
     getRecentLogs,
     pagination
   };
