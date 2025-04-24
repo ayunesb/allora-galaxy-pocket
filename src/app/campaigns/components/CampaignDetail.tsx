@@ -1,20 +1,17 @@
+
 import React, { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Link, useNavigate } from "react-router-dom";
-import { Loader2, ArrowLeft, ChevronRight, PencilLine, Settings } from "lucide-react";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink } from "@/components/ui/breadcrumb";
 import { useTenant } from "@/hooks/useTenant";
-import { AgentInfoCard } from "./AgentInfoCard";
-import { CampaignExecutionMetrics } from "./CampaignExecutionMetrics";
-import { CampaignActionPanel } from "./CampaignActionPanel";
-import { CampaignPrediction } from "./CampaignPrediction";
+import { Loader2, ArrowLeft, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import type { Campaign } from "@/types/campaign";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { CampaignExecutionTracker } from "./CampaignExecutionTracker";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAgentContext } from "@/contexts/AgentContext";
+import { useCampaignExecution } from "@/hooks/campaign/useCampaignExecution";
+import { CampaignScriptPanel } from "./CampaignScriptPanel";
 
 interface CampaignDetailProps {
   id?: string;
@@ -22,253 +19,192 @@ interface CampaignDetailProps {
 
 export default function CampaignDetail({ id }: CampaignDetailProps) {
   const { tenant } = useTenant();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("overview");
-
+  const { agentProfile } = useAgentContext();
+  const { startCampaignExecution, pauseCampaignExecution } = useCampaignExecution();
+  
   const { data: campaign, isLoading, error, refetch } = useQuery({
-    queryKey: ['campaign-detail', id, tenant?.id],
+    queryKey: ['campaign', id],
     queryFn: async () => {
-      if (!id || !tenant?.id) return null;
-
-      try {
-        const { data, error } = await supabase
-          .from('campaigns')
-          .select('*')
-          .eq('id', id)
-          .eq('tenant_id', tenant.id)
-          .single();
-
-        if (error) throw error;
-        return data as Campaign;
-      } catch (err) {
-        console.error("Error in campaign detail query:", err);
-        throw err;
-      }
+      if (!tenant?.id || !id) return null;
+      
+      const { data, error } = await supabase
+        .from('campaigns')
+        .select('*')
+        .eq('id', id)
+        .eq('tenant_id', tenant.id)
+        .single();
+        
+      if (error) throw error;
+      return data;
     },
-    enabled: !!id && !!tenant?.id,
+    enabled: !!tenant?.id && !!id
   });
-
-  const handleRefresh = () => {
-    refetch();
-    queryClient.invalidateQueries({ queryKey: ['campaigns'] });
-  };
-
+  
   if (isLoading) {
     return (
-      <div className="container mx-auto p-4 lg:p-6 flex items-center justify-center">
+      <div className="container mx-auto p-6 flex items-center justify-center">
         <Loader2 className="animate-spin h-6 w-6 mr-2" />
-        <span>Loading campaign details...</span>
+        <span>Loading campaign data...</span>
       </div>
     );
   }
-
-  if (error) {
+  
+  if (error || !campaign) {
     return (
-      <div className="container mx-auto p-4 lg:p-6">
-        <Alert variant="destructive" className="mb-4">
-          <AlertTitle>Error loading campaign</AlertTitle>
-          <AlertDescription>
-            {error instanceof Error ? error.message : 'Unknown error occurred'}
-          </AlertDescription>
-        </Alert>
-        <Button 
-          onClick={() => refetch()}
-          variant="outline"
-          size="sm"
-        >
-          Retry
-        </Button>
-      </div>
-    );
-  }
-
-  if (!campaign) {
-    return (
-      <div className="container mx-auto p-4 lg:p-6">
-        <Alert className="mb-4">
-          <AlertTitle>Campaign not found</AlertTitle>
-          <AlertDescription>
-            The requested campaign could not be found or you don't have permission to view it.
-          </AlertDescription>
-        </Alert>
-        <Button 
-          variant="default" 
-          onClick={() => navigate('/campaigns')}
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Campaigns
-        </Button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="container mx-auto p-4 lg:p-6 space-y-6">
-      {/* Breadcrumb Navigation */}
-      <Breadcrumb className="overflow-x-auto whitespace-nowrap">
-        <BreadcrumbItem>
-          <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbItem>
-          <BreadcrumbLink href="/campaigns">Campaigns</BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbItem>
-          <BreadcrumbLink>{campaign?.name || 'Loading...'}</BreadcrumbLink>
-        </BreadcrumbItem>
-      </Breadcrumb>
-      
-      {/* Campaign Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-2xl font-bold truncate">{campaign?.name}</h1>
-            <Badge variant={campaign?.status === 'active' ? 'default' : 'outline'} className="whitespace-nowrap">
-              {campaign?.status}
-            </Badge>
-          </div>
-          <p className="text-muted-foreground mt-1 line-clamp-2 md:line-clamp-1">
-            {campaign?.description}
+      <div className="container mx-auto p-6">
+        <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-md">
+          <h3 className="font-medium">Error loading campaign</h3>
+          <p className="text-sm mt-1">
+            {error instanceof Error ? error.message : "Campaign not found"}
           </p>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <Button variant="outline" size="sm" className="w-full sm:w-auto">
-            <PencilLine className="h-4 w-4 mr-2" /> Edit
-          </Button>
-          <Button variant="outline" size="sm" className="w-full sm:w-auto">
-            <Settings className="h-4 w-4 mr-2" /> Settings
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="mt-4"
+          asChild
+        >
+          <Link to="/campaigns">
+            <ArrowLeft className="h-4 w-4 mr-2" /> Back to campaigns
+          </Link>
+        </Button>
+      </div>
+    );
+  }
+  
+  const getStatusBadge = () => {
+    const variant = campaign.status === 'active' 
+      ? 'default' 
+      : campaign.status === 'draft' 
+        ? 'outline' 
+        : 'secondary';
+    
+    return (
+      <Badge variant={variant}>
+        {campaign.status}
+      </Badge>
+    );
+  };
+  
+  const getExecutionStatusBadge = () => {
+    const variant = 
+      campaign.execution_status === 'in_progress' ? 'success' :
+      campaign.execution_status === 'paused' ? 'warning' :
+      campaign.execution_status === 'completed' ? 'secondary' : 
+      'outline';
+    
+    return (
+      <Badge variant={variant}>
+        {campaign.execution_status === 'in_progress' ? 'Running' :
+         campaign.execution_status === 'pending' ? 'Not Started' :
+         campaign.execution_status || 'Unknown'}
+      </Badge>
+    );
+  };
+  
+  const handleStartOrPause = async () => {
+    if (campaign.execution_status === 'in_progress') {
+      await pauseCampaignExecution(campaign.id);
+    } else {
+      await startCampaignExecution(campaign.id);
+    }
+    refetch();
+  };
+  
+  return (
+    <div className="container mx-auto p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <Link to="/campaigns" className="hover:text-primary transition-colors">
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+            <h1 className="text-2xl font-bold">{campaign.name}</h1>
+            {getStatusBadge()}
+            {getExecutionStatusBadge()}
+          </div>
+          <p className="text-muted-foreground max-w-3xl">{campaign.description}</p>
+          <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
+            <div className="flex items-center">
+              <Calendar className="h-4 w-4 mr-1" />
+              Created: {new Date(campaign.created_at).toLocaleDateString()}
+            </div>
+            {campaign.execution_start_date && (
+              <div>
+                Started: {new Date(campaign.execution_start_date).toLocaleDateString()}
+              </div>
+            )}
+            {campaign.strategy_id && (
+              <div>
+                From Strategy: <Link to={`/strategy/${campaign.strategy_id}`} className="text-blue-600 hover:underline">View</Link>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        <div className="flex gap-2">
+          <Button
+            variant={campaign.execution_status === 'in_progress' ? "outline" : "default"}
+            onClick={handleStartOrPause}
+          >
+            {campaign.execution_status === 'in_progress' ? 'Pause' : 'Start'} Campaign
           </Button>
         </div>
       </div>
       
-      {/* Agent Info (if present) */}
-      {campaign.generated_by_agent_id && <AgentInfoCard />}
-      
       {/* Campaign Content */}
-      <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="metrics">Performance</TabsTrigger>
-          <TabsTrigger value="content">Content</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-2 space-y-6">
-              <CampaignExecutionMetrics campaign={campaign} isLoading={isLoading} />
-              <CampaignPrediction campaign={campaign} />
-            </div>
-            <div>
-              <CampaignActionPanel campaign={campaign} onRefresh={handleRefresh} />
-            </div>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="metrics">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-3">
-              <CampaignExecutionMetrics campaign={campaign} isLoading={isLoading} />
-            </div>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="content">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Campaign Content</CardTitle>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Campaign Scripts</CardTitle>
             </CardHeader>
             <CardContent>
               {campaign.scripts && Object.keys(campaign.scripts).length > 0 ? (
-                <div className="grid gap-4">
-                  {Object.entries(campaign.scripts).map(([channel, script]) => (
-                    <div key={channel} className="border p-4 rounded-lg">
-                      <h3 className="font-medium text-base capitalize mb-2">{channel}</h3>
-                      <p className="text-sm text-muted-foreground whitespace-pre-line">{String(script)}</p>
-                    </div>
+                <div className="space-y-4">
+                  {Object.entries(campaign.scripts).map(([channel, content]) => (
+                    <CampaignScriptPanel 
+                      key={channel} 
+                      channel={channel} 
+                      content={String(content)} 
+                    />
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  No content scripts available for this campaign
+                <div className="bg-muted/30 p-4 rounded-md text-center">
+                  <p className="text-muted-foreground">No scripts available for this campaign</p>
                 </div>
               )}
             </CardContent>
           </Card>
-        </TabsContent>
-        
-        <TabsContent value="analytics">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-2">
-              <Card className="h-[400px]">
-                <CardHeader>
-                  <CardTitle>Performance Analytics</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                    Campaign performance charts will display here
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            <div>
-              <CampaignPrediction campaign={campaign} />
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
-      
-      {/* Related Campaigns Section */}
-      <div className="mt-8 pt-6 border-t">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Related Campaigns</h2>
-          <Button variant="link" size="sm">
-            View All <ChevronRight className="h-4 w-4 ml-1" />
-          </Button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader className="p-4">
-              <CardTitle className="text-base">Email Follow-up Series</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                5-part email nurture series for new leads
-              </p>
-              <div className="mt-2 flex justify-between items-center">
-                <Badge variant="outline">Active</Badge>
-                <Button variant="ghost" size="sm">View</Button>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="p-4">
-              <CardTitle className="text-base">Social Media Burst</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                Coordinated posting across platforms
-              </p>
-              <div className="mt-2 flex justify-between items-center">
-                <Badge variant="outline">Draft</Badge>
-                <Button variant="ghost" size="sm">View</Button>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="p-4">
-              <CardTitle className="text-base">Webinar Promotion</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                Promotion for upcoming workshop event
-              </p>
-              <div className="mt-2 flex justify-between items-center">
-                <Badge variant="outline">Paused</Badge>
-                <Button variant="ghost" size="sm">View</Button>
-              </div>
-            </CardContent>
-          </Card>
+        
+        <div className="space-y-6">
+          <CampaignExecutionTracker 
+            campaign={campaign} 
+            onUpdate={refetch}
+          />
+          
+          {agentProfile?.agent_name && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">AI Agent</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    {agentProfile.agent_name.substring(0, 2)}
+                  </div>
+                  <div>
+                    <p className="font-medium">{agentProfile.agent_name}</p>
+                    <p className="text-sm text-muted-foreground">{agentProfile.role}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

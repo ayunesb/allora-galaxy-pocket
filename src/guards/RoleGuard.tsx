@@ -2,7 +2,7 @@
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { AlertTriangle, Loader2 } from 'lucide-react';
 import { useTenant } from '@/hooks/useTenant';
 import { supabase } from '@/integrations/supabase/client';
@@ -56,9 +56,7 @@ export default function RoleGuard({
           }
           
           toast({
-            title: "Access denied",
-            description: "You don't have permission to access this page",
-            variant: "destructive"
+            description: "You don't have permission to access this page"
           });
           
           navigate(fallbackPath, { replace: true });
@@ -68,9 +66,7 @@ export default function RoleGuard({
       } catch (error) {
         console.error("Role validation error:", error);
         toast({
-          title: "Access verification error",
-          description: "There was a problem verifying your permissions",
-          variant: "destructive"
+          description: "There was a problem verifying your permissions"
         });
         navigate(fallbackPath, { replace: true });
       } finally {
