@@ -1,64 +1,34 @@
 
-import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
 import { usePlugins } from "@/hooks/usePlugins";
 import { usePluginManager } from "@/hooks/usePluginManager";
-import { Plugin } from "@/types/plugin";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { usePluginFilters } from "@/hooks/usePluginFilters";
+import { availablePlugins, categories } from "./data";
+import { Plugin } from "@/types/plugin";
 import { EmptyPluginState } from "./components/EmptyPluginState";
 import { CategoryFilter } from "./components/CategoryFilter";
 import { SortPlugins } from "./components/SortPlugins";
-import { availablePlugins, categories } from "./data";
 import { MarketplaceHeader } from "./components/MarketplaceHeader";
 import { PluginList } from "./components/PluginList";
 import { PluginDetails } from "./components/PluginDetails";
 
 export default function PluginMarketplace() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filteredPlugins, setFilteredPlugins] = useState<Plugin[]>(availablePlugins);
-  const [activeCategory, setActiveCategory] = useState("all");
-  const [sortOrder, setSortOrder] = useState<"popular" | "newest" | "name">("popular");
   const { activePlugins } = usePlugins();
   const { installPlugin, uninstallPlugin, isInstalling } = usePluginManager();
   const isMobile = useIsMobile();
   const [selectedPlugin, setSelectedPlugin] = useState<Plugin | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
-  const resetFilters = () => {
-    setSearchQuery('');
-    setActiveCategory('all');
-  };
-
-  useEffect(() => {
-    let results = availablePlugins;
-    
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      results = results.filter(plugin => 
-        plugin.name.toLowerCase().includes(query) || 
-        plugin.description.toLowerCase().includes(query) ||
-        plugin.tags?.some(tag => tag.toLowerCase().includes(query))
-      );
-    }
-    
-    if (activeCategory !== "all") {
-      results = results.filter(plugin => plugin.category === activeCategory);
-    }
-    
-    switch (sortOrder) {
-      case "newest":
-        results = [...results].sort(() => Math.random() - 0.5);
-        break;
-      case "name":
-        results = [...results].sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      case "popular":
-      default:
-        break;
-    }
-    
-    setFilteredPlugins(results);
-  }, [searchQuery, activeCategory, sortOrder]);
+  const {
+    searchQuery,
+    setSearchQuery,
+    activeCategory,
+    setActiveCategory,
+    sortOrder,
+    setSortOrder,
+    filteredPlugins,
+    resetFilters
+  } = usePluginFilters(availablePlugins);
 
   const handlePluginAction = async (plugin: Plugin) => {
     const isActive = activePlugins.includes(plugin.key);
