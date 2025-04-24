@@ -5,7 +5,7 @@ import { useTenant } from '@/hooks/useTenant';
 import { toast } from '@/components/ui/sonner';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, ChartLineUp, Activity, RefreshCw } from 'lucide-react';
+import { AlertTriangle, ChartLine, Activity, RefreshCw } from 'lucide-react';
 
 export function GrowthPanel() {
   const { tenant } = useTenant();
@@ -38,7 +38,7 @@ export function GrowthPanel() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <ChartLineUp className="h-5 w-5 text-primary" />
+            <ChartLine className="h-5 w-5 text-primary" />
             Growth Insights
           </CardTitle>
         </CardHeader>
@@ -58,8 +58,8 @@ export function GrowthPanel() {
                   <div className="flex items-start gap-3">
                     <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
                     <div>
-                      <p className="font-medium">{alert.alert_type}</p>
-                      <p className="text-sm text-muted-foreground mt-1">{alert.message}</p>
+                      <p className="font-medium">{alert.kpi_name}</p>
+                      <p className="text-sm text-muted-foreground mt-1">{alert.description}</p>
                       <p className="text-xs text-muted-foreground mt-2">
                         {new Date(alert.created_at).toLocaleDateString()}
                       </p>
