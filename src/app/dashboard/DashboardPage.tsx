@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { useCampaignIntegration } from "@/hooks/useCampaignIntegration";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { KPITrackerWithData } from "@/components/KPITracker";
 import { KpiCampaignTracker } from "@/components/KpiCampaignTracker";
 import { StrategySection } from "./components/StrategySection";
