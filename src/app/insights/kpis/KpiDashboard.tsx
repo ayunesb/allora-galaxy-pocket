@@ -54,7 +54,7 @@ export default function KpiDashboard() {
     enabled: !!tenant?.id,
   });
 
-  const { alerts, isLoading: isLoadingAlerts, error: alertsError } = useKpiAlerts();
+  const { alerts = [], isLoading: isLoadingAlerts, error: alertsError, triggerKpiCheck } = useKpiAlerts();
   const metricSummaries: KpiMetric[] = metrics.map(metric => ({
     id: metric.id || '',
     kpi_name: metric.metric || 'Unnamed Metric',

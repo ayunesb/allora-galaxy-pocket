@@ -2,7 +2,7 @@
 import React from "react";
 import type { RlsTable } from "../hooks/useRlsData";
 import type { AccessTestResult } from "../hooks/useAccessTests";
-import { RlsTableRow } from "./rows/RlsTableRow";
+import { RlsTableRow } from "./RlsTableRow";
 
 interface SecurityAuditTableProps {
   tables: RlsTable[];
@@ -38,9 +38,7 @@ export function SecurityAuditTable({ tables, testResults, isLoading }: SecurityA
           tables.map((table) => (
             <RlsTableRow 
               key={table.tablename}
-              tableName={table.tablename}
-              rlsEnabled={table.rlsEnabled}
-              policies={table.policies}
+              table={table}
               testResult={testResults.find(r => r.tableName === table.tablename)}
             />
           ))

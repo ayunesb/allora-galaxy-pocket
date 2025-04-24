@@ -1,6 +1,6 @@
 
 import React from "react";
-import type { RlsPolicy } from "../hooks/useRlsData";
+import type { RlsTable, RlsPolicy } from "../hooks/useRlsData";
 import type { AccessTestResult } from "../hooks/useAccessTests";
 import { DisabledRlsRow } from "./rows/DisabledRlsRow";
 import { NoRlsPoliciesRow } from "./rows/NoRlsPoliciesRow";
@@ -8,44 +8,40 @@ import { PolicyRow } from "./rows/PolicyRow";
 import { DebugErrorBoundary } from "@/components/DebugErrorBoundary";
 
 interface RlsTableRowProps {
-  tableName: string;
-  rlsEnabled: boolean;
-  policies: RlsPolicy[];
+  table: RlsTable;
   testResult?: AccessTestResult;
 }
 
 export function RlsTableRow({ 
-  tableName, 
-  rlsEnabled, 
-  policies, 
+  table, 
   testResult 
 }: RlsTableRowProps) {
-  if (!rlsEnabled) {
+  if (!table.rlsEnabled) {
     return (
       <DebugErrorBoundary>
-        <DisabledRlsRow tableName={tableName} />
+        <DisabledRlsRow tableName={table.tablename} />
       </DebugErrorBoundary>
     );
   }
 
-  if (policies.length === 0) {
+  if (table.policies.length === 0) {
     return (
       <DebugErrorBoundary>
-        <NoRlsPoliciesRow tableName={tableName} testResult={testResult} />
+        <NoRlsPoliciesRow tableName={table.tablename} testResult={testResult} />
       </DebugErrorBoundary>
     );
   }
 
   return (
     <>
-      {policies.map((policy, index) => (
-        <DebugErrorBoundary key={`${tableName}-${policy.policyname}`}>
+      {table.policies.map((policy, index) => (
+        <DebugErrorBoundary key={`${table.tablename}-${policy.policyname}`}>
           <PolicyRow
-            key={`${tableName}-${policy.policyname}`}
+            key={`${table.tablename}-${policy.policyname}`}
             policy={policy}
-            tableName={tableName}
+            tableName={table.tablename}
             isFirstPolicy={index === 0}
-            totalPolicies={policies.length}
+            totalPolicies={table.policies.length}
             testResult={testResult}
           />
         </DebugErrorBoundary>

@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { useKpiAlerts } from "@/hooks/useKpiAlerts";
 
 export default function GrowthPanel() {
-  const { alerts, campaignInsights, isLoading, refreshAlerts, triggerKpiCheck } = useKpiAlerts({ 
+  const { alerts = [], campaignInsights = [], isLoading, refreshAlerts, triggerKpiCheck } = useKpiAlerts({ 
     days: 30,
     activeOnly: true 
   });
@@ -22,7 +21,7 @@ export default function GrowthPanel() {
   
   const handleRefresh = async () => {
     await triggerKpiCheck();
-    refreshAlerts();
+    if (refreshAlerts) refreshAlerts();
   };
 
   const getSeverityColor = (severity: string) => {

@@ -9,7 +9,7 @@ import { AlertTriangle, CheckCircle } from 'lucide-react';
 import { formatDistance } from 'date-fns';
 
 export function SystemHealthMetrics() {
-  const { cronJobMetrics, systemHealthAlerts, isLoading, error } = useSystemHealthMetrics();
+  const { metrics, cronJobMetrics, systemHealthAlerts, isLoading, error } = useSystemHealthMetrics();
 
   if (isLoading) return <div>Loading system health metrics...</div>;
   if (error) return <div>Error loading system health metrics</div>;
