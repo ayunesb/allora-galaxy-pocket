@@ -1,45 +1,73 @@
 
-import { useBillingProfile } from "@/hooks/useBillingProfile";
+import { ReactNode, useEffect, useState } from "react";
+import { useCreditsManager } from "@/hooks/useCreditsManager";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Card } from "@/components/ui/card";
+import { AlertCircle, CreditCard } from "lucide-react";
+import { useStripeUsageReporting } from "@/hooks/useStripeUsageReporting";
 
 interface CreditCheckProps {
-  children: React.ReactNode;
-  requiredCredits?: number;
+  children: ReactNode;
+  requiredCredits: number;
+  onInsufficientCredits?: () => void;
+  featureName?: string;
 }
 
-export function CreditCheck({ children, requiredCredits = 10 }: CreditCheckProps) {
-  const { profile, isLoading } = useBillingProfile();
+export function CreditCheck({
+  children,
+  requiredCredits,
+  onInsufficientCredits,
+  featureName = "this feature"
+}: CreditCheckProps) {
+  const [hasChecked, setHasChecked] = useState(false);
+  const { hasEnoughCredits, currentCredits } = useCreditsManager();
+  const { createCheckoutSession } = useStripeUsageReporting();
+  const [hasCredits, setHasCredits] = useState(true);
 
-  if (isLoading) {
-    return <div>Loading...</div>;
+  useEffect(() => {
+    // Check if the user has enough credits
+    const hasEnough = hasEnoughCredits(requiredCredits);
+    setHasCredits(hasEnough);
+    setHasChecked(true);
+    
+    if (!hasEnough && onInsufficientCredits) {
+      onInsufficientCredits();
+    }
+  }, [requiredCredits, hasEnoughCredits, onInsufficientCredits]);
+
+  const handleUpgrade = async () => {
+    const url = await createCheckoutSession();
+    if (url) window.location.href = url;
+  };
+
+  if (!hasChecked) {
+    return null; // Don't render anything until we've checked credit status
   }
 
-  if (!profile || profile.credits === 0) {
+  if (!hasCredits) {
     return (
-      <div className="p-6 border rounded-md text-center">
-        <h2 className="text-lg font-semibold text-red-600">🚫 You're out of credits!</h2>
-        <p className="text-sm text-muted-foreground mt-2">
-          Upgrade your plan or wait until your monthly reset.
-        </p>
-        <Button asChild className="mt-4">
-          <Link to="/pricing">🔼 Upgrade Plan</Link>
-        </Button>
-      </div>
-    );
-  }
-
-  if (profile.credits < requiredCredits) {
-    return (
-      <div className="p-6 border rounded-md text-center">
-        <h2 className="text-lg font-semibold text-yellow-600">⚠️ Low Credits Warning</h2>
-        <p className="text-sm text-muted-foreground mt-2">
-          You need at least {requiredCredits} credits to proceed.
-        </p>
-        <Button asChild className="mt-4">
-          <Link to="/pricing">Upgrade Plan</Link>
-        </Button>
-      </div>
+      <Card className="p-6">
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Insufficient Credits</AlertTitle>
+          <AlertDescription>
+            You need at least {requiredCredits} credits to use {featureName}.
+            You currently have {currentCredits} credits.
+          </AlertDescription>
+        </Alert>
+        
+        <div className="flex flex-col space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Purchase more credits or upgrade your plan to continue.
+          </p>
+          
+          <Button onClick={handleUpgrade}>
+            <CreditCard className="mr-2 h-4 w-4" />
+            Upgrade Plan
+          </Button>
+        </div>
+      </Card>
     );
   }
 
