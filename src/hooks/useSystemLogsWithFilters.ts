@@ -8,6 +8,7 @@ export function useSystemLogsWithFilters() {
   const { data: logs, isLoading, error, getRecentLogs } = useFilteredLogs(filters);
   const pagination = useLogPagination(logs?.length || 0);
 
+  // Create a setFilters method for compatibility
   const setFilters = updateFilters;
 
   return {
