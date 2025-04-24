@@ -24,7 +24,6 @@ export function useSystemLogsWithFilters() {
     filters,
     setFilters: updateFilters,
     currentPage,
-    setCurrentPage: resetPage,
     totalPages,
     allLogs,
     getRecentLogs,
