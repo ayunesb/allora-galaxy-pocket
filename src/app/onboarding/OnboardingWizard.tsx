@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
@@ -27,6 +28,7 @@ import { ArrowRight, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getFirstInvalidStep } from "./components/StepValidation";
 import LiveSystemVerification from "@/components/LiveSystemVerification";
+import { useTheme } from "@/components/ui/theme-provider";
 
 const steps = [
   Step1Company,
@@ -44,6 +46,7 @@ const steps = [
 
 export default function OnboardingWizard() {
   const { tenant, isLoading: tenantLoading } = useTenant();
+  const { theme } = useTheme();
   const { toast } = useToast();
   const [step, setStep] = useState(0);
   const [profile, setProfile] = useState<OnboardingProfile>({});

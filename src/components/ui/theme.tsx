@@ -15,10 +15,13 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   useEffect(() => {
     document.body.classList.remove('light', 'dark');
     document.body.classList.add(theme === 'dark' ? 'dark' : 'light');
+    
+    // Set background color on the body element directly to ensure no white background
+    document.body.style.backgroundColor = theme === 'dark' ? 'var(--background)' : 'var(--background)';
   }, [theme]);
   
   return (
-    <div className={theme === 'dark' ? 'dark' : ''}>
+    <div className={`min-h-screen bg-background ${theme === 'dark' ? 'dark' : ''}`}>
       {children}
     </div>
   )

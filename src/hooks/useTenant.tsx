@@ -31,12 +31,15 @@ export function TenantProvider({ children }: { children: ReactNode }) {
           .maybeSingle();
         
         if (data && !error) {
+          console.log("Tenant loaded with theme settings:", {
+            theme_mode: data.theme_mode,
+            theme_color: data.theme_color
+          });
           setTenant(data);
-          console.log("Tenant loaded:", data);
         } else {
           // If the stored tenant doesn't exist anymore, clear localStorage
           localStorage.removeItem("tenant_id");
-          console.warn("Stored tenant not found, reset to null");
+          console.warn("Stored tenant not found, reset to null:", error?.message);
         }
       }
     } catch (err) {
@@ -61,7 +64,10 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       
       if (data && !error) {
         setTenant(data);
-        console.log("Tenant refreshed:", data);
+        console.log("Tenant refreshed with theme:", {
+          theme_mode: data.theme_mode,
+          theme_color: data.theme_color
+        });
       } else if (error) {
         console.error("Error refreshing tenant:", error);
       }
@@ -76,7 +82,10 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     setTenant(newTenant);
     if (newTenant?.id) {
       localStorage.setItem("tenant_id", newTenant.id);
-      console.log("Tenant set:", newTenant);
+      console.log("Tenant set with theme:", {
+        theme_mode: newTenant.theme_mode || 'light',
+        theme_color: newTenant.theme_color
+      });
     } else {
       localStorage.removeItem("tenant_id");
       console.log("Tenant cleared");
