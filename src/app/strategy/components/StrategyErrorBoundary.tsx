@@ -1,77 +1,56 @@
 
-import React from "react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import React, { Component, ErrorInfo, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, ArrowLeft } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { RefreshCw } from "lucide-react";
 
 interface Props {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 interface State {
   hasError: boolean;
-  error?: Error;
+  error: Error | null;
 }
 
-export class StrategyErrorBoundary extends React.Component<Props, State> {
+export class StrategyErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, error: null };
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return {
-      hasError: true,
-      error
-    };
+    return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Strategy Error:', error, errorInfo);
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("Strategy component error:", error, errorInfo);
   }
+
+  handleReload = () => {
+    window.location.reload();
+  };
 
   render() {
     if (this.state.hasError) {
-      return <StrategyErrorMessage error={this.state.error} />;
+      return (
+        <div className="container mx-auto py-8 px-4">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-6 rounded-lg">
+            <h2 className="text-xl font-bold mb-2">Something went wrong</h2>
+            <p className="mb-4">
+              There was an error loading the strategy data. This could be due to a network issue or a problem with the strategy record.
+            </p>
+            <div className="font-mono text-sm bg-red-100 p-2 rounded mb-4 max-h-40 overflow-y-auto">
+              {this.state.error?.message || "Unknown error"}
+            </div>
+            <Button onClick={this.handleReload} variant="outline" className="gap-2">
+              <RefreshCw className="h-4 w-4" />
+              Retry
+            </Button>
+          </div>
+        </div>
+      );
     }
 
     return this.props.children;
   }
-}
-
-function StrategyErrorMessage({ error }: { error?: Error }) {
-  const navigate = useNavigate();
-  const { id } = useParams();
-  
-  return (
-    <div className="container mx-auto py-8 px-4">
-      <Alert variant="destructive" className="mb-6">
-        <AlertCircle className="h-5 w-5" />
-        <AlertTitle className="text-lg font-semibold">Strategy Error</AlertTitle>
-        <AlertDescription className="mt-2">
-          <p className="mb-4">There was an error loading strategy {id}.</p>
-          <p className="text-sm font-mono bg-black/10 p-2 rounded mb-4">
-            {error?.message || 'Unknown error occurred'}
-          </p>
-          <div className="flex gap-4 mt-4">
-            <Button 
-              variant="default"
-              onClick={() => navigate("/strategy")}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft size={16} />
-              Back to Strategies
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={() => window.location.reload()}
-            >
-              Try Again
-            </Button>
-          </div>
-        </AlertDescription>
-      </Alert>
-    </div>
-  );
 }

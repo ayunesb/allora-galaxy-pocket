@@ -17,6 +17,10 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator } from 
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { StrategyErrorBoundary } from "./components/StrategyErrorBoundary";
+const { useStrategySystem } = require("@/hooks/useStrategySystem");
+const { StrategyFeedbackForm } = require("@/components/StrategyFeedbackForm");
+const { StrategyPerformanceTracker } = require("@/components/StrategyPerformanceTracker");
+const { StrategyVersionComparison } = require("@/components/StrategyVersionComparison");
 
 function StrategyDetailContent() {
   const { id } = useParams();
@@ -28,6 +32,10 @@ function StrategyDetailContent() {
   const { logActivity } = useSystemLogs();
   const [note, setNote] = useState("");
   const [showRawFeedback, setShowRawFeedback] = useState(false);
+  const [showVersionComparison, setShowVersionComparison] = useState(false);
+  const [selectedVersions, setSelectedVersions] = useState<{v1: number, v2: number} | null>(null);
+  const [comparisonData, setComparisonData] = useState<any>(null);
+  const { createStrategyVersion, versions, compareVersions } = useStrategySystem();
 
   const { data: strategy, isLoading, error } = useQuery({
     queryKey: ['strategy', id],
@@ -200,6 +208,39 @@ function StrategyDetailContent() {
       });
   };
 
+  const handleCreateVersion = async () => {
+    if (!strategy) return;
+    
+    await createStrategyVersion({
+      strategyId: strategy.id,
+      changes: strategy.description || ''
+    });
+    
+    toast({
+      title: "Version created",
+      description: "A new version of this strategy has been saved"
+    });
+  };
+
+  const handleCompareVersions = async (v1: number, v2: number) => {
+    if (!strategy) return;
+    
+    try {
+      const comparison = await compareVersions(strategy.id, v1, v2);
+      if (comparison) {
+        setComparisonData(comparison);
+        setShowVersionComparison(true);
+      }
+    } catch (error) {
+      console.error("Error comparing versions:", error);
+      toast({
+        title: "Comparison failed",
+        description: "Failed to compare strategy versions",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="container mx-auto py-8 px-4 flex justify-center">
@@ -247,25 +288,95 @@ function StrategyDetailContent() {
             <TabsList>
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="goals">Goals</TabsTrigger>
-              <TabsTrigger value="tasks">Tasks</TabsTrigger>
-              <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
+              <TabsTrigger value="performance">Performance</TabsTrigger>
+              <TabsTrigger value="versions">Versions</TabsTrigger>
               <TabsTrigger value="feedback" className="flex items-center gap-1">
                 <ClipboardList className="h-4 w-4" /> Feedback
               </TabsTrigger>
             </TabsList>
+            
             <TabsContent value="overview" className="mt-4">
               <p>{strategy.description}</p>
             </TabsContent>
             <TabsContent value="goals" className="mt-4">
               <p>{strategy.goal || "No specific goals defined for this strategy."}</p>
             </TabsContent>
-            <TabsContent value="tasks" className="mt-4">
-              <p>Task list will be displayed here.</p>
+            
+            <TabsContent value="performance" className="mt-4">
+              <StrategyPerformanceTracker 
+                strategyId={strategy.id} 
+                initialMetrics={strategy.metrics_baseline || {}}
+              />
             </TabsContent>
-            <TabsContent value="campaigns" className="mt-4">
-              <p>Associated campaigns will be displayed here.</p>
+            
+            <TabsContent value="versions" className="mt-4">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-medium">Version History</h3>
+                  <Button variant="outline" size="sm" onClick={handleCreateVersion}>
+                    Save Current Version
+                  </Button>
+                </div>
+                
+                {versions && versions.length > 0 ? (
+                  <div className="space-y-2">
+                    {versions.map((version, index) => (
+                      <div key={version.id} className="border rounded-lg p-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="font-medium">Version {version.version}</span>
+                            <span className="text-sm text-muted-foreground ml-2">
+                              {format(new Date(version.created_at), 'PPp')}
+                            </span>
+                          </div>
+                          {index > 0 && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleCompareVersions(versions[index].version, versions[index-1].version)}
+                            >
+                              Compare with V{versions[index-1].version}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-muted-foreground">
+                    No versions saved yet. Click "Save Current Version" to create the first version.
+                  </div>
+                )}
+                
+                {showVersionComparison && comparisonData && (
+                  <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-background rounded-lg w-full max-w-4xl overflow-hidden">
+                      <div className="p-4 border-b flex justify-between items-center">
+                        <h3 className="font-semibold text-lg">Version Comparison</h3>
+                        <Button variant="ghost" size="sm" onClick={() => setShowVersionComparison(false)}>
+                          Close
+                        </Button>
+                      </div>
+                      <div className="p-4">
+                        <StrategyVersionComparison
+                          olderVersion={comparisonData.older}
+                          newerVersion={comparisonData.newer}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </TabsContent>
+            
             <TabsContent value="feedback" className="mt-4">
+              <div className="mb-4">
+                <StrategyFeedbackForm 
+                  strategyId={strategy.id}
+                  onFeedbackSubmitted={() => queryClient.invalidateQueries({ queryKey: ['strategy-feedback', id] })}
+                />
+              </div>
+              
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="font-medium">Feedback History</h3>
                 <div className="flex items-center space-x-2">
