@@ -10,6 +10,10 @@ import { useCampaignIntegration } from "@/hooks/useCampaignIntegration";
 import { useNotifications } from "@/hooks/useNotifications";
 import { toast } from "sonner";
 import type { Strategy } from "@/types/strategy";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { useKpiAlerts } from "@/hooks/useKpiAlerts";
 
 interface StrategyApprovalFlowProps {
   strategyId: string;
@@ -22,9 +26,12 @@ export function StrategyApprovalFlow({ strategyId, onApproved, onDeclined }: Str
   const { useCredits } = useCreditsManager();
   const { convertStrategyToCampaign } = useCampaignIntegration();
   const { sendNotification } = useNotifications();
+  const { triggerKpiCheck } = useKpiAlerts();
   const [isApproving, setIsApproving] = useState(false);
   const [isDeclining, setIsDeclining] = useState(false);
   const [showCampaignPrompt, setShowCampaignPrompt] = useState(false);
+  const [campaignChannels, setCampaignChannels] = useState(['email', 'social']);
+  const [showChannelDialog, setShowChannelDialog] = useState(false);
 
   const { data: strategy, isLoading } = useQuery({
     queryKey: ['strategy', strategyId],
@@ -77,8 +84,8 @@ export function StrategyApprovalFlow({ strategyId, onApproved, onDeclined }: Str
         description: "The strategy has been marked as approved"
       });
       
-      // Show campaign creation prompt
-      setShowCampaignPrompt(true);
+      // Show channel selection dialog
+      setShowChannelDialog(true);
       
       if (onApproved) onApproved();
     } catch (error: any) {
@@ -86,7 +93,6 @@ export function StrategyApprovalFlow({ strategyId, onApproved, onDeclined }: Str
       toast.error("Failed to approve strategy", {
         description: error.message || "An unexpected error occurred"
       });
-    } finally {
       setIsApproving(false);
     }
   };
@@ -128,63 +134,132 @@ export function StrategyApprovalFlow({ strategyId, onApproved, onDeclined }: Str
     }
   };
 
+  const handleChannelSelect = (value: string) => {
+    switch(value) {
+      case 'email-social':
+        setCampaignChannels(['email', 'social']);
+        break;
+      case 'email-only':
+        setCampaignChannels(['email']);
+        break;
+      case 'social-only':
+        setCampaignChannels(['social']);
+        break;
+      case 'full-mix':
+        setCampaignChannels(['email', 'social', 'landing_page', 'ads']);
+        break;
+      default:
+        setCampaignChannels(['email', 'social']);
+    }
+  };
+
   const handleCreateCampaign = async () => {
     if (!strategy) return;
     
+    setShowChannelDialog(false);
+    setShowCampaignPrompt(true);
+    
     const success = await convertStrategyToCampaign(
       strategy, 
-      ['email', 'social', 'landing_page']
+      campaignChannels
     );
     
     if (success) {
+      // Trigger KPI check to establish baseline metrics
+      await triggerKpiCheck();
+      
       setShowCampaignPrompt(false);
     }
   };
 
+  const handleSkipCampaign = () => {
+    setShowChannelDialog(false);
+    setShowCampaignPrompt(false);
+    setIsApproving(false);
+  };
+
   if (isLoading || !strategy) {
-    return <div>Loading strategy details...</div>;
+    return <div className="flex items-center justify-center py-4"><span className="loading loading-spinner"></span></div>;
   }
 
   if (showCampaignPrompt) {
     return (
       <div className="border rounded-lg p-4 bg-muted/30">
-        <h3 className="text-lg font-medium">Create a campaign based on this strategy?</h3>
+        <h3 className="text-lg font-medium">Creating campaign...</h3>
         <p className="text-sm text-muted-foreground mt-2">
-          This will generate campaign assets across multiple channels using AI.
+          Generating campaign assets across {campaignChannels.join(', ')} channels using AI.
         </p>
-        <div className="flex gap-3 mt-4">
-          <Button variant="outline" onClick={() => setShowCampaignPrompt(false)}>
-            Skip
-          </Button>
-          <Button onClick={handleCreateCampaign} className="gap-2">
-            <ArrowRight className="h-4 w-4" />
-            Create Campaign
-          </Button>
+        <div className="flex justify-center mt-4">
+          <div className="w-8 h-8 border-t-2 border-primary rounded-full animate-spin"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <Button 
-        variant="outline" 
-        onClick={handleDecline} 
-        disabled={isDeclining || isApproving}
-        className="gap-1 text-destructive hover:text-destructive border-destructive/20 hover:border-destructive"
-      >
-        <X className="h-4 w-4" />
-        Decline
-      </Button>
-      <Button 
-        variant="default" 
-        onClick={handleApprove}
-        disabled={isDeclining || isApproving}
-        className="gap-1"
-      >
-        <Check className="h-4 w-4" />
-        Approve
-      </Button>
-    </div>
+    <>
+      <div className="flex items-center gap-2">
+        <Button 
+          variant="outline" 
+          onClick={handleDecline} 
+          disabled={isDeclining || isApproving}
+          className="gap-1 text-destructive hover:text-destructive border-destructive/20 hover:border-destructive"
+        >
+          <X className="h-4 w-4" />
+          Decline
+        </Button>
+        <Button 
+          variant="default" 
+          onClick={handleApprove}
+          disabled={isDeclining || isApproving}
+          className="gap-1"
+        >
+          <Check className="h-4 w-4" />
+          Approve
+        </Button>
+      </div>
+
+      <Dialog open={showChannelDialog} onOpenChange={setShowChannelDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Select campaign channels</DialogTitle>
+            <DialogDescription>
+              Choose which channels to use for this strategy-based campaign
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <RadioGroup defaultValue="email-social" onValueChange={handleChannelSelect}>
+              <div className="flex items-center space-x-2 mb-3">
+                <RadioGroupItem value="email-social" id="email-social" />
+                <Label htmlFor="email-social">Email + Social Media</Label>
+              </div>
+              <div className="flex items-center space-x-2 mb-3">
+                <RadioGroupItem value="email-only" id="email-only" />
+                <Label htmlFor="email-only">Email Only</Label>
+              </div>
+              <div className="flex items-center space-x-2 mb-3">
+                <RadioGroupItem value="social-only" id="social-only" />
+                <Label htmlFor="social-only">Social Media Only</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="full-mix" id="full-mix" />
+                <Label htmlFor="full-mix">Full Mix (Email, Social, Landing Page, Ads)</Label>
+              </div>
+            </RadioGroup>
+          </div>
+          
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={handleSkipCampaign}>
+              Skip Campaign
+            </Button>
+            <Button onClick={handleCreateCampaign} className="gap-2">
+              <ArrowRight className="h-4 w-4" />
+              Create Campaign
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

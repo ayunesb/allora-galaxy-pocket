@@ -1,16 +1,21 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { StrategyViewer } from "@/components/StrategyViewer";
-import LaunchControls from "./LaunchControls";
+import { StrategyApprovalFlow } from "@/components/StrategyApprovalFlow";
 import { getPluginHooks } from "@/lib/plugins/pluginRegistry";
 import type { Strategy } from "@/types/strategy";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw, CheckCircle, AlertTriangle } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 export default function LaunchPage() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [showApproved, setShowApproved] = useState(false);
 
   const { data: strategy, isLoading } = useQuery({
     queryKey: ['pending-strategy'],
@@ -28,32 +33,48 @@ export default function LaunchPage() {
     }
   });
 
-  const handleApprove = async () => {
-    if (!strategy) return;
+  const handleApproveComplete = () => {
+    toast({
+      title: "Strategy Launched",
+      description: "Your strategy has been approved and is now live"
+    });
     
-    // Get all registered plugin hooks
-    const hooks = getPluginHooks();
-
-    try {
-      await Promise.all(
-        Object.entries(hooks).map(([key, hook]) => 
-          hook.onStrategyLaunch?.(strategy)
-        )
-      );
-
-      toast({
-        title: "Strategy Launched",
-        description: "Your strategy has been approved and is now live"
-      });
-    } catch (error) {
-      console.error("Error in plugin execution:", error);
-      toast({
-        title: "Launch Failed",
-        description: "There was an error launching the strategy",
-        variant: "destructive"
-      });
-    }
+    setShowApproved(true);
+    
+    // Give user time to see the approval confirmation
+    setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: ['pending-strategy'] });
+      setShowApproved(false);
+    }, 3000);
   };
+
+  const handleDeclineComplete = () => {
+    toast({
+      title: "Strategy Declined",
+      description: "The strategy has been marked as declined"
+    });
+    
+    queryClient.invalidateQueries({ queryKey: ['pending-strategy'] });
+  };
+
+  const refreshPendingStrategies = () => {
+    queryClient.invalidateQueries({ queryKey: ['pending-strategy'] });
+  };
+
+  if (showApproved) {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <Alert className="max-w-3xl mx-auto bg-green-50 text-green-800 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800">
+          <CheckCircle className="h-4 w-4" />
+          <AlertTitle>Strategy Approved Successfully</AlertTitle>
+          <AlertDescription>
+            The strategy has been approved and is now ready for execution. 
+            You'll be redirected to the next pending strategy soon.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -65,8 +86,25 @@ export default function LaunchPage() {
 
   if (!strategy) {
     return (
-      <div className="text-center py-8">
-        <p className="text-muted-foreground">No pending strategies to review</p>
+      <div className="container mx-auto py-8 px-4">
+        <Card className="max-w-3xl mx-auto">
+          <CardHeader>
+            <CardTitle className="text-xl">No pending strategies</CardTitle>
+            <CardDescription>
+              There are no strategies currently waiting for your approval
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <Button 
+              variant="outline" 
+              onClick={refreshPendingStrategies}
+              className="gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Check for new strategies
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -78,7 +116,14 @@ export default function LaunchPage() {
       <div className="max-w-3xl mx-auto space-y-6">
         <StrategyViewer 
           strategy={strategy}
-          onApprove={handleApprove}
+          onApprove={() => {}}
+          actions={
+            <StrategyApprovalFlow
+              strategyId={strategy.id}
+              onApproved={handleApproveComplete}
+              onDeclined={handleDeclineComplete}
+            />
+          }
         />
       </div>
     </div>

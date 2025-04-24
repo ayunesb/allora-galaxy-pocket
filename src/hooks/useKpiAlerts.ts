@@ -1,5 +1,5 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { format, subDays } from "date-fns";
@@ -9,6 +9,7 @@ export function useKpiAlerts(options: { days?: number; activeOnly?: boolean } = 
   const { days = 7, activeOnly = false } = options;
   const { tenant } = useTenant();
   const startDate = format(subDays(new Date(), days), 'yyyy-MM-dd');
+  const queryClient = useQueryClient();
 
   const { data: alerts = [], isLoading, error } = useQuery({
     queryKey: ['kpi-alerts', tenant?.id, startDate, activeOnly],
@@ -70,13 +71,30 @@ export function useKpiAlerts(options: { days?: number; activeOnly?: boolean } = 
     enabled: !!tenant?.id,
   });
 
+  const refreshAlerts = () => {
+    queryClient.invalidateQueries({ queryKey: ['kpi-alerts'] });
+    queryClient.invalidateQueries({ queryKey: ['campaign-insights'] });
+  };
+
+  const triggerKpiCheck = async () => {
+    if (!tenant?.id) return;
+    
+    try {
+      await supabase.functions.invoke('check-kpi-alerts', {
+        body: { tenant_id: tenant.id }
+      });
+      refreshAlerts();
+    } catch (err) {
+      console.error('Error triggering KPI check:', err);
+    }
+  };
+
   return {
     alerts,
     campaignInsights,
     isLoading,
     error,
-    refreshAlerts: () => {
-      // This will be used to trigger a manual refresh
-    }
+    refreshAlerts,
+    triggerKpiCheck
   };
 }

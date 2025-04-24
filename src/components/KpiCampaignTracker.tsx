@@ -1,24 +1,65 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useKpiAlerts } from '@/hooks/useKpiAlerts';
+import { useCampaignIntegration } from '@/hooks/useCampaignIntegration';
 import { useNavigate } from 'react-router-dom';
-import { Bell, ArrowUpRight, BarChart2 } from 'lucide-react';
+import { Bell, ArrowUpRight, BarChart2, RefreshCw } from 'lucide-react';
+import { format } from 'date-fns';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function KpiCampaignTracker() {
-  const { campaignInsights, isLoading } = useKpiAlerts();
+  const { campaignInsights, isLoading, triggerKpiCheck } = useKpiAlerts();
+  const { trackCampaignOutcome } = useCampaignIntegration();
   const navigate = useNavigate();
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
+
+  useEffect(() => {
+    // Check campaign outcomes once when component mounts
+    const checkCampaigns = async () => {
+      // Get campaigns with pending insights
+      const pendingCampaigns = new Set(
+        campaignInsights
+          .filter(insight => insight.outcome === 'pending')
+          .map(insight => insight.campaign_id)
+      );
+      
+      // Track outcomes for each campaign
+      for (const campaignId of pendingCampaigns) {
+        if (campaignId) {
+          trackCampaignOutcome(campaignId);
+        }
+      }
+    };
+    
+    if (campaignInsights.length > 0) {
+      checkCampaigns();
+    }
+  }, [campaignInsights, trackCampaignOutcome]);
+
+  const refreshData = async () => {
+    setIsRefreshing(true);
+    await triggerKpiCheck();
+    setTimeout(() => setIsRefreshing(false), 1000);
+  };
 
   if (isLoading) {
     return (
-      <Card className="h-[300px] flex items-center justify-center">
-        <div className="text-center">
-          <BarChart2 className="h-8 w-8 mx-auto mb-3 text-muted-foreground/70" />
-          <p className="text-sm text-muted-foreground">Loading campaign insights...</p>
-        </div>
+      <Card className="h-[300px]">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-8 w-8 rounded-full" />
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-16 w-full" />
+        </CardContent>
       </Card>
     );
   }
@@ -57,14 +98,27 @@ export function KpiCampaignTracker() {
       <CardHeader>
         <CardTitle className="text-lg flex justify-between">
           <span>Campaign KPI Tracking</span>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-8 gap-1" 
-            onClick={() => navigate('/insights/kpis')}
-          >
-            Details <ArrowUpRight className="h-3 w-3" />
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={refreshData}
+              disabled={isRefreshing}
+              className={`h-8 w-8 p-0 ${isRefreshing ? 'animate-spin' : ''}`} 
+            >
+              <RefreshCw className="h-4 w-4" />
+              <span className="sr-only">Refresh</span>
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 w-8 p-0" 
+              onClick={() => navigate('/insights/kpis')}
+            >
+              <ArrowUpRight className="h-4 w-4" />
+              <span className="sr-only">View Details</span>
+            </Button>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -77,7 +131,23 @@ export function KpiCampaignTracker() {
               </Badge>
             </AlertTitle>
             <AlertDescription className="text-sm text-blue-700 dark:text-blue-400">
-              {pendingInsights.length} {pendingInsights.length === 1 ? 'campaign is' : 'campaigns are'} currently running and being tracked.
+              <div className="mt-2">
+                {pendingInsights.slice(0, 2).map(insight => (
+                  <div key={insight.id} className="flex items-center justify-between mt-1 text-sm">
+                    <div className="truncate max-w-[220px]">
+                      {insight.campaigns?.name || 'Unnamed Campaign'}
+                    </div>
+                    <Badge variant="outline" className="ml-2 shrink-0">
+                      {insight.kpi_name || 'KPI'}
+                    </Badge>
+                  </div>
+                ))}
+                {pendingInsights.length > 2 && (
+                  <div className="text-xs mt-1 text-right">
+                    +{pendingInsights.length - 2} more active
+                  </div>
+                )}
+              </div>
             </AlertDescription>
           </Alert>
         )}
@@ -91,7 +161,18 @@ export function KpiCampaignTracker() {
               </Badge>
             </AlertTitle>
             <AlertDescription className="text-sm text-green-700 dark:text-green-400">
-              {successInsights.length} {successInsights.length === 1 ? 'campaign has' : 'campaigns have'} achieved their target KPIs.
+              <div className="mt-2">
+                {successInsights.slice(0, 2).map(insight => (
+                  <div key={insight.id} className="flex items-center justify-between mt-1 text-sm">
+                    <div className="truncate max-w-[220px]">
+                      {insight.campaigns?.name || 'Unnamed Campaign'}
+                    </div>
+                    <Badge variant="outline" className="ml-2 shrink-0">
+                      {insight.kpi_name || 'KPI'}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
             </AlertDescription>
           </Alert>
         )}
@@ -105,9 +186,28 @@ export function KpiCampaignTracker() {
               </Badge>
             </AlertTitle>
             <AlertDescription className="text-sm text-amber-700 dark:text-amber-400">
-              {failedInsights.length} {failedInsights.length === 1 ? 'campaign has' : 'campaigns have'} not met target KPIs.
+              <div className="mt-2">
+                {failedInsights.slice(0, 2).map(insight => (
+                  <div key={insight.id} className="flex items-center justify-between mt-1 text-sm">
+                    <div className="truncate max-w-[220px]">
+                      {insight.campaigns?.name || 'Unnamed Campaign'}
+                    </div>
+                    <Badge variant="outline" className="ml-2 shrink-0">
+                      {insight.kpi_name || 'KPI'}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
             </AlertDescription>
           </Alert>
+        )}
+        
+        {pendingInsights.length === 0 && successInsights.length === 0 && failedInsights.length === 0 && (
+          <div className="text-center py-6 text-muted-foreground">
+            <BarChart2 className="mx-auto h-10 w-10 text-muted-foreground/50 mb-3" />
+            <p>No active campaign KPIs to track</p>
+            <p className="text-sm mt-1">Try launching a new campaign</p>
+          </div>
         )}
       </CardContent>
     </Card>

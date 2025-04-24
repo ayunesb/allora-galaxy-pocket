@@ -86,6 +86,15 @@ export function useCampaignIntegration() {
             insight: `Campaign "${savedCampaign.name}" launched based on strategy "${input.strategy.title}"`,
             impact_level: "medium",
             outcome: "pending",
+            target: 5.0, // Setting a default target value of 5% conversion
+            suggested_action: `Monitor performance of campaign "${savedCampaign.name}" derived from strategy "${input.strategy.title}"`
+          });
+          
+          // Add feedback collection for the strategy
+          await supabase.from("strategy_feedback").insert({
+            tenant_id: tenant.id,
+            strategy_title: input.strategy.title,
+            action: `Created campaign "${savedCampaign.name}" with channels: ${input.channels.join(', ')}`
           });
         }
         
@@ -141,6 +150,8 @@ export function useCampaignIntegration() {
         
         // Invalidate KPI metrics queries
         queryClient.invalidateQueries({ queryKey: ["kpi-metrics"] });
+        queryClient.invalidateQueries({ queryKey: ["kpi-alerts"] });
+        queryClient.invalidateQueries({ queryKey: ["campaign-insights"] });
         
         return true;
       } catch (error) {
@@ -149,10 +160,55 @@ export function useCampaignIntegration() {
       }
     }
   });
+  
+  // Capture feedback on campaign performance to improve future strategies
+  const captureCampaignFeedback = useMutation({
+    mutationFn: async (input: { 
+      campaignId: string, 
+      strategyId: string, 
+      feedback: string, 
+      performanceRating: number 
+    }) => {
+      if (!tenant?.id) {
+        throw new Error("No workspace selected");
+      }
+      
+      try {
+        // Log feedback for strategy improvement
+        await supabase.from("agent_feedback").insert({
+          tenant_id: tenant.id,
+          agent: "Campaign_Agent",
+          feedback: input.feedback,
+          rating: input.performanceRating,
+          type: "campaign_performance_feedback",
+          task_id: input.strategyId
+        });
+        
+        // Add status update to the strategy
+        await supabase.from("strategy_feedback").insert({
+          tenant_id: tenant.id,
+          strategy_title: "Strategy ID: " + input.strategyId,
+          action: `Campaign performance feedback: ${input.feedback} (Rating: ${input.performanceRating}/5)`
+        });
+        
+        // Notify about feedback
+        await sendNotification({
+          event_type: "campaign_feedback",
+          description: `New feedback recorded for campaign performance (${input.performanceRating}/5)`
+        });
+        
+        return true;
+      } catch (error) {
+        console.error("Error capturing campaign feedback:", error);
+        throw error;
+      }
+    }
+  });
 
   return {
-    isLoading: isLoading || generateCampaign.isPending || trackCampaignOutcome.isPending,
+    isLoading: isLoading || generateCampaign.isPending || trackCampaignOutcome.isPending || captureCampaignFeedback.isPending,
     convertStrategyToCampaign,
-    trackCampaignOutcome: trackCampaignOutcome.mutate
+    trackCampaignOutcome: trackCampaignOutcome.mutate,
+    captureCampaignFeedback: captureCampaignFeedback.mutate
   };
 }
