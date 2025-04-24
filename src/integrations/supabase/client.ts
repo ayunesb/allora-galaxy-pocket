@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://lxsuqqlfuftnvuvtctsx.supabase.co';
@@ -14,7 +15,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    flowType: 'implicit' // Use implicit flow for browser environments
+    flowType: 'implicit'
   },
   global: {
     headers: initialHeaders
@@ -22,7 +23,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 });
 
 // Update headers whenever tenant ID changes
-export const updateTenantHeader = (tenantId: string | null) => {
+export const updateTenantHeader = async (tenantId: string | null) => {
   // Store tenant ID in localStorage
   if (tenantId) {
     localStorage.setItem('tenant_id', tenantId);

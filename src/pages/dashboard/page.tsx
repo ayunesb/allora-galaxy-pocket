@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { KpiOverview } from "@/components/dashboard/KpiOverview";
 import { KPISection } from "@/app/dashboard/components/KPISection";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, ArrowRight } from "lucide-react";
@@ -9,6 +8,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { useSystemLogs } from "@/hooks/useSystemLogs";
+import { NotificationCenter } from "@/components/dashboard/NotificationCenter";
+import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 
 export default function DashboardPage() {
   const { tenant } = useTenant();
@@ -75,6 +76,7 @@ export default function DashboardPage() {
         </Link>
       </div>
 
+      <KpiOverview />
       <KPISection />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
@@ -122,35 +124,7 @@ export default function DashboardPage() {
             )}
           </CardContent>
         </Card>
-
-        {/* System Activity */}
-        <Card>
-          <CardHeader>
-            <CardTitle>System Activity</CardTitle>
-            <CardDescription>Recent activities in your workspace</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {recentLogs && recentLogs.length > 0 ? (
-              <div className="space-y-3">
-                {recentLogs.map(log => (
-                  <div key={log.id} className="border-b pb-2 last:border-0">
-                    <div className="flex justify-between">
-                      <span className="font-medium text-sm">{log.event_type}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(log.created_at).toLocaleTimeString()}
-                      </span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">{log.message}</p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-6">
-                <p className="text-muted-foreground">No recent activity to display</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <NotificationCenter />
       </div>
 
       <Card>
