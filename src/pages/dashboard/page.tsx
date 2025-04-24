@@ -54,7 +54,7 @@ export default function DashboardPage() {
   
   // Fetch recent system logs when component mounts
   React.useEffect(() => {
-    getRecentLogs(5);
+    getRecentLogs();
   }, [getRecentLogs]);
   
   const recentLogs = logs.slice(0, 5);

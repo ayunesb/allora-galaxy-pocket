@@ -13,7 +13,7 @@ export function useSystemLogs() {
   const [isLoading, setIsLoading] = useState(false);
   const [logs, setLogs] = useState<SystemLog[]>([]);
 
-  const getRecentLogs = async () => {
+  const getRecentLogs = async (limit?: number) => {
     if (!tenant?.id) {
       console.warn("Cannot fetch logs: No tenant selected");
       return [];
@@ -26,7 +26,7 @@ export function useSystemLogs() {
         .select("*")
         .eq("tenant_id", tenant.id)
         .order("created_at", { ascending: false })
-        .limit(100);
+        .limit(limit || 100);
 
       if (error) throw error;
       setLogs(data || []);
