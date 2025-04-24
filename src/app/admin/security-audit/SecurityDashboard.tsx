@@ -10,6 +10,8 @@ import { SecurityDistributionChart } from "./components/dashboard/SecurityDistri
 import { SecurityIssuesList } from "./components/SecurityIssuesList";
 import { useSecurityDashboard } from "./hooks/useSecurityDashboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./components/ui/Card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { ResponsiveTable, Column } from "@/components/ui/responsive-table";
 
 export default function SecurityDashboard() {
@@ -63,6 +65,28 @@ export default function SecurityDashboard() {
         <Badge variant={value ? "outline" : "destructive"}>
           {value ? "Secure" : "Missing"}
         </Badge>
+      )
+    }
+  ];
+  
+  const logColumns: Column[] = [
+    { 
+      header: "Event Type", 
+      accessorKey: "event_type",
+      cell: (value) => (
+        <Badge variant="outline" className="font-mono">
+          {value}
+        </Badge>
+      )
+    },
+    { header: "Message", accessorKey: "message" },
+    { 
+      header: "Time", 
+      accessorKey: "created_at",
+      cell: (value) => (
+        <span className="text-muted-foreground text-sm">
+          {new Date(value).toLocaleString()}
+        </span>
       )
     }
   ];
