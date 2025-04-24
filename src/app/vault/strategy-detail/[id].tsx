@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -9,16 +10,16 @@ import { useSystemLogs } from "@/hooks/useSystemLogs";
 import type { Strategy } from "@/types/strategy";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
-import { StrategyErrorBoundary } from "./components/StrategyErrorBoundary";
+import { StrategyErrorBoundary } from "../strategy/components/StrategyErrorBoundary";
 import { useStrategySystem } from "@/hooks/useStrategySystem";
 import { StrategyFeedbackForm } from "@/components/StrategyFeedbackForm";
 import { StrategyPerformanceTracker } from "@/components/StrategyPerformanceTracker";
-import { StrategyHeader } from "./components/StrategyHeader";
-import { StrategyActions } from "./components/StrategyActions";
-import { StrategyTabs } from "./components/StrategyTabs";
-import { StrategyVersions } from "./components/StrategyVersions";
-import { StrategyKPIEvaluation } from "@/components/StrategyKPIEvaluation";
-import { StrategyRecommendations } from "@/components/StrategyRecommendations";
+import { StrategyHeader } from "../strategy/components/StrategyHeader";
+import { StrategyActions } from "../strategy/components/StrategyActions";
+import { StrategyTabs } from "../strategy/components/StrategyTabs";
+import { StrategyVersions } from "../strategy/components/StrategyVersions";
+import { StrategyKPIEvaluation } from "../strategy/components/StrategyKPIEvaluation";
+import { StrategyRecommendations } from "../strategy/components/StrategyRecommendations";
 
 function StrategyDetailContent() {
   const { id } = useParams();
