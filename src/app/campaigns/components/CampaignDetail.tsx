@@ -1,7 +1,7 @@
-
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Link, useNavigate } from "react-router-dom";
 import { Loader2, ArrowLeft, ChevronRight, PencilLine, Settings } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,6 @@ import { AgentInfoCard } from "./AgentInfoCard";
 import { CampaignExecutionMetrics } from "./CampaignExecutionMetrics";
 import { CampaignActionPanel } from "./CampaignActionPanel";
 import { CampaignPrediction } from "./CampaignPrediction";
-import { Link, useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import type { Campaign } from "@/types/campaign";

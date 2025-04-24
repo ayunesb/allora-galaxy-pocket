@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from './useTenant';
@@ -7,6 +6,7 @@ import { useAuth } from './useAuth';
 import { useSystemLogs } from './useSystemLogs';
 import type { Strategy } from '@/types/strategy';
 import { toast as sonnerToast } from 'sonner';
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useCampaignIntegration() {
   const [isLoading, setIsLoading] = useState(false);
@@ -14,6 +14,7 @@ export function useCampaignIntegration() {
   const { toast } = useToast();
   const { user } = useAuth();
   const { logActivity } = useSystemLogs();
+  const queryClient = useQueryClient();
 
   const convertStrategyToCampaign = async (strategy: Strategy, channels?: string[]) => {
     if (!tenant?.id || !strategy?.id) {
@@ -85,6 +86,23 @@ export function useCampaignIntegration() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const updateCampaignExecution = async (campaignId: string, data: any) => {
+    const { error } = await supabase
+      .from('campaigns')
+      .update({
+        execution_metrics: data.metrics,
+        execution_status: data.status,
+        execution_start_date: new Date().toISOString()
+      })
+      .eq('id', campaignId);
+
+    if (error) throw error;
+
+    // Invalidate queries
+    queryClient.invalidateQueries({ queryKey: ['campaign-detail', campaignId] });
+    queryClient.invalidateQueries({ queryKey: ['campaigns'] });
   };
 
   const updateCampaignExecutionStatus = async (
@@ -283,6 +301,7 @@ export function useCampaignIntegration() {
   return {
     isLoading,
     convertStrategyToCampaign,
+    updateCampaignExecution,
     updateCampaignExecutionStatus,
     getCampaignExecutionMetrics,
     trackCampaignOutcome,
