@@ -2846,6 +2846,33 @@ export type Database = {
           },
         ]
       }
+      kpi_trends: {
+        Row: {
+          data_points: number | null
+          day: string | null
+          max_value: number | null
+          metric: string | null
+          min_value: number | null
+          tenant_id: string | null
+          value: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kpi_metrics_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kpi_metrics_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       most_remixed_memories: {
         Row: {
           agent_name: string | null

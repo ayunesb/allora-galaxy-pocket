@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://lxsuqqlfuftnvuvtctsx.supabase.co';
@@ -24,25 +23,18 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 // Update headers whenever tenant ID changes
 export const updateTenantHeader = (tenantId: string | null) => {
-  // Create a new headers object
-  const newHeaders = {
-    'x-tenant-id': tenantId || ''
-  };
-  
-  // Use the global.headers setter to update the headers
-  supabase.auth.setSession({
-    access_token: '',
-    refresh_token: ''
-  }).then(({ data }) => {
-    // This is a workaround to refresh the client with the new headers
-    if (data.session) {
-      // If there's a session, it will be maintained
-      console.log('Headers updated with tenant ID:', tenantId);
-    }
-  });
+  // Store tenant ID in localStorage
+  if (tenantId) {
+    localStorage.setItem('tenant_id', tenantId);
+  } else {
+    localStorage.removeItem('tenant_id');
+  }
 
-  // Set the headers globally for all future requests
-  supabase.rest.headers = newHeaders;
+  // Create a new client instance with updated headers
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) {
+    await supabase.auth.refreshSession();
+  }
 };
 
 // Monitor auth status
