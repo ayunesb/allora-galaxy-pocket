@@ -1,100 +1,49 @@
 
-import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useTenant } from "./useTenant";
-import { useAuth } from "./useAuth";
-import type { SystemLog, LogActivityParams } from "@/types/systemLog";
+import { useToast } from "@/hooks/use-toast";
+import { useTenant } from "@/hooks/useTenant";
+import { useAuth } from "@/hooks/useAuth";
+import { useState } from "react";
+import type { LogActivityParams } from "@/types/systemLog";
 
 export function useSystemLogs() {
+  const { toast } = useToast();
   const { tenant } = useTenant();
   const { user } = useAuth();
-  const [logs, setLogs] = useState<SystemLog[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLogging, setIsLogging] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
+  const logActivity = async ({ event_type, message, meta = {} }: LogActivityParams) => {
     if (!tenant?.id) {
-      setLogs([]);
-      setIsLoading(false);
-      return;
-    }
-
-    const fetchLogs = async () => {
-      setIsLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('system_logs')
-          .select('*')
-          .eq('tenant_id', tenant.id)
-          .order('created_at', { ascending: false })
-          .limit(100);
-
-        if (error) throw error;
-        setLogs(data || []);
-      } catch (error) {
-        console.error('Error fetching system logs:', error);
-        setLogs([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchLogs();
-  }, [tenant?.id]);
-
-  const logActivity = async (input: LogActivityParams) => {
-    if (!tenant?.id || isLogging) return false;
-    
-    setIsLogging(true);
-    try {
-      const { error } = await supabase
-        .from('system_logs')
-        .insert({
-          tenant_id: tenant.id,
-          user_id: user?.id,
-          event_type: input.event_type,
-          message: input.message,
-          meta: input.meta || {}
-        });
-        
-      if (error) throw error;
-      return true;
-    } catch (error) {
-      console.error("Error logging activity:", error);
+      console.warn("Cannot log activity: No tenant selected");
       return false;
-    } finally {
-      setIsLogging(false);
     }
-  };
 
-  const getRecentLogs = async (limit = 50) => {
-    if (!tenant?.id) return [];
-    
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('system_logs')
-        .select('*')
-        .eq('tenant_id', tenant.id)
-        .order('created_at', { ascending: false })
-        .limit(limit);
-        
+      const { error } = await supabase.from("system_logs").insert({
+        tenant_id: tenant.id,
+        user_id: user?.id,
+        event_type,
+        message,
+        meta
+      });
+
       if (error) throw error;
-      setLogs(data || []);
-      return data || [];
-    } catch (error) {
-      console.error("Error fetching logs:", error);
-      return [];
+      return true;
+    } catch (err) {
+      console.error("Error logging activity:", err);
+      if (process.env.NODE_ENV === "development") {
+        toast({
+          title: "Error logging activity",
+          description: (err as Error).message,
+          variant: "destructive",
+        });
+      }
+      return false;
     } finally {
       setIsLoading(false);
     }
   };
 
-  return {
-    logs,
-    isLoading,
-    logActivity,
-    getRecentLogs,
-    isLogging
-  };
+  return { logActivity, isLoading };
 }
