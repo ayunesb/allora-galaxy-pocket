@@ -7,10 +7,9 @@ import { SecurityScoreCard } from "./components/dashboard/SecurityScoreCard";
 import { TablesAnalyzedCard } from "./components/dashboard/TablesAnalyzedCard";
 import { SecurityEventsCard } from "./components/dashboard/SecurityEventsCard";
 import { SecurityDistributionChart } from "./components/dashboard/SecurityDistributionChart";
+import { SecurityIssuesList } from "./components/SecurityIssuesList";
 import { useSecurityDashboard } from "./hooks/useSecurityDashboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./components/ui/Card";
-import { Badge } from "./components/ui/Badge";
-import { Progress } from "./components/ui/Progress";
 import { ResponsiveTable, Column } from "@/components/ui/responsive-table";
 
 export default function SecurityDashboard() {
@@ -67,40 +66,9 @@ export default function SecurityDashboard() {
       )
     }
   ];
-  
-  const logColumns: Column[] = [
-    { 
-      header: "Event Type", 
-      accessorKey: "event_type",
-      cell: (value) => (
-        <Badge variant="outline" className="font-mono">
-          {value}
-        </Badge>
-      )
-    },
-    { header: "Message", accessorKey: "message" },
-    { 
-      header: "Time", 
-      accessorKey: "created_at",
-      cell: (value) => (
-        <span className="text-muted-foreground text-sm">
-          {new Date(value).toLocaleString()}
-        </span>
-      )
-    }
-  ];
 
   return (
     <div className="container max-w-7xl mx-auto py-4 md:py-6 px-4 md:px-6 space-y-4 md:space-y-6">
-      <div className="flex justify-between items-center flex-wrap gap-2">
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold tracking-tight">Security Dashboard</h1>
-          <p className="text-sm text-muted-foreground">
-            Monitor and improve your application's security posture
-          </p>
-        </div>
-      </div>
-
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         <SecurityScoreCard score={overallScore} />
         <TablesAnalyzedCard 
@@ -129,15 +97,11 @@ export default function SecurityDashboard() {
       <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}
             className="w-full">
         <TabsList className="mb-4 w-full flex overflow-x-auto space-x-1 md:w-auto">
-          <TabsTrigger value="overview" className="flex-1 md:flex-none">Overview</TabsTrigger>
-          <TabsTrigger value="tables" className="flex-1 md:flex-none">Table Security</TabsTrigger>
-          <TabsTrigger value="logs" className="flex-1 md:flex-none">Security Logs</TabsTrigger>
-          <TabsTrigger value="recommendations" className="flex-1 md:flex-none">Recommendations</TabsTrigger>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="tables">Table Security</TabsTrigger>
+          <TabsTrigger value="logs">Security Logs</TabsTrigger>
+          <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
         </TabsList>
-        
-        <TabsContent value="overview" className="space-y-4 mt-4 md:mt-6">
-          
-        </TabsContent>
         
         <TabsContent value="tables" className="space-y-4 mt-4 md:mt-6">
           <Card>
