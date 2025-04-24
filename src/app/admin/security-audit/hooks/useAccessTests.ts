@@ -1,78 +1,73 @@
 
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { useTenant } from "@/hooks/useTenant";
 import { toast } from "@/components/ui/sonner";
 import type { RlsTable } from "./useRlsData";
 
 export interface AccessTestResult {
   tableName: string;
-  status: "allowed" | "blocked" | "error" | "untested";
-  errorMessage?: string;
+  status: 'allowed' | 'blocked' | 'error';
   rowCount?: number;
+  errorMessage?: string;
 }
 
 export function useAccessTests() {
-  const { user } = useAuth();
-  const { tenant } = useTenant();
   const [testResults, setTestResults] = useState<AccessTestResult[]>([]);
-  const [isRunningTests, setIsRunningTests] = useState<boolean>(false);
-  const [lastRun, setLastRun] = useState<string | null>(null);
+  const [isRunningTests, setIsRunningTests] = useState(false);
+  const [lastRun, setLastRun] = useState<string>('');
 
   const runAccessTests = async (tables: RlsTable[]) => {
-    if (!user || !tenant) {
-      toast.warning("Authentication required", {
-        description: "You must be logged in with an active tenant to run access tests"
-      });
-      return;
-    }
-    
     setIsRunningTests(true);
     const results: AccessTestResult[] = [];
-    
+
     try {
       for (const table of tables) {
-        if (!table.rlsEnabled) continue;
-        
         try {
+          // Attempt to select data from the table
           const { data, error, count } = await supabase
             .from(table.tablename)
-            .select("*", { count: "exact" })
-            .limit(1);
-          
+            .select('*', { count: 'exact' })
+            .limit(5);
+
           if (error) {
+            // Policy blocked access
             results.push({
               tableName: table.tablename,
-              status: "error",
-              errorMessage: error.message,
+              status: 'blocked',
+              errorMessage: error.message
             });
           } else {
+            // Access allowed
             results.push({
               tableName: table.tablename,
-              status: "allowed",
+              status: 'allowed',
               rowCount: count || 0
             });
           }
-        } catch (e: any) {
+        } catch (err) {
+          // Unexpected error
           results.push({
             tableName: table.tablename,
-            status: "blocked",
-            errorMessage: e.message
+            status: 'error',
+            errorMessage: (err as Error).message
           });
         }
       }
-      
+
       setTestResults(results);
       setLastRun(new Date().toLocaleString());
+      
+      // Show result summary
+      const allowedCount = results.filter(r => r.status === 'allowed').length;
+      const blockedCount = results.filter(r => r.status === 'blocked').length;
+      
       toast.success("Access tests completed", {
-        description: `Tested ${results.length} tables with RLS enabled`
+        description: `${allowedCount} tables accessible, ${blockedCount} tables blocked`
       });
+      
     } catch (error) {
       console.error("Error running access tests:", error);
-      toast.error("Failed to complete access tests", {
-        description: "Check console for details"
-      });
+      toast.error("Failed to run access tests");
     } finally {
       setIsRunningTests(false);
     }

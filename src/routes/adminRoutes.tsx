@@ -31,7 +31,7 @@ export const adminRoutes = [
   },
   {
     path: '/admin/security-audit',
-    name: 'Security Audit',
+    name: 'Security Dashboard',
     component: <SecurityDashboard />,
   },
   {

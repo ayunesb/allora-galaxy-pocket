@@ -1,12 +1,5 @@
 
 import React from "react";
-import { Table } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent } from "@/components/ui/card";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { PolicyStatusBadge } from "./badges/PolicyStatusBadge";
-import { AccessTestBadge } from "./badges/AccessTestBadge";
 import type { RlsTable } from "../hooks/useRlsData";
 import type { AccessTestResult } from "../hooks/useAccessTests";
 import { RlsTableRow } from "./rows/RlsTableRow";
@@ -18,85 +11,41 @@ interface SecurityAuditTableProps {
 }
 
 export function SecurityAuditTable({ tables, testResults, isLoading }: SecurityAuditTableProps) {
-  const isMobile = useIsMobile();
-
   if (isLoading) {
-    return (
-      <div className="space-y-4">
-        {Array(3).fill(0).map((_, index) => (
-          <Skeleton key={index} className="h-20 w-full" />
-        ))}
-      </div>
-    );
-  }
-
-  if (isMobile) {
-    return (
-      <div className="space-y-4">
-        {tables.map((table) => {
-          const testResult = testResults.find(r => r.tableName === table.tablename);
-          
-          return (
-            <Card key={table.tablename}>
-              <CardContent className="p-4 space-y-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-medium">{table.tablename}</h3>
-                    <PolicyStatusBadge hasAuthReference={table.rlsEnabled} />
-                  </div>
-                  {testResult && <AccessTestBadge testResult={testResult} />}
-                </div>
-                
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">Policy:</span>
-                    <div>{table.policies.length > 0 ? table.policies[0].policyname : "No policy"}</div>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Command:</span>
-                    <div>{table.policies.length > 0 ? table.policies[0].command : "N/A"}</div>
-                  </div>
-                </div>
-                
-                <div className="text-sm">
-                  <span className="text-muted-foreground">Auth Reference:</span>
-                  <div className="font-mono text-xs bg-muted p-1 rounded mt-1">
-                    {table.policies.length > 0 
-                      ? (table.policies[0].definition.includes('auth.uid()') ? "Contains auth.uid()" : "No auth.uid() reference") 
-                      : "N/A"}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-    );
+    return <div className="text-center p-8">Loading security information...</div>;
   }
 
   return (
-    <div className="border rounded-lg overflow-hidden">
-      <Table>
-        <thead>
-          <tr className="bg-muted">
-            <th className="p-3 border">Table</th>
-            <th className="p-3 border">RLS Status</th>
-            <th className="p-3 border">Policy Name</th>
-            <th className="p-3 border">Command</th>
-            <th className="p-3 border">Auth Reference</th>
-            <th className="p-3 border">Access Test Result</th>
+    <table className="w-full border-collapse">
+      <thead>
+        <tr className="bg-muted">
+          <th className="p-3 border text-left">Table</th>
+          <th className="p-3 border text-center">RLS Status</th>
+          <th className="p-3 border text-left">Policy Name</th>
+          <th className="p-3 border text-left">Command</th>
+          <th className="p-3 border text-center">Auth Reference</th>
+          <th className="p-3 border text-center">Access Test</th>
+        </tr>
+      </thead>
+      <tbody>
+        {tables.length === 0 ? (
+          <tr>
+            <td colSpan={6} className="p-3 text-center text-muted-foreground">
+              No tables found
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          {tables.map((table) => (
+        ) : (
+          tables.map((table) => (
             <RlsTableRow 
               key={table.tablename}
-              table={table}
+              tableName={table.tablename}
+              rlsEnabled={table.rlsEnabled}
+              policies={table.policies}
               testResult={testResults.find(r => r.tableName === table.tablename)}
             />
-          ))}
-        </tbody>
-      </Table>
-    </div>
+          ))
+        )}
+      </tbody>
+    </table>
   );
 }

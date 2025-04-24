@@ -1,7 +1,6 @@
 
-import React from "react";
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
-import { Lock } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Activity } from "lucide-react";
 
 interface SecurityEventsCardProps {
   eventsCount: number;
@@ -11,17 +10,22 @@ interface SecurityEventsCardProps {
 export function SecurityEventsCard({ eventsCount, lastEventDate }: SecurityEventsCardProps) {
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-lg">Security Events</CardTitle>
-        <Lock className="h-5 w-5 text-violet-500" />
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium">Security Events</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="text-3xl font-bold">{eventsCount}</div>
-        <p className="text-sm text-muted-foreground mt-2">
-          {eventsCount > 0 
-            ? `Last event: ${lastEventDate}` 
-            : 'No security events recorded'}
-        </p>
+        <div className="flex justify-between items-center mb-2">
+          <div className="text-3xl font-bold">{eventsCount}</div>
+          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100">
+            <Activity className="h-5 w-5 text-blue-600" />
+          </div>
+        </div>
+        
+        {lastEventDate && (
+          <div className="text-xs text-muted-foreground">
+            Last security event: {lastEventDate}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

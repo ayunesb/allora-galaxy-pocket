@@ -1,77 +1,65 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/sonner";
 
-interface MaintenanceConfig {
+interface MaintenanceMode {
   enabled: boolean;
   message: string;
-  allowedRoles?: string[];
+  allowedRoles: string[];
+  startTime: string;
+  endTime: string | null;
 }
 
-/**
- * Hook to check if the application is in maintenance mode
- * Returns maintenance status and configuration
- */
 export function useMaintenanceMode() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [maintenanceMode, setMaintenanceMode] = useState<MaintenanceConfig>({
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [tableExists, setTableExists] = useState<boolean>(true);
+  const [maintenanceMode, setMaintenanceMode] = useState<MaintenanceMode>({
     enabled: false,
-    message: "Allora OS is currently under maintenance. Please check back shortly.",
+    message: "System is currently undergoing maintenance. Please check back later.",
+    allowedRoles: ["admin"],
+    startTime: new Date().toISOString(),
+    endTime: null
   });
-  const [tableExists, setTableExists] = useState(true);
-
+  
   useEffect(() => {
-    const fetchMaintenanceStatus = async () => {
+    const checkMaintenanceMode = async () => {
       try {
-        setIsLoading(true);
-        
-        // First, check if the table exists by trying to query it
-        const { error: tableCheckError } = await supabase
+        const { data, error } = await supabase
           .from("system_config")
-          .select("key")
-          .limit(1);
-          
-        // If there's a PGRST116 error, the table doesn't exist
-        if (tableCheckError && tableCheckError.code === "42P01") {
-          console.warn("system_config table doesn't exist yet.");
-          setTableExists(false);
-          setMaintenanceMode({
-            enabled: false,
-            message: ""
-          });
+          .select("*")
+          .eq("key", "maintenance_mode")
+          .single();
+        
+        if (error) {
+          if (error.code === "PGRST116") { // Table doesn't exist
+            setTableExists(false);
+          } else if (error.code === "PGRST104") { // No rows returned
+            console.info("No maintenance mode configuration found");
+          } else {
+            console.error("Error checking maintenance mode:", error);
+          }
+          setIsLoading(false);
           return;
         }
         
-        // If table exists, proceed with fetching maintenance mode config
-        const { data, error } = await supabase
-          .from("system_config")
-          .select("config")
-          .eq("key", "maintenance_mode")
-          .single();
-
-        if (error) {
-          // If no config is found, assume system is operational
-          if (error.code === "PGRST116") {
-            setMaintenanceMode({
-              enabled: false,
-              message: ""
-            });
-          } else {
-            console.error("Error fetching maintenance status:", error);
-          }
-        } else if (data) {
-          setMaintenanceMode(data.config as MaintenanceConfig);
+        if (data?.config) {
+          setMaintenanceMode({
+            enabled: data.config.enabled || false,
+            message: data.config.message || maintenanceMode.message,
+            allowedRoles: data.config.allowedRoles || ["admin"],
+            startTime: data.config.startTime || new Date().toISOString(),
+            endTime: data.config.endTime || null
+          });
         }
       } catch (err) {
-        console.error("Unexpected error checking maintenance status:", err);
+        console.error("Error checking maintenance mode:", err);
       } finally {
         setIsLoading(false);
       }
     };
-
-    fetchMaintenanceStatus();
+    
+    checkMaintenanceMode();
   }, []);
-
+  
   return { isLoading, maintenanceMode, tableExists };
 }

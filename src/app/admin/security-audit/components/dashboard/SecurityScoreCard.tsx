@@ -1,28 +1,44 @@
 
-import React from "react";
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Shield } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
+import 'react-circular-progressbar/dist/styles.css';
 
 interface SecurityScoreCardProps {
   score: number;
 }
 
 export function SecurityScoreCard({ score }: SecurityScoreCardProps) {
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return "#4ade80"; // green-500
+    if (score >= 50) return "#facc15"; // yellow-500
+    return "#f87171"; // red-400
+  };
+
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-lg">Security Score</CardTitle>
-        <Shield className={`h-5 w-5 ${score > 80 ? 'text-green-500' : score > 50 ? 'text-yellow-500' : 'text-red-500'}`} />
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium">Overall Security Score</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="text-3xl font-bold">{score}%</div>
-        <Progress value={score} className="h-2 mt-2" />
-        <p className="text-sm text-muted-foreground mt-2">
-          {score > 80 ? 'Good security posture' : 
-           score > 50 ? 'Security needs improvement' : 
-           'Critical security issues detected'}
-        </p>
+        <div className="flex items-center justify-center py-4">
+          <div className="w-28 h-28">
+            <CircularProgressbar
+              value={score}
+              text={`${score}%`}
+              styles={buildStyles({
+                textSize: '24px',
+                pathColor: getScoreColor(score),
+                textColor: getScoreColor(score),
+                trailColor: "#e5e7eb"
+              })}
+            />
+          </div>
+        </div>
+        <div className="pt-2 text-center text-sm text-muted-foreground">
+          {score >= 80 && "Good security posture"}
+          {score >= 50 && score < 80 && "Moderate security risks"}
+          {score < 50 && "Critical security issues detected"}
+        </div>
       </CardContent>
     </Card>
   );

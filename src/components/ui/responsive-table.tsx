@@ -1,94 +1,114 @@
 
-import { useIsMobile } from "@/hooks/use-mobile";
-import { 
-  Table,
-  TableHeader,
-  TableBody,
-  TableHead,
-  TableRow,
-  TableCell
-} from "@/components/ui/table";
 import * as React from "react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 
-export interface Column {
-  header: string;
-  accessorKey: string;
-  cell?: (value: any) => React.ReactNode;
+export interface Column<T = any> {
+  header: React.ReactNode;
+  accessorKey: keyof T | string;
+  cell?: (value: any, row?: T) => React.ReactNode;
 }
 
 interface ResponsiveTableProps<T> {
-  columns: Column[];
+  columns: Column<T>[];
   data: T[];
+  isLoading?: boolean;
   emptyMessage?: string;
 }
 
-export function ResponsiveTable<T>({ columns, data, emptyMessage = "No data available" }: ResponsiveTableProps<T>) {
-  const isMobile = useIsMobile();
-  
-  // Mobile card view
-  if (isMobile) {
+export function ResponsiveTable<T>({
+  columns,
+  data,
+  isLoading = false,
+  emptyMessage = "No data available"
+}: ResponsiveTableProps<T>) {
+  const getNestedValue = (obj: any, path: string) => {
+    return path.split('.').reduce((acc, part) => acc && acc[part], obj);
+  };
+
+  if (isLoading) {
     return (
-      <div className="space-y-4">
-        {data.length === 0 ? (
-          <div className="text-center py-4 text-muted-foreground">{emptyMessage}</div>
-        ) : (
-          data.map((row, rowIndex) => (
-            <div 
-              key={rowIndex} 
-              className="border rounded-lg p-4 shadow-sm bg-card space-y-3"
-            >
-              {columns.map((column, columnIndex) => {
-                const value = (row as any)[column.accessorKey];
-                return (
-                  <div key={columnIndex} className="grid grid-cols-[1fr,2fr] gap-3">
-                    <div className="font-medium text-sm text-muted-foreground">{column.header}</div>
-                    <div className="text-sm">
-                      {column.cell ? column.cell(value) : value}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ))
-        )}
+      <div className="flex justify-center items-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
-  // Desktop table view
-  return (
-    <div className="border rounded-md w-full overflow-hidden">
+  if (!data?.length) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        {emptyMessage}
+      </div>
+    );
+  }
+
+  // Desktop view (standard table)
+  const renderDesktopTable = () => (
+    <div className="hidden md:block overflow-auto">
       <Table>
         <TableHeader>
           <TableRow>
-            {columns.map((column, index) => (
-              <TableHead key={index}>{column.header}</TableHead>
+            {columns.map((column, i) => (
+              <TableHead key={i}>{column.header}</TableHead>
             ))}
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={columns.length} className="text-center py-6">
-                {emptyMessage}
-              </TableCell>
+          {data.map((row, i) => (
+            <TableRow key={i}>
+              {columns.map((column, j) => {
+                const value = typeof column.accessorKey === 'string' 
+                  ? getNestedValue(row, column.accessorKey)
+                  : row[column.accessorKey];
+                  
+                return (
+                  <TableCell key={j}>
+                    {column.cell ? column.cell(value, row) : value}
+                  </TableCell>
+                );
+              })}
             </TableRow>
-          ) : (
-            data.map((row, rowIndex) => (
-              <TableRow key={rowIndex}>
-                {columns.map((column, columnIndex) => {
-                  const value = (row as any)[column.accessorKey];
-                  return (
-                    <TableCell key={columnIndex}>
-                      {column.cell ? column.cell(value) : value}
-                    </TableCell>
-                  );
-                })}
-              </TableRow>
-            ))
-          )}
+          ))}
         </TableBody>
       </Table>
     </div>
+  );
+
+  // Mobile view (cards)
+  const renderMobileCards = () => (
+    <div className="md:hidden space-y-4">
+      {data.map((row, i) => (
+        <Card key={i}>
+          <CardContent className="p-4">
+            <dl className="space-y-2">
+              {columns.map((column, j) => {
+                const value = typeof column.accessorKey === 'string' 
+                  ? getNestedValue(row, column.accessorKey)
+                  : row[column.accessorKey];
+                  
+                return (
+                  <div key={j} className="grid grid-cols-3 gap-1">
+                    <dt className="font-semibold text-sm col-span-1">
+                      {column.header}:
+                    </dt>
+                    <dd className="text-sm col-span-2">
+                      {column.cell ? column.cell(value, row) : value}
+                    </dd>
+                  </div>
+                );
+              })}
+            </dl>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+
+  return (
+    <>
+      {renderDesktopTable()}
+      {renderMobileCards()}
+    </>
   );
 }

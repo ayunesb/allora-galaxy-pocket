@@ -1,8 +1,7 @@
 
 import React from "react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Table } from "@/components/ui/table";
-import { Check } from "lucide-react";
+import { AlertCircle, ShieldAlert, Shield } from "lucide-react";
 import type { SecurityAuditIssue } from "../hooks/useSecurityAudit";
 
 interface SecurityIssuesListProps {
@@ -10,46 +9,48 @@ interface SecurityIssuesListProps {
 }
 
 export function SecurityIssuesList({ issues }: SecurityIssuesListProps) {
-  if (issues.length === 0) {
+  if (!issues || issues.length === 0) {
     return (
-      <Alert className="mb-4 bg-green-50 border-green-200">
-        <Check className="h-4 w-4 text-green-600" />
-        <AlertTitle>No security issues found</AlertTitle>
+      <Alert variant="default" className="mb-4 bg-green-50 border-green-200">
+        <Shield className="h-4 w-4 text-green-500" />
+        <AlertTitle>No security issues detected</AlertTitle>
         <AlertDescription>
-          All views are created without SECURITY DEFINER and all tables have RLS enabled.
+          All tables appear to have proper security configurations
         </AlertDescription>
       </Alert>
     );
   }
 
   return (
-    <div className="mb-6">
-      <h3 className="text-lg font-medium mb-3">Security Issues ({issues.length})</h3>
-      <Table>
-        <thead>
-          <tr className="bg-muted">
-            <th className="p-3 border">Type</th>
-            <th className="p-3 border">Name</th>
-            <th className="p-3 border">Detail</th>
-            <th className="p-3 border">Remediation</th>
-          </tr>
-        </thead>
-        <tbody>
-          {issues.map((issue, index) => (
-            <tr key={index} className="border-b">
-              <td className="p-3 border">
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                  {issue.type === 'security_definer_view' ? 'Security Definer View' : 
-                   issue.type === 'rls_disabled' ? 'RLS Disabled' : 'Incomplete RLS'}
-                </span>
-              </td>
-              <td className="p-3 border font-mono text-sm">{issue.name}</td>
-              <td className="p-3 border">{issue.detail}</td>
-              <td className="p-3 border text-sm">{issue.remediation}</td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
+    <div className="space-y-4 mb-6">
+      <Alert variant="destructive" className="mb-2">
+        <ShieldAlert className="h-4 w-4" />
+        <AlertTitle>Security issues detected</AlertTitle>
+        <AlertDescription>
+          {issues.length} potential security issues found that require attention
+        </AlertDescription>
+      </Alert>
+
+      <div className="space-y-2">
+        {issues.map((issue, index) => (
+          <Alert 
+            key={index} 
+            variant={issue.type === 'rls_disabled' ? "destructive" : "default"}
+            className="border-l-4 border-l-amber-500"
+          >
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 mt-0.5" />
+              <div>
+                <AlertTitle className="font-mono">{issue.name}</AlertTitle>
+                <AlertDescription>
+                  <p>{issue.detail}</p>
+                  <p className="mt-1 text-sm font-medium">Recommendation: {issue.remediation}</p>
+                </AlertDescription>
+              </div>
+            </div>
+          </Alert>
+        ))}
+      </div>
     </div>
   );
 }

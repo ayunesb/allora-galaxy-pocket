@@ -3200,6 +3200,16 @@ export type Database = {
         }
         Relationships: []
       }
+      rls_audit_view: {
+        Row: {
+          has_auth_policy: boolean | null
+          has_tenant_id: boolean | null
+          rls_enabled: boolean | null
+          security_level: string | null
+          table_name: string | null
+        }
+        Relationships: []
+      }
       strategy_approval_stats: {
         Row: {
           ai_approved: number | null
@@ -3368,6 +3378,15 @@ export type Database = {
           rls_enabled: boolean
         }[]
       }
+      check_table_security_status: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          table_name: string
+          rls_enabled: boolean
+          has_tenant_id: boolean
+          has_auth_policy: boolean
+        }[]
+      }
       check_table_tenant_rls_status: {
         Args: { table_name: string }
         Returns: {
@@ -3424,9 +3443,6 @@ export type Database = {
         Returns: {
           tablename: string
           policyname: string
-          has_auth_reference: boolean
-          has_tenant_reference: boolean
-          is_full_policy: boolean
         }[]
       }
       get_latest_weekly_summaries: {
