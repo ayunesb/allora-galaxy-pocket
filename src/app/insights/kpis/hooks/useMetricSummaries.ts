@@ -12,7 +12,7 @@ export function useMetricSummaries(
     return metrics.map(metric => {
       // Check if there are any alerts for this metric
       const hasAlert = alerts.some(
-        alert => alert.metric === metric.metric && alert.status !== 'resolved'
+        alert => alert.kpi_name === metric.metric && alert.outcome !== 'resolved'
       );
       
       return {

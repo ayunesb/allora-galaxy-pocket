@@ -31,16 +31,21 @@ export interface KpiFilter {
 export interface KpiAlert {
   id: string;
   kpi_name: string;
+  metric?: string; // Added to match usage in components
   description: string;
   severity: 'low' | 'medium' | 'high';
   current_value?: number;
   previous_value?: number;
   target?: number;
+  threshold?: number; // Added to match usage in components
   percent_change?: number;
   outcome: 'pending' | 'success' | 'failed' | 'resolved';
   created_at: string;
   tenant_id: string;
   campaign_id?: string;
+  condition?: '<' | '>' | 'falls_by_%' | 'rises_by_%'; // Added to match usage in components
+  triggered_at?: string; // Added to match usage in components
+  status?: 'pending' | 'triggered' | 'resolved'; // Added to match usage in components
 }
 
 export interface KpiAlertRule {

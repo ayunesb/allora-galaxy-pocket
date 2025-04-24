@@ -39,7 +39,7 @@ export default function KpiAlertsPanel({ alerts }: KpiAlertsPanelProps) {
             >
               <div>
                 <div className="font-medium mb-1">
-                  {alert.metric} {alert.condition === 'above' ? '>' : '<'} {alert.threshold}
+                  {alert.kpi_name} {alert.condition === 'above' ? '>' : '<'} {alert.threshold}
                 </div>
                 <div className="text-sm text-muted-foreground">
                   {alert.triggered_at ? (
@@ -56,7 +56,7 @@ export default function KpiAlertsPanel({ alerts }: KpiAlertsPanelProps) {
                   'secondary'
                 }
               >
-                {alert.status}
+                {alert.status || alert.outcome}
               </Badge>
             </div>
           ))}

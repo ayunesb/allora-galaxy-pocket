@@ -26,7 +26,7 @@ export default function KpiCard({
     'text-gray-500';
 
   const chartData = historicalData?.map(item => ({
-    date: new Date(item.recorded_at).toLocaleDateString(),
+    date: new Date(item.date).toLocaleDateString(),
     value: item.value
   })) || [];
 
