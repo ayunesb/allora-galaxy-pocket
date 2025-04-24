@@ -54,7 +54,13 @@ export default function KpiDashboard() {
     enabled: !!tenant?.id,
   });
 
-  const { alerts = [], isLoading: isLoadingAlerts, error: alertsError, triggerKpiCheck } = useKpiAlerts();
+  const { 
+    alerts = [], 
+    isLoading: isLoadingAlerts, 
+    error: alertsError, 
+    triggerKpiCheck 
+  } = useKpiAlerts();
+
   const metricSummaries: KpiMetric[] = metrics.map(metric => ({
     id: metric.id || '',
     kpi_name: metric.metric || 'Unnamed Metric',
@@ -69,12 +75,16 @@ export default function KpiDashboard() {
   const isLoading = isLoadingMetrics || isLoadingAlerts;
   const error = metricsError || alertsError;
 
+  const handleRetry = () => {
+    triggerKpiCheck(tenant?.id);
+  };
+
   if (isLoading) {
     return <KpiLoadingState />;
   }
 
   if (error) {
-    return <KpiErrorState error={error} />;
+    return <KpiErrorState error={error} onRetry={handleRetry} />;
   }
 
   // Add fallback UI for empty metrics state

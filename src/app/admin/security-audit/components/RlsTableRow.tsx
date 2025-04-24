@@ -7,7 +7,7 @@ import { NoRlsPoliciesRow } from "./rows/NoRlsPoliciesRow";
 import { PolicyRow } from "./rows/PolicyRow";
 import { DebugErrorBoundary } from "@/components/DebugErrorBoundary";
 
-interface RlsTableRowProps {
+export interface RlsTableRowProps {
   table: RlsTable;
   testResult?: AccessTestResult;
 }

@@ -190,7 +190,7 @@ export function StrategyApprovalFlow({ strategyId, onApproved, onDeclined }: Str
     
     if (success) {
       // Trigger KPI check to establish baseline metrics
-      await triggerKpiCheck(tenant?.id || '');
+      await triggerKpiCheck(tenant?.id);
       
       setShowCampaignPrompt(false);
     }

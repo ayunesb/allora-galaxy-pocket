@@ -78,9 +78,12 @@ export function useKpiAlerts(options?: KpiAlertsOptions) {
       
       if (error) throw error;
       
+      toast.success("KPI check triggered successfully");
+      await refreshAlerts();
       return true;
     } catch (err) {
       console.error("Error checking KPI alerts:", err);
+      toast.error(`Error checking KPI alerts: ${(err as Error).message}`);
       return false;
     } finally {
       setIsLoading(false);
