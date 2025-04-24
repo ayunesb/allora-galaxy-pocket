@@ -17,26 +17,39 @@ import { InvoiceMonthSelector } from "./InvoiceMonthSelector";
 import { InvoiceActions } from "./InvoiceActions";
 import { InvoicePreview } from "./InvoicePreview";
 
-function useBillingPeriods(initialOpen: boolean = false) {
+export function InvoiceGenerator() {
   const { tenant } = useTenant();
   const [availableMonths, setAvailableMonths] = useState<string[]>([]);
   const [selectedMonth, setSelectedMonth] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [invoiceHtml, setInvoiceHtml] = useState<string>("");
-  const [dialogOpen, setDialogOpen] = useState(initialOpen);
+  const [dialogOpen, setDialogOpen] = useState(false);
   
-  // Fetch available billing months from Supabase RPC
+  // Fetch available billing months from Supabase
   const fetchAvailableMonths = async () => {
     if (!tenant?.id) return;
     try {
       setIsLoading(true);
-      const { data, error } = await supabase.rpc('get_tenant_billing_months', {
-        p_tenant_id: tenant.id
-      });
+      // Use credit_usage_log to find months with billing activity
+      const { data, error } = await supabase
+        .from('credit_usage_log')
+        .select('created_at')
+        .eq('tenant_id', tenant.id)
+        .order('created_at', { ascending: false });
+        
       if (error) throw error;
+      
       if (data && data.length > 0) {
-        setAvailableMonths(data);
-        setSelectedMonth(data[0]);
+        // Extract unique months in YYYY-MM format
+        const months = [...new Set(data.map(item => {
+          const date = new Date(item.created_at);
+          return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        }))];
+        
+        setAvailableMonths(months);
+        if (months.length > 0) {
+          setSelectedMonth(months[0]);
+        }
       } else {
         toast.info("No billing data available");
       }
@@ -48,23 +61,28 @@ function useBillingPeriods(initialOpen: boolean = false) {
     }
   };
   
-  // Generate invoice html via Supabase Edge Function
+  // Generate invoice html
   const generateInvoice = async () => {
     if (!tenant?.id || !selectedMonth) {
       toast.error("Please select a billing period");
       return;
     }
+    
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-invoice-pdf", {
-        body: { tenant_id: tenant.id, month: selectedMonth }
+      const { data, error } = await supabase.functions.invoke('generate-invoice-pdf', {
+        body: { 
+          tenantId: tenant.id, 
+          month: selectedMonth 
+        }
       });
+      
       if (error) throw error;
-      if (data.invoiceHtml) {
-        setInvoiceHtml(data.invoiceHtml);
-        toast.success("Invoice generated successfully");
+      
+      if (data?.html) {
+        setInvoiceHtml(data.html);
       } else {
-        toast.info("No invoice data for the selected period");
+        throw new Error("No invoice data returned");
       }
     } catch (error) {
       console.error("Error generating invoice:", error);
@@ -74,108 +92,82 @@ function useBillingPeriods(initialOpen: boolean = false) {
     }
   };
   
-  // Email invoice using Supabase Edge Function
-  const emailInvoice = async (userEmail?: string | null) => {
-    if (!tenant?.id || !selectedMonth || !userEmail) {
-      toast.error("Missing required information");
+  // Download as PDF
+  const downloadInvoice = () => {
+    if (!invoiceHtml) return;
+    
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast.error("Pop-up blocked. Please allow pop-ups and try again.");
       return;
     }
     
-    setIsLoading(true);
-    try {
-      const { error } = await supabase.functions.invoke("generate-invoice-pdf", {
-        body: {
-          tenant_id: tenant.id,
-          month: selectedMonth,
-          email_to: userEmail
-        }
-      });
-      
-      if (error) throw error;
-      
-      toast.success("Invoice emailed successfully");
-    } catch (error) {
-      console.error("Error emailing invoice:", error);
-      toast.error("Failed to email invoice");
-    } finally {
-      setIsLoading(false);
+    printWindow.document.write(invoiceHtml);
+    printWindow.document.close();
+    
+    setTimeout(() => {
+      printWindow.print();
+    }, 500);
+  };
+  
+  // View invoice
+  const viewInvoice = () => {
+    if (!invoiceHtml) return;
+    
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast.error("Pop-up blocked. Please allow pop-ups and try again.");
+      return;
     }
+    
+    printWindow.document.write(invoiceHtml);
+    printWindow.document.close();
   };
   
-  return {
-    availableMonths,
-    selectedMonth,
-    setSelectedMonth,
-    isLoading,
-    invoiceHtml,
-    dialogOpen,
-    setDialogOpen,
-    fetchAvailableMonths,
-    generateInvoice,
-    emailInvoice,
-  };
-}
-
-export function InvoiceGenerator() {
-  const { user } = useAuth();
-  const {
-    availableMonths,
-    selectedMonth,
-    setSelectedMonth,
-    isLoading,
-    invoiceHtml,
-    dialogOpen,
-    setDialogOpen,
-    fetchAvailableMonths,
-    generateInvoice,
-    emailInvoice,
-  } = useBillingPeriods();
-  
-  // When dialog opens, fetch available months
+  // Fetch months when dialog opens
   useEffect(() => {
     if (dialogOpen) {
       fetchAvailableMonths();
     }
-  }, [dialogOpen]);
+  }, [dialogOpen, tenant?.id]);
   
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={() => setDialogOpen(true)}
-        >
-          <FileText className="h-4 w-4 mr-2" />
-          View Invoices
+        <Button variant="outline" size="sm">
+          <FileText className="mr-2 h-4 w-4" />
+          Generate Invoice
         </Button>
       </DialogTrigger>
-
-      <DialogContent className="sm:max-w-[800px]">
+      <DialogContent className="max-w-4xl">
         <DialogHeader>
-          <DialogTitle>Credit Usage Invoice</DialogTitle>
+          <DialogTitle>Invoice Generator</DialogTitle>
         </DialogHeader>
-
-        <div className="space-y-4 py-4">
-          <div className="flex items-center gap-4">
-            <InvoiceMonthSelector 
-              selectedMonth={selectedMonth}
+        
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row justify-between gap-4">
+            <InvoiceMonthSelector
               availableMonths={availableMonths}
-              onSelectMonth={setSelectedMonth}
-              isLoading={isLoading}
-            />
-
-            <InvoiceActions 
-              onGenerate={generateInvoice}
-              onEmail={() => emailInvoice(user?.email)}
-              isLoading={isLoading}
               selectedMonth={selectedMonth}
+              onSelectMonth={setSelectedMonth}
+              isDisabled={isLoading}
             />
+            
+            <Button 
+              onClick={generateInvoice} 
+              disabled={isLoading || !selectedMonth}
+            >
+              Generate Invoice
+            </Button>
           </div>
-
-          <InvoicePreview 
+          
+          <InvoicePreview invoiceHtml={invoiceHtml} isGenerating={isLoading} />
+          
+          <InvoiceActions
             invoiceHtml={invoiceHtml}
-            isLoading={isLoading}
+            isGenerating={isLoading}
+            onDownload={downloadInvoice}
+            onPrint={viewInvoice}
           />
         </div>
       </DialogContent>

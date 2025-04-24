@@ -1,33 +1,44 @@
 
 import { Button } from "@/components/ui/button";
-import { Loader2, FileText, Mail } from "lucide-react";
+import { Download, Eye, Loader2 } from "lucide-react";
 
 interface InvoiceActionsProps {
-  onGenerate: () => void;
-  onEmail: () => void;
-  isLoading: boolean;
-  selectedMonth: string;
+  invoiceHtml: string;
+  isGenerating: boolean;
+  onDownload: () => void;
+  onPrint: () => void;
 }
 
-export function InvoiceActions({ onGenerate, onEmail, isLoading, selectedMonth }: InvoiceActionsProps) {
+export function InvoiceActions({ 
+  invoiceHtml, 
+  isGenerating, 
+  onDownload, 
+  onPrint 
+}: InvoiceActionsProps) {
+  
   return (
-    <>
+    <div className="flex justify-end space-x-2 mt-4">
       <Button 
-        onClick={onGenerate} 
-        disabled={isLoading || !selectedMonth}
+        variant="outline" 
+        size="sm"
+        onClick={onPrint}
+        disabled={isGenerating || !invoiceHtml}
       >
-        {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FileText className="h-4 w-4 mr-2" />}
-        Generate Invoice
+        <Eye className="mr-2 h-4 w-4" />
+        View
       </Button>
       
       <Button 
-        variant="outline" 
-        onClick={onEmail} 
-        disabled={isLoading || !selectedMonth}
+        onClick={onDownload}
+        disabled={isGenerating || !invoiceHtml}
       >
-        <Mail className="h-4 w-4 mr-2" />
-        Email Invoice
+        {isGenerating ? (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        ) : (
+          <Download className="mr-2 h-4 w-4" />
+        )}
+        Download
       </Button>
-    </>
+    </div>
   );
 }

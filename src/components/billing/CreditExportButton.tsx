@@ -1,60 +1,75 @@
 
-import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
 import { useState } from "react";
-import { useTenant } from "@/hooks/useTenant";
+import { Button } from "@/components/ui/button";
+import { Download, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenant } from "@/hooks/useTenant";
 import { toast } from "sonner";
-import { exportToCSV } from "@/lib/export/exportCSV";
 
 export function CreditExportButton() {
-  const [isLoading, setIsLoading] = useState(false);
   const { tenant } = useTenant();
-
-  const downloadCreditLog = async () => {
-    if (!tenant?.id) {
-      toast.error("No tenant ID available");
-      return;
-    }
-
-    setIsLoading(true);
+  const [isExporting, setIsExporting] = useState(false);
+  
+  const handleExport = async () => {
+    if (!tenant?.id || isExporting) return;
+    
+    setIsExporting(true);
     try {
       const { data, error } = await supabase
         .from('credit_usage_log')
         .select('*')
         .eq('tenant_id', tenant.id)
         .order('created_at', { ascending: false });
-
+      
       if (error) throw error;
       
-      if (!data || data.length === 0) {
-        toast.info("No credit usage data found");
-        return;
-      }
-
-      exportToCSV(data, `allora-credits-${tenant.id}-${new Date().toISOString().split('T')[0]}`);
-      toast.success("Credit usage log downloaded successfully");
-    } catch (error) {
-      console.error("Error downloading credit log:", error);
-      toast.error("Failed to download credit usage log");
+      // Convert to CSV
+      const headers = ['Date', 'Agent', 'Module', 'Credits Used'];
+      const csvData = data.map(row => [
+        new Date(row.created_at).toLocaleDateString(),
+        row.agent_name,
+        row.module,
+        row.credits_used
+      ]);
+      
+      // Add headers
+      csvData.unshift(headers);
+      
+      // Convert to CSV string
+      const csvString = csvData.map(row => row.join(',')).join('\n');
+      
+      // Create download
+      const blob = new Blob([csvString], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `credit-usage-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success("Credit usage exported successfully");
+    } catch (err) {
+      console.error("Error exporting credits:", err);
+      toast.error("Failed to export credit usage");
     } finally {
-      setIsLoading(false);
+      setIsExporting(false);
     }
   };
-
+  
   return (
     <Button 
       variant="outline" 
-      size="sm" 
-      onClick={downloadCreditLog} 
-      disabled={isLoading}
+      size="sm"
+      onClick={handleExport}
+      disabled={isExporting}
     >
-      {isLoading ? "Exporting..." : (
-        <>
-          <Download className="h-4 w-4 mr-2" />
-          Export Credits CSV
-        </>
+      {isExporting ? (
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+      ) : (
+        <Download className="mr-2 h-4 w-4" />
       )}
+      Export Usage
     </Button>
   );
 }

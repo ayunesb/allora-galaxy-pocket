@@ -1,48 +1,84 @@
 
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { useBillingProfile } from "@/hooks/useBillingProfile";
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
 import { AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useCreditsManager } from "@/hooks/useCreditsManager";
 
 export function CreditsDisplay() {
   const { profile, isLoading } = useBillingProfile();
+  const { getRemainingCredits } = useCreditsManager();
+  const [credits, setCredits] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
 
-  if (isLoading) {
+  useEffect(() => {
+    async function fetchCredits() {
+      if (profile) {
+        const remaining = await getRemainingCredits();
+        setCredits(remaining);
+        setLoading(false);
+      } else if (!isLoading) {
+        setLoading(false);
+      }
+    }
+    
+    fetchCredits();
+  }, [profile, isLoading, getRemainingCredits]);
+
+  if (loading) {
     return (
-      <div className="mt-4 px-4">
-        <Progress value={0} className="h-2" />
-        <p className="text-xs mt-1">Loading credits...</p>
-      </div>
+      <div className="animate-pulse h-10 w-full bg-gray-200 rounded"></div>
     );
   }
 
   if (!profile) {
-    return null;
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Billing profile not found</AlertTitle>
+        <AlertDescription>
+          Please contact support if this issue persists.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+  
+  // Get total credits based on plan
+  const totalCredits = profile.plan === 'standard' ? 100 : 
+                       profile.plan === 'growth' ? 500 : 1000;
+                       
+  // Calculate percentage
+  const percentage = Math.min(100, Math.max(0, (credits / totalCredits) * 100));
+  
+  // Determine status color
+  let statusColor = "text-green-600";
+  let progressColor = "bg-green-600";
+  
+  if (percentage < 25) {
+    statusColor = "text-red-600";
+    progressColor = "bg-red-600";
+  } else if (percentage < 50) {
+    statusColor = "text-yellow-600";
+    progressColor = "bg-yellow-600";
   }
 
-  const credits = profile.credits;
-  const monthlyCredits = profile.plan === 'standard' ? 100 : profile.plan === 'growth' ? 500 : 1000;
-  const used = monthlyCredits - credits;
-  const percentUsed = (used / monthlyCredits) * 100;
-  const isLowCredits = credits < monthlyCredits * 0.1;
-
   return (
-    <div className="mt-4 px-4">
-      <p className="text-xs text-muted-foreground">Credits Used</p>
-      <Progress value={percentUsed} className="h-2" />
-      <p className="text-xs mt-1">{credits} / {monthlyCredits} remaining</p>
-      {isLowCredits && (
-        <div className="mt-2">
-          <p className="text-xs text-yellow-500 flex items-center gap-1">
-            <AlertCircle className="h-3 w-3" />
-            Low credits — consider upgrading
-          </p>
-          <Button asChild variant="ghost" size="sm" className="mt-2 w-full">
-            <Link to="/pricing">Upgrade Plan</Link>
-          </Button>
-        </div>
-      )}
+    <div className="space-y-2">
+      <div className="flex justify-between items-center">
+        <span className={`font-bold text-2xl ${statusColor}`}>{credits}</span>
+        <span className="text-sm text-muted-foreground">of {totalCredits} credits</span>
+      </div>
+      
+      <Progress 
+        value={percentage} 
+        className="h-2"
+        indicatorClassName={progressColor} 
+      />
+      
+      <p className="text-sm text-muted-foreground mt-2">
+        Credits renew with your billing cycle
+      </p>
     </div>
   );
 }

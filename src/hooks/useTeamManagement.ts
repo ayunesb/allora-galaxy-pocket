@@ -1,39 +1,65 @@
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useTenant } from "@/hooks/useTenant";
+import { useTenant } from "./useTenant";
 import { toast } from "sonner";
 import { UserRole } from "@/types/invite";
+
+interface TeamMember {
+  id: string;
+  user_id: string;
+  tenant_id: string;
+  role: UserRole;
+  profiles: {
+    email: string;
+  };
+  created_at: string;
+}
+
+interface RoleUpdateParams {
+  userId: string;
+  role: UserRole;
+}
+
+interface InviteParams {
+  email: string;
+  role: UserRole;
+}
 
 export function useTeamManagement() {
   const { tenant } = useTenant();
   const queryClient = useQueryClient();
-
-  const { data: teamMembers, isLoading: isLoadingMembers } = useQuery({
+  const [isInviting, setIsInviting] = useState(false);
+  
+  // Fetch team members
+  const { 
+    data: teamMembers,
+    isLoading: isLoadingMembers,
+    error: teamError
+  } = useQuery({
     queryKey: ['team-members', tenant?.id],
     queryFn: async () => {
       if (!tenant?.id) return [];
       
       const { data, error } = await supabase
         .from('tenant_user_roles')
-        .select(`
-          id,
-          user_id,
-          role,
-          profiles:user_id (
-            email
-          )
-        `)
+        .select('*, profiles:user_id(*)')
         .eq('tenant_id', tenant.id);
-
+      
       if (error) throw error;
-      return data;
+      return data as TeamMember[];
     },
     enabled: !!tenant?.id
   });
-
-  const { data: pendingInvites, isLoading: isLoadingInvites } = useQuery({
-    queryKey: ['team-invites', tenant?.id],
+  
+  // Fetch pending invites
+  const { 
+    data: pendingInvites,
+    isLoading: isLoadingInvites,
+    error: invitesError
+  } = useQuery({
+    queryKey: ['pending-invites', tenant?.id],
     queryFn: async () => {
       if (!tenant?.id) return [];
       
@@ -41,66 +67,76 @@ export function useTeamManagement() {
         .from('team_invites')
         .select('*')
         .eq('tenant_id', tenant.id)
-        .is('accepted_at', null)
-        .gt('expires_at', new Date().toISOString());
-
+        .is('accepted_at', null);
+      
       if (error) throw error;
       return data;
     },
     enabled: !!tenant?.id
   });
-
-  const inviteMutation = useMutation({
-    mutationFn: async ({ email, role }: { email: string; role: UserRole }) => {
-      if (!tenant?.id) throw new Error("No tenant selected");
-      
-      const { error } = await supabase
-        .from('team_invites')
-        .insert({
-          email,
-          role,
-          tenant_id: tenant.id
-        });
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['team-invites', tenant?.id] });
-      toast("Team invitation sent successfully");
-    },
-    onError: (error) => {
-      toast("Failed to send invitation");
-      console.error("Invitation error:", error);
-    }
-  });
-
+  
+  // Update user role
   const updateRoleMutation = useMutation({
-    mutationFn: async ({ userId, role }: { userId: string; role: UserRole }) => {
-      if (!tenant?.id) throw new Error("No tenant selected");
+    mutationFn: async ({ userId, role }: RoleUpdateParams) => {
+      if (!tenant?.id) return false;
       
       const { error } = await supabase
         .from('tenant_user_roles')
         .update({ role })
         .eq('tenant_id', tenant.id)
         .eq('user_id', userId);
-
+      
       if (error) throw error;
+      return true;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['team-members', tenant?.id] });
-      toast("Role updated successfully");
+      queryClient.invalidateQueries({ queryKey: ['team-members'] });
+      toast.success("Role updated successfully");
     },
-    onError: () => {
-      toast("Failed to update role");
+    onError: (error) => {
+      console.error("Error updating role:", error);
+      toast.error("Failed to update role");
     }
   });
-
+  
+  // Invite team member
+  const inviteTeamMember = async ({ email, role }: InviteParams) => {
+    if (!tenant?.id || isInviting) return;
+    
+    setIsInviting(true);
+    try {
+      const { error } = await supabase
+        .from('team_invites')
+        .insert({
+          tenant_id: tenant.id,
+          email,
+          role,
+          created_by: (await supabase.auth.getUser()).data.user?.id
+        });
+      
+      if (error) throw error;
+      
+      // Refresh invites
+      queryClient.invalidateQueries({ queryKey: ['pending-invites'] });
+      
+      toast.success(`Invitation sent to ${email}`);
+    } catch (err) {
+      console.error("Error inviting team member:", err);
+      toast.error("Failed to send invitation");
+    } finally {
+      setIsInviting(false);
+    }
+  };
+  
   return {
     teamMembers,
-    pendingInvites,
     isLoadingMembers,
+    teamError,
+    pendingInvites,
     isLoadingInvites,
-    inviteTeamMember: inviteMutation.mutate,
-    updateRole: updateRoleMutation.mutate
+    invitesError,
+    updateRole: updateRoleMutation.mutate,
+    inviteTeamMember,
+    isInviting
   };
 }

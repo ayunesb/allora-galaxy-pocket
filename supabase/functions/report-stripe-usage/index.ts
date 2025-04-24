@@ -9,77 +9,109 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { tenant_id, credits_used, timestamp } = await req.json();
-    
-    if (!tenant_id || !credits_used) {
-      return new Response(JSON.stringify({ error: "Missing required parameters" }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
+    // Initialize Supabase client with service role key to bypass RLS
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get tenant's stripe subscription item ID
-    const { data: billingData, error: billingError } = await supabase
+    // Get request parameters
+    const { tenant_id, credits_used, timestamp } = await req.json();
+    
+    if (!tenant_id || credits_used === undefined) {
+      throw new Error("Missing required parameters");
+    }
+    
+    console.log(`Reporting ${credits_used} credits for tenant ${tenant_id}`);
+    
+    // Get the billing profile for the tenant
+    const { data: billing, error: billingError } = await supabase
       .from('billing_profiles')
       .select('stripe_subscription_item_id')
       .eq('user_id', tenant_id)
       .single();
-
-    if (billingError || !billingData?.stripe_subscription_item_id) {
-      console.error("Error fetching billing profile or no subscription item ID:", billingError);
-      return new Response(JSON.stringify({ error: "No subscription found for tenant" }), {
+    
+    if (billingError || !billing?.stripe_subscription_item_id) {
+      console.error("No subscription item found:", billingError);
+      return new Response(JSON.stringify({ 
+        error: "No active subscription item found for tenant",
+        details: billingError?.message 
+      }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
-
-    // Report usage to Stripe
+    
+    // Initialize Stripe
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
       apiVersion: '2023-10-16'
     });
-
+    
+    // Report usage to Stripe
     const usageRecord = await stripe.subscriptionItems.createUsageRecord(
-      billingData.stripe_subscription_item_id,
+      billing.stripe_subscription_item_id,
       {
         quantity: credits_used,
         timestamp: timestamp || Math.floor(Date.now() / 1000),
         action: 'increment'
       }
     );
-
-    // Log the usage report in system_logs
+    
+    console.log(`Reported usage to Stripe: ${JSON.stringify(usageRecord)}`);
+    
+    // Log the usage in our system
     await supabase
-      .from('system_logs')
+      .from('stripe_usage_reports')
       .insert({
         tenant_id,
-        event_type: 'stripe_usage_report',
-        message: `Reported ${credits_used} credits to Stripe`,
-        meta: {
-          subscription_item_id: billingData.stripe_subscription_item_id,
-          usage_record_id: usageRecord.id,
-          credits_used
-        }
+        subscription_item_id: billing.stripe_subscription_item_id,
+        credits_used,
+        status: 'success',
+        stripe_usage_record_id: usageRecord.id
       });
-
-    return new Response(JSON.stringify({ success: true, usage_record: usageRecord }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+    
+    // Log the action
+    await supabase
+      .from('cron_job_logs')
+      .insert({
+        function_name: 'report-stripe-usage',
+        status: 'success',
+        message: `Reported ${credits_used} credits for tenant ${tenant_id}`,
+        meta: { tenant_id, credits_used, usage_record_id: usageRecord.id }
+      });
+    
+    return new Response(
+      JSON.stringify({ success: true, usage_record_id: usageRecord.id }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   } catch (error) {
-    console.error("Error reporting usage to Stripe:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+    console.error("Error in report-stripe-usage:", error.message);
+    
+    // Log error
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+    
+    await supabase
+      .from('cron_job_logs')
+      .insert({
+        function_name: 'report-stripe-usage',
+        status: 'error',
+        message: `Error: ${error.message}`
+      });
+    
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
   }
 });

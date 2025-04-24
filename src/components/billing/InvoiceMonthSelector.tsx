@@ -1,25 +1,34 @@
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format } from "date-fns";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { format, parse } from "date-fns";
 
 interface InvoiceMonthSelectorProps {
-  selectedMonth: string;
   availableMonths: string[];
+  selectedMonth: string;
   onSelectMonth: (month: string) => void;
-  isLoading: boolean;
+  isDisabled: boolean;
 }
 
 export function InvoiceMonthSelector({
-  selectedMonth,
   availableMonths,
+  selectedMonth,
   onSelectMonth,
-  isLoading
+  isDisabled
 }: InvoiceMonthSelectorProps) {
-  const formatMonthOption = (dateStr: string) => {
+  
+  const formatMonthLabel = (month: string) => {
     try {
-      return format(new Date(dateStr), "MMMM yyyy");
+      // Parse the YYYY-MM format and format into a nice display
+      const date = parse(month, "yyyy-MM", new Date());
+      return format(date, "MMMM yyyy");
     } catch (e) {
-      return dateStr;
+      return month;
     }
   };
 
@@ -27,15 +36,15 @@ export function InvoiceMonthSelector({
     <Select 
       value={selectedMonth} 
       onValueChange={onSelectMonth}
-      disabled={isLoading || availableMonths.length === 0}
+      disabled={isDisabled}
     >
-      <SelectTrigger className="w-[180px]">
-        <SelectValue placeholder="Select period" />
+      <SelectTrigger className="w-full md:w-[200px]">
+        <SelectValue placeholder="Select billing month" />
       </SelectTrigger>
       <SelectContent>
-        {availableMonths.map((month) => (
+        {availableMonths.map(month => (
           <SelectItem key={month} value={month}>
-            {formatMonthOption(month)}
+            {formatMonthLabel(month)}
           </SelectItem>
         ))}
       </SelectContent>

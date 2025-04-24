@@ -1,7 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,141 +13,249 @@ serve(async (req) => {
   }
 
   try {
-    const { tenant_id, month, email_to } = await req.json();
-    
-    if (!tenant_id || !month) {
-      return new Response(JSON.stringify({ error: "Missing required parameters" }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
+    // Initialize Supabase client with service role key
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get tenant details
-    const { data: tenantData, error: tenantError } = await supabase
-      .from('tenant_profiles')
-      .select('name')
-      .eq('id', tenant_id)
-      .single();
+    // Get request parameters
+    const { tenantId, month } = await req.json();
+    
+    if (!tenantId || !month) {
+      throw new Error("Missing required parameters");
+    }
 
+    console.log(`Generating invoice for tenant ${tenantId} for month ${month}`);
+    
+    // Get tenant details
+    const { data: tenant, error: tenantError } = await supabase
+      .from('tenant_profiles')
+      .select('*')
+      .eq('id', tenantId)
+      .single();
+      
     if (tenantError) {
       throw new Error(`Error fetching tenant: ${tenantError.message}`);
     }
 
-    // Query the tenant_invoice_data view for the invoice data
-    const { data: invoiceData, error: invoiceError } = await supabase
-      .from('tenant_invoice_data')
+    // Get billing profile
+    const { data: billing, error: billingError } = await supabase
+      .from('billing_profiles')
       .select('*')
-      .eq('tenant_id', tenant_id)
-      .eq('billing_month', month);
-
-    if (invoiceError) {
-      throw new Error(`Error fetching invoice data: ${invoiceError.message}`);
+      .eq('user_id', tenantId)
+      .single();
+    
+    if (billingError && billingError.code !== 'PGRST116') {
+      throw new Error(`Error fetching billing profile: ${billingError.message}`);
     }
 
-    if (!invoiceData || invoiceData.length === 0) {
-      return new Response(JSON.stringify({ message: "No invoice data found for this period" }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+    // Parse month and create date range
+    const [year, monthNum] = month.split('-').map(Number);
+    const startDate = new Date(year, monthNum - 1, 1).toISOString();
+    const endDate = new Date(year, monthNum, 0).toISOString();
+    
+    // Get credit usage for the month
+    const { data: usage, error: usageError } = await supabase
+      .from('credit_usage_log')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .gte('created_at', startDate)
+      .lte('created_at', endDate)
+      .order('created_at', { ascending: false });
+    
+    if (usageError) {
+      throw new Error(`Error fetching usage data: ${usageError.message}`);
     }
-
-    // Calculate totals
-    const totalCredits = invoiceData.reduce((sum, item) => sum + item.credits, 0);
-    const startDate = new Date(Math.min(...invoiceData.map(item => new Date(item.start_date).getTime()))).toLocaleDateString();
-    const endDate = new Date(Math.max(...invoiceData.map(item => new Date(item.end_date).getTime()))).toLocaleDateString();
-
-    // Generate an HTML invoice
-    const rows = invoiceData.map(item => `
-      <tr style="border-bottom: 1px solid #eee;">
-        <td style="padding: 8px;">${item.agent_name}</td>
-        <td style="padding: 8px;">${item.module}</td>
-        <td style="padding: 8px;">${item.action || 'N/A'}</td>
-        <td style="padding: 8px; text-align: right;">${item.credits}</td>
-      </tr>
-    `).join('');
-
+    
+    // Calculate total usage
+    const totalCreditsUsed = usage?.reduce((sum, item) => sum + (item.credits_used || 0), 0) || 0;
+    
+    // Get current date for invoice date
+    const invoiceDate = new Date().toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+    
+    // Generate invoice number
+    const invoiceNumber = `INV-${tenantId.substring(0, 8)}-${month}`;
+    
+    // Create HTML invoice
     const html = `
-      <div style="font-family: sans-serif; max-width: 800px; margin: 0 auto;">
-        <h1 style="color: #333;">Allora Credit Usage Invoice</h1>
-        <div style="margin-bottom: 20px;">
-          <p><strong>Tenant:</strong> ${tenantData.name}</p>
-          <p><strong>Period:</strong> ${startDate} to ${endDate}</p>
-          <p><strong>Invoice Date:</strong> ${new Date().toLocaleDateString()}</p>
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>Invoice ${invoiceNumber}</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          margin: 0;
+          padding: 20px;
+          color: #333;
+        }
+        .invoice-header {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 40px;
+        }
+        .company-details {
+          text-align: right;
+        }
+        .invoice-title {
+          font-size: 24px;
+          font-weight: bold;
+          margin-bottom: 10px;
+          color: #2563eb;
+        }
+        .invoice-details {
+          margin-bottom: 30px;
+        }
+        .invoice-details-row {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 5px;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 30px;
+        }
+        thead {
+          background-color: #f3f4f6;
+        }
+        th, td {
+          padding: 12px;
+          text-align: left;
+          border-bottom: 1px solid #e5e7eb;
+        }
+        th {
+          font-weight: 600;
+        }
+        .total-row {
+          font-weight: bold;
+        }
+        .total-section {
+          margin-top: 30px;
+          display: flex;
+          justify-content: flex-end;
+        }
+        .total-table {
+          width: 300px;
+        }
+        .footer {
+          margin-top: 50px;
+          text-align: center;
+          color: #6b7280;
+          font-size: 14px;
+        }
+        @media print {
+          body {
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+          }
+          button {
+            display: none;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="invoice-header">
+        <div>
+          <div class="invoice-title">Allora OS</div>
+          <div>AI-Native Business Operating System</div>
         </div>
-        
-        <table style="width: 100%; border-collapse: collapse;">
-          <thead>
-            <tr style="background: #f5f5f5;">
-              <th style="text-align: left; padding: 12px;">Agent</th>
-              <th style="text-align: left; padding: 12px;">Module</th>
-              <th style="text-align: left; padding: 12px;">Action</th>
-              <th style="text-align: right; padding: 12px;">Credits</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows}
-          </tbody>
-          <tfoot>
-            <tr style="border-top: 2px solid #333; font-weight: bold;">
-              <td colspan="3" style="padding: 12px; text-align: right;">Total Credits:</td>
-              <td style="padding: 12px; text-align: right;">${totalCredits}</td>
-            </tr>
-          </tfoot>
-        </table>
-        
-        <div style="margin-top: 30px; color: #666; font-size: 0.9em;">
-          <p>This is an automatically generated invoice summary for your Allora credit usage.</p>
+        <div class="company-details">
+          <div class="invoice-title">INVOICE</div>
+          <div>Invoice #: ${invoiceNumber}</div>
+          <div>Date: ${invoiceDate}</div>
         </div>
       </div>
+      
+      <div class="invoice-details">
+        <div class="invoice-details-row">
+          <div>
+            <strong>Billed To:</strong><br>
+            ${tenant.name || 'Customer'}<br>
+            ${billing?.plan ? `${billing.plan.charAt(0).toUpperCase() + billing.plan.slice(1)} Plan` : 'Standard Plan'}<br>
+          </div>
+          <div>
+            <strong>Billing Period:</strong><br>
+            ${new Date(startDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}
+          </div>
+        </div>
+      </div>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Description</th>
+            <th>Agent</th>
+            <th>Credits Used</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${usage?.map(item => `
+            <tr>
+              <td>${new Date(item.created_at).toLocaleDateString()}</td>
+              <td>${item.module}</td>
+              <td>${item.agent_name}</td>
+              <td>${item.credits_used}</td>
+            </tr>
+          `).join('') || '<tr><td colspan="4">No usage data for this period</td></tr>'}
+        </tbody>
+      </table>
+      
+      <div class="total-section">
+        <table class="total-table">
+          <tr>
+            <td>Total Credits Used:</td>
+            <td><strong>${totalCreditsUsed}</strong></td>
+          </tr>
+          <tr>
+            <td>Plan Allowance:</td>
+            <td>${
+              billing?.plan === 'standard' ? '100 credits' : 
+              billing?.plan === 'growth' ? '500 credits' : 
+              billing?.plan === 'pro' ? '1000 credits' : 
+              '100 credits'
+            }</td>
+          </tr>
+        </table>
+      </div>
+      
+      <div class="footer">
+        <p>Thank you for using Allora OS!</p>
+        <p>For billing questions, please contact support@alloraos.com</p>
+      </div>
+    </body>
+    </html>
     `;
 
-    // Log this invoice generation
-    await supabase
-      .from('system_logs')
-      .insert({
-        tenant_id,
-        event_type: 'invoice_generated',
-        message: `Generated invoice for period ${month}`,
-        meta: {
-          total_credits: totalCredits,
-          period: month
-        }
-      });
-
-    // If email_to is provided, send the invoice via email
-    if (email_to) {
-      try {
-        const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-        await resend.emails.send({
-          from: "Allora OS <billing@allora-os.com>",
-          to: [email_to],
-          subject: `Allora Credit Usage Invoice - ${month}`,
-          html: html,
-        });
-      } catch (emailError) {
-        console.error("Failed to send invoice email:", emailError);
-        // Continue with returning the HTML even if email fails
+    return new Response(
+      JSON.stringify({ 
+        html,
+        invoiceNumber,
+        totalCreditsUsed,
+        month
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
-    }
-
-    return new Response(JSON.stringify({ 
-      success: true, 
-      invoiceHtml: html,
-      totalCredits,
-      periodStart: startDate,
-      periodEnd: endDate 
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+    );
+    
   } catch (error) {
-    console.error("Error generating invoice:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+    console.error("Error generating invoice:", error.message);
+    
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
   }
 });
