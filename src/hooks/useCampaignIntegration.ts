@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from './useTenant';
@@ -26,7 +25,6 @@ export function useCampaignIntegration() {
 
     setIsLoading(true);
     try {
-      // Create default scripts based on channels or use generic placeholders
       const scripts: Record<string, string> = {};
       if (channels?.length) {
         channels.forEach(channel => {
@@ -37,7 +35,6 @@ export function useCampaignIntegration() {
         scripts.social = "Draft social media post...";
       }
 
-      // Insert new campaign
       const { data, error } = await supabase
         .from('campaigns')
         .insert({
@@ -53,7 +50,6 @@ export function useCampaignIntegration() {
 
       if (error) throw error;
 
-      // Log campaign creation activity
       await logActivity({
         event_type: 'campaign_created',
         message: `Campaign created from strategy: ${strategy.title}`,
@@ -161,7 +157,6 @@ export function useCampaignIntegration() {
 
       if (error) throw error;
 
-      // Log the outcome tracking
       await logActivity({
         event_type: 'campaign_outcome_recorded',
         message: `Recorded ${outcomeType} outcome for campaign`,

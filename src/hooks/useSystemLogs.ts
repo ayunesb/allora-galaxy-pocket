@@ -1,16 +1,50 @@
 
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useTenant } from "@/hooks/useTenant";
 import { useAuth } from "@/hooks/useAuth";
-import { useState } from "react";
-import type { LogActivityParams } from "@/types/systemLog";
+import type { LogActivityParams, SystemLog } from "@/types/systemLog";
 
 export function useSystemLogs() {
   const { toast } = useToast();
   const { tenant } = useTenant();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [logs, setLogs] = useState<SystemLog[]>([]);
+
+  const getRecentLogs = async () => {
+    if (!tenant?.id) {
+      console.warn("Cannot fetch logs: No tenant selected");
+      return [];
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("system_logs")
+        .select("*")
+        .eq("tenant_id", tenant.id)
+        .order("created_at", { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+      setLogs(data || []);
+      return data;
+    } catch (err) {
+      console.error("Error fetching logs:", err);
+      if (process.env.NODE_ENV === "development") {
+        toast({
+          title: "Error fetching logs",
+          description: (err as Error).message,
+          variant: "destructive",
+        });
+      }
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const logActivity = async ({ event_type, message, meta = {} }: LogActivityParams) => {
     if (!tenant?.id) {
@@ -45,5 +79,5 @@ export function useSystemLogs() {
     }
   };
 
-  return { logActivity, isLoading };
+  return { logActivity, isLoading, logs, getRecentLogs };
 }

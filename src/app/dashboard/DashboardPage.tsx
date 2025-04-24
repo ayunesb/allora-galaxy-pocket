@@ -16,7 +16,12 @@ export default function DashboardPage() {
       const activeCampaigns = campaigns.filter(camp => camp.status === 'active');
       
       for (const campaign of activeCampaigns) {
-        trackCampaignOutcome(campaign.id);
+        trackCampaignOutcome(
+          campaign.id, 
+          'execution_check',
+          1,
+          { status: campaign.status }
+        );
       }
     }
   }, [campaigns, trackCampaignOutcome]);

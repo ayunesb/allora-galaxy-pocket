@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -63,7 +62,7 @@ export default function AgentCollaborationPanel({
 
       // Also log to agent memory for learning
       await logAgentMemory({
-        agent_name: selectedAgent,
+        agentName: selectedAgent,
         context: message,
         type: 'history',
         is_user_submitted: true
@@ -88,7 +87,7 @@ export default function AgentCollaborationPanel({
       for (const agent of agentsInvolved) {
         // Log to agent memory a summary of the collaboration
         await logAgentMemory({
-          agent_name: agent,
+          agentName: agent,
           context: `Participated in collaboration session ${sessionId} with ${agentsInvolved.filter(a => a !== agent).join(', ')}. Total messages: ${messages.filter(m => m.agent === agent).length}`,
           type: 'history'
         });
