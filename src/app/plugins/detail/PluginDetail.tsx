@@ -141,8 +141,11 @@ export default function PluginDetail() {
               currentConfig={plugin.fields}
               onSave={async (key, config) => {
                 try {
-                  await logUsage(key, 'configured', 'plugin_detail');
-                  toast.success("Plugin configuration saved");
+                  // Use type guard to ensure key is a valid Plugin['key']
+                  if (isValidPluginKey(key)) {
+                    await logUsage(key, 'configured', 'plugin_detail');
+                    toast.success("Plugin configuration saved");
+                  }
                 } catch (error) {
                   toast.error("Failed to save configuration");
                 }

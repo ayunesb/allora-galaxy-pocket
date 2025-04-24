@@ -1,13 +1,14 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
+import { Plugin } from "@/types/plugin";
 import { toast } from "sonner";
 import { logPluginUsage } from "./logPluginUsage";
 
 // Plugin operation context
 interface PluginExecutionContext {
   tenant_id: string;
-  plugin_key: string;
+  plugin_key: Plugin['key'];
   operation: string;
   data?: any;
   user_id?: string;
@@ -109,7 +110,7 @@ export const usePluginExecutor = () => {
   const { tenant } = useTenant();
   
   const executePluginOperation = async (
-    pluginKey: string,
+    pluginKey: Plugin['key'],
     operation: string,
     data?: any
   ) => {

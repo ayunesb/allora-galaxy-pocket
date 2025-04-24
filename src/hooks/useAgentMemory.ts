@@ -157,7 +157,15 @@ export function useAgentMemory(agentName?: string) {
     xp_delta?: number;
   }) => {
     try {
-      await createMemoryMutation.mutateAsync(params);
+      await createMemoryMutation.mutateAsync({
+        agent_name: params.agentName, // Fix: Changed agentName to agent_name
+        context: params.context,
+        type: params.type,
+        ai_feedback: params.ai_feedback,
+        ai_rating: params.ai_rating,
+        is_user_submitted: params.is_user_submitted,
+        xp_delta: params.xp_delta
+      });
       return true;
     } catch (error) {
       console.error('Failed to log agent memory:', error);
