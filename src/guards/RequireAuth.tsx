@@ -8,17 +8,46 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState, useRef } from "react";
 
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, session, isLoading: authLoading, refreshSession } = useAuth();
   const { tenant, isLoading: tenantLoading } = useTenant();
   const location = useLocation();
   const [shouldCheckOnboarding, setShouldCheckOnboarding] = useState(false);
   const redirectedRef = useRef(false);
   const onboardingCheckDoneRef = useRef(false);
   const stableStateRef = useRef(false);
+  const lastRefreshAttemptRef = useRef<number>(0);
+  const [authAttempts, setAuthAttempts] = useState(0);
   
   // Special cases where we don't need to check onboarding
   const skipOnboardingCheck = location.pathname === "/onboarding" || 
                              location.pathname === "/workspace";
+  
+  // Handle session refresh if token is close to expiry (30 minutes)
+  useEffect(() => {
+    const tokenRefreshCheck = async () => {
+      if (!session) return;
+      
+      const now = new Date().getTime();
+      const expiresAt = (session.expires_at || 0) * 1000;
+      const timeRemaining = expiresAt - now;
+      const thirtyMinutes = 30 * 60 * 1000;
+      
+      // Avoid frequent refresh attempts
+      if (now - lastRefreshAttemptRef.current < 60000) return;
+
+      if (timeRemaining < thirtyMinutes && timeRemaining > 0) {
+        console.log("Session expiring soon, refreshing token...");
+        lastRefreshAttemptRef.current = now;
+        await refreshSession();
+      }
+    };
+    
+    tokenRefreshCheck();
+    // Run check every 5 minutes
+    const interval = setInterval(tokenRefreshCheck, 5 * 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, [session, refreshSession]);
   
   // Delay onboarding check until both user and tenant are loaded
   useEffect(() => {
@@ -32,6 +61,21 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     }
   }, [user, tenant?.id, authLoading, tenantLoading, shouldCheckOnboarding, skipOnboardingCheck]);
   
+  // Handle session persistence issues
+  useEffect(() => {
+    if (authLoading || user || authAttempts > 2) return;
+    
+    const attemptReauth = async () => {
+      console.log(`Auth attempt ${authAttempts + 1}: Trying to refresh session...`);
+      setAuthAttempts(prev => prev + 1);
+      await refreshSession();
+    };
+    
+    if (authAttempts < 3) {
+      attemptReauth();
+    }
+  }, [authLoading, user, authAttempts, refreshSession]);
+  
   // Check onboarding status when user and tenant are available
   const { data: onboardingComplete, isLoading: onboardingLoading } = useQuery({
     queryKey: ['onboarding-status', tenant?.id, user?.id],
@@ -40,20 +84,30 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
       
       try {
         // Check for company profile
-        const { data: companyProfile } = await supabase
+        const { data: companyProfile, error: companyError } = await supabase
           .from('company_profiles')
           .select('id')
           .eq('tenant_id', tenant.id)
           .maybeSingle();
 
+        if (companyError) {
+          console.error("Error checking company profile:", companyError);
+          return false;
+        }
+
         // Check for persona profile
-        const { data: personaProfile } = await supabase
+        const { data: personaProfile, error: personaError } = await supabase
           .from('persona_profiles')
           .select('id')
           .eq('tenant_id', tenant.id)
           .eq('user_id', user.id)
           .maybeSingle();
           
+        if (personaError) {
+          console.error("Error checking persona profile:", personaError);
+          return false;
+        }
+
         const isComplete = !!companyProfile && !!personaProfile;
         onboardingCheckDoneRef.current = true;
         return isComplete;
@@ -63,6 +117,8 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
       }
     },
     enabled: shouldCheckOnboarding,
+    retry: 2,
+    staleTime: 30000 // Cache for 30 seconds
   });
   
   // Log routing state to help with debugging
@@ -77,9 +133,12 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
       onboardingComplete,
       shouldCheckOnboarding,
       redirected: redirectedRef.current,
-      skipOnboardingCheck
+      skipOnboardingCheck,
+      sessionExpiry: session?.expires_at ? new Date((session.expires_at) * 1000).toISOString() : 'none',
+      authAttempts
     });
-  }, [location.pathname, user, tenant, authLoading, tenantLoading, onboardingLoading, onboardingComplete, shouldCheckOnboarding]);
+  }, [location.pathname, user, tenant, authLoading, tenantLoading, onboardingLoading, 
+      onboardingComplete, shouldCheckOnboarding, session, authAttempts]);
   
   // Decide whether to show loading state
   const showLoading = authLoading || 
@@ -95,7 +154,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   if (showLoading || !stableStateRef.current) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <LoadingSpinner size={40} label={showLoading ? "Loading..." : "Preparing application..."} />
+        <LoadingSpinner size={40} label={showLoading ? "Loading authentication..." : "Preparing application..."} />
       </div>
     );
   }
