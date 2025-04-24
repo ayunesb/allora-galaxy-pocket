@@ -1,7 +1,6 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useAdminLogs } from '@/hooks/useAdminLogs';
-import { useState } from 'react';
 import { 
   Table, 
   TableBody, 
@@ -19,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, RefreshCw } from 'lucide-react';
+import { Loader2, RefreshCw, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export function AdminSystemLogs() {
@@ -57,6 +56,7 @@ export function AdminSystemLogs() {
             value={filters.search}
             onChange={handleSearch}
             className="w-full"
+            startAdornment={<Search className="h-4 w-4 mr-2 text-muted-foreground" />}
           />
         </div>
         <div className="flex gap-2">
