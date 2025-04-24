@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import AdminLogsPage from '@/app/admin/logs/page';
@@ -11,7 +12,6 @@ import CampaignPerformancePage from "@/app/admin/campaign-performance/page";
 import FeedbackLoopDashboard from "@/app/admin/feedback-loop/page";
 import AdminDashboardPage from "@/app/admin/dashboard/page";
 import AnalyticsPage from "@/app/admin/analytics/page";
-import LogsPage from "@/app/admin/logs/page";
 import InviteUsersPage from "@/app/admin/invite/page";
 import IntegrationsPage from "@/app/admin/integrations/page";
 import AgentMemoryConsole from "@/app/admin/agents/memory/page";
