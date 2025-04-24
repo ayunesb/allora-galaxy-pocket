@@ -23,10 +23,10 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       const storedId = localStorage.getItem("tenant_id");
       
       if (storedId) {
-        // Fetch the tenant details from Supabase
+        // Fetch the tenant details from the view
         const { data, error } = await supabase
-          .from("tenant_profiles")
-          .select("id, name, theme_color, theme_mode, isDemo, enable_auto_approve")
+          .from("tenant_profiles_view")
+          .select("*")
           .eq("id", storedId)
           .maybeSingle();
         
@@ -54,8 +54,8 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoading(true);
       const { data, error } = await supabase
-        .from("tenant_profiles")
-        .select("id, name, theme_color, theme_mode, isDemo, enable_auto_approve")
+        .from("tenant_profiles_view")
+        .select("*")
         .eq("id", tenant.id)
         .maybeSingle();
       
