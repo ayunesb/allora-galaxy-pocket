@@ -1,18 +1,17 @@
+
 import React from "react";
-import { Table } from "@/components/ui/table";
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { AlertCircle, RefreshCw, ShieldAlert, Download, Check } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import AdminOnly from "@/guards/AdminOnly";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
 import { useRlsData } from "./hooks/useRlsData";
 import { useAccessTests } from "./hooks/useAccessTests";
 import { useSecurityAudit } from "./hooks/useSecurityAudit";
-import { RlsTableRow } from "./components/RlsTableRow";
-import { SecurityAuditTips } from "./components/SecurityAuditTips";
+import { SecurityAuditTable } from "./components/SecurityAuditTable";
+import { SecurityIssuesList } from "./components/SecurityIssuesList";
+import { AuditHeaderActions } from "./components/AuditHeaderActions";
 import { DebugErrorBoundary } from "@/components/DebugErrorBoundary";
 
 export default function RlsAuditReport() {
@@ -29,57 +28,27 @@ export default function RlsAuditReport() {
     
     tables.forEach(table => {
       if (!table.rlsEnabled) {
-        rows.push([
-          table.tablename,
-          'No',
-          '-',
-          '-',
-          '-',
-          'N/A'
-        ]);
+        rows.push([table.tablename, 'No', '-', '-', '-', 'N/A']);
         return;
       }
       
       if (table.policies.length === 0) {
-        rows.push([
-          table.tablename,
-          'Yes',
-          'NO POLICIES',
-          '-',
-          '-',
-          '🚨 CRITICAL: RLS enabled but no policies'
-        ]);
+        rows.push([table.tablename, 'Yes', 'NO POLICIES', '-', '-', 'CRITICAL: RLS enabled but no policies']);
         return;
       }
       
       const testResult = testResults.find(r => r.tableName === table.tablename);
-      
       table.policies.forEach(policy => {
         const definition = policy.definition.toLowerCase();
         const hasAuthUid = definition.includes('auth.uid()');
-        const hasTenantReference = 
-          definition.includes('tenant_id') || 
-          definition.includes('user_id');
-        
-        let testResultText = 'Not tested';
-        
-        if (testResult) {
-          if (testResult.status === 'allowed') {
-            testResultText = `✅ Allowed (${testResult.rowCount} rows)`;
-          } else if (testResult.status === 'blocked') {
-            testResultText = '❌ Blocked';
-          } else {
-            testResultText = `⚠️ Error: ${testResult.errorMessage}`;
-          }
-        }
-        
+        const hasTenantReference = definition.includes('tenant_id') || definition.includes('user_id');
         rows.push([
           table.tablename,
           'Yes',
           policy.policyname,
           policy.command,
-          hasAuthUid && hasTenantReference ? 'Yes' : '🚨 NO AUTH REFERENCE',
-          testResultText
+          hasAuthUid && hasTenantReference ? 'Yes' : 'NO AUTH REFERENCE',
+          testResult ? `${testResult.status} (${testResult.rowCount || 0} rows)` : 'Not tested'
         ]);
       });
     });
@@ -95,74 +64,6 @@ export default function RlsAuditReport() {
     document.body.removeChild(link);
   };
 
-  const renderTableRows = () => {
-    if (isLoading) {
-      return Array(5).fill(0).map((_, index) => (
-        <tr key={index}>
-          <td colSpan={6} className="p-2">
-            <Skeleton className="h-8 w-full" />
-          </td>
-        </tr>
-      ));
-    }
-
-    return tables.map(table => (
-      <DebugErrorBoundary key={table.tablename}>
-        <RlsTableRow
-          tableName={table.tablename}
-          rlsEnabled={table.rlsEnabled}
-          policies={table.policies}
-          testResult={testResults.find(r => r.tableName === table.tablename)}
-        />
-      </DebugErrorBoundary>
-    ));
-  };
-
-  const renderSecurityIssues = () => {
-    if (issues.length === 0) {
-      return (
-        <Alert className="mb-4 bg-green-50 border-green-200">
-          <Check className="h-4 w-4 text-green-600" />
-          <AlertTitle>No security issues found</AlertTitle>
-          <AlertDescription>
-            All views are created without SECURITY DEFINER and all tables have RLS enabled.
-          </AlertDescription>
-        </Alert>
-      );
-    }
-
-    return (
-      <div className="mb-6">
-        <h3 className="text-lg font-medium mb-3">Security Issues ({issues.length})</h3>
-        <Table>
-          <thead>
-            <tr className="bg-muted">
-              <th className="p-3 border">Type</th>
-              <th className="p-3 border">Name</th>
-              <th className="p-3 border">Detail</th>
-              <th className="p-3 border">Remediation</th>
-            </tr>
-          </thead>
-          <tbody>
-            {issues.map((issue, index) => (
-              <tr key={index} className="border-b">
-                <td className="p-3 border">
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                    {issue.type === 'security_definer_view' ? 'Security Definer View' : 
-                     issue.type === 'rls_disabled' ? 'RLS Disabled' : 'Incomplete RLS'}
-                  </span>
-                </td>
-                <td className="p-3 border font-mono text-sm">{issue.name}</td>
-                <td className="p-3 border">{issue.detail}</td>
-                <td className="p-3 border text-sm">{issue.remediation}</td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
-      </div>
-    );
-  };
-
   return (
     <AdminOnly>
       <div className="container mx-auto py-6">
@@ -176,38 +77,17 @@ export default function RlsAuditReport() {
                     Audit all tables with RLS enabled and test tenant-level access controls
                   </CardDescription>
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      fetchRlsTables();
-                      runSecurityAudit();
-                    }}
-                    disabled={isLoading || isAuditLoading}
-                    className="flex items-center gap-1"
-                  >
-                    <RefreshCw className={`h-4 w-4 ${isLoading || isAuditLoading ? 'animate-spin' : ''}`} />
-                    Refresh Audit
-                  </Button>
-                  <Button
-                    variant="default"
-                    onClick={() => runAccessTests(tables)}
-                    disabled={isRunningTests || isLoading || !tables.length}
-                    className="flex items-center gap-1"
-                  >
-                    <ShieldAlert className="h-4 w-4" />
-                    Run Access Tests
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={downloadReport}
-                    disabled={!tables.length}
-                    className="flex items-center gap-1"
-                  >
-                    <Download className="h-4 w-4" />
-                    Export CSV
-                  </Button>
-                </div>
+                <AuditHeaderActions
+                  onRefresh={() => {
+                    fetchRlsTables();
+                    runSecurityAudit();
+                  }}
+                  onRunTests={() => runAccessTests(tables)}
+                  onExport={downloadReport}
+                  isLoading={isLoading || isAuditLoading}
+                  isRunningTests={isRunningTests}
+                  hasData={tables.length > 0}
+                />
               </div>
             </CardHeader>
             <CardContent>
@@ -231,7 +111,7 @@ export default function RlsAuditReport() {
                 </Alert>
               ) : null}
               
-              {renderSecurityIssues()}
+              <SecurityIssuesList issues={issues} />
               
               {testResults.length > 0 && (
                 <div className="mb-4 text-sm text-muted-foreground">
@@ -242,28 +122,14 @@ export default function RlsAuditReport() {
               )}
               
               <div className="overflow-x-auto">
-                <Table>
-                  <thead>
-                    <tr className="bg-muted">
-                      <th className="p-3 border">Table</th>
-                      <th className="p-3 border">RLS Status</th>
-                      <th className="p-3 border">Policy Name</th>
-                      <th className="p-3 border">Command</th>
-                      <th className="p-3 border">Auth Reference</th>
-                      <th className="p-3 border">Access Test Result</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {renderTableRows()}
-                  </tbody>
-                </Table>
+                <SecurityAuditTable
+                  tables={tables}
+                  testResults={testResults}
+                  isLoading={isLoading}
+                />
               </div>
             </CardContent>
           </Card>
-        </DebugErrorBoundary>
-        
-        <DebugErrorBoundary>
-          <SecurityAuditTips />
         </DebugErrorBoundary>
       </div>
     </AdminOnly>
