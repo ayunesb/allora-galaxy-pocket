@@ -17,7 +17,7 @@ export function useSystemLogsWithFilters() {
     goToPrevPage,
     goToPage,
     resetPage
-  } = useLogPagination(filteredLogs);
+  } = useLogPagination(filteredLogs, { logsPerPage: 15 });
 
   return {
     logs: currentLogs,

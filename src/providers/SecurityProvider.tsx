@@ -4,6 +4,8 @@ import { useLocation } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
+import { toast } from '@/components/ui/sonner';
+import { useNavigate } from 'react-router-dom';
 
 interface SecurityProviderProps {
   children: ReactNode;
@@ -16,12 +18,13 @@ interface SecurityProviderProps {
 export function SecurityProvider({ children }: SecurityProviderProps) {
   const location = useLocation();
   const { user } = useAuth();
-  const { tenant } = useTenant();
+  const { tenant, setTenant } = useTenant();
+  const navigate = useNavigate();
   
   // Log route access for audit purposes
   useEffect(() => {
-    // Only monitor routes for authenticated users with a tenant
-    if (!user?.id || !tenant?.id) return;
+    // Skip logging for public routes
+    if (location.pathname.startsWith('/auth/') || location.pathname === '/' || !user?.id || !tenant?.id) return;
     
     const logRouteAccess = async () => {
       try {
@@ -48,7 +51,10 @@ export function SecurityProvider({ children }: SecurityProviderProps) {
   // Tenant data protection
   useEffect(() => {
     // If no user or tenant is selected, no validation needed
-    if (!user?.id || !tenant?.id) return;
+    // Skip for auth pages and workspace selection
+    if (!user?.id || !tenant?.id || 
+        location.pathname.startsWith('/auth/') || 
+        location.pathname === '/workspace') return;
 
     const validateTenantAccess = async () => {
       try {
@@ -62,7 +68,7 @@ export function SecurityProvider({ children }: SecurityProviderProps) {
           return;
         }
 
-        // If user doesn't have access to the tenant, log it
+        // If user doesn't have access to the tenant
         if (!data) {
           console.error(`User ${user.id} attempted unauthorized access to tenant ${tenant.id}`);
           
@@ -71,11 +77,26 @@ export function SecurityProvider({ children }: SecurityProviderProps) {
             .from('system_logs')
             .insert({
               user_id: user.id,
-              tenant_id: tenant.id,
+              tenant_id: tenant.id, // Still log the attempted tenant
               event_type: 'SECURITY_UNAUTHORIZED_TENANT_ACCESS',
               message: `Unauthorized tenant access attempt`,
-              meta: { attempted_tenant_id: tenant.id }
+              meta: { 
+                attempted_tenant_id: tenant.id,
+                path: location.pathname
+              }
             });
+
+          // Reset tenant selection
+          setTenant(null);
+          localStorage.removeItem('tenant_id');
+          
+          // Notify user
+          toast.error("Access denied", {
+            description: "You don't have access to this workspace",
+          });
+
+          // Redirect to workspace switcher
+          navigate("/workspace", { replace: true });
         }
       } catch (error) {
         console.error("Error validating tenant access:", error);
@@ -83,7 +104,7 @@ export function SecurityProvider({ children }: SecurityProviderProps) {
     };
 
     validateTenantAccess();
-  }, [user?.id, tenant?.id]);
+  }, [user?.id, tenant?.id, location.pathname, navigate, setTenant]);
 
   return <>{children}</>;
 }

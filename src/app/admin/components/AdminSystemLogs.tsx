@@ -1,15 +1,6 @@
 
 import React, { useState } from 'react';
-import { useAdminLogs } from '@/hooks/useAdminLogs';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+import { useSystemLogsWithFilters } from '@/hooks/useSystemLogsWithFilters';
 import { Input } from '@/components/ui/input';
 import { 
   Select,
@@ -18,37 +9,82 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, RefreshCw, Search } from 'lucide-react';
+import { RefreshCw, Search, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { AdminSystemLogsTable } from './AdminSystemLogsTable';
+import LogSecurityAlert from '@/app/admin/logs/LogSecurityAlert';
+import { useAuth } from '@/hooks/useAuth';
+import { useTenant } from '@/hooks/useTenant';
 
 export function AdminSystemLogs() {
-  const [filters, setFilters] = useState({
-    dateRange: 7,
-    eventType: 'all',
-    userId: 'all',
-    search: ''
-  });
+  const { 
+    logs, 
+    isLoading, 
+    filters, 
+    setFilters, 
+    getRecentLogs,
+    pagination: {
+      currentPage,
+      totalPages,
+      goToPage
+    }
+  } = useSystemLogsWithFilters();
   
-  const { logs, isLoading, refreshLogs } = useAdminLogs(filters);
+  const { user } = useAuth();
+  const { tenant } = useTenant();
+  const [showSecurityInfo, setShowSecurityInfo] = useState(false);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilters(prev => ({ ...prev, search: e.target.value }));
+    setFilters({ search: e.target.value });
   };
 
   const handleRefresh = () => {
-    refreshLogs();
+    getRecentLogs(100);
   };
 
   const handleDateRangeChange = (value: string) => {
-    setFilters(prev => ({ ...prev, dateRange: parseInt(value) }));
+    setFilters({ dateRange: parseInt(value) });
   };
 
   const handleEventTypeChange = (value: string) => {
-    setFilters(prev => ({ ...prev, eventType: value }));
+    setFilters({ eventType: value });
   };
+
+  const toggleSecurityInfo = () => {
+    setShowSecurityInfo(!showSecurityInfo);
+  };
+
+  // Log security monitoring access event
+  React.useEffect(() => {
+    if (user?.id && tenant?.id) {
+      const logSecurityView = async () => {
+        try {
+          // Log access to security monitoring tools
+          await fetch('/api/log-security-access', {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              user_id: user.id,
+              tenant_id: tenant.id,
+              feature: 'system_logs'
+            })
+          });
+        } catch (error) {
+          // Silent fail - don't disrupt user experience
+          console.error('Failed to log security access:', error);
+        }
+      };
+      
+      logSecurityView();
+    }
+  }, [user?.id, tenant?.id]);
 
   return (
     <div className="space-y-4">
+      {showSecurityInfo && <LogSecurityAlert />}
+      
       <div className="flex flex-col md:flex-row gap-4">
         <div className="flex-1">
           <Input
@@ -86,11 +122,16 @@ export function AdminSystemLogs() {
               <SelectItem value="all">All events</SelectItem>
               <SelectItem value="auth">Authentication</SelectItem>
               <SelectItem value="data">Data changes</SelectItem>
+              <SelectItem value="SECURITY">Security</SelectItem>
               <SelectItem value="api">API calls</SelectItem>
               <SelectItem value="error">Errors</SelectItem>
               <SelectItem value="system">System</SelectItem>
             </SelectContent>
           </Select>
+          
+          <Button onClick={toggleSecurityInfo} variant="outline" size="icon" title="Security information">
+            <Shield className="h-4 w-4" />
+          </Button>
           
           <Button onClick={handleRefresh} variant="outline" size="icon">
             <RefreshCw className="h-4 w-4" />
@@ -98,52 +139,13 @@ export function AdminSystemLogs() {
         </div>
       </div>
       
-      {isLoading ? (
-        <div className="flex justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      ) : (
-        <div className="border rounded-md">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Timestamp</TableHead>
-                <TableHead>Event Type</TableHead>
-                <TableHead className="hidden md:table-cell">User</TableHead>
-                <TableHead>Message</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {logs.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                    No logs found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                logs.map((log) => (
-                  <TableRow key={log.id}>
-                    <TableCell className="whitespace-nowrap">
-                      {new Date(log.created_at).toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={log.event_type === 'error' ? 'destructive' : 'outline'}>
-                        {log.event_type}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {log.user_id ? log.user_id.substring(0, 8) : 'System'}
-                    </TableCell>
-                    <TableCell className="max-w-md truncate">
-                      {log.message}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+      <AdminSystemLogsTable 
+        logs={logs} 
+        isLoading={isLoading}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={goToPage}
+      />
     </div>
   );
 }
