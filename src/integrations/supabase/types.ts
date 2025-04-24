@@ -652,6 +652,53 @@ export type Database = {
         }
         Relationships: []
       }
+      cron_job_metrics: {
+        Row: {
+          created_at: string | null
+          error_count: number | null
+          execution_time_ms: number | null
+          function_name: string
+          id: string
+          last_execution_at: string | null
+          memory_usage_mb: number | null
+          success_rate: number | null
+          tenant_id: string | null
+          total_executions: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_count?: number | null
+          execution_time_ms?: number | null
+          function_name: string
+          id?: string
+          last_execution_at?: string | null
+          memory_usage_mb?: number | null
+          success_rate?: number | null
+          tenant_id?: string | null
+          total_executions?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          error_count?: number | null
+          execution_time_ms?: number | null
+          function_name?: string
+          id?: string
+          last_execution_at?: string | null
+          memory_usage_mb?: number | null
+          success_rate?: number | null
+          tenant_id?: string | null
+          total_executions?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cron_job_metrics_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       demo_analytics: {
         Row: {
           created_at: string | null
@@ -2144,6 +2191,47 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      system_health_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string | null
+          id: string
+          message: string
+          resolved_at: string | null
+          severity: string
+          status: string | null
+          tenant_id: string | null
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string | null
+          id?: string
+          message: string
+          resolved_at?: string | null
+          severity: string
+          status?: string | null
+          tenant_id?: string | null
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string | null
+          id?: string
+          message?: string
+          resolved_at?: string | null
+          severity?: string
+          status?: string | null
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_health_alerts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       system_logs: {
         Row: {
