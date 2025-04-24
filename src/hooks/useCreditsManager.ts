@@ -182,7 +182,8 @@ export function useCreditsManager() {
       
       if (tenantError) throw tenantError;
       
-      return tenantData?.usage_credits || 0;
+      // Ensure we return a numeric value
+      return Number(tenantData?.usage_credits || 0);
     } catch (error) {
       console.error("Error getting remaining credits:", error);
       return 0;

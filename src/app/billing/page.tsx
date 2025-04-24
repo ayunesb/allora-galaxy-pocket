@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -128,11 +127,21 @@ export default function BillingDashboard() {
     : 'Standard';
 
   // Credit info
-  const availableCredits = getRemainingCredits();
+  const [availableCredits, setAvailableCredits] = React.useState<number>(0);
+  
+  React.useEffect(() => {
+    async function fetchCredits() {
+      const credits = await getRemainingCredits();
+      setAvailableCredits(credits);
+    }
+    fetchCredits();
+  }, [getRemainingCredits]);
+
   const creditStatus = React.useMemo(() => {
     const planCredits = profile?.plan === 'standard' ? 100 : 
                        profile?.plan === 'growth' ? 500 : 1000;
-    const percent = availableCredits / planCredits;
+    
+    const percent = Number(availableCredits) / planCredits;
     
     if (percent < 0.1) return 'critical';
     if (percent < 0.25) return 'low';
