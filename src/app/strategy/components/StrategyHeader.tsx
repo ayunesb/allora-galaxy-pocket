@@ -12,21 +12,31 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { NavigateFunction } from "react-router-dom";
 
 export interface StrategyHeaderProps {
   strategy: Strategy;
   onShare?: () => void;
   onExport?: () => void;
   onDelete?: () => void;
+  onNavigate?: NavigateFunction;
 }
 
 export function StrategyHeader({ 
   strategy, 
   onShare, 
   onExport, 
-  onDelete 
+  onDelete,
+  onNavigate
 }: StrategyHeaderProps) {
   const navigate = useNavigate();
+  const handleNavigateBack = () => {
+    if (onNavigate) {
+      onNavigate(-1);
+    } else {
+      navigate(-1);
+    }
+  };
 
   return (
     <div className="mb-6">
@@ -57,7 +67,7 @@ export function StrategyHeader({
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={() => navigate(-1)}
+            onClick={handleNavigateBack}
             className="w-full sm:w-auto"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />

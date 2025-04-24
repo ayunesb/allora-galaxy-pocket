@@ -7,7 +7,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 interface Column<T = any> {
   header: React.ReactNode;
   accessorKey: keyof T;
-  cell?: (value: any) => React.ReactNode;
+  cell?: (value: any, row: T) => React.ReactNode;
 }
 
 interface MobileTableProps<T> {
@@ -40,7 +40,7 @@ export function MobileTable<T>({ columns, data, emptyMessage = "No data availabl
                   <div key={columnIndex} className="flex justify-between py-2 border-b last:border-0">
                     <span className="font-medium">{column.header}</span>
                     <span className="text-right">
-                      {column.cell ? column.cell(value) : String(value)}
+                      {column.cell ? column.cell(value, row) : String(value)}
                     </span>
                   </div>
                 );
@@ -69,7 +69,7 @@ export function MobileTable<T>({ columns, data, emptyMessage = "No data availabl
               const value = row[column.accessorKey];
               return (
                 <TableCell key={columnIndex}>
-                  {column.cell ? column.cell(value) : String(value)}
+                  {column.cell ? column.cell(value, row) : String(value)}
                 </TableCell>
               );
             })}
