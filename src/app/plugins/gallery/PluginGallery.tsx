@@ -4,8 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { usePlugins } from "@/hooks/usePlugins";
+import { Plugin } from "@/types/plugin";
 
-const plugins = [
+// Define plugins with proper typing
+const plugins: Array<{
+  key: Plugin['key'];
+  label: string;
+  description: string;
+  tags: string[];
+}> = [
   { 
     key: "stripe", 
     label: "Stripe", 

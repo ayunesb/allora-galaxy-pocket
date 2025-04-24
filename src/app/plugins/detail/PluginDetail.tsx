@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePlugins } from "@/hooks/usePlugins";
 import { toast } from "sonner";
 import PluginConfigEditor from "@/app/admin/plugins/PluginConfigEditor";
+import { Plugin } from "@/types/plugin";
 
 const pluginDocs = {
   stripe: {
@@ -76,7 +77,20 @@ export default function PluginDetail() {
   const { pluginKey } = useParams();
   const { activePlugins } = usePlugins();
   
-  const plugin = pluginDocs[pluginKey as keyof typeof pluginDocs];
+  // Ensure pluginKey is a valid key for our plugin system
+  const isValidPluginKey = (key: string | undefined): key is Plugin['key'] => {
+    return !!key && ['stripe', 'hubspot', 'shopify', 'ga4', 'twilio'].includes(key);
+  };
+
+  if (!isValidPluginKey(pluginKey)) {
+    return (
+      <div className="container mx-auto p-6">
+        <p className="text-muted-foreground">Invalid or unsupported plugin</p>
+      </div>
+    );
+  }
+  
+  const plugin = pluginDocs[pluginKey];
   
   if (!plugin) {
     return (
@@ -106,14 +120,14 @@ export default function PluginDetail() {
         </CardContent>
       </Card>
 
-      {activePlugins.includes(pluginKey!) && (
+      {activePlugins.includes(pluginKey) && (
         <Card>
           <CardHeader>
             <CardTitle>Configuration</CardTitle>
           </CardHeader>
           <CardContent>
             <PluginConfigEditor
-              pluginKey={pluginKey!}
+              pluginKey={pluginKey}
               currentConfig={plugin.fields}
               onSave={async (key, config) => {
                 try {
