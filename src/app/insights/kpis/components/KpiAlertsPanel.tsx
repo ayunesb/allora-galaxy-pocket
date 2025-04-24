@@ -39,7 +39,7 @@ export default function KpiAlertsPanel({ alerts }: KpiAlertsPanelProps) {
             >
               <div>
                 <div className="font-medium mb-1">
-                  {alert.kpi_name} {alert.condition === '>' ? '>' : '<'} {alert.threshold}
+                  {alert.kpi_name} {renderConditionSymbol(alert.condition)} {alert.threshold}
                 </div>
                 <div className="text-sm text-muted-foreground">
                   {alert.triggered_at ? (
@@ -64,4 +64,20 @@ export default function KpiAlertsPanel({ alerts }: KpiAlertsPanelProps) {
       </CardContent>
     </Card>
   );
+}
+
+// Helper function to render the appropriate condition symbol
+function renderConditionSymbol(condition?: '<' | '>' | 'falls_by_%' | 'rises_by_%'): string {
+  switch (condition) {
+    case '>':
+      return '>';
+    case '<':
+      return '<';
+    case 'falls_by_%':
+      return '↓';
+    case 'rises_by_%':
+      return '↑';
+    default:
+      return '-';
+  }
 }
