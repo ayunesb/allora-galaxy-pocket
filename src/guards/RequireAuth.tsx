@@ -8,14 +8,14 @@ import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import LiveSystemVerification from "@/components/LiveSystemVerification";
-import { useSessionRefresh } from "@/hooks/auth/useSessionRefresh";
-import { useOnboardingCheck } from "@/hooks/auth/useOnboardingCheck";
+import { useSessionRefresh } from "@/hooks/useSessionRefresh";
+import { useOnboardingCheck } from "@/hooks/useOnboardingCheck";
 
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, session, isLoading: authLoading, refreshSession } = useAuth();
   const { tenant, isLoading: tenantLoading } = useTenant();
   const location = useLocation();
-  const [shouldCheckOnboarding, setShouldCheckOnboarding] = useState(false);
+  const [shouldCheckOnboarding, setShouldCheckOnboarding] = useState(true);
   const [authAttempts, setAuthAttempts] = useState(0);
   const [authError, setAuthError] = useState<string | null>(null);
   
@@ -31,7 +31,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   const { data: onboardingComplete, isLoading: onboardingLoading } = useOnboardingCheck(
     user,
     tenant,
-    shouldCheckOnboarding
+    shouldCheckOnboarding && !skipOnboardingCheck
   );
 
   // Handle auth error display
@@ -58,7 +58,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   }
 
   // Show loading state
-  if (authLoading || tenantLoading || (shouldCheckOnboarding && onboardingLoading)) {
+  if (authLoading || tenantLoading || (shouldCheckOnboarding && !skipOnboardingCheck && onboardingLoading)) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
         <LoadingSpinner size={40} label={authLoading ? "Loading authentication..." : "Preparing application..."} />
@@ -85,7 +85,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     return <Navigate to="/workspace" state={{ from: location.pathname }} replace />;
   }
 
-  if (shouldCheckOnboarding && onboardingComplete === false && !skipOnboardingCheck) {
+  if (onboardingComplete === false && !skipOnboardingCheck) {
     console.log("RequireAuth: Onboarding incomplete, redirecting to onboarding");
     return <Navigate to="/onboarding" state={{ from: location.pathname }} replace />;
   }
