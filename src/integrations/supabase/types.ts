@@ -1050,6 +1050,41 @@ export type Database = {
           },
         ]
       }
+      log_bookmarks: {
+        Row: {
+          created_at: string | null
+          id: string
+          log_id: string
+          note: string | null
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          log_id: string
+          note?: string | null
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          log_id?: string
+          note?: string | null
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "log_bookmarks_log_id_fkey"
+            columns: ["log_id"]
+            isOneToOne: false
+            referencedRelation: "system_logs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memory_comments: {
         Row: {
           comment: string
