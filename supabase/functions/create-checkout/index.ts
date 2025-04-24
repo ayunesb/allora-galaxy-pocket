@@ -26,6 +26,18 @@ serve(async (req) => {
     const user = data.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
 
+    // Parse request body
+    let plan = 'standard';
+    try {
+      const body = await req.json();
+      if (body?.plan) {
+        plan = body.plan;
+      }
+    } catch (e) {
+      // If parsing fails, use default plan
+      console.log("No plan specified in request body, using default");
+    }
+
     // Initialize Stripe
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
       apiVersion: "2023-10-16",
@@ -38,6 +50,21 @@ serve(async (req) => {
       customerId = customers.data[0].id;
     }
 
+    // Set pricing based on plan
+    let priceId;
+    let unitAmount;
+    switch (plan) {
+      case 'growth':
+        unitAmount = 1999;
+        break;
+      case 'pro':
+        unitAmount = 4999;
+        break;
+      default: // standard
+        unitAmount = 799;
+        break;
+    }
+
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -46,16 +73,23 @@ serve(async (req) => {
         {
           price_data: {
             currency: "usd",
-            product_data: { name: "Premium Subscription" },
-            unit_amount: 799,
+            product_data: { 
+              name: `${plan.charAt(0).toUpperCase() + plan.slice(1)} Subscription`,
+              description: `Allora OS ${plan} plan with credits and features`
+            },
+            unit_amount: unitAmount,
             recurring: { interval: "month" }
           },
           quantity: 1,
         },
       ],
       mode: "subscription",
-      success_url: `${req.headers.get("origin")}/success`,
-      cancel_url: `${req.headers.get("origin")}/cancel`,
+      metadata: {
+        tenant_id: user.id,
+        plan: plan
+      },
+      success_url: `${req.headers.get("origin")}/billing?success=true`,
+      cancel_url: `${req.headers.get("origin")}/billing?canceled=true`,
     });
 
     return new Response(JSON.stringify({ url: session.url }), {

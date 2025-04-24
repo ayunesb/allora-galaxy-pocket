@@ -4,18 +4,51 @@ import { Loader2, CreditCard, AlertCircle } from "lucide-react";
 import { useBillingProfile } from "@/hooks/useBillingProfile";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+import { useStripeUsageReporting } from "@/hooks/useStripeUsageReporting";
+import { formatDistanceToNow } from "date-fns";
 
 export function BillingPreview() {
   const { user } = useAuth();
   const { profile, isLoading, error } = useBillingProfile();
+  const { getSubscriptionDetails, createCheckoutSession } = useStripeUsageReporting();
+  const [subscriptionDetails, setSubscriptionDetails] = useState<any>(null);
+  const [isCheckingSubscription, setIsCheckingSubscription] = useState(false);
 
   console.log("BillingPreview data:", { profile, isLoading, error, user });
+
+  useEffect(() => {
+    // Only check subscription if we have a profile with a subscription ID
+    if (profile?.stripe_subscription_id) {
+      checkSubscriptionStatus();
+    }
+  }, [profile?.stripe_subscription_id]);
+
+  const checkSubscriptionStatus = async () => {
+    setIsCheckingSubscription(true);
+    try {
+      const details = await getSubscriptionDetails();
+      setSubscriptionDetails(details);
+    } catch (err) {
+      console.error("Failed to fetch subscription details:", err);
+    } finally {
+      setIsCheckingSubscription(false);
+    }
+  };
+
+  const handleUpgrade = async () => {
+    const url = await createCheckoutSession('standard');
+    if (url) {
+      window.location.href = url;
+    }
+  };
 
   if (!user) {
     return null; // Don't show billing preview if not logged in
   }
 
-  if (isLoading) {
+  if (isLoading || isCheckingSubscription) {
     return (
       <Card>
         <CardContent className="pt-6 flex justify-center">
@@ -42,6 +75,10 @@ export function BillingPreview() {
     : 'Standard';
   
   const displayCredits = profile?.credits ?? 0;
+  const hasActiveSubscription = !!subscriptionDetails?.status && subscriptionDetails.status === 'active';
+  const renewalDate = subscriptionDetails?.current_period_end 
+    ? formatDistanceToNow(new Date(subscriptionDetails.current_period_end), { addSuffix: true })
+    : null;
 
   return (
     <Card>
@@ -53,7 +90,21 @@ export function BillingPreview() {
         <div className="text-2xl font-bold">{displayCredits}</div>
         <p className="text-xs text-muted-foreground">
           {displayPlan} Plan
+          {hasActiveSubscription && renewalDate && (
+            <> • Renews {renewalDate}</>
+          )}
         </p>
+        
+        {!hasActiveSubscription && !profile?.stripe_subscription_id && (
+          <Button 
+            onClick={handleUpgrade}
+            size="sm"
+            className="mt-4 w-full"
+            variant="outline"
+          >
+            Upgrade to Subscription
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

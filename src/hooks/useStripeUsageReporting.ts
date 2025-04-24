@@ -58,23 +58,27 @@ export function useStripeUsageReporting() {
   };
 
   // Create a checkout session for subscription or one-time purchase
-  const createCheckoutSession = async (planId?: string) => {
+  const createCheckoutSession = async (plan: 'standard' | 'growth' | 'pro' = 'standard') => {
     if (!tenant?.id) {
       toast.error("No active workspace");
       return null;
     }
     
+    setIsProcessing(true);
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { plan: planId || 'standard' }
+        body: { plan }
       });
       
       if (error) throw error;
+      
       return data?.url;
     } catch (error) {
       console.error("Error creating checkout session:", error);
       toast.error("Failed to create checkout session");
       return null;
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -85,6 +89,7 @@ export function useStripeUsageReporting() {
       return null;
     }
     
+    setIsProcessing(true);
     try {
       const { data, error } = await supabase.functions.invoke('customer-portal');
       
@@ -94,6 +99,8 @@ export function useStripeUsageReporting() {
       console.error("Error opening customer portal:", error);
       toast.error("Failed to open customer portal");
       return null;
+    } finally {
+      setIsProcessing(false);
     }
   };
 

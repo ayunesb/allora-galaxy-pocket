@@ -2,15 +2,16 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Loader2, Plus, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import { useBillingProfile } from "@/hooks/useBillingProfile";
+import { useStripeUsageReporting } from "@/hooks/useStripeUsageReporting";
 
 export function CreditsPlanCard() {
   const [creditAmount, setCreditAmount] = useState<number>(100);
   const { profile, isLoading: profileLoading, addCredits, updatePlan } = useBillingProfile();
+  const { createCheckoutSession, isProcessing: isCheckoutProcessing } = useStripeUsageReporting();
 
   const handleAddCredits = () => {
     if (!creditAmount || creditAmount <= 0) {
@@ -22,6 +23,14 @@ export function CreditsPlanCard() {
 
   const handlePlanChange = (plan: 'standard' | 'growth' | 'pro') => {
     updatePlan.mutate(plan);
+  };
+  
+  const handleUpgrade = async (plan: 'standard' | 'growth' | 'pro') => {
+    toast.info(`Creating checkout for ${plan} plan...`);
+    const url = await createCheckoutSession(plan);
+    if (url) {
+      window.location.href = url;
+    }
   };
 
   return (
@@ -77,9 +86,27 @@ export function CreditsPlanCard() {
           </Button>
         </div>
 
-        <div className="pt-4">
-          <Button className="w-full bg-green-600 hover:bg-green-700">
-            <Sparkles className="h-4 w-4 mr-2" /> Upgrade Plan
+        <div className="pt-4 grid grid-cols-3 gap-2">
+          <Button 
+            className="bg-green-600 hover:bg-green-700"
+            disabled={isCheckoutProcessing}
+            onClick={() => handleUpgrade('standard')}
+          >
+            <Sparkles className="h-4 w-4 mr-2" /> Standard
+          </Button>
+          <Button 
+            className="bg-green-600 hover:bg-green-700"
+            disabled={isCheckoutProcessing}
+            onClick={() => handleUpgrade('growth')}
+          >
+            <Sparkles className="h-4 w-4 mr-2" /> Growth
+          </Button>
+          <Button 
+            className="bg-green-600 hover:bg-green-700"
+            disabled={isCheckoutProcessing}
+            onClick={() => handleUpgrade('pro')}
+          >
+            <Sparkles className="h-4 w-4 mr-2" /> Pro
           </Button>
         </div>
 
