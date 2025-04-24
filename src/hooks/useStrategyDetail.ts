@@ -4,9 +4,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
-import { useSystemLogs } from "@/hooks/useSystemLogs";
 import { toast } from "sonner";
+import { useSystemLogs } from "@/hooks/useSystemLogs";
 import type { Strategy } from "@/types/strategy";
 import { useStrategySystem } from "./useStrategySystem";
 
@@ -69,9 +68,7 @@ export function useStrategyDetail(id: string | undefined) {
         })
         .eq('id', id);
 
-      toast({
-        description: "The strategy has been approved and is now active"
-      });
+      toast("The strategy has been approved and is now active");
 
       logActivity({
         event_type: 'strategy_approved',
@@ -80,10 +77,7 @@ export function useStrategyDetail(id: string | undefined) {
       });
 
     } catch (error) {
-      toast({
-        variant: "destructive",
-        description: "Could not approve the strategy. Please try again."
-      });
+      toast("Could not approve the strategy. Please try again.");
     }
   };
 
@@ -103,9 +97,7 @@ export function useStrategyDetail(id: string | undefined) {
       queryClient.invalidateQueries({ queryKey: ['strategies'] });
       queryClient.invalidateQueries({ queryKey: ['strategy-feedback', id] });
       
-      toast({
-        description: 'Strategy has been declined'
-      });
+      toast('Strategy has been declined');
       
       logActivity({
         event_type: 'strategy_declined',
@@ -123,9 +115,7 @@ export function useStrategyDetail(id: string | undefined) {
   const handleRegenerate = () => {
     if (!strategy) return;
     
-    toast({
-      description: "The AI is creating a new version of this strategy"
-    });
+    toast("The AI is creating a new version of this strategy");
     
     logActivity({ 
       event_type: 'strategy_regenerated',
@@ -142,9 +132,7 @@ export function useStrategyDetail(id: string | undefined) {
       changes: strategy.description || ''
     });
     
-    toast({
-      description: "A new version of this strategy has been saved"
-    });
+    toast("A new version of this strategy has been saved");
   };
 
   const handleCompareVersions = async (v1: number, v2: number) => {
@@ -157,10 +145,7 @@ export function useStrategyDetail(id: string | undefined) {
       }
     } catch (error) {
       console.error("Error comparing versions:", error);
-      toast({
-        variant: "destructive",
-        description: "Failed to compare strategy versions"
-      });
+      toast("Failed to compare strategy versions");
     }
   };
 
@@ -194,6 +179,7 @@ export function useStrategyDetail(id: string | undefined) {
     feedbackItems,
     isLoadingFeedback,
     comparisonData,
+    versions,
     handleApprove,
     handleDecline,
     handleRegenerate,

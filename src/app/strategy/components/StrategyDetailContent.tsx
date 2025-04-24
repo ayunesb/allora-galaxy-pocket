@@ -24,6 +24,7 @@ export function StrategyDetailContent() {
     isLoading,
     error,
     comparisonData,
+    versions,
     handleApprove,
     handleDecline,
     handleRegenerate,
@@ -71,7 +72,7 @@ export function StrategyDetailContent() {
               versions: (
                 <StrategyVersions
                   strategy={strategy}
-                  versions={versions}
+                  versions={versions || []}
                   onCreateVersion={handleCreateVersion}
                   onCompareVersions={handleCompareVersions}
                   comparisonData={comparisonData}
