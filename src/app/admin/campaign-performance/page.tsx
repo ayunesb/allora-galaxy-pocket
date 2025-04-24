@@ -1,7 +1,6 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RefreshCw, Loader2 } from "lucide-react";
 import { useCampaignIntegration } from "@/hooks/useCampaignIntegration";
@@ -10,11 +9,13 @@ import { useCampaignPerformance } from "@/hooks/useCampaignPerformance";
 import { CampaignMetricCards } from "./components/CampaignMetricCards";
 import { PerformanceChart } from "./components/PerformanceChart";
 import { CampaignList } from "./components/CampaignList";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function CampaignPerformancePage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { trackCampaignOutcome } = useCampaignIntegration();
   const { campaignPerformance, kpiMetrics, isLoading } = useCampaignPerformance();
+  const queryClient = useQueryClient();
   
   const refreshData = async () => {
     setIsRefreshing(true);
@@ -63,84 +64,85 @@ export default function CampaignPerformancePage() {
         isLoading={isLoading}
       />
       
-      <Card>
-        <CardHeader>
-          <CardTitle>Campaign Detail</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <Tabs defaultValue="active" className="mt-6">
+        <TabsList className="mb-4">
+          <TabsTrigger value="active">Active</TabsTrigger>
+          <TabsTrigger value="completed">Completed</TabsTrigger>
+          <TabsTrigger value="draft">Drafts</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="active">
           {isLoading ? (
             <div className="flex justify-center items-center h-64">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-          ) : campaignPerformance.length > 0 ? (
-            <Tabs defaultValue="active">
-              <TabsList className="mb-4">
-                <TabsTrigger value="active">Active</TabsTrigger>
-                <TabsTrigger value="completed">Completed</TabsTrigger>
-                <TabsTrigger value="draft">Drafts</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="active">
-                {campaignPerformance
-                  .filter(campaign => campaign.status === 'active')
-                  .map((campaign) => (
-                    <CampaignList 
-                      key={campaign.id} 
-                      campaign={campaign} 
-                      onTrack={() => handleTrackCampaign(campaign.id)}
-                    />
-                  ))}
-                
-                {campaignPerformance.filter(c => c.status === 'active').length === 0 && (
-                  <div className="text-center p-8 text-muted-foreground">
-                    No active campaigns found
-                  </div>
-                )}
-              </TabsContent>
-              
-              <TabsContent value="completed">
-                {campaignPerformance
-                  .filter(campaign => campaign.status === 'completed')
-                  .map((campaign) => (
-                    <CampaignList 
-                      key={campaign.id} 
-                      campaign={campaign} 
-                      onTrack={() => handleTrackCampaign(campaign.id)}
-                    />
-                  ))}
-                
-                {campaignPerformance.filter(c => c.status === 'completed').length === 0 && (
-                  <div className="text-center p-8 text-muted-foreground">
-                    No completed campaigns found
-                  </div>
-                )}
-              </TabsContent>
-              
-              <TabsContent value="draft">
-                {campaignPerformance
-                  .filter(campaign => campaign.status === 'draft')
-                  .map((campaign) => (
-                    <CampaignList 
-                      key={campaign.id} 
-                      campaign={campaign} 
-                      onTrack={() => handleTrackCampaign(campaign.id)}
-                    />
-                  ))}
-                
-                {campaignPerformance.filter(c => c.status === 'draft').length === 0 && (
-                  <div className="text-center p-8 text-muted-foreground">
-                    No draft campaigns found
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
+          ) : campaignPerformance.filter(c => c.status === 'active').length > 0 ? (
+            <div className="space-y-4">
+              {campaignPerformance
+                .filter(campaign => campaign.status === 'active')
+                .map((campaign) => (
+                  <CampaignList 
+                    key={campaign.id} 
+                    campaign={campaign} 
+                    onTrack={() => handleTrackCampaign(campaign.id)}
+                  />
+                ))}
+            </div>
           ) : (
             <div className="text-center p-8 text-muted-foreground">
-              No campaigns found
+              No active campaigns found
             </div>
           )}
-        </CardContent>
-      </Card>
+        </TabsContent>
+        
+        <TabsContent value="completed">
+          {isLoading ? (
+            <div className="flex justify-center items-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : campaignPerformance.filter(c => c.status === 'completed').length > 0 ? (
+            <div className="space-y-4">
+              {campaignPerformance
+                .filter(campaign => campaign.status === 'completed')
+                .map((campaign) => (
+                  <CampaignList 
+                    key={campaign.id} 
+                    campaign={campaign} 
+                    onTrack={() => handleTrackCampaign(campaign.id)}
+                  />
+                ))}
+            </div>
+          ) : (
+            <div className="text-center p-8 text-muted-foreground">
+              No completed campaigns found
+            </div>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="draft">
+          {isLoading ? (
+            <div className="flex justify-center items-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : campaignPerformance.filter(c => c.status === 'draft').length > 0 ? (
+            <div className="space-y-4">
+              {campaignPerformance
+                .filter(campaign => campaign.status === 'draft')
+                .map((campaign) => (
+                  <CampaignList 
+                    key={campaign.id} 
+                    campaign={campaign} 
+                    onTrack={() => handleTrackCampaign(campaign.id)}
+                  />
+                ))}
+            </div>
+          ) : (
+            <div className="text-center p-8 text-muted-foreground">
+              No draft campaigns found
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

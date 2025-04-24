@@ -1,143 +1,179 @@
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-async function insertDemoSeedData(supabase: any, demoTenantId: string) {
-  // Insert strategies
-  await supabase.from('vault_strategies').insert([
-    {
-      tenant_id: demoTenantId,
-      title: 'Launch Campaign Strategy',
-      description: '## Goal: Rapid visibility\nUse WhatsApp, email, and cold outreach.\n1. Create engaging content\n2. Set up automation\n3. Monitor metrics',
-      status: 'active',
-      industry: 'SaaS',
-      goal: 'Growth',
-      confidence: 'High',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      tenant_id: demoTenantId,
-      title: 'Content Funnel Strategy',
-      description: '## Goal: MQL Generation\nCreate lead magnets, CTA sequences.\n1. Design lead magnets\n2. Set up email sequences\n3. Track conversions',
-      status: 'draft',
-      industry: 'Marketing',
-      goal: 'Lead Generation',
-      confidence: 'Medium',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }
-  ])
-
-  // Insert KPI metrics
-  await supabase.from('kpi_metrics').insert([
-    { tenant_id: demoTenantId, metric: 'Sessions', value: 4300 },
-    { tenant_id: demoTenantId, metric: 'Bounce Rate', value: 28.6 },
-    { tenant_id: demoTenantId, metric: 'Qualified Leads (7d)', value: 132 },
-    { tenant_id: demoTenantId, metric: 'Conversion Rate', value: 3.8 },
-    { tenant_id: demoTenantId, metric: 'MRR', value: 15200 }
-  ])
-
-  // Insert campaigns
-  await supabase.from('campaigns').insert([
-    { 
-      tenant_id: demoTenantId, 
-      name: 'Lead Reactivation Sequence',
-      description: 'Re-engage dormant leads with personalized messaging',
-      status: 'active',
-      created_at: new Date().toISOString()
-    },
-    { 
-      tenant_id: demoTenantId, 
-      name: 'Welcome Funnel',
-      description: 'Automated onboarding sequence for new subscribers',
-      status: 'draft',
-      created_at: new Date().toISOString()
-    }
-  ])
-
-  // Insert system welcome message
-  await supabase.from('system_logs').insert({
-    tenant_id: demoTenantId,
-    event_type: 'welcome_message',
-    message: '👋 Welcome to the Allora OS Demo! This is a read-only preview of our platform. Explore our AI-driven marketing tools.',
-    created_at: new Date().toISOString()
-  })
-}
+};
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      { auth: { persistSession: false } }
-    )
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') as string,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') as string
+    );
 
-    // Get demo tenant ID
-    const { data: demoTenant } = await supabaseAdmin
+    console.log('Starting demo tenant reset...');
+
+    // Find the demo tenant
+    const { data: demoTenants, error: tenantError } = await supabase
       .from('tenant_profiles')
-      .select('id')
-      .eq('is_demo', true)
-      .single()
+      .select('id, name')
+      .eq('is_demo', true);
 
-    if (!demoTenant?.id) {
-      throw new Error('Demo tenant not found')
+    if (tenantError) {
+      throw new Error(`Failed to find demo tenant: ${tenantError.message}`);
     }
 
-    // Reset demo tenant data
-    await Promise.all([
-      supabaseAdmin.from('vault_strategies').delete().eq('tenant_id', demoTenant.id),
-      supabaseAdmin.from('kpi_metrics').delete().eq('tenant_id', demoTenant.id),
-      supabaseAdmin.from('campaigns').delete().eq('tenant_id', demoTenant.id),
-      supabaseAdmin.from('system_logs').delete().eq('tenant_id', demoTenant.id)
-    ])
-
-    // Insert fresh demo data
-    await insertDemoSeedData(supabaseAdmin, demoTenant.id)
-
-    // Log the reset
-    await supabaseAdmin.from('cron_job_logs').insert({
-      function_name: 'reset-demo-tenant',
-      status: 'success',
-      message: 'Demo tenant data reset and seeded successfully'
-    })
-
-    return new Response(
-      JSON.stringify({ message: 'Demo tenant reset successful' }),
-      { 
+    if (!demoTenants || demoTenants.length === 0) {
+      console.log('No demo tenant found to reset');
+      return new Response(JSON.stringify({ message: 'No demo tenant found' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 
+      });
+    }
+
+    const resetResults = [];
+    
+    // Process each demo tenant
+    for (const tenant of demoTenants) {
+      console.log(`Resetting demo tenant: ${tenant.name} (${tenant.id})`);
+      
+      // 1. Reset campaigns
+      const { error: campaignError } = await supabase
+        .from('campaigns')
+        .delete()
+        .eq('tenant_id', tenant.id);
+      
+      if (campaignError) {
+        console.error(`Error deleting campaigns for tenant ${tenant.id}:`, campaignError);
       }
-    )
+      
+      // 2. Insert default campaigns
+      const { error: insertCampaignError } = await supabase
+        .from('campaigns')
+        .insert([
+          {
+            tenant_id: tenant.id,
+            name: 'Demo Campaign 1',
+            status: 'active',
+            description: 'This is an example active campaign',
+            scripts: { email: "Hi there, this is a demo campaign script!" }
+          },
+          {
+            tenant_id: tenant.id,
+            name: 'Demo Campaign 2',
+            status: 'draft',
+            description: 'This is an example draft campaign'
+          }
+        ]);
+      
+      if (insertCampaignError) {
+        console.error(`Error inserting demo campaigns for tenant ${tenant.id}:`, insertCampaignError);
+      }
+      
+      // 3. Reset KPI metrics
+      const { error: kpiError } = await supabase
+        .from('kpi_metrics')
+        .delete()
+        .eq('tenant_id', tenant.id);
+      
+      if (kpiError) {
+        console.error(`Error deleting KPI metrics for tenant ${tenant.id}:`, kpiError);
+      }
+      
+      // 4. Insert default KPI metrics
+      const { error: insertKpiError } = await supabase
+        .from('kpi_metrics')
+        .insert([
+          { tenant_id: tenant.id, metric: 'MQLs', value: 45 },
+          { tenant_id: tenant.id, metric: 'Conversion Rate', value: 3.2 },
+          { tenant_id: tenant.id, metric: 'Revenue', value: 12500 },
+          { tenant_id: tenant.id, metric: 'Qualified Leads (7d)', value: 12 }
+        ]);
+      
+      if (insertKpiError) {
+        console.error(`Error inserting demo KPI metrics for tenant ${tenant.id}:`, insertKpiError);
+      }
+      
+      // 5. Reset KPI insights
+      const { error: insightError } = await supabase
+        .from('kpi_insights')
+        .delete()
+        .eq('tenant_id', tenant.id);
+      
+      if (insightError) {
+        console.error(`Error deleting KPI insights for tenant ${tenant.id}:`, insightError);
+      }
+      
+      // 6. Reset notifications
+      const { error: notifError } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('tenant_id', tenant.id);
+      
+      if (notifError) {
+        console.error(`Error deleting notifications for tenant ${tenant.id}:`, notifError);
+      }
+      
+      // 7. Reset usage credits to default (100)
+      const { error: creditError } = await supabase
+        .from('tenant_profiles')
+        .update({ usage_credits: 100 })
+        .eq('id', tenant.id);
+      
+      if (creditError) {
+        console.error(`Error resetting credits for tenant ${tenant.id}:`, creditError);
+      }
+      
+      resetResults.push({
+        tenant_id: tenant.id,
+        success: true
+      });
+    }
+
+    // Log success
+    await supabase
+      .from('cron_job_logs')
+      .insert({
+        function_name: 'reset-demo-tenant',
+        status: 'success',
+        message: `Reset ${demoTenants.length} demo tenants`
+      });
+
+    return new Response(JSON.stringify({ 
+      success: true,
+      reset_count: demoTenants.length,
+      results: resetResults
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
   } catch (error) {
-    console.error('Error in reset-demo-tenant:', error)
+    console.error('Error in reset-demo-tenant function:', error);
     
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    // Log error
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') as string,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') as string
+    );
     
-    await supabaseAdmin.from('cron_job_logs').insert({
-      function_name: 'reset-demo-tenant',
-      status: 'error',
-      message: error.message
-    })
-
-    return new Response(
-      JSON.stringify({ error: error.message }), 
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500
-      }
-    )
+    await supabase
+      .from('cron_job_logs')
+      .insert({
+        function_name: 'reset-demo-tenant',
+        status: 'error',
+        message: `Error: ${error.message}`
+      });
+    
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
-})
+});

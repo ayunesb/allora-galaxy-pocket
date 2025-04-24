@@ -21,8 +21,17 @@ serve(async (req) => {
 
     console.log('Starting KPI alert check...');
 
+    // Get tenant parameter from request if available
+    let tenantId: string | null = null;
+    try {
+      const body = await req.json();
+      tenantId = body?.tenant_id;
+    } catch {
+      // No body or invalid JSON, continue with all tenants
+    }
+
     // 1. Get all active KPI insights with campaigns and their targets
-    const { data: insights, error: insightsError } = await supabase
+    let kpiQuery = supabase
       .from('kpi_insights')
       .select(`
         id, 
@@ -35,6 +44,13 @@ serve(async (req) => {
       .eq('outcome', 'pending')
       .not('campaign_id', 'is', null)
       .not('target', 'is', null);
+    
+    // Filter by tenant if provided
+    if (tenantId) {
+      kpiQuery = kpiQuery.eq('tenant_id', tenantId);
+    }
+
+    const { data: insights, error: insightsError } = await kpiQuery;
 
     if (insightsError) {
       console.error('Error fetching insights:', insightsError);

@@ -7,15 +7,17 @@ import { Button } from "@/components/ui/button";
 import { useKpiAlerts } from '@/hooks/useKpiAlerts';
 import { useCampaignIntegration } from '@/hooks/useCampaignIntegration';
 import { useNavigate } from 'react-router-dom';
-import { Bell, ArrowUpRight, BarChart2, RefreshCw } from 'lucide-react';
+import { Bell, ArrowUpRight, BarChart2, RefreshCw, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useDemoRestrictions } from '@/hooks/useDemoRestrictions';
 
 export function KpiCampaignTracker() {
   const { campaignInsights, isLoading, triggerKpiCheck } = useKpiAlerts();
   const { trackCampaignOutcome } = useCampaignIntegration();
   const navigate = useNavigate();
   const [isRefreshing, setIsRefreshing] = React.useState(false);
+  const { isDemoMode, resetDemo, isResetting } = useDemoRestrictions();
 
   useEffect(() => {
     // Check campaign outcomes once when component mounts
@@ -75,14 +77,27 @@ export function KpiCampaignTracker() {
           <p className="text-sm text-muted-foreground text-center max-w-xs">
             No campaign insights yet. Launch a campaign to start tracking KPIs and measure performance.
           </p>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="mt-4" 
-            onClick={() => navigate('/campaigns/center')}
-          >
-            Go to Campaign Center
-          </Button>
+          <div className="flex gap-2 mt-4">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => navigate('/campaigns/center')}
+            >
+              Go to Campaign Center
+            </Button>
+            
+            {isDemoMode && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => resetDemo()}
+                disabled={isResetting}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Reset Demo
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
     );
@@ -109,6 +124,7 @@ export function KpiCampaignTracker() {
               <RefreshCw className="h-4 w-4" />
               <span className="sr-only">Refresh</span>
             </Button>
+            
             <Button 
               variant="ghost" 
               size="sm" 
@@ -118,6 +134,19 @@ export function KpiCampaignTracker() {
               <ArrowUpRight className="h-4 w-4" />
               <span className="sr-only">View Details</span>
             </Button>
+            
+            {isDemoMode && (
+              <Button 
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => resetDemo()}
+                disabled={isResetting}
+              >
+                <Trash2 className="h-4 w-4" />
+                <span className="sr-only">Reset Demo</span>
+              </Button>
+            )}
           </div>
         </CardTitle>
       </CardHeader>
