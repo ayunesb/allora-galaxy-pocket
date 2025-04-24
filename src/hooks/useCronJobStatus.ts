@@ -18,6 +18,7 @@ export function useCronJobStatus() {
       if (error) throw error;
       return data;
     },
+    refetchInterval: 60000, // Refresh every 60 seconds
     enabled: !!tenant?.id,
   });
 }
