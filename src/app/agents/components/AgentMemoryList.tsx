@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,7 @@ import { useAgentMemory } from "@/hooks/useAgentMemory";
 import { formatDistanceToNow } from "date-fns";
 import { Brain, Star, RefreshCw } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface AgentMemoryListProps {
   agentName: string;
@@ -15,7 +16,17 @@ interface AgentMemoryListProps {
 
 export default function AgentMemoryList({ agentName }: AgentMemoryListProps) {
   const [filter, setFilter] = useState<'all' | 'history' | 'feedback' | 'preference'>('all');
-  const { memories, isLoading, remixMemory } = useAgentMemory(agentName);
+  const { getAgentMemories, isLoading } = useAgentMemory();
+  const [memories, setMemories] = useState<any[]>([]);
+  const isMobile = useIsMobile();
+
+  useEffect(() => {
+    const loadMemories = async () => {
+      const data = await getAgentMemories(agentName);
+      setMemories(data);
+    };
+    loadMemories();
+  }, [agentName, getAgentMemories]);
 
   const filteredMemories = memories.filter(memory => 
     filter === 'all' || memory.type === filter
@@ -30,44 +41,44 @@ export default function AgentMemoryList({ agentName }: AgentMemoryListProps) {
     }
   };
 
-  const handleRemix = (memoryId: string) => {
-    remixMemory(memoryId);
-  };
-
   return (
     <Card className="h-full">
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
+        <div className={`flex ${isMobile ? 'flex-col' : 'items-center'} justify-between gap-4`}>
           <CardTitle className="text-xl flex items-center gap-2">
             <Brain className="h-5 w-5" />
             Agent Memory
           </CardTitle>
-          <div className="flex gap-2">
+          <div className={`flex gap-2 ${isMobile ? 'flex-wrap' : ''}`}>
             <Button 
-              size="sm" 
+              size={isMobile ? "sm" : "default"}
               variant={filter === 'all' ? 'default' : 'outline'} 
               onClick={() => setFilter('all')}
+              className={isMobile ? "text-xs" : ""}
             >
               All
             </Button>
             <Button 
-              size="sm" 
+              size={isMobile ? "sm" : "default"}
               variant={filter === 'history' ? 'default' : 'outline'} 
               onClick={() => setFilter('history')}
+              className={isMobile ? "text-xs" : ""}
             >
               History
             </Button>
             <Button 
-              size="sm" 
+              size={isMobile ? "sm" : "default"}
               variant={filter === 'feedback' ? 'default' : 'outline'} 
               onClick={() => setFilter('feedback')}
+              className={isMobile ? "text-xs" : ""}
             >
               Feedback
             </Button>
             <Button 
-              size="sm" 
+              size={isMobile ? "sm" : "default"}
               variant={filter === 'preference' ? 'default' : 'outline'} 
               onClick={() => setFilter('preference')}
+              className={isMobile ? "text-xs" : ""}
             >
               Preferences
             </Button>
@@ -75,7 +86,7 @@ export default function AgentMemoryList({ agentName }: AgentMemoryListProps) {
         </div>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[500px]">
+        <ScrollArea className={`${isMobile ? 'h-[400px]' : 'h-[500px]'}`}>
           {isLoading ? (
             <div className="space-y-4">
               {[...Array(5)].map((_, i) => (
@@ -90,8 +101,8 @@ export default function AgentMemoryList({ agentName }: AgentMemoryListProps) {
             </div>
           ) : filteredMemories.length > 0 ? (
             <div className="space-y-4">
-              {filteredMemories.map(memory => (
-                <div key={memory.id} className="p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+              {filteredMemories.map((memory, index) => (
+                <div key={index} className="p-4 border rounded-lg hover:bg-muted/50 transition-colors">
                   <div className="flex justify-between items-center mb-2">
                     <div>
                       {getTypeIcon(memory.type)}
@@ -110,10 +121,10 @@ export default function AgentMemoryList({ agentName }: AgentMemoryListProps) {
                     </div>
                   )}
                   
-                  <div className="flex justify-between items-center mt-2">
+                  <div className={`flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-center'} mt-2`}>
                     <div className="flex items-center text-xs text-muted-foreground">
                       <RefreshCw className="h-3 w-3 mr-1" />
-                      Remixed {memory.remix_count || 0} times
+                      {memory.remix_count || 0} remixes
                       
                       {memory.ai_rating && (
                         <div className="ml-3 flex items-center">
@@ -122,11 +133,6 @@ export default function AgentMemoryList({ agentName }: AgentMemoryListProps) {
                         </div>
                       )}
                     </div>
-                    
-                    <Button variant="ghost" size="sm" onClick={() => handleRemix(memory.id)}>
-                      <RefreshCw className="h-3 w-3 mr-1" />
-                      Remix
-                    </Button>
                   </div>
                 </div>
               ))}
