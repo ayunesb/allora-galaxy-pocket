@@ -78,11 +78,16 @@ export function useLogsFilter(initialOptions: LogsFilterOptions = {}) {
       const { data, error } = await supabase
         .from('system_logs')
         .select('event_type')
-        .eq('tenant_id', tenant.id)
-        .distinct();
+        .eq('tenant_id', tenant.id);
       
       if (error) throw error;
-      return data.map(item => item.event_type).filter(Boolean);
+      
+      // Process the data to extract unique event types
+      const uniqueEventTypes = Array.from(new Set(
+        data.map(item => item.event_type).filter(Boolean)
+      ));
+      
+      return uniqueEventTypes;
     },
     enabled: !!tenant,
   });
