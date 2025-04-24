@@ -2,49 +2,81 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
+import { format, subDays } from "date-fns";
 import type { KpiAlert } from "@/types/kpi";
 
-export function useKpiAlerts() {
+export function useKpiAlerts(options: { days?: number; activeOnly?: boolean } = {}) {
+  const { days = 7, activeOnly = false } = options;
   const { tenant } = useTenant();
-  
-  const { 
-    data: alerts = [], 
-    isLoading,
-    error
-  } = useQuery({
-    queryKey: ['kpi-alerts', tenant?.id],
+  const startDate = format(subDays(new Date(), days), 'yyyy-MM-dd');
+
+  const { data: alerts = [], isLoading, error } = useQuery({
+    queryKey: ['kpi-alerts', tenant?.id, startDate, activeOnly],
     queryFn: async () => {
       if (!tenant?.id) return [];
-      
-      // This is just a placeholder - in a real implementation
-      // we would fetch from a kpi_alerts table
-      // This simulates getting alerts from the database
-      const mockAlerts: KpiAlert[] = [
-        {
-          id: '1',
-          metric: 'MRR',
-          threshold: 10000,
-          condition: 'below',
-          status: 'active',
-          tenant_id: tenant.id,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: '2',
-          metric: 'Conversion Rate',
-          threshold: 2.5,
-          condition: 'below',
-          status: 'triggered',
-          triggered_at: new Date().toISOString(),
-          tenant_id: tenant.id,
-          created_at: new Date().toISOString()
+
+      try {
+        let query = supabase
+          .from('kpi_insights')
+          .select('*')
+          .eq('tenant_id', tenant.id)
+          .gte('created_at', startDate)
+          .order('created_at', { ascending: false });
+
+        if (activeOnly) {
+          query = query.eq('outcome', 'pending');
         }
-      ];
-      
-      return mockAlerts;
+
+        const { data, error } = await query;
+
+        if (error) throw error;
+        return data;
+      } catch (err) {
+        console.error('Error fetching KPI alerts:', err);
+        throw err;
+      }
     },
-    enabled: !!tenant?.id
+    enabled: !!tenant?.id,
   });
-  
-  return { alerts, isLoading, error };
+
+  const { data: campaignInsights = [] } = useQuery({
+    queryKey: ['campaign-insights', tenant?.id],
+    queryFn: async () => {
+      if (!tenant?.id) return [];
+
+      try {
+        // Get insights tied to campaigns
+        const { data, error } = await supabase
+          .from('kpi_insights')
+          .select(`
+            *,
+            campaigns!inner(
+              id,
+              name,
+              status
+            )
+          `)
+          .eq('tenant_id', tenant.id)
+          .not('campaign_id', 'is', null)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        return data;
+      } catch (err) {
+        console.error('Error fetching campaign insights:', err);
+        return [];
+      }
+    },
+    enabled: !!tenant?.id,
+  });
+
+  return {
+    alerts,
+    campaignInsights,
+    isLoading,
+    error,
+    refreshAlerts: () => {
+      // This will be used to trigger a manual refresh
+    }
+  };
 }

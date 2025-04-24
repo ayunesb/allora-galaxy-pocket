@@ -147,18 +147,46 @@ export function useCreditsManager() {
    * @param amount Number of credits required
    * @returns boolean indicating if tenant has enough credits
    */
-  const hasEnoughCredits = (amount: number): boolean => {
+  const hasEnoughCredits = async (amount: number): Promise<boolean> => {
     if (!tenant?.id) return false;
     
-    return getRemainingCredits() >= amount;
+    try {
+      const { data: tenantData, error: tenantError } = await supabase
+        .from("tenant_profiles")
+        .select("usage_credits")
+        .eq("id", tenant.id)
+        .single();
+      
+      if (tenantError) throw tenantError;
+      
+      return (tenantData?.usage_credits || 0) >= amount;
+    } catch (error) {
+      console.error("Error checking credits:", error);
+      return false;
+    }
   };
   
   /**
    * Get the remaining credits for the current tenant
    * @returns number of remaining credits
    */
-  const getRemainingCredits = (): number => {
-    return tenant?.usage_credits || 0;
+  const getRemainingCredits = async (): Promise<number> => {
+    if (!tenant?.id) return 0;
+    
+    try {
+      const { data: tenantData, error: tenantError } = await supabase
+        .from("tenant_profiles")
+        .select("usage_credits")
+        .eq("id", tenant.id)
+        .single();
+      
+      if (tenantError) throw tenantError;
+      
+      return tenantData?.usage_credits || 0;
+    } catch (error) {
+      console.error("Error getting remaining credits:", error);
+      return 0;
+    }
   };
   
   /**

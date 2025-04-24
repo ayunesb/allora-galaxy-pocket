@@ -38,12 +38,14 @@ export const executePlugin = async (context: PluginExecutionContext): Promise<{
     }
     
     // Get plugin configuration
-    const { data: pluginConfig, error: configError } = await supabase
+    const { data: pluginConfigs, error: configError } = await supabase
       .from("tenant_plugin_configs")
       .select("config")
       .eq("tenant_id", context.tenant_id)
-      .eq("plugin_key", context.plugin_key)
-      .maybeSingle();
+      .eq("plugin_key", context.plugin_key);
+    
+    // Handle configuration
+    const pluginConfig = pluginConfigs && pluginConfigs.length > 0 ? pluginConfigs[0].config : {};
     
     if (configError) {
       console.warn(`No configuration found for plugin ${context.plugin_key}`);
@@ -61,7 +63,7 @@ export const executePlugin = async (context: PluginExecutionContext): Promise<{
       body: {
         plugin_key: context.plugin_key,
         operation: context.operation,
-        config: pluginConfig?.config || {},
+        config: pluginConfig || {},
         data: context.data,
         strategy: context.strategy,
         tenant_id: context.tenant_id,

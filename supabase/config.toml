@@ -1,5 +1,4 @@
 
-# Config file for our Supabase project
 project_id = "lxsuqqlfuftnvuvtctsx"
 
 [api]
@@ -15,11 +14,7 @@ major_version = 15
 [studio]
 enabled = true
 port = 54323
-api_url = "http://localhost"
-
-[inbucket]
-enabled = true
-port = 54324
+api_url = "http://127.0.0.1"
 
 [storage]
 enabled = true
@@ -34,24 +29,30 @@ enabled = false
 [realtime]
 enabled = true
 
-# Our edge functions
-[functions.security_audit]
-verify_jwt = true
+[inbucket]
+enabled = true
+port = 54324
 
-[functions.check-table-rls-status]
-verify_jwt = true
+[vector]
+enabled = true
 
-[functions.check-rls-policies]
-verify_jwt = true
-
-[functions.generate-strategy]
-verify_jwt = true
+[functions.check-kpi-alerts]
+verify_jwt = false
 
 [functions.generate-campaign]
-verify_jwt = true
+verify_jwt = false
 
-[functions.check-subscription]
+[functions.execute-plugin]
+verify_jwt = false
+
+[functions.generate-strategy]
+verify_jwt = false
+
+[functions.send-webhook-notification]
 verify_jwt = false
 
 [functions.strategy-init]
-verify_jwt = true
+verify_jwt = false
+
+[functions.trackCampaignOutcomes]
+verify_jwt = false

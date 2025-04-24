@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { OnboardingProfile } from "@/types/onboarding";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { useTenant } from "@/hooks/useTenant";
 
 export function useOnboardingSubmission() {

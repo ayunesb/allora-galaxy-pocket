@@ -1,107 +1,172 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.1"
-import { sendSlackAlert } from "../_shared/slack-alert.ts"
+
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-const FUNCTION_NAME = 'check-kpi-alerts';
+};
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
-
-  const supabase = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-  )
 
   try {
-    const { data: rules, error: rulesError } = await supabase
-      .from('kpi_alert_rules')
-      .select('*')
-      .eq('enabled', true)
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') as string,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') as string
+    );
 
-    if (rulesError) throw rulesError
+    console.log('Starting KPI alert check...');
 
-    for (const rule of rules) {
-      const { data: kpiData, error: kpiError } = await supabase
-        .from('kpi_metrics')
-        .select('value')
-        .eq('tenant_id', rule.tenant_id)
-        .eq('metric', rule.kpi_name)
-        .eq('period', 'current')
-        .single()
+    // 1. Get all active KPI insights with campaigns and their targets
+    const { data: insights, error: insightsError } = await supabase
+      .from('kpi_insights')
+      .select(`
+        id, 
+        kpi_name,
+        tenant_id,
+        campaign_id,
+        target,
+        outcome
+      `)
+      .eq('outcome', 'pending')
+      .not('campaign_id', 'is', null)
+      .not('target', 'is', null);
 
-      if (kpiError) continue
-
-      const { data: historicalData } = await supabase
-        .from('kpi_metrics')
-        .select('value')
-        .eq('tenant_id', rule.tenant_id)
-        .eq('metric', rule.kpi_name)
-        .eq('period', rule.compare_period)
-        .single()
-
-      if (!kpiData || !historicalData) continue
-
-      const currentValue = kpiData.value
-      const previousValue = historicalData.value
-
-      let shouldAlert = false
-      let alertMessage = ''
-
-      switch (rule.condition) {
-        case '>':
-          shouldAlert = currentValue > rule.threshold
-          alertMessage = `${rule.kpi_name} exceeded threshold: ${currentValue} > ${rule.threshold}`
-          break
-        case '<':
-          shouldAlert = currentValue < rule.threshold
-          alertMessage = `${rule.kpi_name} fell below threshold: ${currentValue} < ${rule.threshold}`
-          break
-        case 'falls_by_%':
-          const percentDrop = ((previousValue - currentValue) / previousValue) * 100
-          shouldAlert = percentDrop >= rule.threshold
-          alertMessage = `${rule.kpi_name} dropped by ${percentDrop.toFixed(2)}% (threshold: ${rule.threshold}%)`
-          break
-      }
-
-      if (shouldAlert) {
-        await supabase.from('agent_alerts').insert({
-          tenant_id: rule.tenant_id,
-          agent: 'KPI Monitor',
-          alert_type: 'kpi_alert',
-          message: alertMessage,
-        })
-      }
+    if (insightsError) {
+      console.error('Error fetching insights:', insightsError);
+      throw insightsError;
     }
 
-    await supabase.from('cron_job_logs').insert({
-      function_name: FUNCTION_NAME,
-      status: 'success',
-      message: 'KPI alerts checked successfully'
-    })
+    console.log(`Found ${insights?.length || 0} KPI insights to check`);
+    
+    if (!insights || insights.length === 0) {
+      return new Response(JSON.stringify({ message: 'No insights to check' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
-    return new Response(
-      JSON.stringify({ success: true }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-    )
+    // Process each insight
+    const promises = insights.map(async (insight) => {
+      try {
+        // Get latest metric value for this KPI
+        const { data: latestMetric, error: metricError } = await supabase
+          .from('kpi_metrics')
+          .select('value')
+          .eq('tenant_id', insight.tenant_id)
+          .eq('metric', insight.kpi_name)
+          .order('recorded_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (metricError) {
+          console.error(`Error fetching metric for insight ${insight.id}:`, metricError);
+          return null;
+        }
+
+        if (!latestMetric) {
+          console.log(`No metric found for insight ${insight.id}, skipping...`);
+          return null;
+        }
+
+        // Evaluate if target is met
+        const targetMet = latestMetric.value >= insight.target!;
+        console.log(`Insight ${insight.id} evaluation: Target=${insight.target}, Current=${latestMetric.value}, Success=${targetMet}`);
+
+        // Update outcome based on evaluation
+        const { error: updateError } = await supabase
+          .from('kpi_insights')
+          .update({ 
+            outcome: targetMet ? 'success' : 'failed',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', insight.id);
+
+        if (updateError) {
+          console.error(`Error updating insight ${insight.id}:`, updateError);
+          return null;
+        }
+
+        // Create notification
+        await supabase
+          .from('notifications')
+          .insert({
+            tenant_id: insight.tenant_id,
+            event_type: targetMet ? 'kpi_target_achieved' : 'kpi_target_missed',
+            description: targetMet 
+              ? `Campaign KPI "${insight.kpi_name}" has achieved its target of ${insight.target}`
+              : `Campaign KPI "${insight.kpi_name}" has missed its target of ${insight.target}`
+          });
+
+        // Update campaign status if needed
+        if (targetMet) {
+          const { error: campaignError } = await supabase
+            .from('campaigns')
+            .update({ status: 'completed' })
+            .eq('id', insight.campaign_id);
+            
+          if (campaignError) {
+            console.error(`Error updating campaign ${insight.campaign_id}:`, campaignError);
+          }
+        }
+
+        return {
+          insight_id: insight.id,
+          success: true,
+          target_met: targetMet
+        };
+      } catch (error) {
+        console.error(`Error processing insight ${insight.id}:`, error);
+        return {
+          insight_id: insight.id,
+          success: false,
+          error: error.message
+        };
+      }
+    });
+
+    const results = await Promise.all(promises);
+
+    // Log execution
+    await supabase
+      .from('cron_job_logs')
+      .insert({
+        function_name: 'check-kpi-alerts',
+        status: 'success',
+        message: `Processed ${insights.length} KPI insights`
+      });
+
+    return new Response(JSON.stringify({ 
+      success: true, 
+      processed: insights.length,
+      results 
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
   } catch (error) {
-    await supabase.from('cron_job_logs').insert({
-      function_name: FUNCTION_NAME,
-      status: 'failed',
-      message: error.message
-    })
-
-    await sendSlackAlert(FUNCTION_NAME, error.message)
-
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-    )
+    console.error('Error in check-kpi-alerts function:', error);
+    
+    // Log error
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') as string,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') as string
+    );
+    
+    await supabase
+      .from('cron_job_logs')
+      .insert({
+        function_name: 'check-kpi-alerts',
+        status: 'error',
+        message: `Error: ${error.message}`
+      });
+    
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
-})
+});
