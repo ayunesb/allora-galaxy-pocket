@@ -55,7 +55,7 @@ export function CreditsPlanCard() {
             variant={profile?.plan === 'standard' ? "default" : "outline"} 
             size="sm"
             onClick={() => handlePlanChange('standard')}
-            disabled={addCredits.isPending || updatePlan.isPending}
+            disabled={updatePlan.isPending || addCredits.isPending}
           >
             Standard
           </Button>
@@ -63,7 +63,7 @@ export function CreditsPlanCard() {
             variant={profile?.plan === 'growth' ? "default" : "outline"} 
             size="sm"
             onClick={() => handlePlanChange('growth')}
-            disabled={addCredits.isPending || updatePlan.isPending}
+            disabled={updatePlan.isPending || addCredits.isPending}
           >
             Growth
           </Button>
@@ -71,7 +71,7 @@ export function CreditsPlanCard() {
             variant={profile?.plan === 'pro' ? "default" : "outline"} 
             size="sm"
             onClick={() => handlePlanChange('pro')}
-            disabled={addCredits.isPending || updatePlan.isPending}
+            disabled={updatePlan.isPending || addCredits.isPending}
           >
             Pro
           </Button>

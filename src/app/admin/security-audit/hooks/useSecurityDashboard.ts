@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSecurityAudit, SecurityAuditIssue } from "./useSecurityAudit";
 import { useSystemLogs } from "@/hooks/useSystemLogs";
 
@@ -21,8 +21,14 @@ interface SecurityAuditResult {
 
 export function useSecurityDashboard() {
   const { runSecurityAudit, isLoading: isScanning, issues } = useSecurityAudit();
-  const { logs } = useSystemLogs();
+  const { logs, getRecentLogs } = useSystemLogs();
   const [results, setResults] = useState<SecurityAuditResult[]>([]);
+  
+  useEffect(() => {
+    // Fetch logs when component is mounted
+    getRecentLogs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
   // Filter for security-related logs only
   const securityLogs = logs.filter(log => 

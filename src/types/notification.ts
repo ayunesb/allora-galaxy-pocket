@@ -8,3 +8,11 @@ export interface Notification {
   created_at: string;
   updated_at: string;
 }
+
+export interface NotificationInput {
+  event_type: string;
+  description: string;
+  priority?: 'low' | 'medium' | 'high';
+  link?: string;
+  send_webhook?: boolean;
+}

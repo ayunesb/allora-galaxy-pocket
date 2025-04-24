@@ -6,11 +6,12 @@ import { toast } from "sonner";
 import { useAuth } from "./useAuth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-interface NotificationInput {
+export interface NotificationInput {
   event_type: string;
   description: string;
   priority?: 'low' | 'medium' | 'high';
   link?: string;
+  send_webhook?: boolean; // Add this new property to match the usage
 }
 
 export function useNotifications() {
@@ -55,6 +56,22 @@ export function useNotifications() {
         });
         
       if (error) throw error;
+      
+      // If webhook flag is provided, send webhook notification
+      if (notification.send_webhook) {
+        try {
+          await supabase.functions.invoke('send-webhook-notification', {
+            body: { 
+              event_type: notification.event_type,
+              description: notification.description,
+              tenant_id: tenant.id
+            }
+          });
+        } catch (webhookError) {
+          console.error("Error sending webhook notification:", webhookError);
+          // Non-blocking error
+        }
+      }
       
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       return true;
