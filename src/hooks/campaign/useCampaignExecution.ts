@@ -14,9 +14,7 @@ export function useCampaignExecution() {
   const execute = async () => {
     try {
       if (!tenant?.id) {
-        toast({
-          description: "No active workspace"
-        });
+        toast(`No active workspace`);
         return;
       }
 
@@ -46,9 +44,7 @@ export function useCampaignExecution() {
       setStatus('success');
       setProgress(100);
 
-      toast({
-        description: "Campaign executed successfully"
-      });
+      toast(`Campaign executed successfully`);
 
       // Log to automation metrics
       await supabase.rpc('log_automation_metric', {
@@ -59,10 +55,7 @@ export function useCampaignExecution() {
 
     } catch (error) {
       console.error('Campaign execution error:', error);
-      toast({
-        description: "Failed to execute campaign",
-        variant: "destructive"
-      });
+      toast(`Failed to execute campaign`);
     }
   };
   
@@ -70,15 +63,11 @@ export function useCampaignExecution() {
   const startCampaignExecution = async (campaignId: string) => {
     try {
       if (!tenant?.id) {
-        toast({
-          description: "No active workspace"
-        });
+        toast(`No active workspace`);
         return;
       }
       
-      toast({
-        description: "Starting campaign execution..."
-      });
+      toast(`Starting campaign execution...`);
       
       // Update campaign status in database
       const { error } = await supabase
@@ -97,9 +86,7 @@ export function useCampaignExecution() {
       
     } catch (error) {
       console.error('Failed to start campaign:', error);
-      toast({
-        description: "Failed to start campaign execution"
-      });
+      toast(`Failed to start campaign execution`);
     }
   };
   
@@ -118,15 +105,11 @@ export function useCampaignExecution() {
         
       if (error) throw error;
       
-      toast({
-        description: "Campaign paused successfully"
-      });
+      toast(`Campaign paused successfully`);
       
     } catch (error) {
       console.error('Failed to pause campaign:', error);
-      toast({
-        description: "Failed to pause campaign"
-      });
+      toast(`Failed to pause campaign`);
     }
   };
 

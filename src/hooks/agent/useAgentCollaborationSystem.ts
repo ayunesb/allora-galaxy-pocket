@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/hooks/useTenant';
@@ -25,9 +24,7 @@ export function useAgentCollaborationSystem() {
   
   const startCollaboration = async (agents: string[], initialPrompt?: string) => {
     if (!tenant?.id) {
-      toast({
-        description: "No active workspace"
-      });
+      toast(`No active workspace`);
       return null;
     }
     
@@ -57,9 +54,7 @@ export function useAgentCollaborationSystem() {
       return newSessionId;
     } catch (error) {
       console.error('Error starting collaboration session:', error);
-      toast({
-        description: "Failed to start agent collaboration"
-      });
+      toast(`Failed to start agent collaboration`);
       return null;
     } finally {
       setIsLoading(false);

@@ -1,4 +1,3 @@
-
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
@@ -54,9 +53,7 @@ export default function RoleGuard({
             });
           }
           
-          toast({
-            description: "You don't have permission to access this page"
-          });
+          toast(`You don't have permission to access this page`);
           
           navigate(fallbackPath, { replace: true });
         } else {
@@ -64,9 +61,7 @@ export default function RoleGuard({
         }
       } catch (error) {
         console.error("Role validation error:", error);
-        toast({
-          description: "There was a problem verifying your permissions"
-        });
+        toast(`There was a problem verifying your permissions`);
         navigate(fallbackPath, { replace: true });
       } finally {
         setIsVerifying(false);

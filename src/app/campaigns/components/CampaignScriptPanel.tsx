@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,9 +17,7 @@ export function CampaignScriptPanel({ channel, content }: CampaignScriptPanelPro
   const handleCopy = () => {
     navigator.clipboard.writeText(content);
     setCopied(true);
-    toast({
-      description: `${channel} script copied to clipboard`
-    });
+    toast(`${channel} script copied to clipboard`);
     
     setTimeout(() => {
       setCopied(false);
