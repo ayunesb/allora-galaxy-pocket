@@ -5,10 +5,14 @@ import { Button } from "@/components/ui/button";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { RouteDebugger } from "./RouteDebugger";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const isMobile = useIsMobile();
+  
+  // For debugging only - remove in production
+  const isDebugMode = import.meta.env.DEV;
 
   return (
     <div className="min-h-screen bg-background">
@@ -64,6 +68,9 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
           {children}
         </div>
       </main>
+      
+      {/* Route Debugger - only in development */}
+      {isDebugMode && <RouteDebugger />}
     </div>
   );
 };

@@ -28,7 +28,6 @@ const routes: RouteObject[] = [
         </SecurityProvider>
       </RequireAuth>
     ),
-    errorElement: <NotFound />,
     children: [
       // Redirect from root to dashboard
       { path: "/", element: <Navigate to="/dashboard" replace /> },
@@ -40,7 +39,7 @@ const routes: RouteObject[] = [
       ...pluginRoutes, 
       ...billingRoutes,
       
-      // Catch-all route
+      // Catch-all route - this should be LAST
       { path: "*", element: <NotFound /> }
     ],
   }

@@ -18,6 +18,8 @@ export function useRouteMonitoring() {
     
     const logRouteAccess = async () => {
       try {
+        console.log(`Route accessed: ${location.pathname} by ${role || 'user'}`);
+        
         // Log route access
         await supabase
           .from('route_logs')

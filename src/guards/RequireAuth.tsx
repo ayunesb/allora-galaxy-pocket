@@ -1,4 +1,3 @@
-
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
@@ -65,6 +64,21 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     enabled: shouldCheckOnboarding,
   });
   
+  // Log routing state to help with debugging
+  useEffect(() => {
+    console.log("RequireAuth routing state:", {
+      path: location.pathname,
+      user: user ? "authenticated" : "unauthenticated",
+      tenant: tenant ? "selected" : "not selected",
+      authLoading,
+      tenantLoading,
+      onboardingLoading,
+      onboardingComplete,
+      shouldCheckOnboarding,
+      redirected: redirectedRef.current
+    });
+  }, [location.pathname, user, tenant, authLoading, tenantLoading, onboardingLoading, onboardingComplete, shouldCheckOnboarding]);
+  
   // Decide whether to show loading state
   const showLoading = authLoading || 
     tenantLoading || 
@@ -119,5 +133,6 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     return <Navigate to="/onboarding" state={{ from: location.pathname }} replace />;
   }
 
+  // Otherwise, show the protected page
   return <>{children}</>;
 }

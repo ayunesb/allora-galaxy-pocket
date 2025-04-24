@@ -1,3 +1,4 @@
+
 import { Settings } from "lucide-react";
 import { CreditsDisplay } from "./billing/CreditsDisplay";
 import {
@@ -69,7 +70,6 @@ export function AppSidebar() {
             items={filteredPluginItems}
             show={filteredPluginItems.length > 0} 
           />
-          <CreditsDisplay />
         </SidebarErrorBoundary>
       </SidebarContent>
       
