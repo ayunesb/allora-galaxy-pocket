@@ -8,10 +8,7 @@ import SettingsPage from '@/app/admin/settings/page';
 import AdminLogsPage from '@/app/admin/logs/page';
 import RlsAuditReport from "@/app/admin/security-audit/RlsAuditReport";
 import SecurityDashboard from "@/app/admin/security-audit/SecurityDashboard";
-import BillingPanel from '@/app/admin/billing/BillingPanel';
-import AnalyticsDashboard from '@/app/admin/analytics/page';
 import SecurityAuditPage from '@/app/admin/security-audit/page';
-import AIDecisionsPage from '@/app/admin/ai-decisions/page';
 
 export const adminRoutes: RouteObject[] = [
   {
@@ -32,11 +29,15 @@ export const adminRoutes: RouteObject[] = [
   },
   {
     path: '/admin/security-audit',
-    element: <SecurityDashboard />,
+    element: <SecurityAuditPage />,
   },
   {
-    path: '/admin/rls-audit',
+    path: '/admin/security-audit/rls',
     element: <RlsAuditReport />,
+  },
+  {
+    path: '/admin/security-audit/dashboard',
+    element: <SecurityDashboard />,
   },
   {
     path: '/admin/settings',
