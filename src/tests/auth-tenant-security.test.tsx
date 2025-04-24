@@ -9,6 +9,7 @@ import { TenantProvider } from '@/hooks/useTenant';
 import { MemoryRouter } from 'react-router-dom';
 import RequireAuth from '@/guards/RequireAuth';
 import RoleGuard from '@/guards/RoleGuard';
+import { useState, useEffect } from 'react';
 
 // Test component that uses auth hooks
 const TestAuthComponent = () => {
@@ -33,13 +34,17 @@ const TestTenantComponent = () => {
 // Test component for role access
 const TestRoleComponent = () => {
   const { checkAccess } = useRoleAccess();
+  const [hasAccess, setHasAccess] = useState<string>('Checking access...');
+  
+  useEffect(() => {
+    checkAccess('admin').then(result => {
+      setHasAccess(result ? 'Has admin access' : 'No admin access');
+    });
+  }, [checkAccess]);
+  
   return (
     <div>
-      <div data-testid="role-check">
-        {checkAccess('admin').then(hasAccess => 
-          hasAccess ? 'Has admin access' : 'No admin access'
-        )}
-      </div>
+      <div data-testid="role-check">{hasAccess}</div>
     </div>
   );
 };
