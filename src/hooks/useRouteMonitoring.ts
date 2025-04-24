@@ -18,8 +18,6 @@ export function useRouteMonitoring() {
     
     const logRouteAccess = async () => {
       try {
-        console.log(`Route accessed: ${location.pathname} by ${role || 'user'}`);
-        
         // Log route access
         await supabase
           .from('route_logs')
@@ -31,7 +29,6 @@ export function useRouteMonitoring() {
           });
       } catch (error) {
         console.error("Error logging route access:", error);
-        // Silent failure, we don't want to disrupt the user experience
       }
     };
     
@@ -41,5 +38,5 @@ export function useRouteMonitoring() {
     return () => clearTimeout(timeoutId);
   }, [location.pathname, user?.id, tenant?.id, role]);
   
-  return null; // No UI changes
+  return null;
 }
