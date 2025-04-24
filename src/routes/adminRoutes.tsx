@@ -41,13 +41,5 @@ export const adminRoutes: RouteObject[] = [
   {
     path: '/admin/settings',
     element: <SettingsPage />,
-  },
-  {
-    path: 'security-audit',
-    element: <SecurityAuditPage />
-  },
-  {
-    path: 'logs',
-    element: <AdminLogsPage />
   }
 ];
