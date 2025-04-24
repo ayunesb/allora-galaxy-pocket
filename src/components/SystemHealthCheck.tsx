@@ -2,14 +2,11 @@ import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
-import HealthStatusSection from "./system-health/HealthStatusSection";
 import SystemStatusDetails from "./system-health/SystemStatusDetails";
 import TableListSection from "./system-health/TableListSection";
-
 import { RefreshButton } from "./system-health/RefreshButton";
-import { TablesCheck } from "./system-health/TablesCheck";
-import { SystemConfigCreation } from "./system-health/SystemConfigCreation";
 import { SystemOverallStatus } from "./system-health/SystemOverallStatus";
+import { CronJobStatus } from "./system-health/CronJobStatus";
 
 interface SystemStatus {
   database: boolean;
@@ -178,10 +175,7 @@ export default function SystemHealthCheck() {
           maintenance={status.maintenance}
         />
         <TableListSection tables={status.tables} />
-        <SystemConfigCreation 
-          show={!status.tables.system_config}
-          onCreate={createSystemConfigTable}
-        />
+        <CronJobStatus />
       </CardContent>
       <CardFooter className="border-t pt-4 flex-col items-start">
         <p className="text-sm text-muted-foreground mb-2">
