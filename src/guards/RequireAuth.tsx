@@ -9,6 +9,8 @@ import { useEffect, useState, useRef } from "react";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import LiveSystemVerification from "@/components/LiveSystemVerification";
+import { useTheme } from "@/components/ui/theme-provider";
 
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, session, isLoading: authLoading, refreshSession } = useAuth();
@@ -53,43 +55,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     
     return () => clearInterval(interval);
   }, [session, refreshSession]);
-  
-  // Delay onboarding check until both user and tenant are loaded
-  useEffect(() => {
-    if (user && tenant?.id && !authLoading && !tenantLoading && !shouldCheckOnboarding && !skipOnboardingCheck) {
-      setShouldCheckOnboarding(true);
-    }
 
-    // Mark state as stable once all loading is complete
-    if (!authLoading && !tenantLoading) {
-      stableStateRef.current = true;
-    }
-  }, [user, tenant?.id, authLoading, tenantLoading, shouldCheckOnboarding, skipOnboardingCheck]);
-  
-  // Handle session persistence issues
-  useEffect(() => {
-    if (authLoading || user || authAttempts > 2) return;
-    
-    const attemptReauth = async () => {
-      console.log(`Auth attempt ${authAttempts + 1}: Trying to refresh session...`);
-      setAuthAttempts(prev => prev + 1);
-      try {
-        const success = await refreshSession();
-        if (!success && authAttempts >= 2) {
-          setAuthError("Unable to authenticate. Please try logging in again.");
-        }
-      } catch (err) {
-        if (authAttempts >= 2) {
-          setAuthError("Authentication error. Please try logging in again.");
-        }
-      }
-    };
-    
-    if (authAttempts < 3) {
-      attemptReauth();
-    }
-  }, [authLoading, user, authAttempts, refreshSession]);
-  
   // Check onboarding status when user and tenant are available
   const { data: onboardingComplete, isLoading: onboardingLoading } = useQuery({
     queryKey: ['onboarding-status', tenant?.id, user?.id],
@@ -153,18 +119,44 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     });
   }, [location.pathname, user, tenant, authLoading, tenantLoading, onboardingLoading, 
       onboardingComplete, shouldCheckOnboarding, session, authAttempts]);
-  
-  // Decide whether to show loading state
-  const showLoading = authLoading || 
-    tenantLoading || 
-    (shouldCheckOnboarding && onboardingLoading);
-  
-  // If already redirected, don't process again
-  if (redirectedRef.current) {
-    return <>{children}</>;
-  }
 
-  // Show auth error if we've tried multiple times
+  // Delay onboarding check until both user and tenant are loaded
+  useEffect(() => {
+    if (user && tenant?.id && !authLoading && !tenantLoading && !shouldCheckOnboarding && !skipOnboardingCheck) {
+      setShouldCheckOnboarding(true);
+    }
+
+    // Mark state as stable once all loading is complete
+    if (!authLoading && !tenantLoading) {
+      stableStateRef.current = true;
+    }
+  }, [user, tenant?.id, authLoading, tenantLoading, shouldCheckOnboarding, skipOnboardingCheck]);
+  
+  // Handle session persistence issues
+  useEffect(() => {
+    if (authLoading || user || authAttempts > 2) return;
+    
+    const attemptReauth = async () => {
+      console.log(`Auth attempt ${authAttempts + 1}: Trying to refresh session...`);
+      setAuthAttempts(prev => prev + 1);
+      try {
+        const success = await refreshSession();
+        if (!success && authAttempts >= 2) {
+          setAuthError("Unable to authenticate. Please try logging in again.");
+        }
+      } catch (err) {
+        if (authAttempts >= 2) {
+          setAuthError("Authentication error. Please try logging in again.");
+        }
+      }
+    };
+    
+    if (authAttempts < 3) {
+      attemptReauth();
+    }
+  }, [authLoading, user, authAttempts, refreshSession]);
+
+  // Handle auth error display
   if (authError) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-background">
@@ -187,24 +179,17 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     );
   }
 
-  // Don't redirect while checking auth status or before state is stable
-  if (showLoading || !stableStateRef.current) {
+  // Show loading state
+  if (authLoading || tenantLoading || (shouldCheckOnboarding && onboardingLoading) || !stableStateRef.current) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
-        <LoadingSpinner size={40} label={showLoading ? "Loading authentication..." : "Preparing application..."} />
+        <LoadingSpinner size={40} label={authLoading ? "Loading authentication..." : "Preparing application..."} />
       </div>
     );
   }
-  
-  // Allow access to workspace page even without login for certain paths
-  if (location.pathname === "/workspace" || location.pathname.startsWith("/auth/")) {
-    // If already on workspace page, just show it
-    return <>{children}</>;
-  }
-  
-  // If not logged in, redirect to auth page
+
+  // Handle routing logic
   if (!user) {
-    // Special case: already on auth pages
     if (location.pathname.startsWith("/auth/")) {
       return <>{children}</>;
     }
@@ -213,10 +198,8 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     redirectedRef.current = true;
     return <Navigate to="/auth/login" state={{ from: location.pathname }} replace />;
   }
-  
-  // If logged in but no tenant selected, redirect to workspace selection
-  if (!tenant) {
-    // Special case: already on onboarding or workspace page
+
+  if (!tenant && !location.pathname.startsWith("/auth/")) {
     if (location.pathname === "/onboarding" || location.pathname === "/workspace") {
       return <>{children}</>;
     }
@@ -226,8 +209,6 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     return <Navigate to="/workspace" state={{ from: location.pathname }} replace />;
   }
 
-  // If onboarding check completed and it's not complete and we're not already on the onboarding page,
-  // redirect to onboarding
   if (shouldCheckOnboarding && 
       onboardingCheckDoneRef.current &&
       onboardingComplete === false && 
@@ -237,6 +218,5 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     return <Navigate to="/onboarding" state={{ from: location.pathname }} replace />;
   }
 
-  // Otherwise, show the protected page
   return <>{children}</>;
 }
