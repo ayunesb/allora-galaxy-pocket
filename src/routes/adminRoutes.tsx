@@ -9,8 +9,10 @@ import RlsAuditReport from "@/app/admin/security-audit/RlsAuditReport";
 import SystemHealthCheck from "@/components/SystemHealthCheck";
 import CampaignPerformancePage from "@/app/admin/campaign-performance/page";
 import FeedbackLoopDashboard from "@/app/admin/feedback-loop/page";
+import AdminDashboardPage from "@/app/admin/dashboard/page";
 
 export const adminRoutes: RouteObject[] = [
+  { path: "/admin/dashboard", element: <AdminDashboardPage /> },
   { path: "/admin/security-audit", element: <SecurityAuditPage /> },
   { path: "/admin/security-dashboard", element: <SecurityDashboard /> },
   { path: "/admin/rls-audit", element: <RlsAuditReport /> },
