@@ -4,6 +4,7 @@ import { useLocation } from 'react-router-dom';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { AlertCircle } from "lucide-react";
+import routes from "../routes"; // Import the routes from the routes file
 
 export const RouteDebugger = () => {
   const location = useLocation();
