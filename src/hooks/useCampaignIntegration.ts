@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,7 +42,6 @@ export function useCampaignIntegration() {
       
       setIsLoading(true);
       
-      // Deduct credits for campaign generation
       const creditsUsed = await useCredits(3, "Campaign Generation", "Campaign_Agent");
       
       if (!creditsUsed) {
@@ -51,7 +49,6 @@ export function useCampaignIntegration() {
       }
       
       try {
-        // Call the edge function to generate campaign content
         const { data: campaignData, error: genError } = await supabase.functions.invoke("generate-campaign", {
           body: {
             tenant_id: tenant.id,
@@ -71,7 +68,6 @@ export function useCampaignIntegration() {
         
         if (genError) throw genError;
         
-        // Save campaign to database
         const { data: savedCampaign, error: saveError } = await supabase
           .from("campaigns")
           .insert({
@@ -96,7 +92,6 @@ export function useCampaignIntegration() {
         
         if (saveError) throw saveError;
         
-        // Create KPI insight
         if (input.strategy.id) {
           await supabase.from("kpi_insights").insert({
             tenant_id: tenant.id,
@@ -110,13 +105,11 @@ export function useCampaignIntegration() {
           });
         }
         
-        // Send notification
         await sendNotification({
           event_type: "campaign_created",
           description: `New campaign "${savedCampaign.name}" has been created and is ready for review`,
         });
         
-        // Invalidate relevant queries
         queryClient.invalidateQueries({ queryKey: ["campaigns"] });
         
         return savedCampaign;
@@ -146,7 +139,6 @@ export function useCampaignIntegration() {
     }
   };
 
-  // Add campaign execution tracking
   const updateCampaignExecutionStatus = async (campaignId: string, status: string, metrics?: Record<string, any>) => {
     if (!tenant?.id || !campaignId) {
       return { success: false, error: "Missing required information" };
@@ -162,7 +154,6 @@ export function useCampaignIntegration() {
       }
       
       if (metrics) {
-        // Get current metrics to merge with new ones
         const { data: currentCampaign } = await supabase
           .from("campaigns")
           .select("execution_metrics")
@@ -190,8 +181,7 @@ export function useCampaignIntegration() {
       return { success: false, error: err.message };
     }
   };
-  
-  // Get campaign execution metrics
+
   const getCampaignExecutionMetrics = async (campaignId: string) => {
     if (!tenant?.id || !campaignId) {
       return { success: false, error: "Missing required information" };
@@ -214,10 +204,33 @@ export function useCampaignIntegration() {
     }
   };
 
+  const trackCampaignOutcome = async (campaignId: string) => {
+    if (!tenant?.id) {
+      return { success: false, error: "Missing tenant information" };
+    }
+    
+    try {
+      const { error } = await supabase.functions.invoke("trackCampaignOutcomes", {
+        body: { campaign_id: campaignId, tenant_id: tenant.id }
+      });
+      
+      if (error) throw error;
+      
+      queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+      queryClient.invalidateQueries({ queryKey: ['kpi-insights'] });
+      
+      return { success: true };
+    } catch (err: any) {
+      console.error("Error tracking campaign outcome:", err);
+      return { success: false, error: err.message };
+    }
+  };
+
   return {
     isLoading: isLoading || generateCampaign.isPending,
     convertStrategyToCampaign,
     updateCampaignExecutionStatus,
-    getCampaignExecutionMetrics
+    getCampaignExecutionMetrics,
+    trackCampaignOutcome
   };
 }
