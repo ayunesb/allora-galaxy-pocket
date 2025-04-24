@@ -1,5 +1,5 @@
+
 import React from 'react';
-import { lazy } from 'react';
 import { RouteObject } from 'react-router-dom';
 import AdminDashboardPage from '@/app/admin/dashboard/page';
 import SystemMonitoringPage from '@/app/admin/monitoring/page';
@@ -17,38 +17,31 @@ import SystemLogsPage from '@/app/admin/logs/page';
 export const adminRoutes: RouteObject[] = [
   {
     path: '/admin',
-    name: 'Dashboard',
-    component: <AdminDashboardPage />,
+    element: <AdminDashboardPage />,
   },
   {
     path: '/admin/monitoring',
-    name: 'System Monitoring',
-    component: <SystemMonitoringPage />,
+    element: <SystemMonitoringPage />,
   },
   {
     path: '/admin/user-management',
-    name: 'User Management',
-    component: <UserManagementPage />,
+    element: <UserManagementPage />,
   },
   {
     path: '/admin/logs',
-    name: 'System Logs',
-    component: <AdminLogsPage />,
+    element: <AdminLogsPage />,
   },
   {
     path: '/admin/security-audit',
-    name: 'Security Dashboard',
-    component: <SecurityDashboard />,
+    element: <SecurityDashboard />,
   },
   {
     path: '/admin/rls-audit',
-    name: 'RLS Audit',
-    component: <RlsAuditReport />,
+    element: <RlsAuditReport />,
   },
   {
     path: '/admin/settings',
-    name: 'Settings',
-    component: <SettingsPage />,
+    element: <SettingsPage />,
   },
   {
     path: 'security-audit',

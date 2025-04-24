@@ -2,11 +2,15 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
-import type { SystemLog } from "@/types/logs";
+import { useTenant } from "@/hooks/useTenant";
+import { useAuth } from "@/hooks/useAuth";
+import type { SystemLog, LogActivityParams } from "@/types/systemLog";
 
 export function useSystemLogs() {
   const [logs, setLogs] = useState<SystemLog[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const { tenant } = useTenant();
+  const { user } = useAuth();
 
   const getRecentLogs = async (limit = 100) => {
     setIsLoading(true);
@@ -49,10 +53,34 @@ export function useSystemLogs() {
     }
   };
 
+  // Add the logActivity function
+  const logActivity = async ({ event_type, message, meta = {} }: LogActivityParams) => {
+    if (!tenant?.id) return;
+    
+    try {
+      const { error } = await supabase
+        .from('system_logs')
+        .insert({
+          tenant_id: tenant.id,
+          user_id: user?.id,
+          event_type,
+          message,
+          meta
+        });
+        
+      if (error) {
+        console.error("Error logging activity:", error);
+      }
+    } catch (err) {
+      console.error("Failed to log activity:", err);
+    }
+  };
+
   return {
     logs,
     isLoading,
     getRecentLogs,
-    getSecurityLogs
+    getSecurityLogs,
+    logActivity
   };
 }

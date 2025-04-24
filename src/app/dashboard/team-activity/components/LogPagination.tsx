@@ -24,7 +24,6 @@ export function LogPagination({ currentPage, totalPages, onPageChange }: LogPagi
         <PaginationContent>
           <PaginationItem>
             <PaginationPrevious 
-              href="#" 
               onClick={(e) => {
                 e.preventDefault();
                 if (currentPage > 1) onPageChange(currentPage - 1);
@@ -56,7 +55,6 @@ export function LogPagination({ currentPage, totalPages, onPageChange }: LogPagi
               paginationItems.push(
                 <PaginationItem key={pageNum}>
                   <PaginationLink
-                    href="#"
                     onClick={(e) => {
                       e.preventDefault();
                       onPageChange(pageNum);
@@ -76,7 +74,6 @@ export function LogPagination({ currentPage, totalPages, onPageChange }: LogPagi
           
           <PaginationItem>
             <PaginationNext 
-              href="#" 
               onClick={(e) => {
                 e.preventDefault();
                 if (currentPage < totalPages) onPageChange(currentPage + 1);
