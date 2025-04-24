@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useSecurityAudit } from "./useSecurityAudit";
+import { useSecurityAudit, SecurityAuditIssue } from "./useSecurityAudit";
 import { useSystemLogs } from "@/hooks/useSystemLogs";
 
 interface SecurityScores {
@@ -9,9 +9,20 @@ interface SecurityScores {
   low: number;
 }
 
+// Define the structure expected by our components
+interface SecurityAuditResult {
+  tableName: string;
+  securityScore: number;
+  hasRls: boolean;
+  hasTenantId: boolean;
+  hasAuthPolicies: boolean;
+  recommendations: string[];
+}
+
 export function useSecurityDashboard() {
-  const { runSecurityAudit, isLoading: isScanning, issues: results } = useSecurityAudit();
+  const { runSecurityAudit, isLoading: isScanning, issues } = useSecurityAudit();
   const { logs } = useSystemLogs();
+  const [results, setResults] = useState<SecurityAuditResult[]>([]);
   
   // Filter for security-related logs only
   const securityLogs = logs.filter(log => 
@@ -19,6 +30,40 @@ export function useSecurityDashboard() {
     log.event_type.includes('AUTH_') ||
     log.event_type.includes('ACCESS_')
   );
+
+  // Transform SecurityAuditIssue to SecurityAuditResult
+  const transformSecurityIssues = (issues: SecurityAuditIssue[]): SecurityAuditResult[] => {
+    return issues.map(issue => {
+      // Map each issue to our expected format
+      let securityScore = 0;
+      const hasRls = issue.type !== 'rls_disabled';
+      const hasAuthPolicies = issue.type !== 'incomplete_rls';
+      
+      // Calculate a security score based on issue type
+      if (issue.type === 'security_definer_view') {
+        securityScore = 60; // Medium risk
+      } else if (issue.type === 'rls_disabled') {
+        securityScore = 20; // High risk
+      } else if (issue.type === 'incomplete_rls') {
+        securityScore = 40; // Medium-high risk
+      }
+      
+      return {
+        tableName: issue.name,
+        securityScore,
+        hasRls,
+        hasTenantId: true, // We don't have this information in the issue, defaulting to true
+        hasAuthPolicies,
+        recommendations: [issue.remediation]
+      };
+    });
+  };
+  
+  // Update runSecurityAudit to transform issues into our expected format
+  const runAuditAndTransform = async () => {
+    await runSecurityAudit();
+    setResults(transformSecurityIssues(issues));
+  };
 
   // Calculate overall security score
   const calculateOverallScore = () => {
@@ -48,7 +93,7 @@ export function useSecurityDashboard() {
   const criticalIssuesCount = results.filter(r => r.securityScore < 40).length;
 
   return {
-    runSecurityAudit,
+    runSecurityAudit: runAuditAndTransform,
     isScanning,
     results,
     overallScore,

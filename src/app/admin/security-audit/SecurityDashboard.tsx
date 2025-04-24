@@ -23,7 +23,8 @@ export default function SecurityDashboard() {
     hasCriticalIssues,
     criticalIssuesCount,
     results,
-    isScanning
+    isScanning,
+    runSecurityAudit
   } = useSecurityDashboard();
 
   const tableColumns: Column[] = [
