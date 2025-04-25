@@ -18,14 +18,14 @@ export function AdminLogsFilterPanel({ filters, onFilterChange }: AdminLogsFilte
           <div>
             <Input
               placeholder="Search logs..."
-              value={filters.searchTerm}
+              value={filters.searchTerm || ''}
               onChange={(e) => onFilterChange({ searchTerm: e.target.value })}
               className="w-full"
             />
           </div>
           <div>
             <Select 
-              value={filters.eventType} 
+              value={filters.eventType || 'all'} 
               onValueChange={(value) => onFilterChange({ eventType: value })}
             >
               <SelectTrigger>
@@ -44,8 +44,8 @@ export function AdminLogsFilterPanel({ filters, onFilterChange }: AdminLogsFilte
           </div>
           <div>
             <Select
-              value={filters.severity}
-              onValueChange={(value) => onFilterChange({ severity: value as any })}
+              value={filters.severity || 'all'}
+              onValueChange={(value) => onFilterChange({ severity: value })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Severity" />
@@ -64,7 +64,7 @@ export function AdminLogsFilterPanel({ filters, onFilterChange }: AdminLogsFilte
         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Select
-              value={filters.dateRange?.toString()}
+              value={filters.dateRange?.toString() || '7'}
               onValueChange={(value) => onFilterChange({ dateRange: parseInt(value) })}
             >
               <SelectTrigger>
@@ -81,7 +81,7 @@ export function AdminLogsFilterPanel({ filters, onFilterChange }: AdminLogsFilte
           {filters.service !== undefined && (
             <div>
               <Select
-                value={filters.service}
+                value={filters.service || 'all'}
                 onValueChange={(value) => onFilterChange({ service: value })}
               >
                 <SelectTrigger>

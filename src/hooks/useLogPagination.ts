@@ -1,62 +1,79 @@
 
-import { useState, useMemo } from 'react';
-import { PaginationState } from '@/types/logFilters';
+import { useState, useCallback } from 'react';
 
-interface UseLogPaginationProps {
+interface PaginationOptions {
   totalItems: number;
   initialPage?: number;
-  initialLogsPerPage?: number;
+  itemsPerPage?: number;
 }
 
-export function useLogPagination({
-  totalItems,
-  initialPage = 1,
-  initialLogsPerPage = 10
-}: UseLogPaginationProps) {
-  const [currentPage, setCurrentPage] = useState(initialPage);
-  const [logsPerPage, setLogsPerPage] = useState(initialLogsPerPage);
+interface PaginationState {
+  currentPage: number;
+  totalPages: number;
+  logsPerPage: number;
+}
 
-  const totalPages = useMemo(() => {
-    return Math.max(1, Math.ceil(totalItems / logsPerPage));
-  }, [totalItems, logsPerPage]);
+export function useLogPagination({ 
+  totalItems, 
+  initialPage = 1, 
+  itemsPerPage = 10 
+}: PaginationOptions) {
+  const [pagination, setPagination] = useState<PaginationState>({
+    currentPage: initialPage,
+    totalPages: Math.max(1, Math.ceil(totalItems / itemsPerPage)),
+    logsPerPage: itemsPerPage
+  });
 
-  // Ensure current page is valid when data changes
-  useMemo(() => {
-    if (currentPage > totalPages && totalPages > 0) {
-      setCurrentPage(totalPages);
+  // Update pagination when items count changes
+  if (totalItems !== (pagination.totalPages * pagination.logsPerPage)) {
+    const newTotalPages = Math.max(1, Math.ceil(totalItems / pagination.logsPerPage));
+    if (newTotalPages !== pagination.totalPages) {
+      setPagination(prev => ({
+        ...prev,
+        totalPages: newTotalPages,
+        // Reset to page 1 if current page is beyond the new total
+        currentPage: prev.currentPage > newTotalPages ? 1 : prev.currentPage
+      }));
     }
-  }, [currentPage, totalPages]);
+  }
 
-  const nextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
+  const nextPage = useCallback(() => {
+    setPagination(prev => ({
+      ...prev,
+      currentPage: Math.min(prev.currentPage + 1, prev.totalPages)
+    }));
+  }, []);
 
-  const prevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
+  const prevPage = useCallback(() => {
+    setPagination(prev => ({
+      ...prev,
+      currentPage: Math.max(prev.currentPage - 1, 1)
+    }));
+  }, []);
 
-  const goToPage = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
-  };
+  const goToPage = useCallback((page: number) => {
+    setPagination(prev => ({
+      ...prev,
+      currentPage: Math.max(1, Math.min(page, prev.totalPages))
+    }));
+  }, []);
+
+  const setLogsPerPage = useCallback((count: number) => {
+    setPagination(prev => {
+      const newTotalPages = Math.max(1, Math.ceil(totalItems / count));
+      return {
+        currentPage: 1, // Reset to first page when changing items per page
+        totalPages: newTotalPages,
+        logsPerPage: count
+      };
+    });
+  }, [totalItems]);
 
   return {
-    currentPage,
-    totalPages,
-    logsPerPage,
+    ...pagination,
     nextPage,
     prevPage,
     goToPage,
     setLogsPerPage
-  } as PaginationState & {
-    nextPage: () => void;
-    prevPage: () => void;
-    goToPage: (page: number) => void;
-    setLogsPerPage: (count: number) => void;
   };
 }

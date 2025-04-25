@@ -22,9 +22,10 @@ export function useTenantDataProtection() {
 
     const validateTenantAccess = async () => {
       try {
-        // Check if user has access to this tenant
-        const { data, error } = await supabase.rpc("check_tenant_access", {
-          requested_tenant_id: tenant.id
+        // Check if user has access to this tenant using the security definer function
+        const { data, error } = await supabase.rpc("check_tenant_role_permission", {
+          _user_id: user.id,
+          _tenant_id: tenant.id
         });
 
         if (error) throw error;
