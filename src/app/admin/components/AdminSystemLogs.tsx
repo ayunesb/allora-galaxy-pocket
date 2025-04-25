@@ -1,4 +1,5 @@
-import React from "react";
+
+import React, { useState, useEffect } from "react";
 import LogSecurityAlert from "@/app/admin/logs/LogSecurityAlert";
 import { useSystemLogsWithFilters } from '@/hooks/useSystemLogsWithFilters';
 import { Input } from '@/components/ui/input';
@@ -22,7 +23,7 @@ export function AdminSystemLogs() {
     logs, 
     isLoading, 
     filters, 
-    setFilters,
+    updateFilters,
     getRecentLogs,
     pagination: {
       currentPage,
@@ -36,7 +37,7 @@ export function AdminSystemLogs() {
   const [showSecurityInfo, setShowSecurityInfo] = useState(false);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilters({ search: e.target.value });
+    updateFilters({ search: e.target.value });
   };
 
   const handleRefresh = () => {
@@ -49,11 +50,11 @@ export function AdminSystemLogs() {
   };
 
   const handleDateRangeChange = (value: string) => {
-    setFilters({ dateRange: parseInt(value) });
+    updateFilters({ dateRange: parseInt(value) });
   };
 
   const handleEventTypeChange = (value: string) => {
-    setFilters({ eventType: value });
+    updateFilters({ eventType: value });
   };
 
   const toggleSecurityInfo = () => {
@@ -68,7 +69,7 @@ export function AdminSystemLogs() {
     });
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (user?.id && tenant?.id) {
       const logSecurityView = async () => {
         try {
