@@ -3,6 +3,7 @@ import { SystemLog } from '@/types/systemLog';
 import { useSystemLogs } from '@/hooks/useSystemLogs';
 import { useLogFilters } from '@/hooks/useLogFilters';
 import { useLogPagination } from '@/hooks/useLogPagination';
+import { ToastService } from '@/services/toast';
 
 export function useSystemLogsWithFilters() {
   const { logs: allLogs, isLoading, error, getRecentLogs } = useSystemLogs();
@@ -14,6 +15,14 @@ export function useSystemLogsWithFilters() {
 
   // Get paginated logs
   const getPaginatedLogs = () => {
+    if (error) {
+      ToastService.error({
+        title: "Error fetching logs",
+        description: error.message
+      });
+      return [];
+    }
+
     const startIndex = (pagination.currentPage - 1) * pagination.logsPerPage;
     return filteredLogs.slice(startIndex, startIndex + pagination.logsPerPage);
   };
@@ -34,5 +43,3 @@ export function useSystemLogsWithFilters() {
     setLogsPerPage: pagination.setLogsPerPage
   };
 }
-
-export type { LogFilters } from '@/types/logFilters';
