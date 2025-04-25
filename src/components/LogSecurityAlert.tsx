@@ -5,7 +5,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Timestamp } from './ui/Timestamp';
 import { useSystemLogs } from '@/hooks/useSystemLogs';
-import { useToast } from '@/hooks/use-toast';
+import { ToastService } from '@/services/ToastService';
 
 interface LogSecurityAlertProps {
   severity?: 'low' | 'medium' | 'high' | 'critical';
@@ -17,7 +17,7 @@ interface LogSecurityAlertProps {
 
 /**
  * LogSecurityAlert component for displaying security alerts with different severity levels
- * Supports acknowledgeable alerts that get logged to the system logs when actioned
+ * Used in the user journey for error handling at transition points
  */
 export function LogSecurityAlert({
   severity = 'medium',
@@ -27,7 +27,6 @@ export function LogSecurityAlert({
   details
 }: LogSecurityAlertProps) {
   const { logActivity } = useSystemLogs();
-  const { toast } = useToast();
 
   const getSeverityStyles = () => {
     switch (severity) {
@@ -50,7 +49,7 @@ export function LogSecurityAlert({
       const logSeverity = severity === 'critical' || severity === 'high' ? 'error' : 'warning';
       
       await logActivity({
-        event_type: 'SECURITY_ALERT_ACKNOWLEDGED',
+        event_type: "SECURITY_ALERT_ACKNOWLEDGED",
         message: `Security alert acknowledged: ${message}`,
         meta: {
           details,
@@ -58,16 +57,15 @@ export function LogSecurityAlert({
         }
       });
 
-      toast({
+      ToastService.success({
         title: "Alert acknowledged",
         description: "This security alert has been logged as acknowledged."
       });
     } catch (error) {
       console.error('Failed to log acknowledgement:', error);
-      toast({
+      ToastService.error({
         title: "Failed to acknowledge alert",
-        description: "There was a problem logging your acknowledgement.",
-        variant: "destructive"
+        description: "There was a problem logging your acknowledgement."
       });
     }
   };

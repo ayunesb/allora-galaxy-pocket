@@ -1,7 +1,7 @@
 
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { ToastService } from "@/services/ToastService";
 
 export function useAuthActions(
   setIsLoading: (loading: boolean) => void,
@@ -24,7 +24,8 @@ export function useAuthActions(
           errorMessage = "Invalid email or password";
         }
         
-        toast.error("Login failed", {
+        ToastService.error({
+          title: "Login failed",
           description: errorMessage
         });
         throw error;
@@ -54,7 +55,8 @@ export function useAuthActions(
       }
       
       if (existingUsers) {
-        toast.error("Signup failed", {
+        ToastService.error({
+          title: "Signup failed",
           description: "This email is already registered"
         });
         throw new Error("Email already registered");
@@ -70,12 +72,14 @@ export function useAuthActions(
       
       if (error) throw error;
       
-      toast.success("Signup successful", {
+      ToastService.success({
+        title: "Signup successful",
         description: "Please check your email to confirm your account"
       });
     } catch (error) {
       const e = error as Error;
-      toast.error("Signup failed", {
+      ToastService.error({
+        title: "Signup failed",
         description: e.message
       });
       throw error;
@@ -92,12 +96,14 @@ export function useAuthActions(
       
       // Clear any auth-related local storage
       localStorage.removeItem("tenant_id");
-      toast.success("Logged out", {
+      ToastService.success({
+        title: "Logged out",
         description: "You have been successfully logged out"
       });
     } catch (error) {
       const e = error as Error;
-      toast.error("Logout failed", {
+      ToastService.error({
+        title: "Logout failed",
         description: e.message
       });
       throw error;
@@ -113,7 +119,8 @@ export function useAuthActions(
       
       if (error) {
         console.error("Session refresh error:", error);
-        toast.error("Failed to refresh authentication", {
+        ToastService.error({
+          title: "Failed to refresh authentication",
           description: error.message
         });
         return false;

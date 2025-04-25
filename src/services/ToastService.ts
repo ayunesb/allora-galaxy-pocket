@@ -10,6 +10,7 @@ export interface ToastOptions {
 
 /**
  * Standardized toast service to ensure consistent toast notifications across the application
+ * Used across the entire user journey: Auth → Onboarding → Strategy → Campaign → Execution → KPI
  */
 export class ToastService {
   private static defaultDuration = 5000;

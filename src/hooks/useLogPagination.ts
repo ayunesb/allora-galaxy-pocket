@@ -1,51 +1,59 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { PaginationState } from '@/types/logFilters';
 
-interface LogPaginationProps {
+interface PaginationProps {
   totalItems: number;
   initialPage?: number;
-  initialLogsPerPage?: number;
+  initialItemsPerPage?: number;
 }
 
-export function useLogPagination({
-  totalItems,
-  initialPage = 1,
-  initialLogsPerPage = 10
-}: LogPaginationProps) {
+export function useLogPagination({ 
+  totalItems, 
+  initialPage = 1, 
+  initialItemsPerPage = 10 
+}: PaginationProps) {
   const [currentPage, setCurrentPage] = useState(initialPage);
-  const [logsPerPage, setLogsPerPage] = useState(initialLogsPerPage);
+  const [logsPerPage, setLogsPerPage] = useState(initialItemsPerPage);
   
-  // Calculate total pages
+  // Calculate total pages based on items and items per page
   const totalPages = Math.max(1, Math.ceil(totalItems / logsPerPage));
   
-  // Navigate to next page
-  const nextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
+  // Ensure currentPage is within valid range when dependencies change
+  useCallback(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
     }
-  };
+  }, [totalItems, logsPerPage, totalPages]);
   
-  // Navigate to previous page
-  const prevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
+  // Navigation functions
+  const nextPage = useCallback(() => {
+    setCurrentPage(prev => Math.min(prev + 1, totalPages));
+  }, [totalPages]);
   
-  // Go to a specific page
-  const goToPage = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
+  const prevPage = useCallback(() => {
+    setCurrentPage(prev => Math.max(prev - 1, 1));
+  }, []);
+  
+  const goToPage = useCallback((page: number) => {
+    const targetPage = Math.min(Math.max(1, page), totalPages);
+    setCurrentPage(targetPage);
+  }, [totalPages]);
+
+  const pagination: PaginationState = {
+    currentPage,
+    totalPages,
+    logsPerPage
   };
   
   return {
     currentPage,
     totalPages,
     logsPerPage,
+    setLogsPerPage,
     nextPage,
     prevPage,
     goToPage,
-    setLogsPerPage
+    pagination
   };
 }

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { format, formatDistanceToNow, isValid } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 
 interface TimestampProps {
   date: string | Date;
@@ -8,35 +8,23 @@ interface TimestampProps {
   showRelative?: boolean;
 }
 
-/**
- * Timestamp component for consistently displaying dates throughout the application
- * Supports both absolute and relative time formatting
- */
 export function Timestamp({ 
   date, 
-  format: dateFormat = 'PPpp', 
+  format: formatString = 'PPp', 
   showRelative = true 
 }: TimestampProps) {
-  if (!date) return null;
+  const dateValue = typeof date === 'string' ? new Date(date) : date;
   
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
-  
-  if (!isValid(dateObj)) {
-    return <span className="text-muted-foreground">Invalid date</span>;
+  if (isNaN(dateValue.getTime())) {
+    return <span>Invalid date</span>;
   }
   
+  const formattedDate = format(dateValue, formatString);
+  const relativeDate = formatDistanceToNow(dateValue, { addSuffix: true });
+  
   return (
-    <time 
-      dateTime={dateObj.toISOString()} 
-      title={format(dateObj, 'PPpp')}
-      className="whitespace-nowrap"
-    >
-      {dateFormat && format(dateObj, dateFormat)}
-      {showRelative && (
-        <span className="text-muted-foreground ml-1">
-          ({formatDistanceToNow(dateObj, { addSuffix: true })})
-        </span>
-      )}
-    </time>
+    <span title={formattedDate}>
+      {showRelative ? relativeDate : formattedDate}
+    </span>
   );
 }
