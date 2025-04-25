@@ -1,68 +1,85 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
-import { toast } from "@/hooks/use-toast";
-import { ToastFunction } from "@/types/toast";
 
-export async function createDefaultWorkspace(
-  toast: ToastFunction,
-  onSuccess?: () => void
-) {
+/**
+ * Creates a default workspace for a new user
+ * @param toast Toast function to display messages
+ * @param onSuccess Optional callback function on successful workspace creation
+ * @returns The newly created workspace or null if creation failed
+ */
+export async function createDefaultWorkspace(toast: any, onSuccess?: () => void) {
   try {
     const { data: user } = await supabase.auth.getUser();
-    if (!user?.user) {
-      throw new Error("You must be logged in to create a workspace");
+    
+    if (!user?.user?.id) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to create a workspace",
+        variant: "destructive"
+      });
+      return null;
     }
 
-    const workspaceId = uuidv4();
-    const workspaceName = `My Workspace`;
-
+    // Check if user is authenticated before proceeding
+    const userId = user.user.id;
+    
+    // Get user email or generate random name
+    const { data: userData } = await supabase.auth.getUser();
+    const email = userData?.user?.email || '';
+    
+    // Create a workspace name from email or generate one
+    const workspaceName = email 
+      ? `${email.split('@')[0]}'s Workspace`
+      : `New Workspace ${Math.floor(Math.random() * 1000)}`;
+    
+    // Generate a new tenant ID
+    const newTenantId = uuidv4();
+    
     // Create the tenant profile
-    const { error: tenantError } = await supabase
-      .from("tenant_profiles")
+    const { data: tenant, error: tenantError } = await supabase
+      .from('tenant_profiles')
       .insert({
-        id: workspaceId,
+        id: newTenantId,
         name: workspaceName,
-        theme_color: "indigo",
-        theme_mode: "light",
-        enable_auto_approve: true
-      });
-
-    if (tenantError) throw tenantError;
-
-    // Create tenant user role association
-    const { error: roleError } = await supabase
-      .from("tenant_user_roles")
-      .insert({
-        tenant_id: workspaceId,
-        user_id: user.user.id,
-        role: "admin"
-      });
-
-    if (roleError) {
-      console.error("[createDefaultWorkspace] Error creating role:", roleError);
-      // Continue even if role assignment fails - we'll fix it later
+        theme_mode: 'light',
+        theme_color: 'indigo'
+      })
+      .select()
+      .single();
+    
+    if (tenantError) {
+      console.error("[createDefaultWorkspace] Error creating tenant:", tenantError);
+      throw new Error(tenantError.message);
     }
-
-    // Call the success callback if provided
-    if (onSuccess) {
+    
+    // Assign the user to the tenant with admin role
+    const { error: roleError } = await supabase
+      .from('tenant_user_roles')
+      .insert({
+        tenant_id: newTenantId,
+        user_id: userId,
+        role: 'admin'
+      });
+    
+    if (roleError) {
+      console.error("[createDefaultWorkspace] Error assigning role:", roleError);
+      throw new Error(roleError.message);
+    }
+    
+    // Call onSuccess callback if provided
+    if (onSuccess && typeof onSuccess === 'function') {
       onSuccess();
     }
-
-    return {
-      id: workspaceId,
-      name: workspaceName,
-      theme_color: "indigo",
-      theme_mode: "light",
-      enable_auto_approve: true
-    };
+    
+    return tenant;
   } catch (error: any) {
-    console.error("[createDefaultWorkspace] Error:", error);
+    console.error("[createDefaultWorkspace] Unexpected error:", error);
     toast({
-      title: "Failed to create workspace",
-      description: error.message || "Please try again",
-      variant: "destructive",
+      title: "Error creating workspace",
+      description: error.message || "An unexpected error occurred",
+      variant: "destructive"
     });
-    throw error;
+    return null;
   }
 }

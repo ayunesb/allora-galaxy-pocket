@@ -14,7 +14,7 @@ export function useAvailableTenants() {
     queryKey: ["available-tenants"],
     queryFn: async () => {
       const { data: tenants, error } = await supabase
-        .from("tenants")
+        .from("tenant_profiles")
         .select("*")
         .order("name");
 

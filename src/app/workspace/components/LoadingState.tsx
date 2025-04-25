@@ -1,16 +1,23 @@
 
+import React from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2 } from "lucide-react";
 
-interface LoadingStateProps {
-  message?: string;
-}
-
-export const LoadingState = ({ message = "Loading..." }: LoadingStateProps) => {
+export const LoadingState: React.FC = () => {
   return (
-    <div className="flex flex-col items-center justify-center py-2 space-y-2">
-      <Loader2 className="h-5 w-5 text-muted-foreground animate-spin" />
-      <p className="text-sm text-muted-foreground">{message}</p>
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-[150px]" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+      
+      <div className="space-y-3">
+        <Skeleton className="h-4 w-[100px]" />
+        <div className="space-y-2">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      </div>
     </div>
   );
 };
