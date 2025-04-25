@@ -32,12 +32,13 @@ export function AdminSystemLogsTable({
   onPrevPage,
   onGoToPage,
 }: AdminSystemLogsTableProps) {
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+  const formatDate = (date: string | Date) => {
+    // Convert Date object to string if necessary
+    const dateToFormat = date instanceof Date ? date : new Date(date);
     return new Intl.DateTimeFormat("en-US", {
       dateStyle: "short",
       timeStyle: "medium",
-    }).format(date);
+    }).format(dateToFormat);
   };
 
   const getBadgeVariant = (severity?: string) => {

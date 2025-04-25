@@ -6,7 +6,7 @@ import { AdminSystemLogsTable } from "./AdminSystemLogsTable";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ReloadIcon } from "@radix-ui/react-icons";
+import { RefreshCw } from "lucide-react"; // Changed from ReloadIcon to RefreshCw from lucide-react
 
 export function AdminSystemLogs() {
   const {
@@ -45,7 +45,7 @@ export function AdminSystemLogs() {
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-2xl font-bold">System Logs</CardTitle>
           <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isLoading}>
-            {isLoading ? <ReloadIcon className="mr-2 h-4 w-4 animate-spin" /> : "Refresh"}
+            {isLoading ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : "Refresh"}
           </Button>
         </CardHeader>
         <CardContent>
