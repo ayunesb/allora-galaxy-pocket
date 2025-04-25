@@ -50,8 +50,7 @@ export const ToastService = {
       loading?: string;
       success?: string | ((data: T) => string);
       error?: string | ((error: unknown) => string);
-    },
-    options?: { id?: string; duration?: number }
+    }
   ) => {
     // The toast.promise function in sonner expects only 2 arguments
     return toast.promise(promise, messages);

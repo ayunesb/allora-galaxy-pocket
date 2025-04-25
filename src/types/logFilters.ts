@@ -1,30 +1,20 @@
 
 export interface LogFilters {
+  searchTerm?: string;
+  search?: string;
   eventType?: string;
   severity?: string;
-  dateFrom?: Date | null;
-  dateTo?: Date | null;
+  dateRange?: number;
+  dateFrom?: string;
+  dateTo?: string;
   userId?: string;
   tenantId?: string;
-  searchTerm?: string;
-  // Add missing properties
-  search?: string;
-  dateRange?: number;
   service?: string;
 }
 
 export const DEFAULT_FILTERS: LogFilters = {
+  searchTerm: '',
   eventType: 'all',
   severity: 'all',
-  dateFrom: null,
-  dateTo: null,
-  search: '',
-  dateRange: 7,
-  service: 'all'
+  dateRange: 7 // last 7 days
 };
-
-export interface PaginationState {
-  currentPage: number;
-  totalPages: number;
-  logsPerPage: number;
-}

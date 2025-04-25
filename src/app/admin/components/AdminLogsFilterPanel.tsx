@@ -1,104 +1,88 @@
 
-import React from 'react';
-import { LogFilters } from '@/types/logFilters';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import React from "react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { LogFilters } from "@/types/logFilters";
 
-interface AdminLogsFilterPanelProps {
+export interface AdminLogsFilterPanelProps {
   filters: LogFilters;
   onFilterChange: (newFilters: Partial<LogFilters>) => void;
 }
 
 export function AdminLogsFilterPanel({ filters, onFilterChange }: AdminLogsFilterPanelProps) {
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onFilterChange({ searchTerm: e.target.value });
+  };
+
+  const handleDateRangeChange = (value: string) => {
+    onFilterChange({ dateRange: parseInt(value, 10) });
+  };
+
+  const handleEventTypeChange = (value: string) => {
+    onFilterChange({ eventType: value });
+  };
+
+  const handleSeverityChange = (value: string) => {
+    onFilterChange({ severity: value });
+  };
+
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <Input
-              placeholder="Search logs..."
-              value={filters.searchTerm || ''}
-              onChange={(e) => onFilterChange({ searchTerm: e.target.value })}
-              className="w-full"
-            />
-          </div>
-          <div>
-            <Select 
-              value={filters.eventType || 'all'} 
-              onValueChange={(value) => onFilterChange({ eventType: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Event type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All events</SelectItem>
-                <SelectItem value="AUTH_LOGIN">Auth Login</SelectItem>
-                <SelectItem value="DATA_UPDATE">Data Update</SelectItem>
-                <SelectItem value="SECURITY_ACCESS_DENIED">Security Access Denied</SelectItem>
-                <SelectItem value="SYSTEM_UPDATE">System Update</SelectItem>
-                <SelectItem value="API_ERROR">API Error</SelectItem>
-                <SelectItem value="USER_JOURNEY">User Journey</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Select
-              value={filters.severity || 'all'}
-              onValueChange={(value) => onFilterChange({ severity: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Severity" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All severities</SelectItem>
-                <SelectItem value="info">Info</SelectItem>
-                <SelectItem value="warning">Warning</SelectItem>
-                <SelectItem value="error">Error</SelectItem>
-                <SelectItem value="success">Success</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Select
-              value={filters.dateRange?.toString() || '7'}
-              onValueChange={(value) => onFilterChange({ dateRange: parseInt(value) })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Time range" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">Last 24 hours</SelectItem>
-                <SelectItem value="7">Last 7 days</SelectItem>
-                <SelectItem value="30">Last 30 days</SelectItem>
-                <SelectItem value="90">Last 90 days</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          {filters.service !== undefined && (
-            <div>
-              <Select
-                value={filters.service || 'all'}
-                onValueChange={(value) => onFilterChange({ service: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Service" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All services</SelectItem>
-                  <SelectItem value="api">API</SelectItem>
-                  <SelectItem value="auth">Authentication</SelectItem>
-                  <SelectItem value="database">Database</SelectItem>
-                  <SelectItem value="storage">Storage</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 my-4">
+      <div>
+        <Input
+          placeholder="Search logs..."
+          value={filters.searchTerm || ""}
+          onChange={handleSearchChange}
+          className="w-full"
+        />
+      </div>
+      <div>
+        <Select value={filters.eventType || "all"} onValueChange={handleEventTypeChange}>
+          <SelectTrigger>
+            <SelectValue placeholder="Event Type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Events</SelectItem>
+            <SelectItem value="AUTH">Auth Events</SelectItem>
+            <SelectItem value="SECURITY">Security Events</SelectItem>
+            <SelectItem value="ERROR">Errors</SelectItem>
+            <SelectItem value="USER_JOURNEY">User Journey</SelectItem>
+            <SelectItem value="STRATEGY">Strategy Events</SelectItem>
+            <SelectItem value="CAMPAIGN">Campaign Events</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Select value={filters.severity || "all"} onValueChange={handleSeverityChange}>
+          <SelectTrigger>
+            <SelectValue placeholder="Severity" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Severities</SelectItem>
+            <SelectItem value="critical">Critical</SelectItem>
+            <SelectItem value="error">Error</SelectItem>
+            <SelectItem value="warning">Warning</SelectItem>
+            <SelectItem value="info">Info</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Select
+          value={filters.dateRange ? filters.dateRange.toString() : "7"}
+          onValueChange={handleDateRangeChange}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Date Range" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="1">Last 24 Hours</SelectItem>
+            <SelectItem value="7">Last 7 Days</SelectItem>
+            <SelectItem value="30">Last 30 Days</SelectItem>
+            <SelectItem value="90">Last 90 Days</SelectItem>
+            <SelectItem value="365">Last Year</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
   );
 }

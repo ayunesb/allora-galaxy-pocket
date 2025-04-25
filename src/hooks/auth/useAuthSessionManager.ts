@@ -122,10 +122,7 @@ export function useAuthSessionManager(options: AuthSessionManagerOptions = {}) {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        password,
-        options: {
-          persistSession: remember
-        }
+        password
       });
       
       // Handle remember me setting separately after successful login

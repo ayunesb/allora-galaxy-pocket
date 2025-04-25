@@ -1,85 +1,77 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { ToastService } from "@/services/ToastService";
+import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { ToastService } from '@/services/ToastService';
 
 export function useAuthActions(
   setIsLoading: (loading: boolean) => void,
   setAuthError: (error: string | null) => void
 ) {
-  const login = async (email: string, password: string): Promise<void> => {
-    try {
-      setIsLoading(true);
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      
-      if (error) {
-        let errorMessage = error.message;
-        
-        if (error.message.includes("Email not confirmed")) {
-          errorMessage = "Please check your email to confirm your account before logging in";
-        } else if (error.message.includes("Invalid login")) {
-          errorMessage = "Invalid email or password";
-        }
-        
-        ToastService.error({
-          title: "Login failed",
-          description: errorMessage
-        });
-        throw error;
-      }
-    } catch (error) {
-      const e = error as Error;
-      console.error("Login error:", e);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const [rememberMe, setRememberMe] = useState(false);
 
-  const signup = async (email: string, password: string): Promise<void> => {
+  /**
+   * Login with email and password
+   */
+  const login = async (email: string, password: string) => {
+    setIsLoading(true);
+    setAuthError(null);
+    
     try {
-      setIsLoading(true);
-      
-      // Check if email already exists
-      const { data: existingUsers, error: checkError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', email)
-        .maybeSingle();
-        
-      if (checkError && !checkError.message.includes('not found')) {
-        console.error("Error checking existing user:", checkError);
-      }
-      
-      if (existingUsers) {
-        ToastService.error({
-          title: "Signup failed",
-          description: "This email is already registered"
-        });
-        throw new Error("Email already registered");
-      }
-      
-      const { error } = await supabase.auth.signUp({
-        email,
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email, 
         password,
         options: {
-          emailRedirectTo: window.location.origin + '/auth/login'
+          // Use the rememberMe state to determine if we should persist the session
+          persistSession: rememberMe
+        }
+      });
+      
+      if (error) throw error;
+      return data;
+    } catch (error: any) {
+      console.error('Login error:', error);
+      setAuthError(error.message);
+      ToastService.error({
+        title: "Login failed",
+        description: error.message
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Sign up with email and password
+   */
+  const signup = async (email: string, password: string) => {
+    setIsLoading(true);
+    setAuthError(null);
+    
+    try {
+      const { data, error } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: {
+          // Always persist session on signup
+          persistSession: true
         }
       });
       
       if (error) throw error;
       
       ToastService.success({
-        title: "Signup successful",
-        description: "Please check your email to confirm your account"
+        title: "Sign up successful",
+        description: "Please check your email to verify your account"
       });
-    } catch (error) {
-      const e = error as Error;
+      
+      return data;
+    } catch (error: any) {
+      console.error('Signup error:', error);
+      setAuthError(error.message);
       ToastService.error({
-        title: "Signup failed",
-        description: e.message
+        title: "Sign up failed",
+        description: error.message
       });
       throw error;
     } finally {
@@ -87,45 +79,77 @@ export function useAuthActions(
     }
   };
 
-  const logout = async (): Promise<void> => {
+  /**
+   * Logout the user
+   */
+  const logout = async () => {
+    setIsLoading(true);
+    
     try {
-      setIsLoading(true);
       const { error } = await supabase.auth.signOut();
+      
       if (error) throw error;
       
-      // Clear any auth-related local storage
-      localStorage.removeItem("tenant_id");
       ToastService.success({
-        title: "Logged out",
-        description: "You have been successfully logged out"
+        title: "Logged out successfully"
       });
-    } catch (error) {
-      const e = error as Error;
+    } catch (error: any) {
+      console.error('Logout error:', error);
       ToastService.error({
         title: "Logout failed",
-        description: e.message
+        description: error.message
       });
-      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Update the refreshSession function to not return a boolean
-  const refreshSession = async (): Promise<void> => {
+  /**
+   * Request a password reset email
+   */
+  const requestPasswordReset = async (email: string) => {
+    setIsLoading(true);
+    setAuthError(null);
+    
     try {
-      setIsLoading(true);
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      
+      if (error) throw error;
+      
+      ToastService.success({
+        title: "Password reset email sent",
+        description: "Please check your email for the reset link"
+      });
+      
+      return true;
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      setAuthError(error.message);
+      ToastService.error({
+        title: "Password reset failed",
+        description: error.message
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Refresh the current session
+   */
+  const refreshSession = async () => {
+    setIsLoading(true);
+    
+    try {
       const { data, error } = await supabase.auth.refreshSession();
       
-      if (error) {
-        console.error("Session refresh error:", error);
-        ToastService.error({
-          title: "Failed to refresh authentication",
-          description: error.message
-        });
-      }
-    } catch (error) {
-      console.error("Session refresh exception:", error);
+      if (error) throw error;
+      
+      return true;
+    } catch (error: any) {
+      console.error('Session refresh error:', error);
+      return false;
     } finally {
       setIsLoading(false);
     }
@@ -135,6 +159,9 @@ export function useAuthActions(
     login,
     signup,
     logout,
-    refreshSession
+    requestPasswordReset,
+    refreshSession,
+    rememberMe,
+    setRememberMe
   };
 }

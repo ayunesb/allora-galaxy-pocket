@@ -4,8 +4,8 @@ import { SystemLog } from '@/types/systemLog';
 import { useSystemLogs } from '@/hooks/useSystemLogs';
 import { useLogFilters } from '@/hooks/useLogFilters';
 import { useLogPagination } from '@/hooks/useLogPagination';
-import { toast } from 'sonner';
-import { LogFilters } from '@/types/logFilters';
+import { ToastService } from '@/services/ToastService';
+import { supabase } from '@/integrations/supabase/client';
 
 export function useSystemLogsWithFilters() {
   const { 
@@ -30,16 +30,20 @@ export function useSystemLogsWithFilters() {
   const getRecentLogs = useCallback(async (limit: number = 100) => {
     setIsLoading(true);
     try {
-      const { data, error: fetchError } = await fetch('/api/logs?limit=' + limit)
-        .then(res => res.json());
+      const { data, error } = await supabase
+        .from('system_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(limit);
       
-      if (fetchError) throw new Error(fetchError.message);
+      if (error) throw error;
       
       setLogs(data || []);
       setError(null);
     } catch (err: any) {
       setError(err);
-      toast.error('Error fetching logs', {
+      ToastService.error({
+        title: 'Error fetching logs',
         description: err.message
       });
     } finally {
@@ -48,20 +52,15 @@ export function useSystemLogsWithFilters() {
   }, []);
 
   // Get paginated logs
-  const getPaginatedLogs = useCallback(() => {
-    if (error) {
-      toast.error('Error fetching logs', {
-        description: error.message
-      });
-      return [];
-    }
+  const getPaginatedLogs = useMemo(() => {
+    if (!filteredLogs.length) return [];
 
     const startIndex = (pagination.currentPage - 1) * pagination.logsPerPage;
     return filteredLogs.slice(startIndex, startIndex + pagination.logsPerPage);
-  }, [error, filteredLogs, pagination.currentPage, pagination.logsPerPage]);
+  }, [filteredLogs, pagination.currentPage, pagination.logsPerPage]);
 
   return {
-    logs: getPaginatedLogs(),
+    logs: getPaginatedLogs,
     allLogs: logs,
     filters,
     pagination,
