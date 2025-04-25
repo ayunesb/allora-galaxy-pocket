@@ -7,6 +7,7 @@ import { dashboardRoutes } from './routes/dashboardRoutes';
 import { adminRoutes } from './routes/adminRoutes';
 import { pluginRoutes } from './routes/pluginRoutes';
 import { billingRoutes } from './routes/billingRoutes';
+import { workspaceRoutes } from './app/workspace/routes';
 import RequireAuth from '@/guards/RequireAuth';
 import Layout from '@/components/Layout';
 import NotFound from '@/pages/NotFound';
@@ -41,6 +42,7 @@ const routes: RouteObject[] = [
       ...adminRoutes,
       ...pluginRoutes, 
       ...billingRoutes,
+      ...workspaceRoutes,
       
       // Catch-all route - this should be LAST
       { path: "*", element: <NotFound /> }

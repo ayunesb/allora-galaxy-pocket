@@ -7,13 +7,13 @@ import {
   Database, 
   File, 
   FileText, 
-  Home, 
   Layers, 
   LayoutDashboard, 
   Settings, 
   User, 
   Users, 
   Wallet,
+  Buildings,
 } from "lucide-react";
 
 const Sidebar = () => {
@@ -98,7 +98,7 @@ const Sidebar = () => {
               : "text-muted-foreground hover:bg-muted hover:text-foreground"
             }`}
           >
-            <Database className="mr-3 h-5 w-5" />
+            <Buildings className="mr-3 h-5 w-5" />
             Workspace
           </Link>
           
@@ -192,6 +192,6 @@ const Sidebar = () => {
       </div>
     </aside>
   );
-};
+}
 
 export default Sidebar;

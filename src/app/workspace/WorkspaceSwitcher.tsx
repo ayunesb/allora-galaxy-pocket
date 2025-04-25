@@ -13,14 +13,16 @@ import { NoWorkspaces } from "./components/NoWorkspaces";
 import { WorkspaceSelector } from "./components/WorkspaceSelector";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tenant } from "@/types/tenant";
+import { useTenantSwitcher } from "./hooks/useTenantSwitcher";
 
 export default function WorkspaceSwitcher({ highlight = false }) {
-  const { tenant, setTenant } = useTenant();
+  const { tenant } = useTenant();
   const { toast } = useToast();
   const { tenants: availableTenants, loading, error, retryFetch, status } = useAvailableTenants();
   const { selected, setSelected, initialized } = useInitializeSelectedTenant(availableTenants, loading, error);
   const location = useLocation();
   const { user, isLoading: authLoading } = useAuth();
+  const { switchTenant, isChanging } = useTenantSwitcher();
   const isOnboarding = location.pathname === "/onboarding";
   const [isCreating, setIsCreating] = useState(false);
   const [justCreated, setJustCreated] = useState(false);
@@ -65,7 +67,7 @@ export default function WorkspaceSwitcher({ highlight = false }) {
       
       if (newWorkspace) {
         console.log("[WorkspaceSwitcher] New workspace created:", newWorkspace.id, newWorkspace.name);
-        setTenant(newWorkspace as Tenant);
+        await switchTenant(newWorkspace as Tenant);
         setSelected(newWorkspace.id);
         localStorage.setItem("tenant_id", newWorkspace.id);
         setJustCreated(true);
@@ -92,23 +94,21 @@ export default function WorkspaceSwitcher({ highlight = false }) {
     window.location.reload();
   };
 
-  const onTenantChange = (value: string) => {
+  const onTenantChange = async (value: string) => {
     const selectedTenant = availableTenants.find((t) => t.id === value);
     if (selectedTenant) {
       console.log("[WorkspaceSwitcher] Switching to tenant:", selectedTenant.name, selectedTenant.id);
       setSelected(value);
-      setTenant(selectedTenant as Tenant);
-      localStorage.setItem("tenant_id", value);
-
-      toast({
-        title: "Workspace changed",
-        description: `Now working in "${selectedTenant.name}"`,
-      });
       
-      if (isOnboarding) {
-        setTimeout(() => {
-          window.location.href = "/onboarding";
-        }, 500);
+      const success = await switchTenant(selectedTenant as Tenant);
+      if (success) {
+        localStorage.setItem("tenant_id", value);
+        
+        if (isOnboarding) {
+          setTimeout(() => {
+            window.location.href = "/onboarding";
+          }, 500);
+        }
       }
     }
   };
@@ -123,12 +123,7 @@ export default function WorkspaceSwitcher({ highlight = false }) {
   }
 
   if (loading) {
-    return (
-      <div className="space-y-2">
-        <Skeleton className="h-4 w-32 mb-2" />
-        <Skeleton className="h-9 w-full" />
-      </div>
-    );
+    return <LoadingState />;
   }
 
   if (error) {
@@ -161,7 +156,7 @@ export default function WorkspaceSwitcher({ highlight = false }) {
       highlight={highlight}
       isOnboarding={isOnboarding}
       tenant={tenant}
-      isCreating={isCreating}
+      isCreating={isCreating || isChanging}
       onCreateWorkspace={handleCreateWorkspace}
       userExists={!!user}
     />

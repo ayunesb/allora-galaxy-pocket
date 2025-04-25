@@ -1,53 +1,67 @@
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { useTenant } from '@/hooks/useTenant';
 import { supabase } from '@/integrations/supabase/client';
-import { useTenant } from './useTenant';
-import { useAuth } from './useAuth';
-import { toast } from '@/components/ui/sonner';
+import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 
+/**
+ * Hook to validate tenant access for the current user
+ * Checks if the user has access to the selected tenant
+ * Redirects to workspace selection if not
+ */
 export function useTenantValidation() {
-  const { tenant, setTenant } = useTenant();
+  const [isValidating, setIsValidating] = useState(true);
+  const [isValid, setIsValid] = useState(false);
   const { user } = useAuth();
+  const { tenant } = useTenant();
+  const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!user?.id || !tenant?.id) return;
+    const validateTenant = async () => {
+      if (!user || !tenant) {
+        setIsValidating(false);
+        return;
+      }
 
-    const validateTenantAccess = async () => {
       try {
-        const { data: hasAccess, error } = await supabase.rpc(
-          'check_tenant_access',
-          { requested_tenant_id: tenant.id }
-        );
-
-        if (error) throw error;
-
-        if (!hasAccess) {
-          // Log security incident
-          await supabase.from('system_logs').insert({
-            user_id: user.id,
-            tenant_id: tenant.id,
-            event_type: 'SECURITY_UNAUTHORIZED_TENANT_ACCESS',
-            message: 'Unauthorized tenant access attempt',
-            meta: { attempted_tenant_id: tenant.id }
-          });
-
-          // Reset tenant selection and redirect
-          setTenant(null);
-          localStorage.removeItem('tenant_id');
+        setIsValidating(true);
+        
+        // Check if the user has access to this tenant
+        const { data, error } = await supabase
+          .from('tenant_user_roles')
+          .select('role')
+          .eq('tenant_id', tenant.id)
+          .eq('user_id', user.id)
+          .single();
+        
+        if (error || !data) {
+          console.error("Tenant validation error:", error?.message || "No access to tenant");
           
-          toast.error('Access to workspace denied');
+          toast({
+            title: "Access denied",
+            description: "You don't have access to this workspace",
+            variant: "destructive"
+          });
+          
+          // Redirect to workspace selection
           navigate('/workspace');
+          setIsValid(false);
+        } else {
+          setIsValid(true);
         }
-      } catch (err: any) {
-        console.error('Tenant validation error:', err);
-        toast.error('Error validating workspace access');
+      } catch (error: any) {
+        console.error("Error validating tenant access:", error);
+        setIsValid(false);
+      } finally {
+        setIsValidating(false);
       }
     };
 
-    validateTenantAccess();
-  }, [user?.id, tenant?.id, setTenant, navigate]);
+    validateTenant();
+  }, [user, tenant, toast, navigate]);
 
-  return null;
+  return { isValidating, isValid };
 }
