@@ -1,9 +1,11 @@
 
+import { useState, useCallback } from 'react';
 import { SystemLog } from '@/types/systemLog';
 import { useSystemLogs } from '@/hooks/useSystemLogs';
 import { useLogFilters } from '@/hooks/useLogFilters';
 import { useLogPagination } from '@/hooks/useLogPagination';
-import { ToastService } from '@/services/toast';
+import { showToast } from '@/utils/toastUtils';
+import { LogFilters, DEFAULT_FILTERS } from '@/types/logFilters';
 
 export function useSystemLogsWithFilters() {
   const { logs: allLogs, isLoading, error, getRecentLogs } = useSystemLogs();
@@ -14,18 +16,19 @@ export function useSystemLogsWithFilters() {
   });
 
   // Get paginated logs
-  const getPaginatedLogs = () => {
+  const getPaginatedLogs = useCallback(() => {
     if (error) {
-      ToastService.error({
+      showToast({
         title: "Error fetching logs",
-        description: error.message
+        description: error.message,
+        variant: "destructive"
       });
       return [];
     }
 
     const startIndex = (pagination.currentPage - 1) * pagination.logsPerPage;
     return filteredLogs.slice(startIndex, startIndex + pagination.logsPerPage);
-  };
+  }, [error, filteredLogs, pagination.currentPage, pagination.logsPerPage]);
 
   return {
     logs: getPaginatedLogs(),

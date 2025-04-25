@@ -1,16 +1,28 @@
 
 import { useState, useCallback } from 'react';
+import { PaginationState } from '@/types/logFilters';
 
 interface UseLogPaginationProps {
   totalItems: number;
-  itemsPerPage?: number;
+  initialPage?: number;
+  initialLogsPerPage?: number;
 }
 
-export function useLogPagination({ totalItems, itemsPerPage = 10 }: UseLogPaginationProps) {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [logsPerPage, setLogsPerPage] = useState(itemsPerPage);
-  
+export function useLogPagination({ 
+  totalItems, 
+  initialPage = 1, 
+  initialLogsPerPage = 10 
+}: UseLogPaginationProps) {
+  const [currentPage, setCurrentPage] = useState(initialPage);
+  const [logsPerPage, setLogsPerPage] = useState(initialLogsPerPage);
+
+  // Calculate the total number of pages
   const totalPages = Math.max(1, Math.ceil(totalItems / logsPerPage));
+
+  // Ensure current page is valid when total items or logs per page changes
+  if (currentPage > totalPages) {
+    setCurrentPage(totalPages);
+  }
 
   const nextPage = useCallback(() => {
     if (currentPage < totalPages) {
@@ -30,18 +42,23 @@ export function useLogPagination({ totalItems, itemsPerPage = 10 }: UseLogPagina
     }
   }, [totalPages]);
 
-  const changeItemsPerPage = useCallback((count: number) => {
+  const updateLogsPerPage = useCallback((count: number) => {
     setLogsPerPage(count);
+    // Reset to first page when changing items per page
     setCurrentPage(1);
   }, []);
 
-  return {
+  const paginationState: PaginationState = {
     currentPage,
     totalPages,
-    logsPerPage,
+    logsPerPage
+  };
+
+  return {
+    ...paginationState,
     nextPage,
     prevPage,
     goToPage,
-    setLogsPerPage: changeItemsPerPage
+    setLogsPerPage: updateLogsPerPage
   };
 }
