@@ -1,43 +1,45 @@
 
-import { useCallback } from 'react';
+import { useTenant } from '@/hooks/useTenant';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { useTenant } from './useTenant';
-import { useAuth } from './useAuth';
+import { useCallback } from 'react';
 
 export function useRoleAccess() {
   const { tenant } = useTenant();
   const { user } = useAuth();
-
-  const checkAccess = useCallback(async (requiredRole?: string): Promise<boolean> => {
+  
+  /**
+   * Check if the current user has a specific role
+   * @param role The role to check for
+   * @returns Promise resolving to true if user has the role, false otherwise
+   */
+  const checkAccess = useCallback(async (role: string): Promise<boolean> => {
+    // If no user or tenant, no access
     if (!user?.id || !tenant?.id) return false;
-
+    
     try {
-      if (!requiredRole) {
-        // Just check tenant access
-        const { data: hasAccess, error } = await supabase.rpc(
-          'check_tenant_role_permission',
-          { _user_id: user.id, _tenant_id: tenant.id }
-        );
-        if (error) throw error;
-        return !!hasAccess;
-      }
-
-      // Check specific role
-      const { data: role, error } = await supabase.rpc(
-        'get_user_role_for_tenant',
-        { user_uuid: user.id, tenant_uuid: tenant.id }
-      );
-      if (error) throw error;
+      // Check for admin role which has all permissions
+      const { data: isAdmin } = await supabase.rpc('is_admin');
+      if (isAdmin) return true;
       
-      // Admin role has access to everything
-      if (role === 'admin') return true;
+      // Check for tenant-specific role
+      const { data: userRole } = await supabase.rpc('get_user_role_for_tenant', {
+        user_uuid: user.id,
+        tenant_uuid: tenant.id
+      });
       
-      return role === requiredRole;
-    } catch (err) {
-      console.error('Error checking role access:', err);
+      if (!userRole) return false;
+      
+      // Admin and owner roles have access to everything
+      if (userRole === 'admin' || userRole === 'owner') return true;
+      
+      // For other roles, check specifically
+      return userRole === role;
+    } catch (error) {
+      console.error('Error checking role access:', error);
       return false;
     }
   }, [user?.id, tenant?.id]);
-
+  
   return { checkAccess };
 }

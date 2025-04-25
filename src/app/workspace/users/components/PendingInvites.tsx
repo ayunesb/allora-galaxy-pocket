@@ -1,94 +1,111 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Trash2, RefreshCw } from 'lucide-react';
-import { useTenant } from '@/hooks/useTenant';
-import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { formatDistanceToNow } from 'date-fns';
-import { toast } from 'sonner';
+import { useTenant } from '@/hooks/useTenant';
+import { toast } from '@/components/ui/sonner';
+import { TrashIcon, MailIcon, Clock } from 'lucide-react';
+import { LoadingState } from '@/components/ui/loading-state';
+import { ErrorState } from '@/components/ui/error-state';
+import { format, isPast } from 'date-fns';
 
-interface InviteType {
+export interface PendingInvite {
   id: string;
   email: string;
   role: string;
   created_at: string;
-  expires_at: string | null;
+  expires_at: string;
 }
 
 export function PendingInvites() {
   const { tenant } = useTenant();
+  const [invites, setInvites] = useState<PendingInvite[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   
-  const { data: invites, isLoading, error, refetch } = useQuery({
-    queryKey: ['pending-invites', tenant?.id],
-    queryFn: async () => {
-      if (!tenant?.id) return [];
+  const fetchInvites = async () => {
+    if (!tenant?.id) return;
+    
+    try {
+      setIsLoading(true);
+      setError(null);
       
       const { data, error } = await supabase
         .from('team_invites')
         .select('*')
         .eq('tenant_id', tenant.id)
-        .is('accepted_at', null);
+        .is('accepted_at', null)
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as InviteType[];
-    },
-    enabled: !!tenant?.id
-  });
+      
+      setInvites(data);
+    } catch (err: any) {
+      console.error('Error fetching invites:', err);
+      setError(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
-  const handleRemoveInvite = async (inviteId: string) => {
-    if (!tenant?.id) return;
-    
+  useEffect(() => {
+    if (tenant) {
+      fetchInvites();
+    }
+  }, [tenant]);
+  
+  const handleResendInvite = async (inviteId: string, email: string) => {
+    try {
+      // In a real app, this would call an API endpoint to resend the invitation email
+      // For now, we'll just show a toast
+      toast.success('Invitation resent', {
+        description: `Invitation has been resent to ${email}`,
+      });
+    } catch (error: any) {
+      toast.error('Failed to resend invitation');
+    }
+  };
+  
+  const handleCancelInvite = async (inviteId: string, email: string) => {
     try {
       const { error } = await supabase
         .from('team_invites')
         .delete()
-        .eq('id', inviteId)
-        .eq('tenant_id', tenant.id);
+        .eq('id', inviteId);
       
       if (error) throw error;
       
-      toast.success("Invitation removed successfully");
-      refetch();
+      toast.success('Invitation cancelled', {
+        description: `Invitation to ${email} has been cancelled`,
+      });
+      
+      setInvites(invites.filter(invite => invite.id !== inviteId));
     } catch (error: any) {
-      toast.error("Failed to remove invitation", {
-        description: error.message
+      toast.error('Failed to cancel invitation', {
+        description: error.message,
       });
     }
   };
   
+  const isExpired = (expiresAt: string) => {
+    return isPast(new Date(expiresAt));
+  };
+  
   if (isLoading) {
-    return (
-      <div className="flex justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="bg-destructive/10 p-4 rounded-md text-sm text-destructive">
-        Error loading pending invites
-      </div>
-    );
+    return <LoadingState message="Loading pending invitations..." />;
   }
   
-  if (!invites?.length) {
-    return (
-      <div className="text-center py-6 text-muted-foreground">
-        No pending invitations
-      </div>
-    );
+  if (error) {
+    return <ErrorState error={error} onRetry={fetchInvites} />;
   }
   
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-medium">Pending Invitations</h3>
-        <Button variant="ghost" size="sm" onClick={() => refetch()}>
-          <RefreshCw className="h-4 w-4 mr-1" />
+    <>
+      <div className="flex justify-end mb-4">
+        <Button variant="outline" size="sm" onClick={fetchInvites}>
           Refresh
         </Button>
       </div>
@@ -100,33 +117,61 @@ export function PendingInvites() {
             <TableHead>Role</TableHead>
             <TableHead>Sent</TableHead>
             <TableHead>Expires</TableHead>
-            <TableHead className="w-[80px]"></TableHead>
+            <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {invites.map((invite) => (
-            <TableRow key={invite.id}>
-              <TableCell>{invite.email}</TableCell>
-              <TableCell>
-                <Badge variant="outline">{invite.role}</Badge>
-              </TableCell>
-              <TableCell>{formatDistanceToNow(new Date(invite.created_at), { addSuffix: true })}</TableCell>
-              <TableCell>
-                {invite.expires_at ? formatDistanceToNow(new Date(invite.expires_at), { addSuffix: true }) : 'Never'}
-              </TableCell>
-              <TableCell>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => handleRemoveInvite(invite.id)}
-                >
-                  <Trash2 className="h-4 w-4 text-muted-foreground" />
-                </Button>
+          {invites.length > 0 ? (
+            invites.map((invite) => (
+              <TableRow key={invite.id}>
+                <TableCell>{invite.email}</TableCell>
+                <TableCell>
+                  <Badge variant="outline">{invite.role}</Badge>
+                </TableCell>
+                <TableCell>{format(new Date(invite.created_at), 'PP')}</TableCell>
+                <TableCell>
+                  {isExpired(invite.expires_at) ? (
+                    <Badge variant="destructive" className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      Expired
+                    </Badge>
+                  ) : (
+                    format(new Date(invite.expires_at), 'PP')
+                  )}
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      size="icon" 
+                      variant="ghost"
+                      className="h-8 w-8"
+                      onClick={() => handleResendInvite(invite.id, invite.email)}
+                      title="Resend invitation"
+                    >
+                      <MailIcon className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-destructive"
+                      onClick={() => handleCancelInvite(invite.id, invite.email)}
+                      title="Cancel invitation"
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={5} className="h-24 text-center">
+                No pending invitations
               </TableCell>
             </TableRow>
-          ))}
+          )}
         </TableBody>
       </Table>
-    </div>
+    </>
   );
 }

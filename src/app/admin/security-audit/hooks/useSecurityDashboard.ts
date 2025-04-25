@@ -1,122 +1,60 @@
 
-import { useState, useEffect } from "react";
-import { useSecurityAudit, SecurityAuditIssue } from "./useSecurityAudit";
-import { useSystemLogs } from "@/hooks/useSystemLogs";
-import { SystemLog } from "@/types/systemLog";
-
-interface SecurityScores {
-  high: number;
-  medium: number;
-  low: number;
-}
-
-// Define the structure expected by our components
-interface SecurityAuditResult {
-  tableName: string;
-  securityScore: number;
-  hasRls: boolean;
-  hasTenantId: boolean;
-  hasAuthPolicies: boolean;
-  recommendations: string[];
-}
+import { useState, useEffect } from 'react';
+import { useSecurityAudit } from './useSecurityAudit';
+import { supabase } from '@/integrations/supabase/client';
 
 export function useSecurityDashboard() {
-  const { runSecurityAudit, isLoading: isScanning, issues } = useSecurityAudit();
-  const systemLogs = useSystemLogs();
-  const [securityLogs, setSecurityLogs] = useState<SystemLog[]>([]);
-  const [results, setResults] = useState<SecurityAuditResult[]>([]);
+  const { results, isScanning, runSecurityAudit } = useSecurityAudit();
+  const [securityLogs, setSecurityLogs] = useState<any[]>([]);
+  const [lastEventDate, setLastEventDate] = useState<string | null>(null);
   
+  // Compute overall security score
+  const overallScore = results.length 
+    ? Math.round(results.reduce((acc, curr) => acc + curr.securityScore, 0) / results.length)
+    : 0;
+  
+  // Security scores distribution
+  const securityScores = {
+    critical: results.filter(r => r.securityScore < 40).length,
+    warning: results.filter(r => r.securityScore >= 40 && r.securityScore < 70).length,
+    good: results.filter(r => r.securityScore >= 70 && r.securityScore < 90).length,
+    excellent: results.filter(r => r.securityScore >= 90).length,
+  };
+  
+  // Critical issues flag
+  const hasCriticalIssues = securityScores.critical > 0;
+  const criticalIssuesCount = securityScores.critical;
+  
+  // Fetch security logs
   useEffect(() => {
-    // Fetch security logs when component mounts
     const fetchSecurityLogs = async () => {
-      const { data, error } = await fetch('/api/security-logs').then(res => res.json());
+      const { data, error } = await supabase
+        .from('system_logs')
+        .select('*')
+        .ilike('event_type', 'SECURITY_%')
+        .order('created_at', { ascending: false })
+        .limit(100);
+      
       if (!error && data) {
         setSecurityLogs(data);
+        if (data.length > 0) {
+          setLastEventDate(new Date(data[0].created_at).toLocaleString());
+        }
       }
     };
     
     fetchSecurityLogs();
   }, []);
   
-  // Filter for security-related logs only
-  const filteredSecurityLogs = securityLogs.filter(log => 
-    log.event_type.startsWith('SECURITY_') || 
-    log.event_type.includes('AUTH_') ||
-    log.event_type.includes('ACCESS_')
-  );
-
-  // Transform SecurityAuditIssue to SecurityAuditResult
-  const transformSecurityIssues = (issues: SecurityAuditIssue[]): SecurityAuditResult[] => {
-    return issues.map(issue => {
-      // Map each issue to our expected format
-      let securityScore = 0;
-      const hasRls = issue.type !== 'rls_disabled';
-      const hasAuthPolicies = issue.type !== 'incomplete_rls';
-      
-      // Calculate a security score based on issue type
-      if (issue.type === 'security_definer_view') {
-        securityScore = 60; // Medium risk
-      } else if (issue.type === 'rls_disabled') {
-        securityScore = 20; // High risk
-      } else if (issue.type === 'incomplete_rls') {
-        securityScore = 40; // Medium-high risk
-      }
-      
-      return {
-        tableName: issue.name,
-        securityScore,
-        hasRls,
-        hasTenantId: true, // We don't have this information in the issue, defaulting to true
-        hasAuthPolicies,
-        recommendations: [issue.remediation]
-      };
-    });
-  };
-  
-  // Update runSecurityAudit to transform issues into our expected format
-  const runAuditAndTransform = async () => {
-    await runSecurityAudit();
-    setResults(transformSecurityIssues(issues));
-  };
-
-  // Calculate overall security score
-  const calculateOverallScore = () => {
-    if (!results.length) return 0;
-    const sum = results.reduce((total, item) => total + item.securityScore, 0);
-    return Math.round(sum / results.length);
-  };
-
-  // Count tables by security level
-  const getSecurityScores = (): SecurityScores => {
-    const counts = { high: 0, medium: 0, low: 0 };
-    results.forEach(item => {
-      if (item.securityScore >= 80) counts.high++;
-      else if (item.securityScore >= 40) counts.medium++;
-      else counts.low++;
-    });
-    return counts;
-  };
-
-  const overallScore = calculateOverallScore();
-  const securityScores = getSecurityScores();
-  
-  // Use created_at if timestamp is not available
-  const lastEventDate = filteredSecurityLogs[0]?.created_at
-    ? new Date(filteredSecurityLogs[0].created_at).toLocaleString() 
-    : undefined;
-
-  const hasCriticalIssues = results.some(r => r.securityScore < 40);
-  const criticalIssuesCount = results.filter(r => r.securityScore < 40).length;
-
   return {
-    runSecurityAudit: runAuditAndTransform,
-    isScanning,
-    results,
     overallScore,
     securityScores,
-    securityLogs: filteredSecurityLogs,
+    securityLogs,
     lastEventDate,
     hasCriticalIssues,
-    criticalIssuesCount
+    criticalIssuesCount,
+    results,
+    isScanning,
+    runSecurityAudit
   };
 }

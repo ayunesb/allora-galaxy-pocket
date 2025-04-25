@@ -1,27 +1,16 @@
 
 import React, { useState } from 'react';
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from '@/components/ui/sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/hooks/useTenant';
-import { Loader2 } from "lucide-react";
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 interface InviteUserModalProps {
   isOpen: boolean;
@@ -29,45 +18,54 @@ interface InviteUserModalProps {
   onInviteSuccess: () => void;
 }
 
+const formSchema = z.object({
+  email: z.string().email({ message: 'Please enter a valid email address' }),
+  role: z.string({ required_error: 'Please select a role' }),
+});
+
 export function InviteUserModal({ isOpen, onClose, onInviteSuccess }: InviteUserModalProps) {
-  const [email, setEmail] = useState('');
-  const [role, setRole] = useState('viewer');
-  const [isLoading, setIsLoading] = useState(false);
   const { tenant } = useTenant();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: '',
+      role: 'member',
+    },
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!email || !role || !tenant) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
-    setIsLoading(true);
+  const handleInviteUser = async (values: z.infer<typeof formSchema>) => {
+    if (!tenant) return;
     
     try {
+      setIsSubmitting(true);
+      
       const { error } = await supabase
         .from('team_invites')
         .insert({
-          email,
-          role,
+          email: values.email.toLowerCase(),
+          role: values.role,
           tenant_id: tenant.id,
-          created_by: (await supabase.auth.getUser()).data.user?.id
+          created_by: (await supabase.auth.getUser()).data.user?.id,
         });
-
+      
       if (error) throw error;
       
-      toast.success("Invitation sent successfully");
-      setEmail('');
-      setRole('viewer');
+      toast.success('Invitation sent', {
+        description: `An invitation has been sent to ${values.email}`,
+      });
+      
+      form.reset();
       onInviteSuccess();
       onClose();
     } catch (error: any) {
-      toast.error("Failed to send invitation", {
-        description: error.message
+      console.error('Error inviting user:', error);
+      toast.error('Failed to send invitation', {
+        description: error.message,
       });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -75,51 +73,62 @@ export function InviteUserModal({ isOpen, onClose, onInviteSuccess }: InviteUser
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Invite Team Member</DialogTitle>
+          <DialogTitle>Invite User</DialogTitle>
           <DialogDescription>
-            Send an invitation email to add a new team member to your workspace.
+            Invite a new user to join your workspace
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email address</Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="colleague@example.com"
-              required
+        
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleInviteUser)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input {...field} type="email" placeholder="user@example.com" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="role">Role</Label>
-            <Select value={role} onValueChange={setRole}>
-              <SelectTrigger id="role">
-                <SelectValue placeholder="Select a role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="owner">Owner</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="member">Member</SelectItem>
-                <SelectItem value="viewer">Viewer</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <DialogFooter className="mt-6">
-            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Sending...
-                </>
-              ) : "Send Invitation"}
-            </Button>
-          </DialogFooter>
-        </form>
+            
+            <FormField
+              control={form.control}
+              name="role"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Role</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a role" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="owner">Owner</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="member">Member</SelectItem>
+                      <SelectItem value="viewer">Viewer</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button variant="outline" onClick={onClose} type="button">
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Sending...' : 'Invite User'}
+              </Button>
+            </div>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
