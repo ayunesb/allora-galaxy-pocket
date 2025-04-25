@@ -42,7 +42,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         // Get all tenants the user has access to
         const { data: userTenants, error: tenantsError } = await supabase
           .from('tenant_user_roles')
-          .select('tenant_id, role, tenant_profiles:tenant_id(id, name)')
+          .select('tenant_id, role, tenant_profiles:tenant_id(id, name, theme_color, theme_mode, enable_auto_approve, is_demo)')
           .eq('user_id', user.id);
 
         if (tenantsError) throw tenantsError;
@@ -51,7 +51,11 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         const formattedTenants: Tenant[] = userTenants.map(ut => ({
           id: ut.tenant_id,
           name: ut.tenant_profiles?.name || 'Unnamed Workspace',
-          role: ut.role
+          role: ut.role,
+          theme_color: ut.tenant_profiles?.theme_color,
+          theme_mode: ut.tenant_profiles?.theme_mode,
+          enable_auto_approve: ut.tenant_profiles?.enable_auto_approve,
+          isDemo: ut.tenant_profiles?.is_demo
         }));
 
         setTenants(formattedTenants);
@@ -164,7 +168,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     try {
       const { data: userTenants, error: tenantsError } = await supabase
         .from('tenant_user_roles')
-        .select('tenant_id, role, tenant_profiles:tenant_id(id, name)')
+        .select('tenant_id, role, tenant_profiles:tenant_id(id, name, theme_color, theme_mode, enable_auto_approve, is_demo)')
         .eq('user_id', user.id);
 
       if (tenantsError) throw tenantsError;
@@ -172,7 +176,11 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       const formattedTenants: Tenant[] = userTenants.map(ut => ({
         id: ut.tenant_id,
         name: ut.tenant_profiles?.name || 'Unnamed Workspace',
-        role: ut.role
+        role: ut.role,
+        theme_color: ut.tenant_profiles?.theme_color,
+        theme_mode: ut.tenant_profiles?.theme_mode,
+        enable_auto_approve: ut.tenant_profiles?.enable_auto_approve,
+        isDemo: ut.tenant_profiles?.is_demo
       }));
 
       setTenants(formattedTenants);
@@ -203,7 +211,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     switchTenant,
     createTenant,
     refreshTenants,
-    setTenant // Expose setTenant in the context
+    setTenant
   };
 
   return (
