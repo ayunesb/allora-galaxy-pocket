@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { ToastService } from "@/services/ToastService";
 import { useNavigate } from "react-router-dom";
 
 /**
@@ -14,7 +14,6 @@ import { useNavigate } from "react-router-dom";
 export function useTenantDataProtection() {
   const { user } = useAuth();
   const { tenant, setTenant } = useTenant();
-  const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -49,10 +48,9 @@ export function useTenantDataProtection() {
           setTenant(null);
           
           // Notify user
-          toast({
+          ToastService.error({
             title: "Access denied",
-            description: "You don't have access to this workspace",
-            variant: "destructive"
+            description: "You don't have access to this workspace"
           });
 
           // Redirect to workspace switcher

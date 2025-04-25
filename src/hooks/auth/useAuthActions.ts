@@ -1,5 +1,4 @@
 
-import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { ToastService } from "@/services/ToastService";
 

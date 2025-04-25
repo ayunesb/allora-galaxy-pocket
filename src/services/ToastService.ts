@@ -1,83 +1,52 @@
 
-import { toast } from "sonner";
+import { toast } from 'sonner';
 
-export interface ToastOptions {
-  title?: string;
+type ToastOptions = {
+  title: string;
   description?: string;
-  variant?: 'default' | 'destructive' | 'success' | 'warning';
   duration?: number;
-}
+};
 
 /**
- * Standardized toast service to ensure consistent toast notifications across the application
- * Used across the entire user journey: Auth → Onboarding → Strategy → Campaign → Execution → KPI
+ * Consistent toast service to manage notifications throughout the app
  */
-export class ToastService {
-  private static defaultDuration = 5000;
-
-  /**
-   * Show a success toast notification
-   */
-  static success(options: ToastOptions) {
-    const { title, description, duration } = options;
-    toast.success(title, {
-      description,
-      duration: duration || this.defaultDuration,
+export const ToastService = {
+  success: (options: ToastOptions) => {
+    toast.success(options.title, {
+      description: options.description,
+      duration: options.duration || 5000
     });
-  }
+  },
 
-  /**
-   * Show an error toast notification
-   */
-  static error(options: ToastOptions) {
-    const { title, description, duration } = options;
-    toast.error(title, {
-      description,
-      duration: duration || this.defaultDuration,
+  error: (options: ToastOptions) => {
+    toast.error(options.title, {
+      description: options.description,
+      duration: options.duration || 8000
     });
-  }
+  },
 
-  /**
-   * Show a warning toast notification
-   */
-  static warning(options: ToastOptions) {
-    const { title, description, duration } = options;
-    toast.warning(title, {
-      description,
-      duration: duration || this.defaultDuration,
+  warning: (options: ToastOptions) => {
+    toast.warning(options.title, {
+      description: options.description,
+      duration: options.duration || 5000
     });
-  }
+  },
 
-  /**
-   * Show an informational toast notification
-   */
-  static info(options: ToastOptions) {
-    const { title, description, duration } = options;
-    toast.info(title, {
-      description,
-      duration: duration || this.defaultDuration,
+  info: (options: ToastOptions) => {
+    toast.info(options.title, {
+      description: options.description,
+      duration: options.duration || 4000
     });
-  }
+  },
 
-  /**
-   * Show a promise toast notification
-   */
-  static promise<T>(
+  promise: <T>(
     promise: Promise<T>,
-    {
-      loading = "Loading...",
-      success = "Completed successfully",
-      error = "Something went wrong"
-    }: {
+    messages: {
       loading?: string;
       success?: string | ((data: T) => string);
       error?: string | ((error: unknown) => string);
     }
-  ) {
-    toast.promise(promise, {
-      loading,
-      success,
-      error,
-    });
+  ) => {
+    return toast.promise(promise, messages);
   }
-}
+};
