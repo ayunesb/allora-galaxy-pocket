@@ -1,4 +1,3 @@
-
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,6 +14,7 @@ interface AuthContextType {
   signUp: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,10 +31,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthError
   } = useAuthState();
 
-  // Set up auth listeners and session checking
   useAuthSetup(setSession, setUser, setIsLoading);
   
-  // Configure automatic token refresh
   useSessionRefresh();
 
   const signIn = async (email: string, password: string) => {
@@ -85,6 +83,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const login = async (email: string, password: string) => {
+    const { error } = await signIn(email, password);
+    if (error) throw error;
+  };
+
   const value = {
     user,
     session,
@@ -93,7 +96,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signIn,
     signUp,
     signOut,
-    refreshSession
+    refreshSession,
+    login
   };
 
   return (

@@ -13,6 +13,7 @@ interface TenantContextType {
   switchTenant: (tenantId: string) => Promise<void>;
   createTenant: (name: string) => Promise<Tenant | null>;
   refreshTenants: () => Promise<void>;
+  setTenant: (tenant: Tenant | null) => void; // Added to match usage in other components
 }
 
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
@@ -201,7 +202,8 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     error,
     switchTenant,
     createTenant,
-    refreshTenants
+    refreshTenants,
+    setTenant // Expose setTenant in the context
   };
 
   return (
