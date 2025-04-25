@@ -1,7 +1,9 @@
+
 import { useTenant } from "@/hooks/useTenant";
 import { useState, useEffect } from "react";
 import type { TenantOption } from "./useAvailableTenants";
 import { useToast } from "@/hooks/use-toast";
+import { Tenant } from "@/types/tenant";
 
 export function useInitializeSelectedTenant(tenants: TenantOption[], loading: boolean, error: string | null) {
   const { setTenant } = useTenant();
@@ -34,13 +36,14 @@ export function useInitializeSelectedTenant(tenants: TenantOption[], loading: bo
         const foundTenant = tenants.find((t) => t.id === storedId);
         if (foundTenant) {
           console.log("[useInitializeSelectedTenant] Restoring tenant:", foundTenant.name);
-          setTenant(foundTenant);
+          // Cast to Tenant since we know it has all the required properties
+          setTenant(foundTenant as Tenant);
           setSelected(foundTenant.id);
         }
       } else if (tenants.length > 0) {
         // Otherwise use the first tenant
         console.log("[useInitializeSelectedTenant] Setting default tenant:", tenants[0].name);
-        setTenant(tenants[0]);
+        setTenant(tenants[0] as Tenant);
         setSelected(tenants[0].id);
         localStorage.setItem("tenant_id", tenants[0].id);
         

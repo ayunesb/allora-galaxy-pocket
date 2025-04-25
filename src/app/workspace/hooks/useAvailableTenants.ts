@@ -3,15 +3,11 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { Tenant } from "@/types/tenant";
 
-export interface TenantOption {
-  id: string;
-  name: string;
-  theme_color?: string;
-  theme_mode?: string;
-  isDemo?: boolean;
-  enable_auto_approve?: boolean;
-}
+export type TenantOption = Omit<Tenant, 'role'> & {
+  role?: string;
+};
 
 type Status = "idle" | "loading" | "error" | "success";
 
@@ -40,32 +36,48 @@ export function useAvailableTenants() {
     setError(null);
 
     try {
-      // Direct tenant profiles query with safer column selection
-      const { data: directTenantResponse, error: tenantError } = await supabase
-        .from("tenant_profiles")
-        .select("id, name, theme_color, theme_mode, enable_auto_approve")
+      // Get tenant profiles and user roles in one query
+      const { data: tenantsWithRoles, error: tenantsError } = await supabase
+        .from("tenant_user_roles")
+        .select(`
+          tenant_id, 
+          role,
+          tenant_profiles:tenant_id (
+            id, 
+            name, 
+            theme_color, 
+            theme_mode, 
+            enable_auto_approve,
+            is_demo
+          )
+        `)
+        .eq("user_id", user.id)
         .limit(20);
 
-      if (tenantError) {
-        console.error("[useAvailableTenants] Tenant query error:", tenantError);
-        throw tenantError;
+      if (tenantsError) {
+        console.error("[useAvailableTenants] Tenant query error:", tenantsError);
+        throw tenantsError;
       }
 
-      if (directTenantResponse && directTenantResponse.length > 0) {
-        console.log("[useAvailableTenants] Tenant query succeeded:", directTenantResponse.length, "tenants");
-        setTenants(directTenantResponse.map(tenant => ({
-          id: tenant.id,
-          name: tenant.name || 'Unnamed Workspace',
-          theme_color: tenant.theme_color,
-          theme_mode: tenant.theme_mode,
-          enable_auto_approve: tenant.enable_auto_approve
-        })));
+      if (tenantsWithRoles && tenantsWithRoles.length > 0) {
+        console.log("[useAvailableTenants] Tenant query succeeded:", tenantsWithRoles.length, "tenants");
+        
+        const formattedTenants = tenantsWithRoles.map(item => ({
+          id: item.tenant_id,
+          name: item.tenant_profiles?.name || 'Unnamed Workspace',
+          theme_color: item.tenant_profiles?.theme_color,
+          theme_mode: item.tenant_profiles?.theme_mode,
+          enable_auto_approve: item.tenant_profiles?.enable_auto_approve,
+          isDemo: item.tenant_profiles?.is_demo,
+          role: item.role
+        }));
+        
+        setTenants(formattedTenants);
         setStatus("success");
         setRetryCount(0);
         return;
       }
 
-      // If no tenants found or error occurred, return empty
       console.log("[useAvailableTenants] No tenants found");
       setTenants([]);
       setStatus("success");
@@ -74,7 +86,6 @@ export function useAvailableTenants() {
       setError(err.message || "Could not fetch workspaces. Please refresh.");
       setStatus("error");
       
-      // Only show a toast for non-initial load errors to avoid confusion
       if (retryCount > 0) {
         toast({
           title: "Workspace Fetch Error",
@@ -91,7 +102,6 @@ export function useAvailableTenants() {
     if (user) {
       fetchTenants();
     } else {
-      // Clear tenants when user is not logged in
       setTenants([]);
       setLoading(false);
       setError(null);

@@ -13,7 +13,7 @@ interface TenantContextType {
   switchTenant: (tenantId: string) => Promise<void>;
   createTenant: (name: string) => Promise<Tenant | null>;
   refreshTenants: () => Promise<void>;
-  setTenant: (tenant: Tenant | null) => void; // Added to match usage in other components
+  setTenant: (tenant: Tenant | null) => void; 
 }
 
 const TenantContext = createContext<TenantContextType | undefined>(undefined);

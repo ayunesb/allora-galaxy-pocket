@@ -12,6 +12,7 @@ import { ErrorState } from "./components/ErrorState";
 import { NoWorkspaces } from "./components/NoWorkspaces";
 import { WorkspaceSelector } from "./components/WorkspaceSelector";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tenant } from "@/types/tenant";
 
 export default function WorkspaceSwitcher({ highlight = false }) {
   const { tenant, setTenant } = useTenant();
@@ -64,7 +65,8 @@ export default function WorkspaceSwitcher({ highlight = false }) {
       
       if (newWorkspace) {
         console.log("[WorkspaceSwitcher] New workspace created:", newWorkspace.id, newWorkspace.name);
-        setTenant(newWorkspace);
+        // Cast to Tenant to ensure type compatibility
+        setTenant(newWorkspace as Tenant);
         setSelected(newWorkspace.id);
         localStorage.setItem("tenant_id", newWorkspace.id);
         setJustCreated(true);
@@ -96,7 +98,8 @@ export default function WorkspaceSwitcher({ highlight = false }) {
     if (selectedTenant) {
       console.log("[WorkspaceSwitcher] Switching to tenant:", selectedTenant.name, selectedTenant.id);
       setSelected(value);
-      setTenant(selectedTenant);
+      // Cast to Tenant to ensure type compatibility
+      setTenant(selectedTenant as Tenant);
       localStorage.setItem("tenant_id", value);
 
       toast({
