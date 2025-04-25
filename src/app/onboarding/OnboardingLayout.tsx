@@ -2,7 +2,6 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useTheme } from "@/components/ui/theme-provider";
 
 interface OnboardingLayoutProps {
   children: React.ReactNode;
@@ -10,8 +9,6 @@ interface OnboardingLayoutProps {
 }
 
 const OnboardingLayout = ({ children, className }: OnboardingLayoutProps) => {
-  const { theme } = useTheme();
-  
   return (
     <TooltipProvider>
       <div className="min-h-screen flex flex-col items-center justify-center bg-background dark:bg-gray-900 p-4 md:p-6">

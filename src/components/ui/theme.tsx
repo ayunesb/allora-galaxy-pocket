@@ -21,8 +21,10 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   }, [theme]);
   
   return (
-    <div className={`min-h-screen bg-background ${theme === 'dark' ? 'dark' : ''}`}>
-      {children}
+    <div className={`min-h-screen ${theme}`}>
+      <div className="min-h-screen bg-background text-foreground">
+        {children}
+      </div>
     </div>
-  )
+  );
 }

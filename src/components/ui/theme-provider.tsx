@@ -27,18 +27,21 @@ const initialState: ThemeProviderState = {
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
+// Create a separate context to avoid circular dependencies
+const TenantContext = createContext<{tenant: any} | undefined>(undefined);
+
 export function ThemeProvider({
   children,
   defaultTheme = "light",
   storageKey = "vite-ui-theme",
   ...props
 }: ThemeProviderProps) {
-  // Initialize with default values first
   const [theme, setTheme] = useState<Theme>(defaultTheme);
   const [themeColor, setThemeColor] = useState("indigo");
+  const [mounted, setMounted] = useState(false);
   
-  // Try to get tenant data safely
-  const tenantContext = useContext(TenantContext);
+  // Get tenant context data
+  const tenantContext = useTenant();
   const tenant = tenantContext?.tenant;
 
   // Update theme when tenant changes
@@ -54,7 +57,7 @@ export function ThemeProvider({
     }
   }, [tenant]);
 
-  // Load theme from localStorage or system preference on mount
+  // On mount, load theme from localStorage or system preference
   useEffect(() => {
     const storedTheme = localStorage.getItem(storageKey);
     
@@ -63,16 +66,33 @@ export function ThemeProvider({
     } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
       setTheme("dark");
     }
+    
+    setMounted(true);
   }, [storageKey]);
 
   // Apply theme to document
   useEffect(() => {
+    if (!mounted) return;
+    
     const root = window.document.documentElement;
 
+    // Remove previous theme classes
     root.classList.remove("light", "dark");
+    
+    // Add current theme class
     root.classList.add(theme);
+    
+    // Store theme in localStorage
     localStorage.setItem(storageKey, theme);
-  }, [theme, storageKey]);
+    
+    // Ensure body also gets theme class for full coverage
+    document.body.classList.remove('light', 'dark');
+    document.body.classList.add(theme);
+    
+    // Set body background color to match theme
+    const bgColor = theme === 'dark' ? 'hsl(var(--background))' : 'hsl(var(--background))';
+    document.body.style.backgroundColor = bgColor;
+  }, [theme, storageKey, mounted]);
 
   const updateThemeColor = async (color: string) => {
     if (!tenant?.id) return;
@@ -91,6 +111,7 @@ export function ThemeProvider({
     }
   };
 
+  // Use this value to prevent hydration mismatch
   const value = {
     theme,
     themeColor,
@@ -109,15 +130,17 @@ export function ThemeProvider({
     updateThemeColor
   };
 
+  // Return a static theme provider during SSR
+  if (!mounted) {
+    return <div className="bg-background text-foreground">{children}</div>;
+  }
+
   return (
     <ThemeProviderContext.Provider {...props} value={value}>
       {children}
     </ThemeProviderContext.Provider>
   );
 }
-
-// Create a separate TenantContext to avoid circular dependencies
-const TenantContext = createContext<{tenant: any} | undefined>(undefined);
 
 export const useTheme = () => {
   const context = useContext(ThemeProviderContext);

@@ -35,6 +35,13 @@
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
+  html, body {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
@@ -73,6 +80,13 @@
 
   body {
     @apply bg-background text-foreground;
+    transition: background-color 0.3s ease;
+  }
+
+  #root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
   }
 
   /* Improved text contrast for error pages */
