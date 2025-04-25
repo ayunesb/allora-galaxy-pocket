@@ -10,14 +10,14 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { SystemLog } from "@/types/systemLog";
+import { SystemLog, LogSeverity } from "@/types/systemLog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PaginationState } from "@/types/logFilters";
 
 interface AdminSystemLogsTableProps {
   logs: SystemLog[];
   isLoading: boolean;
-  currentPage: number;
-  totalPages: number;
+  pagination: PaginationState;
   onNextPage: () => void;
   onPrevPage: () => void;
   onGoToPage: (page: number) => void;
@@ -26,12 +26,13 @@ interface AdminSystemLogsTableProps {
 export function AdminSystemLogsTable({
   logs,
   isLoading,
-  currentPage,
-  totalPages,
+  pagination,
   onNextPage,
   onPrevPage,
   onGoToPage,
 }: AdminSystemLogsTableProps) {
+  const { currentPage, totalPages } = pagination;
+
   const formatDate = (date: string | Date) => {
     // Convert Date object to string if necessary
     const dateToFormat = date instanceof Date ? date : new Date(date);
@@ -41,7 +42,7 @@ export function AdminSystemLogsTable({
     }).format(dateToFormat);
   };
 
-  const getBadgeVariant = (severity?: string) => {
+  const getBadgeVariant = (severity?: LogSeverity | string) => {
     switch (severity) {
       case "error":
         return "destructive";

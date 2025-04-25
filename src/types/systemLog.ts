@@ -6,7 +6,7 @@ export interface SystemLog {
   id: string;
   event_type: string;
   message: string;
-  severity?: 'info' | 'warning' | 'error';
+  severity?: LogSeverity;
   service?: string;
   created_at: string;
   timestamp?: string;
@@ -15,3 +15,5 @@ export interface SystemLog {
   user_id?: string;
   status?: 'success' | 'error' | 'warning';
 }
+
+export type LogSeverity = 'info' | 'warning' | 'error' | 'all';

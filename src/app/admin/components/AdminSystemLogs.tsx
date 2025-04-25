@@ -11,6 +11,7 @@ import { RefreshCw } from "lucide-react";
 export function AdminSystemLogs() {
   const {
     logs,
+    allLogs,
     filters,
     updateFilters,
     resetFilters,
@@ -21,8 +22,6 @@ export function AdminSystemLogs() {
     prevPage,
     goToPage,
   } = useSystemLogsWithFilters();
-
-  const { currentPage, totalPages } = pagination;
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     updateFilters({ search: e.target.value });
@@ -95,8 +94,7 @@ export function AdminSystemLogs() {
           <AdminSystemLogsTable
             logs={logs}
             isLoading={isLoading}
-            currentPage={currentPage}
-            totalPages={totalPages}
+            pagination={pagination}
             onNextPage={nextPage}
             onPrevPage={prevPage}
             onGoToPage={goToPage}
