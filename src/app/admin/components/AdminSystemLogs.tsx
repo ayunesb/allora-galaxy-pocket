@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React from "react";
+import LogSecurityAlert from "@/app/admin/logs/LogSecurityAlert";
 import { useSystemLogsWithFilters } from '@/hooks/useSystemLogsWithFilters';
 import { Input } from '@/components/ui/input';
 import { 
@@ -11,7 +12,6 @@ import {
 import { RefreshCw, Search, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SecurityLogViewer } from '@/components/SecurityLogViewer';
-import { LogSecurityAlert } from '@/app/admin/logs/LogSecurityAlert';
 import { useAuth } from '@/hooks/useAuth';
 import { useTenant } from '@/hooks/useTenant';
 import { showToast } from '@/utils/toastUtils';

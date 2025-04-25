@@ -11,9 +11,9 @@ interface OnboardingLayoutProps {
 const OnboardingLayout = ({ children, className }: OnboardingLayoutProps) => {
   return (
     <TooltipProvider>
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background dark:bg-gray-900 p-4 md:p-6">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 md:p-6">
         <main 
-          className={cn("w-full max-w-3xl bg-card shadow-lg rounded-lg p-4 md:p-6 border border-border dark:border-gray-700 dark:bg-gray-800", className)}
+          className={cn("w-full max-w-3xl bg-card shadow-lg rounded-lg p-4 md:p-6 border border-border", className)}
           role="main"
           aria-label="Onboarding process"
         >

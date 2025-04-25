@@ -27,9 +27,6 @@ const initialState: ThemeProviderState = {
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
-// Create a separate context to avoid circular dependencies
-const TenantContext = createContext<{tenant: any} | undefined>(undefined);
-
 export function ThemeProvider({
   children,
   defaultTheme = "light",
@@ -75,23 +72,23 @@ export function ThemeProvider({
     if (!mounted) return;
     
     const root = window.document.documentElement;
+    const body = document.body;
 
     // Remove previous theme classes
     root.classList.remove("light", "dark");
+    body.classList.remove("light", "dark");
     
     // Add current theme class
     root.classList.add(theme);
+    body.classList.add(theme);
     
     // Store theme in localStorage
     localStorage.setItem(storageKey, theme);
     
-    // Ensure body also gets theme class for full coverage
-    document.body.classList.remove('light', 'dark');
-    document.body.classList.add(theme);
-    
-    // Set body background color to match theme
-    const bgColor = theme === 'dark' ? 'hsl(var(--background))' : 'hsl(var(--background))';
-    document.body.style.backgroundColor = bgColor;
+    // Set explicit background color to match theme
+    document.body.style.backgroundColor = theme === 'dark' 
+      ? 'hsl(222.2, 84%, 4.9%)' // Dark background
+      : 'hsl(0, 0%, 100%)';     // Light background
   }, [theme, storageKey, mounted]);
 
   const updateThemeColor = async (color: string) => {

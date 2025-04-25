@@ -2,7 +2,6 @@
 import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { ThemeProvider } from "@/components/ui/theme-provider";
 import { AuthProvider } from "@/hooks/useAuth";
 import { TenantProvider } from "@/hooks/useTenant";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
@@ -15,14 +14,14 @@ function AppRoutes() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="light" storageKey="allora-theme-preference">
-        <AuthProvider>
-          <TenantProvider>
+      <AuthProvider>
+        <TenantProvider>
+          <div className="min-h-screen bg-background text-foreground">
             <RouterProvider router={router} />
             <Toaster />
-          </TenantProvider>
-        </AuthProvider>
-      </ThemeProvider>
+          </div>
+        </TenantProvider>
+      </AuthProvider>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );
