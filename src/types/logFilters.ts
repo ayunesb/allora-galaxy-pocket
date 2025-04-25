@@ -1,26 +1,18 @@
 
-import { LogSeverity } from '@/types/systemLog';
+import { LogSeverity } from './systemLog';
 
 export interface LogFilters {
   search: string;
-  dateRange: number; // in days
   eventType: string;
-  severity?: LogSeverity | 'all';
+  severity: LogSeverity | 'all';
   service?: string;
+  dateRange: number; // Days
   userId?: string;
 }
 
 export const DEFAULT_FILTERS: LogFilters = {
-  search: "",
-  dateRange: 7, // Default to last 7 days
-  eventType: "all",
-  severity: "all",
-  service: undefined,
-  userId: undefined,
+  search: '',
+  eventType: 'all',
+  severity: 'all',
+  dateRange: 7, // Last 7 days
 };
-
-export interface PaginationState {
-  currentPage: number;
-  totalPages: number;
-  logsPerPage: number;
-}

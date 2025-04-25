@@ -1,10 +1,16 @@
 
 import React from 'react';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, CheckCircle, Info } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { 
+  Alert,
+  AlertDescription,
+  AlertTitle
+} from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { X, AlertTriangle, Info, CheckCircle } from 'lucide-react';
+import { format } from 'date-fns';
 
-export interface SystemAlertProps {
+interface SystemAlertProps {
+  id?: string;
   title: string;
   description?: string;
   severity: 'info' | 'warning' | 'error' | 'success';
@@ -15,53 +21,61 @@ export interface SystemAlertProps {
 export function SystemAlert({ 
   title, 
   description, 
-  severity = 'info',
+  severity, 
   timestamp,
   onDismiss 
 }: SystemAlertProps) {
-  const getIcon = () => {
-    switch (severity) {
-      case 'error':
-        return <AlertTriangle className="h-5 w-5" />;
-      case 'warning':
-        return <AlertTriangle className="h-5 w-5" />;
-      case 'success':
-        return <CheckCircle className="h-5 w-5" />;
-      default:
-        return <Info className="h-5 w-5" />;
-    }
-  };
-  
-  const getVariant = () => {
+  const getAlertVariant = () => {
     switch (severity) {
       case 'error':
         return 'destructive';
       case 'warning':
         return 'warning';
-      default:
+      case 'success':
         return 'default';
+      default:
+        return 'secondary';
+    }
+  };
+
+  const getAlertIcon = () => {
+    switch (severity) {
+      case 'error':
+        return <AlertTriangle className="h-4 w-4" />;
+      case 'warning':
+        return <AlertTriangle className="h-4 w-4" />;
+      case 'success':
+        return <CheckCircle className="h-4 w-4" />;
+      default:
+        return <Info className="h-4 w-4" />;
     }
   };
 
   return (
-    <Alert variant={getVariant()} className="my-2">
+    <Alert variant={getAlertVariant()} className="relative">
       <div className="flex items-start gap-2">
-        {getIcon()}
+        {getAlertIcon()}
         <div className="flex-1">
-          <AlertTitle>{title}</AlertTitle>
-          {description && (
-            <AlertDescription>{description}</AlertDescription>
-          )}
-          {timestamp && (
-            <div className="mt-2 text-xs text-muted-foreground">
-              {new Date(timestamp).toLocaleString()}
-            </div>
-          )}
+          <AlertTitle className="flex items-center justify-between">
+            {title}
+            {timestamp && (
+              <span className="text-xs text-muted-foreground">
+                {format(new Date(timestamp), 'yyyy-MM-dd HH:mm')}
+              </span>
+            )}
+          </AlertTitle>
+          {description && <AlertDescription>{description}</AlertDescription>}
         </div>
-        {severity !== 'info' && (
-          <Badge variant={getVariant()} className="ml-2">
-            {severity.toUpperCase()}
-          </Badge>
+        {onDismiss && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-6 w-6 p-0 rounded-full"
+            onClick={onDismiss}
+          >
+            <X className="h-4 w-4" />
+            <span className="sr-only">Dismiss</span>
+          </Button>
         )}
       </div>
     </Alert>

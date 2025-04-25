@@ -1,8 +1,7 @@
 
-import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useTenant } from "./useTenant";
-import { toast } from "sonner";
+import { useTenant } from '@/hooks/useTenant';
+import { supabase } from '@/integrations/supabase/client';
+import { ToastService } from '@/services/ToastService';
 
 interface PipelineEvent {
   event_type: string;
@@ -11,87 +10,47 @@ interface PipelineEvent {
   metadata?: Record<string, any>;
 }
 
-interface PipelineResponse {
-  success: boolean;
-  error?: string;
-  data?: any;
-}
-
-/**
- * Hook for logging data pipeline events and activities
- */
 export function useDataPipeline() {
-  const [isLoading, setIsLoading] = useState(false);
   const { tenant } = useTenant();
 
-  const logPipelineEvent = async (event: PipelineEvent): Promise<PipelineResponse> => {
+  const logPipelineEvent = async (event: PipelineEvent) => {
     if (!tenant?.id) {
-      return {
-        success: false,
-        error: "No active tenant"
-      };
+      console.warn("Cannot log pipeline event: No tenant ID");
+      return false;
     }
 
-    setIsLoading(true);
     try {
-      const { error } = await supabase.from("data_pipeline_events").insert({
-        tenant_id: tenant.id,
-        event_type: event.event_type,
-        source: event.source,
-        target: event.target,
-        metadata: event.metadata || {},
-        status: "completed"
+      const { error } = await supabase.rpc('log_pipeline_event', {
+        p_tenant_id: tenant.id,
+        p_event_type: event.event_type,
+        p_source: event.source,
+        p_target: event.target,
+        p_metadata: event.metadata || {}
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Failed to log pipeline event:", error);
+        return false;
+      }
 
-      return { success: true };
-    } catch (error) {
-      console.error("Pipeline event logging error:", error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error logging pipeline event"
-      };
-    } finally {
-      setIsLoading(false);
+      return true;
+    } catch (err) {
+      console.error("Error in pipeline event logging:", err);
+      return false;
     }
   };
 
-  const trackMetric = async (
-    metricName: string,
-    value: number,
-    metadata?: Record<string, any>
-  ): Promise<PipelineResponse> => {
-    if (!tenant?.id) {
-      return {
-        success: false,
-        error: "No active tenant"
-      };
-    }
-
-    try {
-      const { error } = await supabase.from("system_metrics").insert({
-        tenant_id: tenant.id,
-        metric_name: metricName,
-        value,
-        metadata: metadata || {}
-      });
-
-      if (error) throw error;
-
-      return { success: true };
-    } catch (error) {
-      console.error("Metric tracking error:", error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error tracking metric"
-      };
-    }
+  const trackUserJourney = async (from: string, to: string, details: Record<string, any> = {}) => {
+    return logPipelineEvent({
+      event_type: 'user_journey',
+      source: from,
+      target: to,
+      metadata: details
+    });
   };
 
   return {
     logPipelineEvent,
-    trackMetric,
-    isLoading
+    trackUserJourney
   };
 }

@@ -17,7 +17,8 @@ export class ToastService {
   /**
    * Show a success toast notification
    */
-  static success({ title, description, duration }: ToastOptions) {
+  static success(options: ToastOptions) {
+    const { title, description, duration } = options;
     toast.success(title, {
       description,
       duration: duration || this.defaultDuration,
@@ -27,7 +28,8 @@ export class ToastService {
   /**
    * Show an error toast notification
    */
-  static error({ title, description, duration }: ToastOptions) {
+  static error(options: ToastOptions) {
+    const { title, description, duration } = options;
     toast.error(title, {
       description,
       duration: duration || this.defaultDuration,
@@ -37,7 +39,8 @@ export class ToastService {
   /**
    * Show a warning toast notification
    */
-  static warning({ title, description, duration }: ToastOptions) {
+  static warning(options: ToastOptions) {
+    const { title, description, duration } = options;
     toast.warning(title, {
       description,
       duration: duration || this.defaultDuration,
@@ -47,7 +50,8 @@ export class ToastService {
   /**
    * Show an informational toast notification
    */
-  static info({ title, description, duration }: ToastOptions) {
+  static info(options: ToastOptions) {
+    const { title, description, duration } = options;
     toast.info(title, {
       description,
       duration: duration || this.defaultDuration,
