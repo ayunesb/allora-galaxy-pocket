@@ -31,19 +31,18 @@ export function CreateWorkspaceForm() {
 
     setIsCreating(true);
     try {
-      const workspace = await createDefaultWorkspace({
+      // Update the createDefaultWorkspace call to match its expected signature
+      await createDefaultWorkspace({
         name: data.workspaceName,
         themeMode: 'light',
         themeColor: 'indigo'
       });
 
-      if (workspace) {
-        toast({
-          title: "Success",
-          description: "Workspace created successfully"
-        });
-        form.reset();
-      }
+      toast({
+        title: "Success",
+        description: "Workspace created successfully"
+      });
+      form.reset();
     } catch (error: any) {
       toast({
         title: "Error",
