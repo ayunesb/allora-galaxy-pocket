@@ -14,5 +14,5 @@ export interface SystemLog {
   created_at: string;
   timestamp?: string;
   severity?: LogSeverity;
-  service?: string; // Added service property
+  service?: string;
 }

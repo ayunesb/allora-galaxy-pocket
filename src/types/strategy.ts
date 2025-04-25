@@ -15,4 +15,6 @@ export interface Strategy {
   generated_by?: string;
   health_score?: number;
   impact_score?: number;
+  industry?: string;
+  goal?: string;
 }
