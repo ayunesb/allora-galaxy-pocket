@@ -3,15 +3,15 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { OnboardingProfile } from "@/types/onboarding";
-import { ToastService } from "@/services/toast";
+import { ToastService } from "@/services/ToastService";
 import { useTenant } from "@/hooks/useTenant";
-import { useDataPipeline } from "@/hooks/useDataPipeline";
+import { useSystemLogs } from "@/hooks/useSystemLogs";
 
 export function useOnboardingSubmission() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { tenant } = useTenant();
   const navigate = useNavigate();
-  const { logPipelineEvent } = useDataPipeline();
+  const { logActivity, logJourneyStep } = useSystemLogs();
 
   const completeOnboarding = async (profile: OnboardingProfile) => {
     if (!tenant?.id) {
@@ -28,6 +28,12 @@ export function useOnboardingSubmission() {
 
     setIsSubmitting(true);
     try {
+      // Log journey step - transitioning from Auth to Onboarding completion
+      await logJourneyStep('auth', 'onboarding_completion', { 
+        profile_type: profile.launch_mode,
+        industry: profile.industry
+      });
+      
       // Save company profile
       const { error } = await supabase
         .from("company_profiles")
@@ -42,14 +48,14 @@ export function useOnboardingSubmission() {
 
       if (error) throw error;
 
-      // Log pipeline event
-      logPipelineEvent({
-        event_type: "onboarding_completed",
-        source: "onboarding",
-        target: "strategy",
-        metadata: {
+      // Log successful completion
+      await logActivity({
+        event_type: "ONBOARDING_COMPLETED",
+        message: `Onboarding completed successfully for ${profile.companyName}`,
+        meta: {
           profile_type: profile.launch_mode,
-          industry: profile.industry
+          industry: profile.industry,
+          team_size: profile.teamSize
         }
       });
 
@@ -61,10 +67,22 @@ export function useOnboardingSubmission() {
       return { success: true };
     } catch (error: any) {
       console.error("Onboarding submission error:", error);
+      
+      // Log the error
+      await logActivity({
+        event_type: "ONBOARDING_ERROR",
+        message: `Onboarding failed: ${error.message || "Unknown error"}`,
+        meta: {
+          error: error.message,
+          profile: profile
+        }
+      });
+      
       ToastService.error({
         title: "Submission failed",
         description: error.message || "An unexpected error occurred"
       });
+      
       return {
         success: false,
         error: error.message || "Failed to save onboarding data"

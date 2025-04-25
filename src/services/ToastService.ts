@@ -70,8 +70,8 @@ export class ToastService {
       error = "Something went wrong"
     }: {
       loading?: string;
-      success?: string;
-      error?: string;
+      success?: string | ((data: T) => string);
+      error?: string | ((error: unknown) => string);
     }
   ) {
     toast.promise(promise, {

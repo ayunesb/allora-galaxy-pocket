@@ -7,9 +7,10 @@ import { useState } from "react";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import LiveSystemVerification from "@/components/LiveSystemVerification";
 import { useSessionRefresh } from "@/hooks/useSessionRefresh";
 import { useOnboardingCheck } from "@/hooks/useOnboardingCheck";
+import { ToastService } from "@/services/ToastService";
+import { useSystemLogs } from "@/hooks/useSystemLogs";
 
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, session, isLoading: authLoading, refreshSession } = useAuth();
@@ -18,6 +19,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   const [shouldCheckOnboarding, setShouldCheckOnboarding] = useState(true);
   const [authAttempts, setAuthAttempts] = useState(0);
   const [authError, setAuthError] = useState<string | null>(null);
+  const { logActivity, logSecurityEvent } = useSystemLogs();
   
   // Special cases where we don't need to check onboarding
   const skipOnboardingCheck = location.pathname === "/onboarding" || 
@@ -34,6 +36,63 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     shouldCheckOnboarding && !skipOnboardingCheck
   );
 
+  // Handle retry for auth errors
+  const handleRetry = async () => {
+    try {
+      setAuthAttempts(prev => prev + 1);
+      setAuthError(null);
+      await refreshSession();
+      
+      // Log retry attempt
+      if (user) {
+        logActivity({
+          event_type: "AUTH_RETRY",
+          message: `Authentication retry attempt ${authAttempts + 1}`,
+          meta: { retry_count: authAttempts + 1 }
+        });
+      }
+    } catch (error) {
+      const e = error as Error;
+      setAuthError(e.message || "Authentication failed after retry");
+      
+      // Log retry failure
+      if (user) {
+        logActivity({
+          event_type: "AUTH_RETRY_FAILED",
+          message: `Authentication retry failed: ${e.message}`,
+          meta: { retry_count: authAttempts + 1, error: e.message }
+        });
+      }
+      
+      ToastService.error({
+        title: "Authentication failed",
+        description: "Please try logging in again"
+      });
+    }
+  };
+
+  // Log security events for unauthorized access attempts
+  if (user && !authLoading && !tenantLoading && !onboardingLoading) {
+    // If user is trying to access protected route without tenant
+    if (!tenant && !location.pathname.startsWith("/auth/") && 
+        location.pathname !== "/onboarding" && location.pathname !== "/workspace") {
+      logSecurityEvent(
+        "Attempted access without workspace",
+        "TENANT_MISSING",
+        { path: location.pathname, user_id: user.id }
+      );
+    }
+    
+    // If user is trying to access route without completing onboarding
+    if (tenant && onboardingComplete === false && !skipOnboardingCheck) {
+      logSecurityEvent(
+        "Attempted access before onboarding completion",
+        "ONBOARDING_INCOMPLETE",
+        { path: location.pathname, user_id: user.id, tenant_id: tenant.id }
+      );
+    }
+  }
+
   // Handle auth error display
   if (authError) {
     return (
@@ -44,7 +103,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
           <AlertDescription className="space-y-4">
             <p>{authError}</p>
             <div className="flex space-x-2 mt-2">
-              <Button size="sm" variant="outline" onClick={() => refreshSession()}>
+              <Button size="sm" variant="outline" onClick={handleRetry}>
                 Retry
               </Button>
               <Button size="sm" onClick={() => window.location.href = "/auth/login"}>
@@ -82,12 +141,29 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     }
     
     console.log("RequireAuth: No tenant selected, redirecting to workspace");
+    ToastService.warning({
+      title: "Workspace required",
+      description: "Please select or create a workspace to continue"
+    });
     return <Navigate to="/workspace" state={{ from: location.pathname }} replace />;
   }
 
   if (onboardingComplete === false && !skipOnboardingCheck) {
     console.log("RequireAuth: Onboarding incomplete, redirecting to onboarding");
+    ToastService.info({
+      title: "Complete your setup",
+      description: "Please finish onboarding to continue"
+    });
     return <Navigate to="/onboarding" state={{ from: location.pathname }} replace />;
+  }
+
+  // User journey tracking - log successful navigation
+  if (user && tenant) {
+    logActivity({
+      event_type: "USER_NAVIGATION",
+      message: `User navigated to ${location.pathname}`,
+      meta: { path: location.pathname }
+    }).catch(e => console.error("Failed to log navigation:", e));
   }
 
   return <>{children}</>;

@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useNavigate, useLocation } from "react-router-dom";
-import { toast } from "@/components/ui/sonner";
+import { ToastService } from "@/services/ToastService";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useSystemLogs } from "@/hooks/useSystemLogs";
 
 export default function Login() {
   const { login, session, isLoading: authLoading } = useAuth();
@@ -19,6 +20,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const { logActivity } = useSystemLogs();
 
   // Check if we have a session from email confirmation
   useEffect(() => {
@@ -29,7 +31,17 @@ export default function Login() {
           const { data, error } = await supabase.auth.getSession();
           
           if (data.session && !error) {
-            toast.success("Email confirmed successfully!");
+            ToastService.success({
+              title: "Email confirmed",
+              description: "You have successfully confirmed your email"
+            });
+            
+            logActivity({
+              event_type: "AUTH_EMAIL_CONFIRMED",
+              message: "User confirmed email address",
+              severity: "info"
+            });
+            
             navigate("/onboarding");
           }
         }
@@ -41,14 +53,19 @@ export default function Login() {
     }
     
     checkSession();
-  }, [location, navigate]);
+  }, [location, navigate, logActivity]);
 
   // Redirect if already authenticated
   useEffect(() => {
     if (session && !isCheckingSession) {
+      logActivity({
+        event_type: "AUTH_AUTO_REDIRECT",
+        message: "User automatically redirected after authentication",
+        severity: "info"
+      });
       navigate("/onboarding");
     }
-  }, [session, isCheckingSession, navigate]);
+  }, [session, isCheckingSession, navigate, logActivity]);
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -60,6 +77,13 @@ export default function Login() {
     try {
       setIsLoading(true);
       await login(email, password);
+      
+      // Log successful login
+      logActivity({
+        event_type: "AUTH_LOGIN_SUCCESS",
+        message: "User logged in successfully",
+        severity: "info"
+      });
       
       // Fetch canonical user role for redirect after login
       const { data: roleData, error } = await supabase.rpc("get_user_role");
@@ -74,6 +98,14 @@ export default function Login() {
     } catch (err: any) {
       console.error("Login error:", err);
       setErrorMessage(err.message || "Login failed. Please check your credentials.");
+      
+      // Log failed login attempt
+      logActivity({
+        event_type: "AUTH_LOGIN_FAILED",
+        message: `Login failed: ${err.message}`,
+        severity: "warning",
+        meta: { error: err.message }
+      });
     } finally {
       setIsLoading(false);
     }

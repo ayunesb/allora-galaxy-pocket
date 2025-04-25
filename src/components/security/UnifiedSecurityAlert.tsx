@@ -3,8 +3,7 @@ import React from "react";
 import { AlertTriangle, ShieldAlert } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-import { SystemLog } from "@/types/systemLog";
+import { ToastService } from "@/services/ToastService";
 import { useSystemLogs } from "@/hooks/useSystemLogs";
 
 interface UnifiedSecurityAlertProps {
@@ -63,7 +62,8 @@ export function UnifiedSecurityAlert({
         }
       });
 
-      toast.success("Alert acknowledged", {
+      ToastService.success({
+        title: "Alert acknowledged",
         description: "This security alert has been logged and acknowledged."
       });
 
@@ -72,7 +72,8 @@ export function UnifiedSecurityAlert({
       }
     } catch (error) {
       console.error("Failed to log security alert acknowledgement:", error);
-      toast.error("Failed to acknowledge alert", {
+      ToastService.error({
+        title: "Failed to acknowledge alert",
         description: "Please try again or contact support."
       });
     }

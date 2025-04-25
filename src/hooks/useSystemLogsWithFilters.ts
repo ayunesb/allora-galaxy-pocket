@@ -5,7 +5,7 @@ import { useSystemLogs } from '@/hooks/useSystemLogs';
 import { useLogFilters } from '@/hooks/useLogFilters';
 import { useLogPagination } from '@/hooks/useLogPagination';
 import { ToastService } from '@/services/ToastService';
-import { LogFilters, DEFAULT_FILTERS } from '@/types/logFilters';
+import { LogFilters } from '@/types/logFilters';
 
 export function useSystemLogsWithFilters() {
   const { logs: allLogs, isLoading, error, getRecentLogs } = useSystemLogs();
