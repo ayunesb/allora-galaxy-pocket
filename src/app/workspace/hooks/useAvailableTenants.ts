@@ -62,7 +62,7 @@ export function useAvailableTenants() {
       if (tenantsWithRoles && tenantsWithRoles.length > 0) {
         console.log("[useAvailableTenants] Tenant query succeeded:", tenantsWithRoles.length, "tenants");
         
-        const formattedTenants = tenantsWithRoles.map(item => ({
+        const formattedTenants: TenantOption[] = tenantsWithRoles.map(item => ({
           id: item.tenant_id,
           name: item.tenant_profiles?.name || 'Unnamed Workspace',
           theme_color: item.tenant_profiles?.theme_color,

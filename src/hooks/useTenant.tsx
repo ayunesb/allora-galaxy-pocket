@@ -48,7 +48,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         if (tenantsError) throw tenantsError;
 
         // Format tenant data
-        const formattedTenants = userTenants.map(ut => ({
+        const formattedTenants: Tenant[] = userTenants.map(ut => ({
           id: ut.tenant_id,
           name: ut.tenant_profiles?.name || 'Unnamed Workspace',
           role: ut.role
@@ -169,7 +169,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
       if (tenantsError) throw tenantsError;
 
-      const formattedTenants = userTenants.map(ut => ({
+      const formattedTenants: Tenant[] = userTenants.map(ut => ({
         id: ut.tenant_id,
         name: ut.tenant_profiles?.name || 'Unnamed Workspace',
         role: ut.role
