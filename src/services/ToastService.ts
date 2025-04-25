@@ -53,6 +53,7 @@ export const ToastService = {
     },
     options?: { id?: string; duration?: number }
   ) => {
+    // Fixed: The toast.promise expects promise, messages and optionally options
     return toast.promise(promise, messages, options);
   },
 
