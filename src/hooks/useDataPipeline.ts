@@ -1,9 +1,9 @@
 
-import { useTenant } from '@/hooks/useTenant';
-import { supabase } from '@/integrations/supabase/client';
-import { useCallback } from 'react';
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useTenant } from "@/hooks/useTenant";
 
-interface PipelineEventParams {
+interface PipelineEvent {
   event_type: string;
   source: string;
   target: string;
@@ -12,27 +12,50 @@ interface PipelineEventParams {
 
 export function useDataPipeline() {
   const { tenant } = useTenant();
-
-  const logPipelineEvent = useCallback(async (params: PipelineEventParams) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const logPipelineEvent = async (event: PipelineEvent) => {
     if (!tenant?.id) {
-      console.warn('Cannot log pipeline event: No tenant ID available');
-      return;
+      console.error("Cannot log pipeline event: No tenant ID available");
+      return {
+        success: false,
+        error: "No tenant ID available"
+      };
     }
-
+    
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      const { error } = await supabase.rpc('log_pipeline_event', {
-        p_tenant_id: tenant.id,
-        p_event_type: params.event_type,
-        p_source: params.source,
-        p_target: params.target,
-        p_metadata: params.metadata || {}
-      });
-
+      const { error } = await supabase
+        .from("data_pipeline_events")
+        .insert({
+          tenant_id: tenant.id,
+          event_type: event.event_type,
+          source: event.source,
+          target: event.target,
+          metadata: event.metadata || {}
+        });
+        
       if (error) throw error;
-    } catch (err) {
-      console.error('Error logging pipeline event:', err);
+      
+      return { success: true };
+    } catch (err: any) {
+      console.error("Pipeline event error:", err);
+      setError(err.message || "Failed to log pipeline event");
+      return {
+        success: false,
+        error: err.message
+      };
+    } finally {
+      setIsLoading(false);
     }
-  }, [tenant?.id]);
-
-  return { logPipelineEvent };
+  };
+  
+  return {
+    logPipelineEvent,
+    isLoading,
+    error
+  };
 }

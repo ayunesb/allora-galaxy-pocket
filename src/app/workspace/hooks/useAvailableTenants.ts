@@ -5,9 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Tenant } from "@/types/tenant";
 
-export type TenantOption = Omit<Tenant, 'role'> & {
-  role?: string;
-};
+export type TenantOption = Tenant;
 
 type Status = "idle" | "loading" | "error" | "success";
 
