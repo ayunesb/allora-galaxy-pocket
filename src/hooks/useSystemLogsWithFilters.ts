@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { SystemLog } from '@/types/systemLog';
 import { useSystemLogs } from '@/hooks/useSystemLogs';
 import { useLogFilters } from '@/hooks/useLogFilters';
@@ -8,7 +8,17 @@ import { ToastService } from '@/services/ToastService';
 import { LogFilters } from '@/types/logFilters';
 
 export function useSystemLogsWithFilters() {
-  const { logs, isLoading, error, getRecentLogs } = useSystemLogs();
+  const { 
+    logActivity, 
+    logSecurityEvent, 
+    verifyModuleImplementation,
+    getRecentLogs, 
+    logs, 
+    isLoading, 
+    error, 
+    isLogging 
+  } = useSystemLogs();
+  
   const { filters, updateFilters, resetFilters, filteredLogs } = useLogFilters(logs ?? []);
   
   const pagination = useLogPagination({
@@ -39,6 +49,10 @@ export function useSystemLogsWithFilters() {
     updateFilters,
     resetFilters,
     getRecentLogs,
+    logActivity,
+    logSecurityEvent,
+    verifyModuleImplementation,
+    isLogging,
     nextPage: pagination.nextPage,
     prevPage: pagination.prevPage,
     goToPage: pagination.goToPage,
