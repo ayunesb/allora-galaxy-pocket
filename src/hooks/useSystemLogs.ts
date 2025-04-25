@@ -2,20 +2,22 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { useTenant } from "./useTenant";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { SystemLog } from "@/types/systemLog";
 
 export interface LogActivityParams {
   event_type: string;
   message: string;
   meta?: Record<string, any>;
-  severity?: string; // Add severity support
+  severity?: string;
 }
 
 export function useSystemLogs() {
   const { user } = useAuth();
   const { tenant } = useTenant();
   const [isLogging, setIsLogging] = useState(false);
+  const [logs, setLogs] = useState<SystemLog[]>([]);
+  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
 
   const logActivity = async ({ event_type, message, meta = {}, severity = 'info' }: LogActivityParams): Promise<void> => {
     if (!user || !tenant) return;
@@ -99,11 +101,39 @@ export function useSystemLogs() {
     }
   };
 
+  const getRecentLogs = useCallback(async (limit: number = 20) => {
+    if (!tenant?.id) {
+      setLogs([]);
+      return;
+    }
+    
+    setIsLoadingLogs(true);
+    try {
+      const { data, error } = await supabase
+        .from('system_logs')
+        .select('*')
+        .eq('tenant_id', tenant.id)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+        
+      if (error) throw error;
+      setLogs(data || []);
+    } catch (error) {
+      console.error('Error fetching system logs:', error);
+      setLogs([]);
+    } finally {
+      setIsLoadingLogs(false);
+    }
+  }, [tenant?.id]);
+
   return {
+    logs,
+    isLoadingLogs,
     logActivity,
     logSecurityEvent,
     logJourneyStep,
     verifyModuleImplementation,
-    isLogging
+    isLogging,
+    getRecentLogs
   };
 }

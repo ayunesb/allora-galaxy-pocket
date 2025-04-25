@@ -1,120 +1,103 @@
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { updateTenantHeader } from '@/integrations/supabase/client';
-import type { Tenant } from "@/types/tenant";
-import { ToastService } from "@/services/ToastService";
+import { useAuth } from './useAuth';
+import { Tenant } from '@/types/tenant';
+import { TenantContext } from '@/contexts/TenantContext';
 
 interface TenantContextType {
   tenant: Tenant | null;
   setTenant: (tenant: Tenant | null) => void;
   isLoading: boolean;
   refreshTenant: () => Promise<void>;
+  updateTenantProfile: (updatedTenant: Partial<Tenant>) => Promise<void>;
 }
 
-const TenantContext = createContext<TenantContextType | undefined>(undefined);
+const TenantProviderContext = createContext<TenantContextType | undefined>(undefined);
 
-export function TenantProvider({ children }: { children: ReactNode }) {
-  const [tenant, setTenantState] = useState<Tenant | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [tenant, setTenant] = useState<Tenant | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const { user } = useAuth();
 
-  // Load tenant from localStorage on component mount
-  useEffect(() => {
-    const storedTenantId = localStorage.getItem("tenant_id");
-    
-    if (!storedTenantId) {
+  const refreshTenant = useCallback(async () => {
+    if (!user) {
+      setTenant(null);
       setIsLoading(false);
       return;
     }
-
-    const storedTenant = localStorage.getItem("tenant");
-    if (storedTenant) {
-      try {
-        const parsedTenant = JSON.parse(storedTenant);
-        setTenantState(parsedTenant);
-      } catch (error) {
-        console.error("Error parsing stored tenant:", error);
-        localStorage.removeItem("tenant");
-      }
-    } else {
-      // If we have an ID but no stored tenant object, try to fetch it
-      fetchTenantById(storedTenantId);
-    }
-
-    setIsLoading(false);
-  }, []);
-
-  // Function to fetch tenant by ID
-  const fetchTenantById = async (tenantId: string) => {
+    
     try {
       setIsLoading(true);
+      
+      // Get the current tenant for the authenticated user
       const { data, error } = await supabase
-        .from('tenant_profiles')
+        .from('tenants')
         .select('*')
-        .eq('id', tenantId)
+        .eq('id', user.app_metadata?.tenant_id || '')
         .single();
-        
-      if (error) {
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching tenant:', error);
         throw error;
       }
       
-      if (data) {
-        const fetchedTenant: Tenant = {
-          id: data.id,
-          name: data.name || 'Unnamed Workspace', 
-          theme_mode: data.theme_mode,
-          theme_color: data.theme_color,
-          enable_auto_approve: data.enable_auto_approve,
-          isDemo: data.is_demo
-        };
-        
-        setTenantState(fetchedTenant);
-        localStorage.setItem("tenant", JSON.stringify(fetchedTenant));
-      }
+      setTenant(data || null);
     } catch (error) {
-      console.error("Error fetching tenant:", error);
-      ToastService.error({
-        title: "Error loading workspace",
-        description: "Please try selecting your workspace again"
-      });
+      console.error('Error in refreshTenant:', error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
 
-  // Function to refresh tenant data
-  const refreshTenant = async (): Promise<void> => {
-    if (!tenant?.id) return;
-    await fetchTenantById(tenant.id);
-  };
-
-  // Custom setter that also updates localStorage
-  const setTenant = (newTenant: Tenant | null) => {
-    if (newTenant) {
-      localStorage.setItem("tenant_id", newTenant.id);
-      localStorage.setItem("tenant", JSON.stringify(newTenant));
-      updateTenantHeader(newTenant.id); // Update Supabase client headers
-    } else {
-      localStorage.removeItem("tenant_id");
-      localStorage.removeItem("tenant");
-      updateTenantHeader(null); // Update Supabase client headers
+  // Add the missing updateTenantProfile method
+  const updateTenantProfile = async (updatedTenant: Partial<Tenant>) => {
+    if (!tenant?.id) {
+      throw new Error('No active tenant to update');
     }
-    setTenantState(newTenant);
+
+    const { data, error } = await supabase
+      .from('tenants')
+      .update(updatedTenant)
+      .eq('id', tenant.id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating tenant profile:', error);
+      throw error;
+    }
+
+    setTenant(data || tenant);
+    return;
   };
+
+  // Initialize tenant when user changes
+  useEffect(() => {
+    refreshTenant();
+  }, [user, refreshTenant]);
 
   return (
-    <TenantContext.Provider value={{ tenant, setTenant, isLoading, refreshTenant }}>
+    <TenantProviderContext.Provider 
+      value={{ 
+        tenant, 
+        setTenant, 
+        isLoading, 
+        refreshTenant,
+        updateTenantProfile
+      }}
+    >
       {children}
-    </TenantContext.Provider>
+    </TenantProviderContext.Provider>
   );
-}
+};
 
-export function useTenant() {
-  const context = useContext(TenantContext);
+export const useTenant = (): TenantContextType => {
+  const context = useContext(TenantProviderContext);
   
   if (context === undefined) {
-    throw new Error("useTenant must be used within a TenantProvider");
+    throw new Error('useTenant must be used within a TenantProvider');
   }
   
   return context;
-}
+};
