@@ -94,7 +94,7 @@ export function AdminSystemLogsTable({
             {logs.map((log) => (
               <TableRow key={log.id}>
                 <TableCell className="font-mono text-xs">
-                  {formatDate(log.timestamp || log.created_at)}
+                  {formatDate(log.created_at)}
                 </TableCell>
                 <TableCell className="font-medium">{log.event_type}</TableCell>
                 <TableCell>{log.message}</TableCell>

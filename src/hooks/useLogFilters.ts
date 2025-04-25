@@ -13,8 +13,8 @@ export function useLogFilters(logs: SystemLog[]) {
     
     return logs.filter(log => {
       // Apply search filter
-      if (filters.search && !log.message.toLowerCase().includes(filters.search.toLowerCase()) && 
-          !log.event_type.toLowerCase().includes(filters.search.toLowerCase())) {
+      if (filters.searchTerm && !log.message.toLowerCase().includes(filters.searchTerm.toLowerCase()) && 
+          !log.event_type.toLowerCase().includes(filters.searchTerm.toLowerCase())) {
         return false;
       }
       
@@ -34,7 +34,7 @@ export function useLogFilters(logs: SystemLog[]) {
       }
       
       // Apply date range filter
-      if (filters.dateRange > 0) {
+      if (filters.dateRange && filters.dateRange > 0) {
         const cutoffDate = subDays(new Date(), filters.dateRange);
         const logDate = new Date(log.created_at);
         if (logDate < cutoffDate) {

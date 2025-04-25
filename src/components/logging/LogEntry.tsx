@@ -43,8 +43,8 @@ export function LogEntry({ log, onClick, compact = false }: LogEntryProps) {
     }
   };
 
-  const timestamp = log.timestamp || log.created_at;
-  const formattedDate = timestamp ? format(new Date(timestamp), 'yyyy-MM-dd HH:mm:ss') : '';
+  const logDate = log.created_at;
+  const formattedDate = logDate ? format(new Date(logDate), 'yyyy-MM-dd HH:mm:ss') : '';
 
   return (
     <Card 

@@ -81,7 +81,7 @@ export function LogViewer({
               onClick={onLogSelect ? () => onLogSelect(log) : undefined}
             >
               <TableCell className="font-mono text-xs">
-                {format(new Date(log.created_at || log.timestamp || ''), 'yyyy-MM-dd HH:mm:ss')}
+                {format(new Date(log.created_at), 'yyyy-MM-dd HH:mm:ss')}
               </TableCell>
               <TableCell className="font-medium">
                 {log.event_type}

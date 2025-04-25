@@ -4,9 +4,10 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { VerificationIndicator } from '@/components/VerificationIndicator';
 import { TransitionErrorTester } from '@/components/TransitionErrorTester';
 import { useSystemLogsWithFilters } from '@/hooks/useSystemLogsWithFilters';
-import { RoleGuard } from '@/guards/RoleGuard';
+import RoleGuard from '@/guards/RoleGuard';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { InfoCircle } from 'lucide-react';
+import { Info } from 'lucide-react'; // Fix import
+import { UserJourneyTracker } from '@/components/UserJourneyTracker'; // Import UserJourneyTracker
 
 export default function JourneyVerificationPage() {
   const { logActivity } = useSystemLogsWithFilters();
@@ -28,7 +29,7 @@ export default function JourneyVerificationPage() {
         <h1 className="text-3xl font-bold mb-6">User Journey Integration Testing</h1>
         
         <Alert>
-          <InfoCircle className="h-4 w-4" />
+          <Info className="h-4 w-4" />
           <AlertTitle>Testing Environment</AlertTitle>
           <AlertDescription>
             Use this page to test transitions between different stages of the user journey and verify proper error handling.

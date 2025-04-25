@@ -18,8 +18,8 @@ export function AdminLogsFilterPanel({ filters, onFilterChange }: AdminLogsFilte
           <div>
             <Input
               placeholder="Search logs..."
-              value={filters.search}
-              onChange={(e) => onFilterChange({ search: e.target.value })}
+              value={filters.searchTerm}
+              onChange={(e) => onFilterChange({ searchTerm: e.target.value })}
               className="w-full"
             />
           </div>
@@ -64,7 +64,7 @@ export function AdminLogsFilterPanel({ filters, onFilterChange }: AdminLogsFilte
         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Select
-              value={filters.dateRange.toString()}
+              value={filters.dateRange?.toString()}
               onValueChange={(value) => onFilterChange({ dateRange: parseInt(value) })}
             >
               <SelectTrigger>
@@ -78,7 +78,7 @@ export function AdminLogsFilterPanel({ filters, onFilterChange }: AdminLogsFilte
               </SelectContent>
             </Select>
           </div>
-          {filters.service && (
+          {filters.service !== undefined && (
             <div>
               <Select
                 value={filters.service}

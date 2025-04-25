@@ -10,6 +10,8 @@ export interface SystemLog {
   tenant_id?: string;
   meta?: Record<string, any>;
   severity?: LogSeverity;
+  timestamp?: string; // Add timestamp property
+  service?: string;   // Add service property
 }
 
 export interface LogActivity {

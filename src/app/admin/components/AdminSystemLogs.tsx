@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RefreshCw } from "lucide-react";
+import { AdminLogsFilterPanel } from "./AdminLogsFilterPanel";
 
 export function AdminSystemLogs() {
   const {
@@ -24,7 +25,7 @@ export function AdminSystemLogs() {
   } = useSystemLogsWithFilters();
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    updateFilters({ search: e.target.value });
+    updateFilters({ searchTerm: e.target.value });
   };
 
   const handleDateRangeChange = (value: string) => {
@@ -49,56 +50,18 @@ export function AdminSystemLogs() {
           </Button>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div>
-              <Input
-                placeholder="Search logs..."
-                value={filters.search}
-                onChange={handleSearchChange}
-                className="w-full"
-              />
-            </div>
-            <div>
-              <Select value={filters.eventType} onValueChange={handleEventTypeChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Event type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All events</SelectItem>
-                  <SelectItem value="AUTH_LOGIN">Auth Login</SelectItem>
-                  <SelectItem value="DATA_UPDATE">Data Update</SelectItem>
-                  <SelectItem value="SECURITY_ACCESS_DENIED">Security Access Denied</SelectItem>
-                  <SelectItem value="SYSTEM_UPDATE">System Update</SelectItem>
-                  <SelectItem value="API_ERROR">API Error</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Select
-                value={filters.dateRange.toString()}
-                onValueChange={handleDateRangeChange}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Time range" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">Last 24 hours</SelectItem>
-                  <SelectItem value="7">Last 7 days</SelectItem>
-                  <SelectItem value="30">Last 30 days</SelectItem>
-                  <SelectItem value="90">Last 90 days</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <AdminLogsFilterPanel filters={filters} onFilterChange={updateFilters} />
+          
+          <div className="mt-6">
+            <AdminSystemLogsTable
+              logs={logs}
+              isLoading={isLoading}
+              pagination={pagination}
+              onNextPage={nextPage}
+              onPrevPage={prevPage}
+              onGoToPage={goToPage}
+            />
           </div>
-
-          <AdminSystemLogsTable
-            logs={logs}
-            isLoading={isLoading}
-            pagination={pagination}
-            onNextPage={nextPage}
-            onPrevPage={prevPage}
-            onGoToPage={goToPage}
-          />
 
           <div className="flex justify-end mt-4">
             <Button variant="outline" size="sm" onClick={resetFilters}>
