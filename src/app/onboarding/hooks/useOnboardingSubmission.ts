@@ -1,9 +1,8 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { OnboardingProfile } from "@/types/onboarding";
-import { toast } from "sonner";
+import { ToastService } from "@/services/toast";
 import { useTenant } from "@/hooks/useTenant";
 import { useDataPipeline } from "@/hooks/useDataPipeline";
 
@@ -16,7 +15,10 @@ export function useOnboardingSubmission() {
   const completeOnboarding = async (profile: OnboardingProfile) => {
     if (!tenant?.id) {
       console.error("Cannot complete onboarding: No tenant ID available");
-      toast.error("Workspace not selected. Please try again.");
+      ToastService.error({
+        title: "Error",
+        description: "Workspace not selected. Please try again."
+      });
       return {
         success: false,
         error: "Workspace not selected. Please try again."
@@ -50,14 +52,16 @@ export function useOnboardingSubmission() {
         }
       });
 
-      toast.success("Setup complete!", {
+      ToastService.success({
+        title: "Setup complete!",
         description: "Welcome to Allora OS"
       });
 
       return { success: true };
     } catch (error: any) {
       console.error("Onboarding submission error:", error);
-      toast.error("Failed to save onboarding data", {
+      ToastService.error({
+        title: "Submission failed",
         description: error.message || "An unexpected error occurred"
       });
       return {

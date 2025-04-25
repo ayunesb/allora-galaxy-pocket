@@ -7,7 +7,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { TenantProvider } from "@/hooks/useTenant";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import routes from "./routes";
-import { Toaster } from "@/components/ui/toaster";
+import { Toaster } from "sonner";
 
 function App() {
   const queryClient = new QueryClient();
@@ -19,7 +19,7 @@ function App() {
         <AuthProvider>
           <TenantProvider>
             <RouterProvider router={router} />
-            <Toaster />
+            <Toaster richColors closeButton position="top-right" />
           </TenantProvider>
         </AuthProvider>
       </ThemeProvider>
