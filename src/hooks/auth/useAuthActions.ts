@@ -8,9 +8,6 @@ export function useAuthActions(
 ) {
   const [rememberMe, setRememberMe] = useState(false);
 
-  /**
-   * Login with email and password
-   */
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     setAuthError(null);
@@ -18,8 +15,7 @@ export function useAuthActions(
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ 
         email, 
-        password,
-        // Remove persistSession as it's not supported in the current Supabase version
+        password
       });
       
       if (error) throw error;
@@ -47,8 +43,7 @@ export function useAuthActions(
     try {
       const { data, error } = await supabase.auth.signUp({ 
         email, 
-        password,
-        // Remove persistSession as it's not supported in the current Supabase version
+        password
       });
       
       if (error) throw error;

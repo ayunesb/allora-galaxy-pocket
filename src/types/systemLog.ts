@@ -6,7 +6,7 @@ export interface SystemLog {
   event_type: string;
   message: string;
   created_at: string;
-  timestamp?: string; // Add timestamp as an optional property
+  timestamp?: string;
   meta?: {
     severity?: LogSeverity;
     [key: string]: any;
