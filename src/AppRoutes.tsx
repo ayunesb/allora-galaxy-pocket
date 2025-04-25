@@ -1,10 +1,6 @@
 
 import React from 'react';
-import {
-  createBrowserRouter,
-  RouterProvider,
-  RouteObject,
-} from 'react-router-dom';
+import { RouteObject } from 'react-router-dom';
 import App from './App';
 import ErrorPage from './ErrorPage';
 import HomePage from './app/page';
@@ -32,7 +28,8 @@ const PluginsSubmitPage = () => <div className="p-8">Plugin Submit Page</div>;
 
 import { systemRoutes } from '@/app/system/routes';
 
-const router = createBrowserRouter([
+// Export routes config instead of a RouterProvider component
+const appRoutes: RouteObject[] = [
   {
     path: '/',
     element: <App />,
@@ -121,10 +118,6 @@ const router = createBrowserRouter([
       ...systemRoutes,
     ],
   },
-]);
+];
 
-function AppRoutes() {
-  return <RouterProvider router={router} />;
-}
-
-export default AppRoutes;
+export default appRoutes;

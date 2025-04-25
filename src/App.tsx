@@ -6,12 +6,12 @@ import { ThemeProvider } from "@/components/ui/theme-provider";
 import { AuthProvider } from "@/hooks/useAuth";
 import { TenantProvider } from "@/hooks/useTenant";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
-import routes from "./routes";
 import { Toaster } from "sonner";
+import appRoutes from "./AppRoutes";
 
 function App() {
   const queryClient = new QueryClient();
-  const router = createBrowserRouter(routes);
+  const router = createBrowserRouter(appRoutes);
 
   return (
     <QueryClientProvider client={queryClient}>
