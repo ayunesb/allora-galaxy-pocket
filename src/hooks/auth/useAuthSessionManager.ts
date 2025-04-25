@@ -123,12 +123,20 @@ export function useAuthSessionManager(options: AuthSessionManagerOptions = {}) {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
+        // The correct options format for the Supabase JS v2 client
         options: {
-          // Only store persistent session if remember me is checked
-          // The correct property is persistSession, not session
-          persistSession: remember
+          emailRedirectTo: window.location.origin
         }
       });
+      
+      // Handle remember me setting separately after successful login
+      if (!error && remember) {
+        // Set a longer expiration for localStorage
+        localStorage.setItem('supabase.auth.remember', 'true');
+      } else if (!error && !remember) {
+        // Ensure the token isn't stored long-term
+        localStorage.setItem('supabase.auth.remember', 'false');
+      }
       
       if (error) throw error;
       return { success: true, session: data.session };

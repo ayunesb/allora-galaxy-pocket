@@ -1,70 +1,57 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { useTenant } from "./useTenant";
-import { useAuth } from "./useAuth";
-import { useState } from "react";
-import { toast } from "@/components/ui/sonner";
+import { useState } from 'react';
+import { SystemLog } from '@/types/systemLog';
+import { exportLogs } from '@/utils/exportUtils';
+import { ToastService } from '@/services/ToastService';
 
 export function useExport() {
-  const { tenant } = useTenant();
-  const { user } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
-  const downloadCSV = async (type: 'strategies' | 'leads' | 'kpis') => {
-    setIsLoading(true);
+  const exportLogsToCSV = async (logs: SystemLog[]) => {
+    setIsExporting(true);
     try {
-      // Fetch data from Supabase based on type
-      const { data, error } = await supabase
-        .from(type === 'strategies' ? 'vault_strategies' : 'kpi_metrics')
-        .select('*')
-        .eq('tenant_id', tenant?.id);
-
-      if (error) throw error;
-
-      // Convert data to CSV
-      const csvContent = data.map(item => 
-        Object.values(item).join(',')
-      ).join('\n');
-
-      // Trigger download
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', `${type}_export.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      toast.success(`${type} exported successfully`);
-    } catch (error) {
-      toast.error('Export failed', { description: error.message });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const emailExport = async (type: 'strategies' | 'leads' | 'kpis') => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('export-data', {
-        body: JSON.stringify({
-          type,
-          tenantId: tenant?.id,
-          userId: user?.id
-        })
+      await exportLogs(logs, 'csv');
+      ToastService.success({
+        title: 'Export successful',
+        description: 'Logs have been exported to CSV'
       });
-
-      if (error) throw error;
-
-      toast.success('Export email sent');
+      return true;
     } catch (error) {
-      toast.error('Export failed', { description: error.message });
+      console.error('CSV export error:', error);
+      ToastService.error({
+        title: 'Export failed',
+        description: error instanceof Error ? error.message : 'An error occurred during export'
+      });
+      return false;
     } finally {
-      setIsLoading(false);
+      setIsExporting(false);
     }
   };
 
-  return { downloadCSV, emailExport, isLoading };
+  const exportLogsToPDF = async (logs: SystemLog[]) => {
+    setIsExporting(true);
+    try {
+      await exportLogs(logs, 'pdf');
+      ToastService.success({
+        title: 'Export successful',
+        description: 'Logs have been exported to PDF'
+      });
+      return true;
+    } catch (error) {
+      console.error('PDF export error:', error);
+      ToastService.error({
+        title: 'Export failed',
+        description: error instanceof Error ? error.message : 'An error occurred during export'
+      });
+      return false;
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  return {
+    isExporting,
+    exportLogsToCSV,
+    exportLogsToPDF
+  };
 }
