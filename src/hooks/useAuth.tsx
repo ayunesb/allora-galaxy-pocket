@@ -1,18 +1,20 @@
 
-import { createContext, useContext, ReactNode } from "react";
-import { User, Session } from "@supabase/supabase-js";
-import { useAuthState } from "./auth/useAuthState";
-import { useAuthActions } from "./auth/useAuthActions";
-import { useAuthSetup } from "./auth/useAuthSetup";
+import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuthState } from '@/hooks/auth/useAuthState';
+import { useAuthSetup } from '@/hooks/auth/useAuthSetup';
+import { useSessionRefresh } from '@/hooks/auth/useSessionRefresh';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
   isLoading: boolean;
-  refreshSession: () => Promise<boolean>;
+  error: string | null;
+  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string) => Promise<{ error: any }>;
+  signOut: () => Promise<void>;
+  refreshSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,26 +31,73 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthError
   } = useAuthState();
 
-  const {
-    login,
-    signup,
-    logout,
-    refreshSession
-  } = useAuthActions(setIsLoading, setAuthError);
-
-  // Set up auth state change listener and session check
+  // Set up auth listeners and session checking
   useAuthSetup(setSession, setUser, setIsLoading);
+  
+  // Configure automatic token refresh
+  useSessionRefresh();
+
+  const signIn = async (email: string, password: string) => {
+    setIsLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    
+    if (error) {
+      setAuthError(error.message);
+      console.error('Sign in error:', error);
+    }
+    
+    setIsLoading(false);
+    return { error };
+  };
+
+  const signUp = async (email: string, password: string) => {
+    setIsLoading(true);
+    const { error } = await supabase.auth.signUp({ email, password });
+    
+    if (error) {
+      setAuthError(error.message);
+      console.error('Sign up error:', error);
+    }
+    
+    setIsLoading(false);
+    return { error };
+  };
+
+  const signOut = async () => {
+    setIsLoading(true);
+    const { error } = await supabase.auth.signOut();
+    
+    if (error) {
+      console.error('Sign out error:', error);
+      setAuthError(error.message);
+    }
+    
+    setIsLoading(false);
+  };
+
+  const refreshSession = async () => {
+    try {
+      const { error } = await supabase.auth.refreshSession();
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Failed to refresh session:', error);
+      throw error;
+    }
+  };
+
+  const value = {
+    user,
+    session,
+    isLoading,
+    error: authError,
+    signIn,
+    signUp,
+    signOut,
+    refreshSession
+  };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      session, 
-      login, 
-      signup, 
-      logout, 
-      isLoading,
-      refreshSession
-    }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
@@ -56,8 +105,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
+  
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
   }
+  
   return context;
 }

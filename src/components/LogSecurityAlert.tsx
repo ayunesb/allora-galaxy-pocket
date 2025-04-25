@@ -15,6 +15,10 @@ interface LogSecurityAlertProps {
   details?: string;
 }
 
+/**
+ * LogSecurityAlert component for displaying security alerts with different severity levels
+ * Supports acknowledgeable alerts that get logged to the system logs when actioned
+ */
 export function LogSecurityAlert({
   severity = 'medium',
   message,
