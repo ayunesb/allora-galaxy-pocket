@@ -49,6 +49,23 @@ export default function SupabaseConnectionTest() {
     checkConnection();
   }, []);
 
+  // Get the Supabase URL for display
+  const getSupabaseUrl = () => {
+    // Use the URL directly since getClientRpcUrl() isn't available
+    return import.meta.env.VITE_SUPABASE_URL || 'Not configured';
+  };
+
+  // Get project ID from the URL
+  const getProjectId = () => {
+    const url = import.meta.env.VITE_SUPABASE_URL || '';
+    try {
+      // Try to extract project ID from URL
+      return url.split('//')[1]?.split('.')[0] || 'Unknown';
+    } catch {
+      return 'Unknown';
+    }
+  };
+
   return (
     <Card className="w-full max-w-lg mx-auto">
       <CardHeader>
@@ -96,9 +113,9 @@ export default function SupabaseConnectionTest() {
         </div>
 
         <div className="text-sm text-muted-foreground mt-4">
-          <p>Connection URL: {supabase.getClientRpcUrl()}</p>
+          <p>Connection URL: {getSupabaseUrl()}</p>
           <p className="text-xs mt-1">
-            Project ID: {import.meta.env.VITE_SUPABASE_URL?.split('//')[1]?.split('.')[0] || 'lxsuqqlfuftnvuvtctsx'}
+            Project ID: {getProjectId()}
           </p>
         </div>
       </CardContent>
