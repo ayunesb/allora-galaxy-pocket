@@ -19,7 +19,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
-import { toast } from "sonner";
+import { ToastService } from "@/services/ToastService";
 import { 
   AlertCircle, 
   ArrowLeft, 
@@ -108,9 +108,9 @@ export default function KpiDashboard() {
       } catch (err: any) {
         console.error("Error fetching KPI data:", err);
         setError(err.message || "Failed to load KPI data");
-        toast("Error loading KPI data", {
-          description: err.message || "Please try again",
-          variant: "destructive"
+        ToastService.error({
+          title: "Error loading KPI data",
+          description: err.message || "Please try again"
         });
       } finally {
         setLoading(false);

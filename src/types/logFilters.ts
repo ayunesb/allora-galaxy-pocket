@@ -16,3 +16,10 @@ export const DEFAULT_FILTERS: LogFilters = {
   severity: 'all',
   dateRange: 7, // Last 7 days
 };
+
+// Pagination state for log tables
+export interface PaginationState {
+  currentPage: number;
+  totalPages: number;
+  logsPerPage: number;
+}

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
@@ -16,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Strategy } from "@/types/strategy";
 import { useTenant } from "@/hooks/useTenant";
 import { useAuth } from "@/hooks/useAuth";
-import { toast } from "sonner";
+import { ToastService } from "@/services/ToastService";
 import { AlertCircle, ArrowRight, PlusCircle, LineChart } from "lucide-react";
 import { StrategyViewer } from "@/components/StrategyViewer";
 import { UnifiedSecurityAlert } from "@/components/security/UnifiedSecurityAlert";
@@ -43,7 +42,6 @@ export default function StrategyDetail() {
       setError(null);
       
       try {
-        // Fetch strategy details
         const { data: strategyData, error: strategyError } = await supabase
           .from('strategies')
           .select('*')
@@ -55,14 +53,12 @@ export default function StrategyDetail() {
         
         setStrategy(strategyData);
 
-        // Log viewing of the strategy
         await logActivity({
           event_type: "STRATEGY_VIEW",
           message: `Strategy "${strategyData.title}" viewed`,
           meta: { strategy_id: id }
         });
 
-        // Fetch associated campaigns
         const { data: campaignData, error: campaignError } = await supabase
           .from('campaigns')
           .select('*')
@@ -77,9 +73,9 @@ export default function StrategyDetail() {
       } catch (err: any) {
         console.error("Error fetching strategy data:", err);
         setError(err.message || "Failed to load strategy");
-        toast("Error loading strategy", {
-          description: err.message || "Please try again",
-          variant: "destructive"
+        ToastService.error({
+          title: "Error loading strategy",
+          description: err.message || "Please try again"
         });
       } finally {
         setLoading(false);
@@ -92,7 +88,6 @@ export default function StrategyDetail() {
   const handleCreateCampaign = () => {
     if (!strategy) return;
     
-    // Log transition to campaign creation
     logActivity({
       event_type: "USER_JOURNEY",
       message: "User initiated campaign creation from strategy",
@@ -114,6 +109,41 @@ export default function StrategyDetail() {
 
   const handleViewCampaign = (campaignId: string) => {
     navigate(`/campaigns/${campaignId}`);
+  };
+
+  const handleApprove = async () => {
+    try {
+      if (strategy.status === 'approved') return;
+      
+      const { error } = await supabase
+        .from('strategies')
+        .update({
+          status: 'approved',
+          approved_at: new Date().toISOString()
+        })
+        .eq('id', strategy.id);
+      
+      if (error) throw error;
+      
+      setStrategy({ ...strategy, status: 'approved' });
+      
+      ToastService.success({
+        title: "Strategy approved",
+        description: "You can now create campaigns for this strategy"
+      });
+      
+      await logActivity({
+        event_type: "STRATEGY_APPROVED",
+        message: `Strategy "${strategy.title}" approved`,
+        meta: { strategy_id: strategy.id }
+      });
+    } catch (err: any) {
+      console.error("Error approving strategy:", err);
+      ToastService.error({
+        title: "Approval failed",
+        description: err.message || "Please try again"
+      });
+    }
   };
 
   if (loading) {
@@ -168,7 +198,7 @@ export default function StrategyDetail() {
             Back to Strategies
           </Button>
           {strategy.status === 'approved' && (
-            <Button onClick={handleCreateCampaign} className="flex gap-2">
+            <Button onClick={handleApprove} className="flex gap-2">
               <PlusCircle className="h-4 w-4" /> Create Campaign
             </Button>
           )}
@@ -195,43 +225,7 @@ export default function StrategyDetail() {
         <TabsContent value="overview" className="space-y-6 p-1">
           <StrategyViewer 
             strategy={strategy} 
-            onApprove={async () => {
-              // If already approved, don't do anything
-              if (strategy.status === 'approved') return;
-              
-              try {
-                const { error } = await supabase
-                  .from('strategies')
-                  .update({
-                    status: 'approved',
-                    approved_at: new Date().toISOString()
-                  })
-                  .eq('id', strategy.id);
-                  
-                if (error) throw error;
-                
-                // Update local state
-                setStrategy({ ...strategy, status: 'approved' });
-                
-                toast("Strategy approved", {
-                  description: "You can now create campaigns for this strategy"
-                });
-                
-                // Log approval
-                await logActivity({
-                  event_type: "STRATEGY_APPROVED",
-                  message: `Strategy "${strategy.title}" approved`,
-                  meta: { strategy_id: strategy.id }
-                });
-                
-              } catch (err: any) {
-                console.error("Error approving strategy:", err);
-                toast("Approval failed", {
-                  description: err.message || "Please try again",
-                  variant: "destructive"
-                });
-              }
-            }}
+            onApprove={handleApprove}
           />
         </TabsContent>
         

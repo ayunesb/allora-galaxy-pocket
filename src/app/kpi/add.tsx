@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
-import { toast } from "sonner";
+import { ToastService } from "@/services/ToastService";
 import { AlertCircle, ArrowLeft, Save, X } from "lucide-react";
 import { useSystemLogs } from "@/hooks/useSystemLogs";
 import LoadingOverlay from "@/components/ui/LoadingOverlay";
@@ -42,25 +42,25 @@ export default function AddKpiPage() {
     e.preventDefault();
     
     if (!tenant?.id) {
-      toast("Missing workspace", {
-        description: "Please select a workspace first",
-        variant: "destructive"
+      ToastService.error({
+        title: "Missing workspace",
+        description: "Please select a workspace first"
       });
       return;
     }
     
     if (!metricName.trim()) {
-      toast("Missing metric name", {
-        description: "Please provide a name for this metric",
-        variant: "destructive"
+      ToastService.error({
+        title: "Missing metric name",
+        description: "Please provide a name for this metric"
       });
       return;
     }
     
     if (!metricValue.trim()) {
-      toast("Missing value", {
-        description: "Please provide a value for this metric",
-        variant: "destructive"
+      ToastService.error({
+        title: "Missing value",
+        description: "Please provide a value for this metric"
       });
       return;
     }
@@ -109,7 +109,8 @@ export default function AddKpiPage() {
         }
       });
       
-      toast("Metric added", {
+      ToastService.success({
+        title: "Metric added",
         description: "Your KPI metric has been added successfully"
       });
       
@@ -119,9 +120,9 @@ export default function AddKpiPage() {
     } catch (err: any) {
       console.error("Error adding KPI metric:", err);
       setError(err.message || "Failed to add KPI metric");
-      toast("Metric addition failed", {
-        description: err.message || "Please try again",
-        variant: "destructive"
+      ToastService.error({
+        title: "Metric addition failed",
+        description: err.message || "Please try again"
       });
     } finally {
       setLoading(false);

@@ -1,21 +1,15 @@
 
 export interface Strategy {
   id: string;
-  title?: string;
-  description?: string;
+  title: string;
+  description: string | null;
   created_at: string;
-  updated_at?: string;
+  updated_at?: string | null;
   tenant_id: string;
-  status?: string;
-  user_id?: string;
-  tags?: string[];
-  approved_at?: string;
-  failure_reason?: string;
+  industry?: string | null;
+  goal?: string | null;
+  confidence?: string | null;
+  status?: string | null;
+  approved_at?: string | null;
   metrics_baseline?: Record<string, any>;
-  generated_by?: string;
-  health_score?: number;
-  impact_score?: number;
-  industry?: string;
-  goal?: string;
-  confidence?: string; // Added confidence property
 }
