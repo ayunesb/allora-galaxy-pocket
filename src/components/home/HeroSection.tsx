@@ -16,7 +16,7 @@ export const HeroSection = () => {
 
       <div className="mt-8 flex justify-center gap-4 flex-wrap">
         <Button size="lg" asChild>
-          <Link to="/demo" className="gap-2">
+          <Link to="/demo" className="gap-2 inline-flex items-center">
             🎓 Explore the Live Demo <ArrowRight className="h-5 w-5" />
           </Link>
         </Button>

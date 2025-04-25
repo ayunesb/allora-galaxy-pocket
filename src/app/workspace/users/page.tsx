@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -71,7 +70,6 @@ export default function WorkspaceUsersPage() {
       
       if (error) throw error;
       
-      // Format the data properly
       const formattedUsers = data.map(item => ({
         id: item.user_id,
         email: item.users ? (item.users as any).email || 'No email' : 'No email',
@@ -116,7 +114,6 @@ export default function WorkspaceUsersPage() {
         description: 'User role has been updated successfully',
       });
       
-      // Update the local state
       setUsers(users.map(user => 
         user.id === userId ? { ...user, role: newRole } : user
       ));
@@ -152,7 +149,6 @@ export default function WorkspaceUsersPage() {
         description: 'User has been removed from the workspace',
       });
       
-      // Update local state
       setUsers(users.filter(user => user.id !== selectedUserId));
       setIsRemoveDialogOpen(false);
       setSelectedUserId(null);
@@ -230,7 +226,10 @@ export default function WorkspaceUsersPage() {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction variant="destructive" onClick={handleRemoveUser}>
+              <AlertDialogAction 
+                onClick={handleRemoveUser}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
                 Remove
               </AlertDialogAction>
             </AlertDialogFooter>
