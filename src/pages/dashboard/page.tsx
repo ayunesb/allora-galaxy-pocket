@@ -54,10 +54,12 @@ export default function DashboardPage() {
   
   // Fetch recent system logs when component mounts
   React.useEffect(() => {
-    getRecentLogs();
+    if (getRecentLogs) {
+      getRecentLogs();
+    }
   }, [getRecentLogs]);
   
-  const recentLogs = logs.slice(0, 5);
+  const recentLogs = logs?.slice(0, 5) || [];
 
   return (
     <div className="container mx-auto p-4 md:p-6 space-y-6">

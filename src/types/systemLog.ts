@@ -13,7 +13,7 @@ export interface SystemLog {
     [key: string]: any;
   };
   created_at: string;
-  timestamp?: string; // Added timestamp property
+  timestamp?: string;
   severity?: LogSeverity;
   service?: string;
 }

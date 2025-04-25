@@ -35,8 +35,7 @@ export function useOnboardingSubmission() {
         meta: {
           company: profile.companyName,
           industry: profile.industry
-        },
-        severity: 'info'
+        }
       });
       
       const { error } = await supabase
@@ -63,8 +62,7 @@ export function useOnboardingSubmission() {
             teamSize: profile.teamSize,
             launchMode: profile.launch_mode
           }
-        },
-        severity: 'info'
+        }
       });
 
       ToastService.success({
@@ -83,8 +81,7 @@ export function useOnboardingSubmission() {
         meta: {
           error_details: error.message || "Unknown error",
           tenant_id: tenant.id
-        },
-        severity: 'error'
+        }
       });
       
       ToastService.error({

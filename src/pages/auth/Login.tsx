@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Input } from "@/components/ui/input";
@@ -22,11 +21,9 @@ export default function Login() {
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const { logActivity } = useSystemLogs();
 
-  // Check if we have a session from email confirmation
   useEffect(() => {
     async function checkSession() {
       try {
-        // Check for auth code in the URL (from email confirmation)
         if (location.hash && location.hash.includes('access_token')) {
           const { data, error } = await supabase.auth.getSession();
           
@@ -38,8 +35,7 @@ export default function Login() {
             
             logActivity({
               event_type: "AUTH_EMAIL_CONFIRMED",
-              message: "User confirmed email address",
-              severity: "info"
+              message: "User confirmed email address"
             });
             
             navigate("/onboarding");
@@ -55,13 +51,11 @@ export default function Login() {
     checkSession();
   }, [location, navigate, logActivity]);
 
-  // Redirect if already authenticated
   useEffect(() => {
     if (session && !isCheckingSession) {
       logActivity({
         event_type: "AUTH_AUTO_REDIRECT",
-        message: "User automatically redirected after authentication",
-        severity: "info"
+        message: "User automatically redirected after authentication"
       });
       navigate("/onboarding");
     }
@@ -78,14 +72,11 @@ export default function Login() {
       setIsLoading(true);
       await login(email, password);
       
-      // Log successful login
       logActivity({
         event_type: "AUTH_LOGIN_SUCCESS",
-        message: "User logged in successfully",
-        severity: "info"
+        message: "User logged in successfully"
       });
       
-      // Fetch canonical user role for redirect after login
       const { data: roleData, error } = await supabase.rpc("get_user_role");
       if (!error && roleData) {
         if (roleData === "client") navigate("/onboarding");
@@ -99,11 +90,9 @@ export default function Login() {
       console.error("Login error:", err);
       setErrorMessage(err.message || "Login failed. Please check your credentials.");
       
-      // Log failed login attempt
       logActivity({
         event_type: "AUTH_LOGIN_FAILED",
         message: `Login failed: ${err.message}`,
-        severity: "warning",
         meta: { error: err.message }
       });
     } finally {

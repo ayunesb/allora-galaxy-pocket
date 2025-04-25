@@ -1,13 +1,14 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useTenant } from '@/hooks/useTenant';
+import { SystemLog, LogSeverity } from '@/types/systemLog';
 
-type LogActivity = {
+export type LogActivity = {
   event_type: string;
   message: string;
   meta?: Record<string, any>;
+  severity?: LogSeverity;
 };
 
 /**
@@ -17,7 +18,9 @@ type LogActivity = {
 export function useSystemLogs() {
   const { user } = useAuth();
   const { tenant } = useTenant();
-  const [isLogging, setIsLogging] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [logs, setLogs] = useState<SystemLog[]>([]);
+  const [error, setError] = useState<Error | null>(null);
 
   /**
    * Log general activity in the system
@@ -30,7 +33,10 @@ export function useSystemLogs() {
       const { error } = await supabase.from('system_logs').insert({
         event_type: log.event_type,
         message: log.message,
-        meta: log.meta || {},
+        meta: { 
+          ...log.meta || {},
+          severity: log.severity || 'info'
+        },
         user_id: user.id,
         tenant_id: tenant?.id
       });
@@ -72,6 +78,53 @@ export function useSystemLogs() {
   };
 
   /**
+   * Log user journey steps for tracking user flow
+   */
+  const logJourneyStep = async (from: string, to: string, details: Record<string, any> = {}) => {
+    return logActivity({
+      event_type: 'USER_JOURNEY',
+      message: `User navigated from ${from} to ${to}`,
+      meta: {
+        from,
+        to,
+        ...details
+      },
+      severity: 'info'
+    });
+  };
+
+  /**
+   * Get recent system logs
+   */
+  const getRecentLogs = async (limit = 50) => {
+    if (!tenant?.id) {
+      console.warn("Can't fetch logs: No tenant ID available");
+      return;
+    }
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('system_logs')
+        .select('*')
+        .eq('tenant_id', tenant.id)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+        
+      if (fetchError) throw fetchError;
+      
+      setLogs(data || []);
+    } catch (err) {
+      console.error("Failed to fetch logs:", err);
+      setError(err instanceof Error ? err : new Error(String(err)));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
    * Verify system modules are implementing all three phases
    * Returns detection of proper implementation
    */
@@ -87,7 +140,8 @@ export function useSystemLogs() {
           module: modulePath,
           verifier_id: user.id,
           tenant_id: tenant.id
-        }
+        },
+        severity: 'info'
       });
 
       // Phase 1: Check for error handling
@@ -111,7 +165,8 @@ export function useSystemLogs() {
       await logActivity({
         event_type: 'VERIFICATION_RESULT',
         message: `Module ${modulePath} verification ${result.verified ? 'passed' : 'failed'}`,
-        meta: result
+        meta: result,
+        severity: 'info'
       });
       
       return result;
@@ -187,10 +242,17 @@ export function useSystemLogs() {
     }
   };
 
+  const [isLogging, setIsLogging] = useState(false);
+
   return {
     logActivity,
     logSecurityEvent,
+    logJourneyStep,
     verifyModuleImplementation,
+    getRecentLogs,
+    logs,
+    isLoading,
+    error,
     isLogging
   };
 }

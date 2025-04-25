@@ -8,8 +8,8 @@ import { ToastService } from '@/services/ToastService';
 import { LogFilters } from '@/types/logFilters';
 
 export function useSystemLogsWithFilters() {
-  const { logs: allLogs, isLoading, error, getRecentLogs } = useSystemLogs();
-  const { filters, updateFilters, resetFilters, filteredLogs } = useLogFilters(allLogs);
+  const { logs, isLoading, error, getRecentLogs } = useSystemLogs();
+  const { filters, updateFilters, resetFilters, filteredLogs } = useLogFilters(logs ?? []);
   
   const pagination = useLogPagination({
     totalItems: filteredLogs.length
@@ -31,7 +31,7 @@ export function useSystemLogsWithFilters() {
 
   return {
     logs: getPaginatedLogs(),
-    allLogs: allLogs || [],
+    allLogs: logs || [],
     filters,
     pagination,
     isLoading,
