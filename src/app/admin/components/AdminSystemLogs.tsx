@@ -87,13 +87,15 @@ export function AdminSystemLogs() {
       
       <div className="flex flex-col md:flex-row gap-4">
         <div className="flex-1">
-          <Input
-            placeholder="Search logs..."
-            value={filters.search}
-            onChange={handleSearch}
-            className="w-full"
-            startAdornment={<Search className="h-4 w-4 mr-2 text-muted-foreground" />}
-          />
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search logs..."
+              value={filters.search}
+              onChange={handleSearch}
+              className="w-full pl-8"
+            />
+          </div>
         </div>
         <div className="flex gap-2">
           <Select 
