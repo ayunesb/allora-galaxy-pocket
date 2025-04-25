@@ -9,10 +9,10 @@ export interface SystemLog {
   message: string;
   meta?: {
     severity?: LogSeverity;
+    service?: string;
     [key: string]: any;
   };
   created_at: string;
-  timestamp?: string;
   severity?: LogSeverity;
   service?: string;
 }
