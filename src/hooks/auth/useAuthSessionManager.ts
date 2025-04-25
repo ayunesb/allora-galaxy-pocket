@@ -123,9 +123,10 @@ export function useAuthSessionManager(options: AuthSessionManagerOptions = {}) {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
-        // The correct options format for the Supabase JS v2 client
+        // Fixed the options format to use the correct type
         options: {
-          emailRedirectTo: window.location.origin
+          // We can't use emailRedirectTo here as it's not supported in this context
+          captchaToken: undefined
         }
       });
       
