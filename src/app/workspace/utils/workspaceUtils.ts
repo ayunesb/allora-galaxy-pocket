@@ -2,7 +2,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
 import { ToastService } from "@/services/ToastService";
-import { Tenant } from "@/types/tenant";
 
 /**
  * Creates a default workspace for a new user
@@ -10,7 +9,7 @@ import { Tenant } from "@/types/tenant";
  * @param onSuccess Optional callback function on successful workspace creation
  * @returns The newly created workspace or null if creation failed
  */
-export async function createDefaultWorkspace(onSuccess?: () => void): Promise<Tenant | null> {
+export async function createDefaultWorkspace(onSuccess?: () => void) {
   try {
     const { data: user } = await supabase.auth.getUser();
     
@@ -78,7 +77,7 @@ export async function createDefaultWorkspace(onSuccess?: () => void): Promise<Te
       description: `Your new workspace "${workspaceName}" is ready to use`
     });
     
-    return tenant as Tenant;
+    return tenant;
   } catch (error: any) {
     console.error("[createDefaultWorkspace] Unexpected error:", error);
     ToastService.error({

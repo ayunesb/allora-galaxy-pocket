@@ -1,78 +1,61 @@
 
-import { useUserRole } from "@/hooks/useUserRole";
-
-const accessMatrix: Record<string, string[]> = {
-  client: [
-    "/dashboard", 
-    "/dashboard/insights", 
-    "/dashboard/performance", 
-    "/dashboard/kpi", 
-    "/dashboard/team-activity", 
-    "/dashboard/alerts", 
-    "/dashboard/incidents", 
-    "/dashboard/startup", 
-    "/strategy", 
-    "/strategy/:id", 
-    "/vault", 
-    "/startup", 
-    "/campaigns/center", 
-    "/campaigns/:id", 
-    "/insights/kpis", 
-    "/launch", 
-    "/assistant", 
-    "/notifications", 
-    "/creative/suite",
-    "/settings"
-  ],
-  developer: [
-    "/dashboard", 
-    "/dashboard/insights", 
-    "/dashboard/performance", 
-    "/dashboard/kpi", 
-    "/dashboard/team-activity", 
-    "/plugins/builder", 
-    "/agents/performance", 
-    "/agents", 
-    "/creative/suite", 
-    "/startup", 
-    "/campaigns/center",
-    "/settings",
-    "/plugins/settings",
-    "/plugins/explore",
-    "/plugins/my",
-    "/plugins/submit",
-    "/plugins/revenue/apply",
-    "/plugins/builder",
-    "/galaxy/create"
-  ],
-  admin: ["*"]
-};
+import { useTenant } from "./useTenant";
+import { useAuth } from "./useAuth";
+import { useUserRole } from "./useUserRole";
 
 export function useRouteAccess() {
+  const { user } = useAuth();
+  const { tenant } = useTenant();
   const { role } = useUserRole();
 
-  const canAccessRoute = (path: string): boolean => {
-    if (!role) return false;
-    
-    // For exact matches
-    if (accessMatrix[role]?.includes(path)) return true;
-    
-    // For wildcard permission
-    if (accessMatrix[role]?.includes("*")) return true;
-    
-    // For paths with parameters (e.g., /strategy/:id)
-    const paramPaths = accessMatrix[role]?.filter(p => p.includes(':'));
-    if (paramPaths?.length) {
-      for (const paramPath of paramPaths) {
-        const regex = new RegExp(
-          '^' + paramPath.replace(/:[^\/]+/g, '[^\/]+') + '$'
-        );
-        if (regex.test(path)) return true;
-      }
+  const canAccessRoute = (route: string): boolean => {
+    // Public routes - always accessible
+    if (
+      route.startsWith("/auth/") ||
+      route === "/" ||
+      route === "/marketing" ||
+      route === "/pricing" ||
+      route === "/explore" ||
+      route === "/docs" ||
+      route.startsWith("/legal/")
+    ) {
+      return true;
     }
-    
-    return false;
+
+    // Authenticated user check
+    if (!user) {
+      return false;
+    }
+
+    // Workspace page is always accessible to authenticated users
+    if (route === "/workspace") {
+      return true;
+    }
+
+    // Onboarding page is accessible to users with a tenant
+    if (route === "/onboarding" && tenant) {
+      return true;
+    }
+
+    // Need tenant for all other routes
+    if (!tenant) {
+      return false;
+    }
+
+    // Admin-only routes
+    if (route.startsWith("/admin/") && role !== "admin") {
+      return false;
+    }
+
+    // Role-based route access
+    if (route.includes("/security-audit/") && !["admin"].includes(role)) {
+      return false;
+    }
+
+    return true;
   };
 
-  return { canAccessRoute };
+  return {
+    canAccessRoute
+  };
 }

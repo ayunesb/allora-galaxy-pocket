@@ -1,18 +1,22 @@
 
-import React from "react";
-import { Loader } from "lucide-react";
+import React from 'react';
+import { Loader2 } from 'lucide-react';
 
 interface LoadingSpinnerProps {
   size?: number;
-  className?: string;
   label?: string;
+  className?: string;
 }
 
-export default function LoadingSpinner({ size = 32, className, label }: LoadingSpinnerProps) {
+const LoadingSpinner = ({ size = 24, label, className = '' }: LoadingSpinnerProps) => {
   return (
-    <div className={`flex flex-col items-center justify-center ${className ?? ""}`}>
-      <Loader className="animate-spin text-primary" size={size} aria-label="Loading" />
-      {label && <span className="mt-2 text-sm text-muted-foreground">{label}</span>}
+    <div className={`flex flex-col items-center justify-center ${className}`}>
+      <Loader2 className={`h-${size} w-${size} animate-spin text-primary`} />
+      {label && (
+        <p className="mt-2 text-sm text-muted-foreground">{label}</p>
+      )}
     </div>
   );
-}
+};
+
+export default LoadingSpinner;

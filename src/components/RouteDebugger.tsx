@@ -1,41 +1,20 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useLocation } from 'react-router-dom';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { AlertCircle } from "lucide-react";
-import routes from "../routes"; // Import the routes from the routes file
 
-export const RouteDebugger = () => {
+export function RouteDebugger() {
   const location = useLocation();
-
-  useEffect(() => {
-    console.log(`Route loaded: ${location.pathname}`);
-    console.log("Current route:", location);
-  }, [location]);
+  
+  // Only show in development mode
+  if (import.meta.env.PROD) {
+    return null;
+  }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
-      <Alert className="bg-slate-800 text-white border-red-500 shadow-lg">
-        <AlertCircle className="h-4 w-4 text-red-400" />
-        <AlertTitle>Debug Mode Active</AlertTitle>
-        <AlertDescription className="flex flex-col gap-2">
-          <div>
-            <strong>Current Route:</strong> {location.pathname}
-          </div>
-          <Button 
-            size="sm" 
-            variant="destructive" 
-            className="text-xs mt-2"
-            onClick={() => {
-              console.log('Current route:', location);
-              console.log('Route structure:', routes);
-            }}
-          >
-            Debug to Console
-          </Button>
-        </AlertDescription>
-      </Alert>
+    <div className="fixed bottom-0 right-0 z-50 p-2 text-xs bg-black/80 text-white rounded-tl-md">
+      <div>
+        <span className="font-semibold">Route:</span> {location.pathname}
+      </div>
     </div>
   );
-};
+}

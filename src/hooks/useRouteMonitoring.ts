@@ -1,42 +1,25 @@
 
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { useTenant } from "@/hooks/useTenant";
-import { useUserRole } from "@/hooks/useUserRole";
+import { useAuth } from "./useAuth";
+import { useTenant } from "./useTenant";
 
 export function useRouteMonitoring() {
   const location = useLocation();
   const { user } = useAuth();
   const { tenant } = useTenant();
-  const { role } = useUserRole();
-  
+
   useEffect(() => {
-    // Only monitor routes for authenticated users with a tenant
-    if (!user?.id || !tenant?.id) return;
-    
-    const logRouteAccess = async () => {
+    // Log route access for auditing
+    if (user && tenant) {
       try {
-        // Log route access
-        await supabase
-          .from('route_logs')
-          .insert({
-            user_id: user.id,
-            tenant_id: tenant.id,
-            route: location.pathname,
-            role: role
-          });
+        // You could call your logging service here
+        console.log(`User ${user.id} accessed route ${location.pathname} in tenant ${tenant.id}`);
       } catch (error) {
-        console.error("Error logging route access:", error);
+        console.error("Failed to log route access:", error);
       }
-    };
-    
-    // Small timeout to prevent excessive logging during redirects
-    const timeoutId = setTimeout(logRouteAccess, 1000);
-    
-    return () => clearTimeout(timeoutId);
-  }, [location.pathname, user?.id, tenant?.id, role]);
-  
+    }
+  }, [location.pathname, user, tenant]);
+
   return null;
 }

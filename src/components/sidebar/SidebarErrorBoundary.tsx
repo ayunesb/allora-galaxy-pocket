@@ -1,8 +1,8 @@
 
-import React from "react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import React from 'react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface Props {
   children: React.ReactNode;
@@ -10,7 +10,6 @@ interface Props {
 
 interface State {
   hasError: boolean;
-  error?: Error;
 }
 
 export class SidebarErrorBoundary extends React.Component<Props, State> {
@@ -19,38 +18,31 @@ export class SidebarErrorBoundary extends React.Component<Props, State> {
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(error: Error): State {
-    return {
-      hasError: true,
-      error
-    };
+  static getDerivedStateFromError() {
+    return { hasError: true };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Sidebar Error:', error, errorInfo);
+    console.error("Error in sidebar:", error, errorInfo);
   }
 
   render() {
     if (this.state.hasError) {
       return (
-        <div className="p-4">
-          <Alert variant="destructive">
-            <AlertDescription className="space-y-4">
-              <p>Navigation error occurred.</p>
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => {
-                  this.setState({ hasError: false });
-                  window.location.reload();
-                }}
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Reload Navigation
-              </Button>
-            </AlertDescription>
-          </Alert>
-        </div>
+        <Alert variant="destructive" className="m-2">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Navigation Error</AlertTitle>
+          <AlertDescription className="space-y-2">
+            <p>The sidebar navigation couldn't be loaded.</p>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => this.setState({ hasError: false })}
+            >
+              Try Again
+            </Button>
+          </AlertDescription>
+        </Alert>
       );
     }
 

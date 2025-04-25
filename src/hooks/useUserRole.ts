@@ -1,44 +1,63 @@
 
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "./useAuth";
+import { useTenant } from "./useTenant";
 
-/**
- * Returns the main role for the current user (client, developer, or admin).
- */
+export type UserRole = "admin" | "moderator" | "user" | "client" | "developer";
+
 export function useUserRole() {
   const { user } = useAuth();
-  const [role, setRole] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const { tenant } = useTenant();
 
-  useEffect(() => {
-    let active = true;
+  const { data: role = "user", isLoading } = useQuery({
+    queryKey: ['user-role', user?.id, tenant?.id],
+    queryFn: async (): Promise<UserRole> => {
+      if (!user || !tenant) return "user";
 
-    async function fetchRole() {
-      setIsLoading(true);
-      if (!user?.id) {
-        setRole(null);
-        setIsLoading(false);
-        return;
-      }
-      // Use the get_user_role() Postgres function
-      const { data, error } = await supabase.rpc("get_user_role");
-      if (active) {
-        if (error) {
-          console.error("Error fetching user role:", error.message);
-          setRole(null);
-        } else {
-          setRole(data); // "admin", "developer", "client", or null
+      try {
+        // Check for tenant-specific role
+        const { data: tenantRole, error: tenantError } = await supabase
+          .from('tenant_user_roles')
+          .select('role')
+          .eq('tenant_id', tenant.id)
+          .eq('user_id', user.id)
+          .single();
+
+        if (tenantRole?.role) {
+          return tenantRole.role as UserRole;
         }
-        setIsLoading(false);
+
+        // Check for system-wide role
+        const { data: systemRole, error: systemError } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .single();
+
+        if (systemRole?.role) {
+          return systemRole.role as UserRole;
+        }
+
+        // Default role
+        return "user";
+      } catch (error) {
+        console.error("Error fetching user role:", error);
+        return "user";
       }
+    },
+    enabled: !!user && !!tenant,
+  });
+
+  return {
+    role,
+    isAdmin: role === "admin",
+    isLoading,
+    hasRole: (requiredRole: UserRole | UserRole[]): boolean => {
+      if (Array.isArray(requiredRole)) {
+        return requiredRole.includes(role);
+      }
+      return role === requiredRole;
     }
-    fetchRole();
-
-    return () => {
-      active = false;
-    };
-  }, [user?.id]);
-
-  return { role, isLoading };
+  };
 }

@@ -2,138 +2,52 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { useTenant } from "./useTenant";
-import { useState, useCallback } from "react";
-import { SystemLog } from "@/types/systemLog";
-
-export interface LogActivityParams {
-  event_type: string;
-  message: string;
-  meta?: Record<string, any>;
-  severity?: string;
-}
 
 export function useSystemLogs() {
   const { user } = useAuth();
   const { tenant } = useTenant();
-  const [isLogging, setIsLogging] = useState(false);
-  const [logs, setLogs] = useState<SystemLog[]>([]);
-  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
 
-  const logActivity = async ({ event_type, message, meta = {}, severity = 'info' }: LogActivityParams): Promise<void> => {
-    if (!user || !tenant) return;
-
+  const logActivity = async ({ 
+    event_type, 
+    message, 
+    meta = {}
+  }: {
+    event_type: string;
+    message: string;
+    meta?: Record<string, any>;
+  }) => {
     try {
-      setIsLogging(true);
-      await supabase.from('system_logs').insert({
+      if (!user) return;
+      
+      await supabase.from('activity_logs').insert({
+        user_id: user.id,
+        tenant_id: tenant?.id,
         event_type,
         message,
-        meta: { ...meta, severity },
-        user_id: user.id,
-        tenant_id: tenant.id
+        meta
       });
     } catch (error) {
       console.error("Failed to log activity:", error);
-    } finally {
-      setIsLogging(false);
     }
   };
 
-  const logSecurityEvent = async (message: string, eventType: string, meta: Record<string, any> = {}) => {
-    if (!user) return;
-
+  const logSecurityEvent = async (
+    message: string,
+    event_type = "SECURITY_EVENT",
+    meta = {}
+  ) => {
     try {
-      await supabase.from('system_logs').insert({
-        event_type: `SECURITY_${eventType}`,
+      await supabase.from('security_logs').insert({
+        user_id: user?.id || null,
+        tenant_id: tenant?.id || null,
+        event_type,
         message,
-        meta,
-        user_id: user.id,
-        tenant_id: tenant?.id || null
+        meta
       });
     } catch (error) {
       console.error("Failed to log security event:", error);
     }
   };
 
-  const logJourneyStep = async (from: string, to: string, details: Record<string, any> = {}) => {
-    return logActivity({
-      event_type: 'USER_JOURNEY',
-      message: `User navigated from ${from} to ${to}`,
-      meta: {
-        from,
-        to,
-        ...details
-      },
-      severity: 'info'
-    });
-  };
-  
-  const verifyModuleImplementation = async (modulePath: string): Promise<any> => {
-    try {
-      // Implementation for module verification
-      const { data, error } = await supabase.rpc('verify_module_implementation', {
-        module_path: modulePath
-      });
-      
-      if (error) throw error;
-      
-      await logActivity({
-        event_type: 'MODULE_VERIFICATION',
-        message: `Module ${modulePath} verification completed`,
-        meta: { result: data },
-        severity: 'info'
-      });
-      
-      return data || { 
-        phase1Complete: false,
-        phase2Complete: false,
-        phase3Complete: false,
-        verified: false
-      };
-    } catch (error) {
-      console.error(`Error verifying module ${modulePath}:`, error);
-      return { 
-        phase1Complete: false,
-        phase2Complete: false,
-        phase3Complete: false,
-        verified: false,
-        error: true
-      };
-    }
-  };
-
-  const getRecentLogs = useCallback(async (limit: number = 20) => {
-    if (!tenant?.id) {
-      setLogs([]);
-      return;
-    }
-    
-    setIsLoadingLogs(true);
-    try {
-      const { data, error } = await supabase
-        .from('system_logs')
-        .select('*')
-        .eq('tenant_id', tenant.id)
-        .order('created_at', { ascending: false })
-        .limit(limit);
-        
-      if (error) throw error;
-      setLogs(data || []);
-    } catch (error) {
-      console.error('Error fetching system logs:', error);
-      setLogs([]);
-    } finally {
-      setIsLoadingLogs(false);
-    }
-  }, [tenant?.id]);
-
-  return {
-    logs,
-    isLoadingLogs,
-    logActivity,
-    logSecurityEvent,
-    logJourneyStep,
-    verifyModuleImplementation,
-    isLogging,
-    getRecentLogs
-  };
+  return { logActivity, logSecurityEvent };
 }

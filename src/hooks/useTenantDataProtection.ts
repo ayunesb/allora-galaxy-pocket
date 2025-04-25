@@ -1,69 +1,33 @@
 
 import { useEffect } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import { useTenant } from "@/hooks/useTenant";
-import { supabase } from "@/integrations/supabase/client";
-import { ToastService } from "@/services/ToastService";
-import { useNavigate } from "react-router-dom";
+import { useTenant } from "./useTenant";
 
-/**
- * This hook ensures proper tenant data isolation by validating that the current
- * user has access to the selected tenant. It protects against unauthorized
- * cross-tenant data access.
- */
 export function useTenantDataProtection() {
-  const { user } = useAuth();
-  const { tenant, setTenant } = useTenant();
-  const navigate = useNavigate();
+  const { tenant } = useTenant();
 
   useEffect(() => {
-    // If no user or tenant is selected, no validation needed
-    if (!user?.id || !tenant?.id) return;
-
-    const validateTenantAccess = async () => {
-      try {
-        // Check if user has access to this tenant using the security definer function
-        const { data, error } = await supabase.rpc("check_tenant_role_permission", {
-          _user_id: user.id,
-          _tenant_id: tenant.id
-        });
-
-        if (error) throw error;
-
-        // If user doesn't have access to the tenant
-        if (!data) {
-          console.error(`User ${user.id} attempted unauthorized access to tenant ${tenant.id}`);
-          
-          // Log security incident
-          await supabase
-            .from('system_logs')
-            .insert({
-              user_id: user.id,
-              tenant_id: tenant.id, // Still log the attempted tenant
-              event_type: 'SECURITY_UNAUTHORIZED_TENANT_ACCESS',
-              message: `Unauthorized tenant access attempt`,
-              meta: { attempted_tenant_id: tenant.id }
-            });
-
-          // Reset tenant selection
-          setTenant(null);
-          
-          // Notify user
-          ToastService.error({
-            title: "Access denied",
-            description: "You don't have access to this workspace"
-          });
-
-          // Redirect to workspace switcher
-          navigate("/workspace");
+    // Add tenant_id to all API requests
+    const originalFetch = window.fetch;
+    window.fetch = function(input, init) {
+      // Only modify requests to our API
+      if (typeof input === 'string' && input.includes('/api/')) {
+        init = init || {};
+        init.headers = init.headers || {};
+        
+        // Add tenant context header if we have a tenant
+        if (tenant?.id) {
+          (init.headers as any)['X-Tenant-ID'] = tenant.id;
         }
-      } catch (error) {
-        console.error("Error validating tenant access:", error);
       }
+      
+      return originalFetch.call(this, input, init);
     };
 
-    validateTenantAccess();
-  }, [user?.id, tenant?.id]);
+    return () => {
+      // Restore original fetch when component unmounts
+      window.fetch = originalFetch;
+    };
+  }, [tenant]);
 
-  return null; // No UI component
+  return null;
 }

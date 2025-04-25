@@ -1,27 +1,12 @@
 
-import { toast } from "sonner";
-import type { ToastProps } from "@/components/ui/toast";
+import { toast, ToastOptions } from "sonner";
 
 export function useToast() {
   return {
-    toast: (props: ToastProps) => {
-      const { title, description, variant = "default", duration = 5000 } = props;
-      
-      switch (variant) {
-        case "success":
-          toast.success(title, { description, duration });
-          break;
-        case "destructive":
-          toast.error(title, { description, duration });
-          break;
-        case "warning":
-          toast.warning(title, { description, duration });
-          break;
-        default:
-          toast(title, { description, duration });
-      }
-    }
+    toast: toast,
+    success: (message: string, options?: ToastOptions) => toast.success(message, options),
+    error: (message: string, options?: ToastOptions) => toast.error(message, options),
+    warning: (message: string, options?: ToastOptions) => toast.warning(message, options),
+    info: (message: string, options?: ToastOptions) => toast.info(message, options),
   };
 }
-
-export { toast };

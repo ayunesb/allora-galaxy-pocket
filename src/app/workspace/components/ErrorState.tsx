@@ -1,11 +1,11 @@
 
 import React from 'react';
-import { AlertCircle, RefreshCw } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { RefreshCw, AlertTriangle } from 'lucide-react';
 
 interface ErrorStateProps {
-  error: string;
+  error: string | null;
   onRetry: () => void;
   onRefresh: () => void;
 }
@@ -13,15 +13,16 @@ interface ErrorStateProps {
 export function ErrorState({ error, onRetry, onRefresh }: ErrorStateProps) {
   return (
     <Alert variant="destructive">
-      <AlertCircle className="h-4 w-4" />
+      <AlertTriangle className="h-4 w-4" />
       <AlertTitle>Error loading workspaces</AlertTitle>
-      <AlertDescription className="mt-2">
-        <p className="mb-2">{error}</p>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={onRetry}>
+      <AlertDescription className="space-y-2">
+        <p>{error || 'Failed to load workspace data'}</p>
+        <div className="flex gap-2 mt-2">
+          <Button size="sm" onClick={onRetry} variant="outline">
             Try Again
           </Button>
-          <Button variant="outline" size="sm" onClick={onRefresh}>
+          <Button size="sm" onClick={onRefresh}>
+            <RefreshCw className="h-4 w-4 mr-1" />
             Refresh Page
           </Button>
         </div>
