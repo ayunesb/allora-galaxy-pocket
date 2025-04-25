@@ -1,49 +1,18 @@
 
 import React, { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { useTenant } from "@/hooks/useTenant";
-import { useToast } from "@/hooks/use-toast";
-import { OnboardingProfile } from "@/types/onboarding";
-import Step1Company from "./steps/Step1Company";
-import Step2Industry from "./steps/Step2Industry";
-import StepTeamSize from "./steps/StepTeamSize";
-import StepRevenue from "./steps/StepRevenue";
-import StepSellType from "./steps/StepSellType";
-import StepTone from "./steps/StepTone";
-import StepChallenges from "./steps/StepChallenges";
-import StepChannels from "./steps/StepChannels";
-import StepTools from "./steps/StepTools";
-import Step3Goals from "./steps/Step3Goals";
-import StepLaunchMode from "./steps/StepLaunchMode";
-import { BillingPreview } from "@/components/billing/BillingPreview";
-import LoadingOverlay from "@/components/ui/LoadingOverlay";
-import { OnboardingProgressIndicator } from "./components/OnboardingProgressIndicator";
-import { OnboardingError } from "./components/OnboardingError";
-import { useOnboardingSubmission } from "./hooks/useOnboardingSubmission";
-import { useStepNavigation } from "./components/StepNavigator";
-import WorkspaceSwitcher from "@/app/workspace/WorkspaceSwitcher";
-import { Button } from "@/components/ui/button";
-import { ArrowRight, RefreshCw, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { getFirstInvalidStep } from "./components/StepValidation";
-import LiveSystemVerification from "@/components/LiveSystemVerification";
-import { useTheme } from "@/components/ui/theme-provider";
+import { useTenant } from "@/hooks/useTenant";
 import { useAuth } from "@/hooks/useAuth";
-
-const steps = [
-  Step1Company,
-  Step2Industry,
-  StepTeamSize,
-  StepRevenue,
-  StepSellType,
-  StepTone,
-  StepChallenges,
-  StepChannels,
-  StepTools,
-  Step3Goals,
-  StepLaunchMode,
-];
+import { useTheme } from "@/components/ui/theme-provider";
+import { useToast } from "@/hooks/use-toast";
+import { OnboardingForm } from "./components/OnboardingForm";
+import { WorkspaceRequirement } from "./components/WorkspaceRequirement";
+import { AuthRequirement } from "./components/AuthRequirement";
+import { OnboardingProfile } from "@/types/onboarding";
+import LoadingOverlay from "@/components/ui/LoadingOverlay";
+import { useStepNavigation } from "./components/StepNavigator";
+import { useOnboardingSubmission } from "./hooks/useOnboardingSubmission";
+import { steps } from "./steps";
 
 export default function OnboardingWizard() {
   const { tenant, isLoading: tenantLoading } = useTenant();
@@ -58,7 +27,6 @@ export default function OnboardingWizard() {
   const [creatingWorkspace, setCreatingWorkspace] = useState(false);
 
   const { isSubmitting, completeOnboarding } = useOnboardingSubmission();
-
   const CurrentStep = steps[step];
 
   useEffect(() => {
@@ -70,36 +38,50 @@ export default function OnboardingWizard() {
         variant: "destructive"
       });
     } else if (tenant) {
-      // Clear workspace error if tenant is selected
       setWorkspaceError(false);
     }
   }, [tenant, tenantLoading, authLoading, toast]);
 
-  const next = (data: Partial<OnboardingProfile>) => {
-    setProfile((prev) => ({ ...prev, ...data }));
-    setStep((prev) => Math.min(prev + 1, steps.length - 1));
-  };
+  if (tenantLoading || authLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background dark:bg-gray-900 p-4">
+        <LoadingOverlay show={true} label="Loading your workspace..." />
+      </div>
+    );
+  }
 
-  const back = () => setStep((prev) => Math.max(prev - 1, 0));
+  if (!user) {
+    return <AuthRequirement />;
+  }
+
+  if (!tenant) {
+    return (
+      <WorkspaceRequirement 
+        workspaceError={workspaceError}
+        onContinue={() => {
+          if (!tenant) {
+            setWorkspaceError(true);
+            toast({
+              title: "Workspace required",
+              description: "Please select or create a workspace above.",
+              variant: "destructive"
+            });
+            return;
+          }
+          window.location.reload();
+        }}
+      />
+    );
+  }
 
   const handleOnboardingCompletion = async (finalProfile: OnboardingProfile) => {
     try {
-      if (!tenant) {
-        setFormError("Please select a workspace before completing onboarding.");
-        return;
-      }
-      
       const result = await completeOnboarding(finalProfile);
       if (result.success) {
         setTimeout(() => {
           navigate("/dashboard", { replace: true });
         }, 500);
       } else {
-        const firstErrorStep = getFirstInvalidStep(finalProfile);
-        if (firstErrorStep !== null) {
-          console.log(`[handleOnboardingCompletion] Found invalid step: ${firstErrorStep}, setting current step`);
-          setStep(firstErrorStep);
-        }
         setFormError(result.error || "Unknown error, please try again.");
       }
     } catch (error) {
@@ -112,151 +94,32 @@ export default function OnboardingWizard() {
     step,
     totalSteps: steps.length,
     profile,
-    onNext: next,
-    onBack: back,
+    onNext: (data) => {
+      setProfile((prev) => ({ ...prev, ...data }));
+      setStep((prev) => Math.min(prev + 1, steps.length - 1));
+    },
+    onBack: () => setStep((prev) => Math.max(prev - 1, 0)),
     setFormError,
     completeOnboarding: handleOnboardingCompletion
   });
 
-  const getStepProps = () => {
-    const commonProps = {
-      next: handleNext,
-      profile
-    };
-    if (step === 0) {
-      return commonProps;
-    }
-    return {
-      ...commonProps,
-      back
-    };
-  };
-
-  const handleContinue = () => {
-    if (!tenant) {
-      setWorkspaceError(true);
-      toast({
-        title: "Workspace required",
-        description: "Please select or create a workspace above.",
-        variant: "destructive"
-      });
-      return;
-    }
-    // If we have a tenant and we're on the onboarding page with an error,
-    // simply reload the page to clear any error states
-    window.location.reload();
-  };
-
-  if (tenantLoading || authLoading) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background dark:bg-gray-900 p-4">
-        <LoadingOverlay show={true} label="Loading your workspace..." />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background dark:bg-gray-900 p-4">
-        <Card className="w-full max-w-2xl p-6 space-y-6 bg-card dark:bg-gray-800 border border-border dark:border-gray-700 relative">
-          <LiveSystemVerification />
-          <Alert variant="destructive">
-            <AlertTitle>Authentication Required</AlertTitle>
-            <AlertDescription>
-              Please sign in before continuing with onboarding.
-            </AlertDescription>
-          </Alert>
-          
-          <div className="flex flex-col gap-4">
-            <Button 
-              className="w-full" 
-              onClick={() => navigate("/auth/login", { state: { from: "/onboarding" } })}
-            >
-              Sign In <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-            <Button 
-              variant="outline"
-              className="w-full"
-              onClick={() => navigate("/auth/signup", { state: { from: "/onboarding" } })}
-            >
-              Create Account
-            </Button>
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
-  if (!tenant) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background dark:bg-gray-900 p-4">
-        <Card className="w-full max-w-2xl p-6 space-y-6 bg-card dark:bg-gray-800 border border-border dark:border-gray-700 relative">
-          <LiveSystemVerification />
-          <Alert variant="destructive">
-            <AlertTitle>No workspace selected</AlertTitle>
-            <AlertDescription>
-              Please select or create a workspace before continuing with onboarding.
-            </AlertDescription>
-          </Alert>
-          
-          <div className="p-4 border rounded-md bg-muted/50">
-            <h3 className="text-lg font-medium mb-3">Select a workspace to continue</h3>
-            <WorkspaceSwitcher highlight={true} />
-            
-            {workspaceError && (
-              <p className="text-sm text-destructive mt-2">
-                You must select or create a workspace to continue with onboarding.
-              </p>
-            )}
-            
-            <div className="mt-6">
-              <Button 
-                className="w-full" 
-                onClick={handleContinue}
-                disabled={!tenant}
-              >
-                Continue to Onboarding <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full mt-2"
-                onClick={() => window.location.reload()}
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh Page
-              </Button>
-            </div>
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background dark:bg-gray-900 p-4">
       <LoadingOverlay show={isSubmitting} label="Setting up your OS..." />
-      <Card className="w-full max-w-2xl p-6 space-y-6 bg-card dark:bg-gray-800 border border-border dark:border-gray-700 relative">
-        <LiveSystemVerification />
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-foreground dark:text-white">Setup your Allora OS</h1>
-          <OnboardingProgressIndicator currentStep={step} totalSteps={steps.length} />
-        </div>
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            Workspace: <span className="font-medium text-foreground">{tenant.name}</span>
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => navigate("/workspace")}
-          >
-            Change
-          </Button>
-        </div>
-        <BillingPreview />
-        <OnboardingError error={formError} />
-        <CurrentStep {...getStepProps()} />
-      </Card>
+      <OnboardingForm
+        step={step}
+        totalSteps={steps.length}
+        tenant={tenant}
+        formError={formError}
+        isSubmitting={isSubmitting}
+        onWorkspaceChange={() => navigate("/workspace")}
+      >
+        <CurrentStep {...{
+          next: handleNext,
+          back: () => setStep((prev) => Math.max(prev - 1, 0)),
+          profile
+        }} />
+      </OnboardingForm>
     </div>
   );
 }

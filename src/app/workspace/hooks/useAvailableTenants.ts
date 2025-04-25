@@ -3,10 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tenant } from "@/types/tenant";
 
-export type TenantOption = Tenant;
-
 export function useAvailableTenants() {
-  return useQuery({
+  const query = useQuery<Tenant[], Error>({
     queryKey: ["available-tenants"],
     queryFn: async () => {
       const { data: tenants, error } = await supabase
@@ -16,7 +14,7 @@ export function useAvailableTenants() {
 
       if (error) throw error;
 
-      return (tenants || []).map((tenant): TenantOption => ({
+      return (tenants || []).map((tenant): Tenant => ({
         id: tenant.id,
         name: tenant.name,
         theme_color: tenant.theme_color,
@@ -27,4 +25,12 @@ export function useAvailableTenants() {
       }));
     }
   });
+
+  return {
+    tenants: query.data || [],
+    loading: query.isLoading,
+    error: query.error?.message || null,
+    status: query.status,
+    retryFetch: () => query.refetch()
+  };
 }
