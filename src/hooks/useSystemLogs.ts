@@ -1,105 +1,82 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { SystemLog } from '@/types/systemLog';
+import { useTenant } from './useTenant';
 
-// Mock data for development
-const MOCK_LOGS: SystemLog[] = [
-  {
-    id: '1',
-    created_at: new Date().toISOString(),
-    tenant_id: 'tenant-001',
-    event_type: 'AUTH_LOGIN',
-    message: 'User logged in successfully',
-    severity: 'info',
-    service: 'auth',
-    timestamp: new Date().toISOString(),
-    status: 'success'
-  },
-  {
-    id: '2',
-    created_at: new Date(Date.now() - 3600000).toISOString(),
-    tenant_id: 'tenant-001',
-    event_type: 'DATA_UPDATE',
-    message: 'Campaign data updated',
-    severity: 'info',
-    service: 'data',
-    timestamp: new Date(Date.now() - 3600000).toISOString(),
-    status: 'success'
-  },
-  {
-    id: '3',
-    created_at: new Date(Date.now() - 7200000).toISOString(),
-    tenant_id: 'tenant-001',
-    event_type: 'SECURITY_ACCESS_DENIED',
-    message: 'Unauthorized access attempt to admin panel',
-    severity: 'error',
-    service: 'security',
-    timestamp: new Date(Date.now() - 7200000).toISOString(),
-    status: 'error'
-  },
-  {
-    id: '4',
-    created_at: new Date(Date.now() - 86400000).toISOString(),
-    tenant_id: 'tenant-001',
-    event_type: 'SYSTEM_UPDATE',
-    message: 'System maintenance completed',
-    severity: 'info',
-    service: 'system',
-    timestamp: new Date(Date.now() - 86400000).toISOString(),
-    status: 'success'
-  },
-  {
-    id: '5',
-    created_at: new Date(Date.now() - 172800000).toISOString(),
-    tenant_id: 'tenant-001',
-    event_type: 'API_ERROR',
-    message: 'External API connection failed',
-    severity: 'warning',
-    service: 'api',
-    timestamp: new Date(Date.now() - 172800000).toISOString(),
-    status: 'warning'
-  }
-];
+interface LogActivityParams {
+  event_type: string;
+  message: string;
+  meta?: Record<string, any>;
+}
 
-export function useSystemLogs() {
-  const [logs, setLogs] = useState<SystemLog[]>(MOCK_LOGS);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  
-  const getRecentLogs = async (limit = 50) => {
+interface UseSystemLogsReturn {
+  logs: SystemLog[];
+  isLoading: boolean;
+  error: Error | null;
+  getRecentLogs: (limit?: number) => Promise<void>;
+  logActivity: (params: LogActivityParams) => Promise<void>;
+}
+
+export function useSystemLogs(): UseSystemLogsReturn {
+  const [logs, setLogs] = useState<SystemLog[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const { tenant } = useTenant();
+
+  const getRecentLogs = useCallback(async (limit = 100) => {
+    if (!tenant?.id) return;
+    
     setIsLoading(true);
+    setError(null);
+    
     try {
-      console.log(`Fetching ${limit} recent logs`);
-      // This would normally fetch from an API
-      // For now, we'll just simulate a delay and return mock data
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setLogs(MOCK_LOGS.slice(0, Math.min(limit, MOCK_LOGS.length)));
-    } catch (error) {
-      console.error("Error fetching logs:", error);
+      const { data, error } = await supabase
+        .from('system_logs')
+        .select('*')
+        .eq('tenant_id', tenant.id)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+      
+      if (error) throw error;
+      
+      setLogs(data || []);
+    } catch (err) {
+      console.error('Error fetching system logs:', err);
+      setError(err instanceof Error ? err : new Error('Failed to fetch system logs'));
     } finally {
       setIsLoading(false);
     }
-  };
-  
-  const logActivity = async ({ 
-    event_type, 
-    message, 
-    meta = {} 
-  }: { 
-    event_type: string;
-    message: string;
-    meta?: Record<string, any>;
-  }) => {
-    try {
-      console.log(`Logging activity: ${event_type}`, message, meta);
-      // You would typically call an API endpoint to log this activity
-    } catch (error) {
-      console.error("Error logging activity:", error);
+  }, [tenant?.id]);
+
+  const logActivity = useCallback(async ({ event_type, message, meta }: LogActivityParams) => {
+    if (!tenant?.id) {
+      console.warn('Cannot log activity: No tenant ID available');
+      return;
     }
-  };
-  
+    
+    try {
+      const { error } = await supabase
+        .from('system_logs')
+        .insert({
+          tenant_id: tenant.id,
+          event_type,
+          message,
+          meta: meta || {},
+          user_id: (await supabase.auth.getUser()).data.user?.id
+        });
+      
+      if (error) throw error;
+    } catch (err) {
+      console.error('Error logging activity:', err);
+      throw err;
+    }
+  }, [tenant?.id]);
+
   return {
     logs,
     isLoading,
+    error,
     getRecentLogs,
     logActivity
   };

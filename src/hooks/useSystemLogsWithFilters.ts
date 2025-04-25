@@ -36,6 +36,8 @@ export interface UseSystemLogsWithFiltersReturn {
   setLogsPerPage: (count: number) => void;
   availableServices: string[];
   availableEventTypes: string[];
+  currentPage: number;
+  totalPages: number;
 }
 
 const DEFAULT_FILTERS: LogFilters = {
@@ -198,6 +200,8 @@ export function useSystemLogsWithFilters(): UseSystemLogsWithFiltersReturn {
     goToPage,
     setLogsPerPage: changeLogsPerPage,
     availableServices,
-    availableEventTypes
+    availableEventTypes,
+    currentPage,
+    totalPages
   };
 }

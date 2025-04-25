@@ -6,7 +6,7 @@ import { AdminSystemLogsTable } from "./AdminSystemLogsTable";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCw } from "lucide-react"; // Changed from ReloadIcon to RefreshCw from lucide-react
+import { RefreshCw } from "lucide-react";
 
 export function AdminSystemLogs() {
   const {
@@ -16,12 +16,13 @@ export function AdminSystemLogs() {
     resetFilters,
     isLoading,
     getRecentLogs,
-    currentPage,
-    totalPages,
+    pagination,
     nextPage,
     prevPage,
     goToPage,
   } = useSystemLogsWithFilters();
+
+  const { currentPage, totalPages } = pagination;
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     updateFilters({ search: e.target.value });

@@ -42,14 +42,16 @@ export function LogSecurityAlert({
 
   const handleAcknowledge = async () => {
     try {
+      // Map the component severity to a system log severity
+      const logSeverity = severity === 'critical' || severity === 'high' ? 'error' : 'warning';
+      
       await logActivity({
         event_type: 'SECURITY_ALERT_ACKNOWLEDGED',
         message: `Security alert acknowledged: ${message}`,
         meta: {
-          severity,
-          details
-        },
-        severity: severity === 'critical' || severity === 'high' ? 'error' : 'warning'
+          details,
+          alertSeverity: severity
+        }
       });
 
       toast({
