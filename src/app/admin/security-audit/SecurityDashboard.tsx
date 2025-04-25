@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
@@ -7,12 +6,11 @@ import { SecurityScoreCard } from "./components/dashboard/SecurityScoreCard";
 import { TablesAnalyzedCard } from "./components/dashboard/TablesAnalyzedCard";
 import { SecurityEventsCard } from "./components/dashboard/SecurityEventsCard";
 import { SecurityDistributionChart } from "./components/dashboard/SecurityDistributionChart";
-import { SecurityIssuesList } from "./components/SecurityIssuesList";
-import { useSecurityDashboard } from "./hooks/useSecurityDashboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./components/ui/Card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ResponsiveTable, Column } from "@/components/ui/responsive-table";
+import { useSecurityDashboard, SecurityScores } from "./hooks/useSecurityDashboard";
 
 export default function SecurityDashboard() {
   const [activeTab, setActiveTab] = useState("overview");

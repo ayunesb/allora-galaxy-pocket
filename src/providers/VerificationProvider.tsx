@@ -1,75 +1,66 @@
 
-import React, { ReactNode, useEffect, useState } from 'react';
-import { useAuth } from "@/hooks/useAuth";
-import { useTenant } from "@/hooks/useTenant";
-import { useSystemLogs } from "@/hooks/useSystemLogs";
-import { toast } from '@/components/ui/sonner';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useSystemLogs } from '@/hooks/useSystemLogs';
+import { useAuth } from '@/hooks/useAuth';
+import { useTenant } from '@/hooks/useTenant';
 
-interface VerificationProviderProps {
-  children: ReactNode;
+interface VerificationContextType {
+  isVerifying: boolean;
+  verifyModule: (modulePath: string) => Promise<any>;
+  verificationResults: Record<string, any>;
 }
 
-/**
- * Provider component that verifies all modules follow the three-phase approach:
- * Phase 1: Fix all errors and implement missing functionality
- * Phase 2: Add proper error handling and edge cases
- * Phase 3: Test thoroughly with different user roles and scenarios
- */
-export function VerificationProvider({ children }: VerificationProviderProps) {
-  const { user, isLoading: authLoading } = useAuth();
-  const { tenant, isLoading: tenantLoading } = useTenant();
+const VerificationContext = createContext<VerificationContextType | undefined>(undefined);
+
+export function VerificationProvider({ children }: { children: ReactNode }) {
+  const [isVerifying, setIsVerifying] = useState<boolean>(false);
+  const [verificationResults, setVerificationResults] = useState<Record<string, any>>({});
   const { verifyModuleImplementation } = useSystemLogs();
-  const [verificationComplete, setVerificationComplete] = useState(false);
-  
-  // Core modules to verify
-  const coreModules = [
-    'auth',
-    'tenant',
-    'workspace',
-    'admin',
-    'security',
-    'plugins',
-    'billing'
-  ];
-  
-  useEffect(() => {
-    // Skip verification during loading or if already completed
-    if (authLoading || tenantLoading || !user || !tenant || verificationComplete) return;
+  const { user } = useAuth();
+  const { tenant } = useTenant();
 
-    const runVerification = async () => {
-      console.log('Running verification of three-phase approach across modules...');
-      
-      let allModulesVerified = true;
-      const incompleteModules: string[] = [];
-      
-      for (const module of coreModules) {
-        const result = await verifyModuleImplementation(module);
-        
-        if (!result.verified) {
-          allModulesVerified = false;
-          incompleteModules.push(module);
-          
-          console.warn(`Module ${module} verification failed:`, result);
-        }
-      }
-      
-      if (!allModulesVerified && user.email?.includes('admin')) {
-        // Only notify admins about incomplete modules
-        toast.warning('Incomplete module verification', {
-          description: `The following modules need review: ${incompleteModules.join(', ')}`,
-          duration: 5000,
-        });
-      }
-      
-      setVerificationComplete(true);
-    };
-    
-    // Delay verification to avoid initial loading issues
-    const timeoutId = setTimeout(runVerification, 3000);
-    
-    return () => clearTimeout(timeoutId);
-  }, [authLoading, tenantLoading, user, tenant, verifyModuleImplementation, verificationComplete]);
+  const verifyModule = async (modulePath: string): Promise<any> => {
+    if (!user || !tenant) {
+      return { verified: false, reason: 'No active user or tenant' };
+    }
 
-  // Just render children - verification happens in background
-  return <>{children}</>;
+    setIsVerifying(true);
+    try {
+      const result = await verifyModuleImplementation(modulePath);
+      
+      // Store result in state
+      setVerificationResults(prev => ({
+        ...prev,
+        [modulePath]: result
+      }));
+      
+      return result;
+    } catch (error) {
+      console.error(`Error verifying module ${modulePath}:`, error);
+      return { 
+        verified: false, 
+        error: true 
+      };
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  return (
+    <VerificationContext.Provider value={{
+      isVerifying,
+      verifyModule,
+      verificationResults
+    }}>
+      {children}
+    </VerificationContext.Provider>
+  );
 }
+
+export const useVerification = (): VerificationContextType => {
+  const context = useContext(VerificationContext);
+  if (context === undefined) {
+    throw new Error('useVerification must be used within a VerificationProvider');
+  }
+  return context;
+};
