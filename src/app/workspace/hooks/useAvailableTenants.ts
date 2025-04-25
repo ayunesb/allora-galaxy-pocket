@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tenant } from "@/types/tenant";
 
+export interface TenantOption extends Tenant {}
+
 /**
  * Hook to fetch available tenants for the current user
  * @returns List of available tenants and loading state
