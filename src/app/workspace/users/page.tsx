@@ -50,12 +50,13 @@ export default function WorkspaceUsersPage() {
       
       if (error) throw error;
       
+      // Fix the TypeScript error by properly mapping the data structure
       const formattedUsers = data.map(item => ({
         id: item.user_id,
-        email: item.users.email,
+        email: item.users?.email || 'No email',
         role: item.role,
         created_at: item.created_at,
-        last_sign_in: item.users.last_sign_in_at,
+        last_sign_in: item.users?.last_sign_in_at,
       }));
       
       setUsers(formattedUsers);
@@ -122,7 +123,7 @@ export default function WorkspaceUsersPage() {
           <Tabs defaultValue="members" value={activeTab} onValueChange={setActiveTab}>
             <CardHeader className="pb-0">
               <div className="flex items-center justify-between">
-                <CardTitle>Users for {tenant.name}</CardTitle>
+                <CardTitle>Users for {tenant?.name}</CardTitle>
                 <TabsList>
                   <TabsTrigger value="members">
                     <User className="h-4 w-4 mr-2" />
