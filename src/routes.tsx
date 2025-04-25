@@ -11,6 +11,7 @@ import RequireAuth from '@/guards/RequireAuth';
 import Layout from '@/components/Layout';
 import NotFound from '@/pages/NotFound';
 import { SecurityProvider } from '@/providers/SecurityProvider';
+import { VerificationProvider } from '@/providers/VerificationProvider';
 
 // Define the route structure
 const routes: RouteObject[] = [
@@ -22,9 +23,11 @@ const routes: RouteObject[] = [
     element: (
       <RequireAuth>
         <SecurityProvider>
-          <Layout>
-            <Outlet />
-          </Layout>
+          <VerificationProvider>
+            <Layout>
+              <Outlet />
+            </Layout>
+          </VerificationProvider>
         </SecurityProvider>
       </RequireAuth>
     ),

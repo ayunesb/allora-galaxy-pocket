@@ -1,4 +1,3 @@
-
 import React, { ReactNode, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
@@ -6,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
 import { toast } from '@/components/ui/sonner';
 import { useNavigate } from 'react-router-dom';
+import { useSystemLogs } from "@/hooks/useSystemLogs";
 
 interface SecurityProviderProps {
   children: ReactNode;
@@ -20,6 +20,7 @@ export function SecurityProvider({ children }: SecurityProviderProps) {
   const { user } = useAuth();
   const { tenant, setTenant } = useTenant();
   const navigate = useNavigate();
+  const { logActivity, logSecurityEvent } = useSystemLogs();
   
   // Log route access for audit purposes
   useEffect(() => {
@@ -73,18 +74,14 @@ export function SecurityProvider({ children }: SecurityProviderProps) {
           console.error(`User ${user.id} attempted unauthorized access to tenant ${tenant.id}`);
           
           // Log security incident
-          await supabase
-            .from('system_logs')
-            .insert({
-              user_id: user.id,
-              tenant_id: tenant.id, // Still log the attempted tenant
-              event_type: 'SECURITY_UNAUTHORIZED_TENANT_ACCESS',
-              message: `Unauthorized tenant access attempt`,
-              meta: { 
-                attempted_tenant_id: tenant.id,
-                path: location.pathname
-              }
-            });
+          await logSecurityEvent(
+            `Unauthorized tenant access attempt`,
+            'UNAUTHORIZED_TENANT_ACCESS', 
+            { 
+              attempted_tenant_id: tenant.id,
+              path: location.pathname
+            }
+          );
 
           // Reset tenant selection
           setTenant(null);
@@ -97,6 +94,17 @@ export function SecurityProvider({ children }: SecurityProviderProps) {
 
           // Redirect to workspace switcher
           navigate("/workspace", { replace: true });
+        } else {
+          // Successfully validated tenant access
+          await logActivity({
+            event_type: 'TENANT_ACCESS_VALIDATED',
+            message: `User accessed tenant ${tenant.name}`,
+            meta: {
+              tenant_id: tenant.id,
+              path: location.pathname,
+              phase: 'verification'
+            }
+          });
         }
       } catch (error) {
         console.error("Error validating tenant access:", error);
@@ -104,7 +112,7 @@ export function SecurityProvider({ children }: SecurityProviderProps) {
     };
 
     validateTenantAccess();
-  }, [user?.id, tenant?.id, location.pathname, navigate, setTenant]);
+  }, [user?.id, tenant?.id, location.pathname, navigate, setTenant, logSecurityEvent, logActivity]);
 
   return <>{children}</>;
 }
