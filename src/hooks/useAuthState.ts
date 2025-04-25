@@ -2,12 +2,13 @@
 import { useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/sonner';
+import { ToastService } from '@/services/ToastService';
 
 export function useAuthState() {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -18,9 +19,15 @@ export function useAuthState() {
         
         // Handle auth events
         if (event === 'SIGNED_OUT') {
-          toast.info("Logged out successfully");
+          ToastService.info({
+            title: "Logged out",
+            description: "You have been successfully logged out"
+          });
         } else if (event === 'SIGNED_IN') {
-          toast.success("Logged in successfully");
+          ToastService.success({
+            title: "Logged in",
+            description: "You have been successfully logged in"
+          });
         } else if (event === 'TOKEN_REFRESHED') {
           console.log('Token refreshed successfully');
         }
@@ -31,7 +38,7 @@ export function useAuthState() {
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
-      setLoading(false);
+      setIsLoading(false);
     });
 
     return () => {
@@ -42,6 +49,11 @@ export function useAuthState() {
   return {
     user,
     session,
-    loading,
+    isLoading,
+    authError,
+    setUser,
+    setSession,
+    setIsLoading,
+    setAuthError
   };
 }
