@@ -11,10 +11,12 @@ import {
 } from '@/components/ui/select';
 import { RefreshCw, Search, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { AdminSystemLogsTable } from './AdminSystemLogsTable';
+import { SecurityLogViewer } from '@/components/SecurityLogViewer';
 import { LogSecurityAlert } from '@/app/admin/logs/LogSecurityAlert';
 import { useAuth } from '@/hooks/useAuth';
 import { useTenant } from '@/hooks/useTenant';
+import { showToast } from '@/utils/toastUtils';
+import { SystemLog } from '@/types/systemLog';
 
 export function AdminSystemLogs() {
   const { 
@@ -40,6 +42,11 @@ export function AdminSystemLogs() {
 
   const handleRefresh = () => {
     getRecentLogs(100);
+    showToast({
+      title: "Logs refreshed",
+      description: "The system logs have been updated.",
+      variant: 'default'
+    });
   };
 
   const handleDateRangeChange = (value: string) => {
@@ -54,12 +61,18 @@ export function AdminSystemLogs() {
     setShowSecurityInfo(!showSecurityInfo);
   };
 
-  // Log security monitoring access event
+  const handleLogSelect = (log: SystemLog) => {
+    showToast({
+      title: "Log details",
+      description: log.message,
+      variant: 'default'
+    });
+  };
+
   React.useEffect(() => {
     if (user?.id && tenant?.id) {
       const logSecurityView = async () => {
         try {
-          // Log access to security monitoring tools
           await fetch('/api/log-security-access', {
             method: 'POST',
             headers: { 
@@ -72,7 +85,6 @@ export function AdminSystemLogs() {
             })
           });
         } catch (error) {
-          // Silent fail - don't disrupt user experience
           console.error('Failed to log security access:', error);
         }
       };
@@ -141,12 +153,9 @@ export function AdminSystemLogs() {
         </div>
       </div>
       
-      <AdminSystemLogsTable 
+      <SecurityLogViewer 
         logs={logs} 
-        isLoading={isLoading}
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={goToPage}
+        onLogSelect={handleLogSelect}
       />
     </div>
   );
