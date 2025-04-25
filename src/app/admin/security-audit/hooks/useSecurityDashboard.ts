@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useSecurityAudit, SecurityAuditIssue } from "./useSecurityAudit";
 import { useSystemLogs } from "@/hooks/useSystemLogs";
-import { SystemLog } from "@/types/systemLog"; // Using the SystemLog from types folder
+import { SystemLog } from "@/types/systemLog";
 
 interface SecurityScores {
   high: number;
@@ -22,17 +22,24 @@ interface SecurityAuditResult {
 
 export function useSecurityDashboard() {
   const { runSecurityAudit, isLoading: isScanning, issues } = useSecurityAudit();
-  const { logs, getRecentLogs } = useSystemLogs();
+  const systemLogs = useSystemLogs();
+  const [securityLogs, setSecurityLogs] = useState<SystemLog[]>([]);
   const [results, setResults] = useState<SecurityAuditResult[]>([]);
   
   useEffect(() => {
-    // Fetch logs when component is mounted
-    getRecentLogs();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Fetch security logs when component mounts
+    const fetchSecurityLogs = async () => {
+      const { data, error } = await fetch('/api/security-logs').then(res => res.json());
+      if (!error && data) {
+        setSecurityLogs(data);
+      }
+    };
+    
+    fetchSecurityLogs();
   }, []);
   
   // Filter for security-related logs only
-  const securityLogs = logs.filter(log => 
+  const filteredSecurityLogs = securityLogs.filter(log => 
     log.event_type.startsWith('SECURITY_') || 
     log.event_type.includes('AUTH_') ||
     log.event_type.includes('ACCESS_')
@@ -94,8 +101,8 @@ export function useSecurityDashboard() {
   const securityScores = getSecurityScores();
   
   // Use timestamp property or created_at for SystemLog type
-  const lastEventDate = securityLogs[0]?.timestamp || securityLogs[0]?.created_at
-    ? new Date(securityLogs[0].timestamp || securityLogs[0].created_at).toLocaleString() 
+  const lastEventDate = filteredSecurityLogs[0]?.timestamp || filteredSecurityLogs[0]?.created_at
+    ? new Date(filteredSecurityLogs[0].timestamp || filteredSecurityLogs[0].created_at).toLocaleString() 
     : undefined;
 
   const hasCriticalIssues = results.some(r => r.securityScore < 40);
@@ -107,7 +114,7 @@ export function useSecurityDashboard() {
     results,
     overallScore,
     securityScores,
-    securityLogs,
+    securityLogs: filteredSecurityLogs,
     lastEventDate,
     hasCriticalIssues,
     criticalIssuesCount

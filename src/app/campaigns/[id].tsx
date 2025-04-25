@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -33,7 +32,8 @@ import {
   Settings,
   ArrowRight,
   Edit,
-  ListChecks
+  ListChecks,
+  Check
 } from "lucide-react";
 import { useSystemLogs } from "@/hooks/useSystemLogs";
 import LoadingOverlay from "@/components/ui/LoadingOverlay";
@@ -97,8 +97,7 @@ export default function CampaignDetailPage() {
         console.error("Error fetching campaign data:", err);
         setError(err.message || "Failed to load campaign details");
         toast("Error loading campaign", {
-          description: err.message || "Please try again",
-          variant: "destructive"
+          description: err.message || "Please try again"
         });
       } finally {
         setLoading(false);
@@ -146,8 +145,7 @@ export default function CampaignDetailPage() {
     } catch (err: any) {
       console.error("Error starting campaign:", err);
       toast("Failed to start campaign", {
-        description: err.message || "Please try again",
-        variant: "destructive"
+        description: err.message || "Please try again"
       });
     }
   };
@@ -178,8 +176,7 @@ export default function CampaignDetailPage() {
     } catch (err: any) {
       console.error("Error pausing campaign:", err);
       toast("Failed to pause campaign", {
-        description: err.message || "Please try again",
-        variant: "destructive"
+        description: err.message || "Please try again"
       });
     }
   };

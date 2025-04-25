@@ -1,22 +1,25 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/hooks/useTenant';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from "sonner";
-import { SystemLog } from '@/types/systemLog';
+import { SystemLog, LogSeverity } from '@/types/systemLog';
 
 interface LogActivityParams {
   event_type: string;
   message: string;
   meta?: Record<string, any>;
-  severity?: 'info' | 'warning' | 'error' | 'success';
+  severity?: LogSeverity;
 }
 
 export function useSystemLogs() {
   const { tenant } = useTenant();
   const { user } = useAuth();
   const [isLogging, setIsLogging] = useState(false);
+  const [logs, setLogs] = useState<SystemLog[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<any>(null);
 
   /**
    * Log an activity to the system_logs table
@@ -117,13 +120,58 @@ export function useSystemLogs() {
       }
     });
   };
+
+  /**
+   * Get recent logs for the current tenant
+   */
+  const getRecentLogs = async (limit = 50): Promise<void> => {
+    if (!tenant?.id) {
+      console.warn("Can't fetch logs: No tenant ID available");
+      return;
+    }
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('system_logs')
+        .select('*')
+        .eq('tenant_id', tenant.id)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+        
+      if (fetchError) throw fetchError;
+      
+      setLogs(data || []);
+    } catch (err) {
+      console.error("Failed to fetch logs:", err);
+      setError(err);
+      toast("Error loading logs", {
+        description: "Failed to retrieve system logs"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Fetch logs on component mount
+  useEffect(() => {
+    if (tenant?.id) {
+      getRecentLogs();
+    }
+  }, [tenant?.id]);
   
   return {
     logActivity,
     logError,
     logSecurityEvent,
     logJourneyStep,
-    isLogging
+    isLogging,
+    logs,
+    isLoading,
+    error,
+    getRecentLogs
   };
 }
 
@@ -218,6 +266,13 @@ export function useSystemLogsWithFilters() {
       setLoading(false);
     }
   };
+
+  // Get recent logs on mount
+  useEffect(() => {
+    if (tenant?.id) {
+      fetchLogs();
+    }
+  }, [tenant?.id]);
 
   return {
     logs,

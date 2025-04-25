@@ -1,19 +1,18 @@
 
 export interface Strategy {
   id: string;
-  title: string;
-  description: string | null;
-  created_at: string | null;
-  updated_at: string | null;
-  tenant_id: string | null;
-  industry?: string | null;
-  goal?: string | null;
-  confidence?: string | null;
-  status?: string | null;
-  impact_score?: number | null;
-  is_public?: boolean | null;
-  generated_by?: string | null;
-  retry_prompt?: string | null;
-  approved_at?: string | null;
-  metrics_baseline?: Record<string, any> | null;
+  title?: string;
+  description?: string;
+  created_at: string;
+  updated_at?: string;
+  tenant_id: string;
+  status?: string;
+  user_id?: string;
+  tags?: string[];
+  approved_at?: string;
+  failure_reason?: string;
+  metrics_baseline?: Record<string, any>;
+  generated_by?: string;
+  health_score?: number;
+  impact_score?: number;
 }

@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { useTenant } from "@/hooks/useTenant";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/components/ui/theme-provider";
-import { useToast } from "@/components/ui/toast";
 import { OnboardingForm } from "./components/OnboardingForm";
 import { WorkspaceRequirement } from "./components/WorkspaceRequirement";
 import { AuthRequirement } from "./components/AuthRequirement";
@@ -14,6 +13,8 @@ import { useStepNavigation } from "./components/StepNavigator";
 import { useOnboardingSubmission } from "./hooks/useOnboardingSubmission";
 import { steps } from "./steps";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useSystemLogs } from "@/hooks/useSystemLogs";
 
 export default function OnboardingWizard() {
   const { tenant, isLoading: tenantLoading } = useTenant();
@@ -25,6 +26,7 @@ export default function OnboardingWizard() {
   const [workspaceError, setWorkspaceError] = useState<boolean>(false);
   const navigate = useNavigate();
   const [creatingWorkspace, setCreatingWorkspace] = useState(false);
+  const { logActivity } = useSystemLogs();
 
   const { isSubmitting, completeOnboarding } = useOnboardingSubmission();
   const CurrentStep = steps[step];
@@ -79,8 +81,7 @@ export default function OnboardingWizard() {
       if (result.success) {
         // Log the successful onboarding completion
         try {
-          await supabase.from("system_logs").insert({
-            tenant_id: tenant.id,
+          await logActivity({
             event_type: "ONBOARDING_COMPLETED",
             message: `Onboarding completed for ${finalProfile.companyName}`,
             meta: {
@@ -110,16 +111,14 @@ export default function OnboardingWizard() {
       } else {
         setFormError(result.error || "Unknown error, please try again.");
         toast("Onboarding failed", {
-          description: result.error || "Please try again",
-          variant: "destructive"
+          description: result.error || "Please try again"
         });
       }
     } catch (error) {
       console.error("[handleOnboardingCompletion] Unexpected error:", error);
       setFormError("A system error occurred. Please try again or contact support.");
       toast("System error", {
-        description: "Please try again or contact support",
-        variant: "destructive"
+        description: "Please try again or contact support"
       });
     } finally {
       setCreatingWorkspace(false);

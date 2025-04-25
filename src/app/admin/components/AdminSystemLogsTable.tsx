@@ -103,7 +103,7 @@ export function AdminSystemLogsTable({
                     {log.severity || "info"}
                   </Badge>
                 </TableCell>
-                <TableCell>{log.service}</TableCell>
+                <TableCell>{log.service || "system"}</TableCell>
               </TableRow>
             ))}
           </TableBody>

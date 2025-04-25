@@ -1,62 +1,62 @@
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { SystemLog } from '@/types/systemLog';
 import { LogFilters, DEFAULT_FILTERS } from '@/types/logFilters';
 
-export function useLogFilters(logs: SystemLog[] = []) {
+export function useLogFilters(logs: SystemLog[]) {
   const [filters, setFilters] = useState<LogFilters>(DEFAULT_FILTERS);
-
-  const updateFilters = useCallback((newFilters: Partial<LogFilters>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
-  }, []);
-
-  const resetFilters = useCallback(() => {
+  
+  const updateFilters = (newFilters: Partial<LogFilters>) => {
+    setFilters(prevFilters => ({ ...prevFilters, ...newFilters }));
+  };
+  
+  const resetFilters = () => {
     setFilters(DEFAULT_FILTERS);
-  }, []);
-
-  // Apply filters to logs
+  };
+  
+  // Apply filters to the logs
   const filteredLogs = useMemo(() => {
     return logs.filter(log => {
       // Filter by search term
-      const searchMatch = !filters.search
-        ? true
-        : (log.message && log.message.toLowerCase().includes(filters.search.toLowerCase())) ||
-          (log.event_type && log.event_type.toLowerCase().includes(filters.search.toLowerCase())) ||
-          (log.service && log.service.toLowerCase().includes(filters.search.toLowerCase()));
-
+      if (filters.search && !log.message.toLowerCase().includes(filters.search.toLowerCase())) {
+        return false;
+      }
+      
       // Filter by event type
-      const eventTypeMatch =
-        filters.eventType === "all" ? true : log.event_type === filters.eventType;
-
+      if (filters.eventType !== 'all' && log.event_type !== filters.eventType) {
+        return false;
+      }
+      
       // Filter by severity
-      const severityMatch = 
-        !filters.severity || filters.severity === "all" 
-          ? true 
-          : log.severity === filters.severity;
-
-      // Filter by service
-      const serviceMatch = 
-        !filters.service 
-          ? true 
-          : log.service === filters.service;
-
-      // Filter by user ID
-      const userIdMatch = 
-        !filters.userId 
-          ? true 
-          : log.user_id === filters.userId;
-
+      if (filters.severity !== 'all' && log.severity !== filters.severity) {
+        return false;
+      }
+      
+      // Filter by service if it exists
+      if (filters.service && log.service && log.service !== filters.service) {
+        return false;
+      }
+      
       // Filter by date range
-      const dateRangeMatch = !filters.dateRange
-        ? true
-        : new Date(log.timestamp || log.created_at) >=
-          new Date(Date.now() - filters.dateRange * 24 * 60 * 60 * 1000);
-
-      return searchMatch && eventTypeMatch && dateRangeMatch && 
-             severityMatch && serviceMatch && userIdMatch;
+      if (filters.dateRange > 0) {
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - filters.dateRange);
+        
+        const logDate = new Date(log.created_at);
+        if (logDate < cutoffDate) {
+          return false;
+        }
+      }
+      
+      // Filter by user if specified
+      if (filters.userId && log.user_id !== filters.userId) {
+        return false;
+      }
+      
+      return true;
     });
   }, [logs, filters]);
-
+  
   return {
     filters,
     updateFilters,

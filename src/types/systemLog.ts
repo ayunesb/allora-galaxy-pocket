@@ -1,4 +1,6 @@
 
+export type LogSeverity = 'info' | 'warning' | 'error' | 'success';
+
 export interface SystemLog {
   id: string;
   tenant_id: string;
@@ -6,10 +8,11 @@ export interface SystemLog {
   event_type: string;
   message: string;
   meta?: {
-    severity?: 'info' | 'warning' | 'error' | 'success';
+    severity?: LogSeverity;
     [key: string]: any;
   };
   created_at: string;
   timestamp?: string;
-  severity?: string;
+  severity?: LogSeverity;
+  service?: string; // Added service property
 }
