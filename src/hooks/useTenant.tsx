@@ -50,7 +50,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, [user]);
 
-  // Add the missing updateTenantProfile method
+  // Add the updateTenantProfile method
   const updateTenantProfile = async (updatedTenant: Partial<Tenant>) => {
     if (!tenant?.id) {
       throw new Error('No active tenant to update');

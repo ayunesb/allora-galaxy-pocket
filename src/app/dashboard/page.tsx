@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from "@/hooks/useAuth";
@@ -10,11 +11,13 @@ import { Loader2, AlertCircle, PlusCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
+import { useSystemLogs } from "@/hooks/useSystemLogs";
 
 export default function DashboardPage() {
   const { user, isLoading: authLoading } = useAuth();
   const { tenant, isLoading: tenantLoading } = useTenant();
   const { toast } = useToast();
+  const { logActivity } = useSystemLogs();
   
   const { data: companyProfile, isLoading: profileLoading } = useQuery({
     queryKey: ['company-profile', tenant?.id],
@@ -45,7 +48,7 @@ export default function DashboardPage() {
     retry: 1
   });
   
-  const { data: strategies, isLoading: strategiesLoading } = useQuery({
+  const { data: strategies = [], isLoading: strategiesLoading } = useQuery({
     queryKey: ['strategies', tenant?.id],
     queryFn: async () => {
       if (!tenant?.id) return [];

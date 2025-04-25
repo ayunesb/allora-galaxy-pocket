@@ -57,11 +57,11 @@ export function useSecurityDashboard() {
   // Security scores distribution
   const securityScores: SecurityScores = {
     critical: results.filter(r => r.securityScore < 40).length,
-    high: 0, // Added to match the expected interface
-    medium: 0, // Added to match the expected interface
-    low: 0, // Added to match the expected interface
-    warning: results.filter(r => r.securityScore >= 40 && r.securityScore < 70).length,
-    good: results.filter(r => r.securityScore >= 70 && r.securityScore < 90).length,
+    high: results.filter(r => r.securityScore >= 40 && r.securityScore < 50).length,
+    medium: results.filter(r => r.securityScore >= 50 && r.securityScore < 60).length,
+    low: results.filter(r => r.securityScore >= 60 && r.securityScore < 70).length,
+    warning: results.filter(r => r.securityScore >= 70 && r.securityScore < 80).length,
+    good: results.filter(r => r.securityScore >= 80 && r.securityScore < 90).length,
     excellent: results.filter(r => r.securityScore >= 90).length,
   };
   
