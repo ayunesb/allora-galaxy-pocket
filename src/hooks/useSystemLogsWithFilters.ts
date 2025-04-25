@@ -4,7 +4,7 @@ import { SystemLog } from '@/types/systemLog';
 import { useSystemLogs } from '@/hooks/useSystemLogs';
 import { useLogFilters } from '@/hooks/useLogFilters';
 import { useLogPagination } from '@/hooks/useLogPagination';
-import { ToastService } from '@/services/ToastService';
+import { toast } from 'sonner';
 import { LogFilters } from '@/types/logFilters';
 
 export function useSystemLogsWithFilters() {
@@ -12,24 +12,45 @@ export function useSystemLogsWithFilters() {
     logActivity, 
     logSecurityEvent, 
     verifyModuleImplementation,
-    getRecentLogs, 
-    logs, 
-    isLoading, 
-    error, 
     isLogging 
   } = useSystemLogs();
   
-  const { filters, updateFilters, resetFilters, filteredLogs } = useLogFilters(logs ?? []);
+  // Local state for logs since useSystemLogs doesn't provide them directly
+  const [logs, setLogs] = useState<SystemLog[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<Error | null>(null);
+  
+  const { filters, updateFilters, resetFilters, filteredLogs } = useLogFilters(logs);
   
   const pagination = useLogPagination({
     totalItems: filteredLogs.length
   });
 
+  // Fetch recent logs
+  const getRecentLogs = useCallback(async (limit: number = 100) => {
+    setIsLoading(true);
+    try {
+      const { data, error: fetchError } = await fetch('/api/logs?limit=' + limit)
+        .then(res => res.json());
+      
+      if (fetchError) throw new Error(fetchError.message);
+      
+      setLogs(data || []);
+      setError(null);
+    } catch (err: any) {
+      setError(err);
+      toast.error('Error fetching logs', {
+        description: err.message
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   // Get paginated logs
   const getPaginatedLogs = useCallback(() => {
     if (error) {
-      ToastService.error({
-        title: "Error fetching logs",
+      toast.error('Error fetching logs', {
         description: error.message
       });
       return [];
@@ -41,7 +62,7 @@ export function useSystemLogsWithFilters() {
 
   return {
     logs: getPaginatedLogs(),
-    allLogs: logs || [],
+    allLogs: logs,
     filters,
     pagination,
     isLoading,
