@@ -125,9 +125,8 @@ export function useAuthSessionManager(options: AuthSessionManagerOptions = {}) {
         password,
         options: {
           // Only store persistent session if remember me is checked
-          session: {
-            persistSession: remember
-          }
+          // The correct property is persistSession, not session
+          persistSession: remember
         }
       });
       
