@@ -17,4 +17,5 @@ export interface Strategy {
   impact_score?: number;
   industry?: string;
   goal?: string;
+  confidence?: string; // Added confidence property
 }
