@@ -1,5 +1,6 @@
 
-import { useToast } from "@/components/ui/use-toast";
+import React from "react";
+import { toast } from "sonner";
 import GalaxyKitCard from "./GalaxyKitCard";
 
 const kits = [
@@ -18,12 +19,9 @@ const kits = [
 ];
 
 const ExplorePage = () => {
-  const { toast } = useToast();
-
   const handleUseKit = (title: string) => {
-    toast({
-      title: "Kit Selected",
-      description: `You've selected the ${title}. Starting deployment...`,
+    toast.success("Kit Selected", {
+      description: `You've selected the ${title}. Starting deployment...`
     });
   };
 

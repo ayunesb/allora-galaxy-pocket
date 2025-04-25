@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
 import { vi } from "vitest";
 import StrategyWizard from "@/app/strategy-gen/StrategyWizard";
-import { ToastProvider } from "@/components/ui/toast";
+import { Toaster } from "sonner";
 
 // Create a new QueryClient for each test
 const createTestQueryClient = () => new QueryClient({
@@ -22,9 +22,8 @@ function TestWrapper({ children }: { children: React.ReactNode }) {
   return (
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
-        <ToastProvider>
-          {children}
-        </ToastProvider>
+        <Toaster />
+        {children}
       </QueryClientProvider>
     </BrowserRouter>
   );

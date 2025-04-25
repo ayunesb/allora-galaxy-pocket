@@ -3,7 +3,7 @@ import { useState } from "react";
 import { CommandBar } from "./components/CommandBar";
 import { ResponseDisplay } from "./components/ResponseDisplay";
 import { Card } from "@/components/ui/card";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useAgentContext } from "@/contexts/AgentContext";
 import { AgentInfoCard } from "@/app/campaigns/components/AgentInfoCard";
 import { useSystemLogs } from "@/hooks/useSystemLogs";
@@ -57,16 +57,13 @@ export default function AssistantPanel() {
           });
         }
         
-        toast({
-          title: "Task Complete",
-          description: "Your AI assistant has processed your request",
+        toast.success("Task Complete", {
+          description: "Your AI assistant has processed your request"
         });
       }, 1200);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to process the command",
-        variant: "destructive",
+      toast.error("Error", {
+        description: "Failed to process the command"
       });
     } finally {
       setLoading(false);

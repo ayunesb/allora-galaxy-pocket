@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { LogoSection } from "./components/LogoSection";
 import { LandingSection } from "./components/LandingSection";
 import { SocialSection } from "./components/SocialSection";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 
 export default function CreativeSuite() {
   const [approved, setApproved] = useState(false);
@@ -23,9 +23,8 @@ export default function CreativeSuite() {
 
   const handleApprove = () => {
     setApproved(true);
-    toast({
-      title: "Creative Kit Approved",
-      description: "Your brand assets are now live and synced to campaigns + site 🎯",
+    toast.success("Creative Kit Approved", {
+      description: "Your brand assets are now live and synced to campaigns + site 🎯"
     });
   };
 

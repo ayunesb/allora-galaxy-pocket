@@ -2,7 +2,7 @@
 import React from 'react';
 import { StrategicRoadmap } from '@/components/strategy/StrategicRoadmap';
 import { useRoadmapMilestones } from '@/hooks/useRoadmapMilestones';
-import { showToast } from '@/utils/toastUtils';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Loader2 } from 'lucide-react';
@@ -28,10 +28,8 @@ export default function StrategicRoadmapPage() {
 
   // Handle error state
   if (error) {
-    showToast({
-      title: 'Failed to load roadmap',
-      description: 'Could not load strategic milestones',
-      variant: 'destructive'
+    toast.error('Failed to load roadmap', {
+      description: 'Could not load strategic milestones'
     });
   }
 

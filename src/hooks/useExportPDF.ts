@@ -1,7 +1,7 @@
 
 import { useTenant } from "./useTenant";
 import { useAuth } from "./useAuth";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { exportToPDF, ExportFilters, ExportOptions } from "@/lib/export/exportPDF";
 import { useExportLogger } from "./useExportLogger";
 
@@ -35,16 +35,13 @@ export function useExportPDF() {
       link.click();
       document.body.removeChild(link);
 
-      toast({
-        title: "PDF export successful",
+      toast.success("PDF export successful", {
         description: `Report has been generated and downloaded`
       });
     } catch (error) {
       console.error('PDF export failed:', error);
-      toast({
-        title: "PDF export failed",
-        description: error instanceof Error ? error.message : "Unknown error occurred",
-        variant: "destructive"
+      toast.error("PDF export failed", {
+        description: error instanceof Error ? error.message : "Unknown error occurred"
       });
     }
   };
@@ -70,18 +67,15 @@ export function useExportPDF() {
 
       await exportToPDF(exportFilters, exportOptions);
 
-      toast({
-        title: "Report sent",
+      toast.success("Report sent", {
         description: `The ${type} report has been sent to ${recipients.join(', ')}`
       });
 
       await logExport(type, 'email', 0, recipients);
     } catch (error) {
       console.error('Email report failed:', error);
-      toast({
-        title: "Failed to send report",
-        description: error instanceof Error ? error.message : "Unknown error occurred",
-        variant: "destructive"
+      toast.error("Failed to send report", {
+        description: error instanceof Error ? error.message : "Unknown error occurred"
       });
     }
   };

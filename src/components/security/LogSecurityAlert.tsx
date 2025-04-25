@@ -4,7 +4,7 @@ import { AlertCircle } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useDataPipeline } from "@/hooks/useDataPipeline";
-import { ToastService } from "@/services/ToastService";
+import { toast } from "sonner";
 
 interface LogSecurityAlertProps {
   title: string;
@@ -41,16 +41,14 @@ export function LogSecurityAlert({
         }
       });
       
-      ToastService.info({
-        title: "Alert Acknowledged",
+      toast.info("Alert Acknowledged", {
         description: "This security alert has been logged for review."
       });
       
       if (onDismiss) onDismiss();
     } catch (error) {
       console.error("Failed to log security alert:", error);
-      ToastService.error({
-        title: "Logging Failed",
+      toast.error("Logging Failed", {
         description: "Could not record security acknowledgment"
       });
     }

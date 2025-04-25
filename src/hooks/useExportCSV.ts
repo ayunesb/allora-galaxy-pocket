@@ -1,7 +1,7 @@
 
 import { useTenant } from "./useTenant";
 import { useAuth } from "./useAuth";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useExportLogger } from "./useExportLogger";
 
@@ -43,8 +43,7 @@ export function useExportCSV() {
       const { data, error } = await query;
       if (error) throw error;
       if (!data?.length) {
-        toast({ 
-          title: "No data to export",
+        toast.warning("No data to export", {
           description: "There are no records matching your criteria"
         });
         return;
@@ -73,20 +72,16 @@ export function useExportCSV() {
 
       await logExport(type, 'csv', data.length);
 
-      toast({
-        title: "Export successful",
+      toast.success("Export successful", {
         description: `${data.length} records exported as CSV`
       });
     } catch (error) {
       console.error('Export failed:', error);
-      toast({
-        title: "Export failed",
-        description: error instanceof Error ? error.message : "Unknown error occurred",
-        variant: "destructive"
+      toast.error("Export failed", {
+        description: error instanceof Error ? error.message : "Unknown error occurred"
       });
     }
   };
 
   return { downloadCSV };
 }
-

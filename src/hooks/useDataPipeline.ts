@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "./useTenant";
-import { ToastService } from "@/services/ToastService";
+import { toast } from "sonner";
 
 interface PipelineEvent {
   event_type: string;
