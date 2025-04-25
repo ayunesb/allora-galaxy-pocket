@@ -10,6 +10,7 @@ import { Toaster } from "sonner";
 import { baseRoutes } from "./routes/appRoutesConfig";
 import { Outlet } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { RouteDebugger } from "./components/RouteDebugger";
 
 function App() {
   const queryClient = new QueryClient();
@@ -20,25 +21,26 @@ function App() {
   // Set up the root element with all providers in the correct order
   routes[0].element = (
     <ErrorBoundary>
-      <AuthProvider>
-        <TenantProvider>
-          <ThemeProvider defaultTheme="light" storageKey="allora-theme-preference">
-            <Outlet />
-            <Toaster richColors closeButton position="top-right" />
-          </ThemeProvider>
-        </TenantProvider>
-      </AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TenantProvider>
+            <ThemeProvider defaultTheme="light" storageKey="allora-theme-preference">
+              <>
+                <Outlet />
+                <Toaster richColors closeButton position="top-right" />
+                {import.meta.env.DEV && <RouteDebugger />}
+              </>
+            </ThemeProvider>
+          </TenantProvider>
+        </AuthProvider>
+        <ReactQueryDevtools initialIsOpen={false} />
+      </QueryClientProvider>
     </ErrorBoundary>
   );
   
   const router = createBrowserRouter(routes);
 
-  return (
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-      <ReactQueryDevtools initialIsOpen={false} />
-    </QueryClientProvider>
-  );
+  return <RouterProvider router={router} />;
 }
 
 export default App;

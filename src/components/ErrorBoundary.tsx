@@ -1,59 +1,78 @@
 
 import React from "react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { AlertCircle } from "lucide-react";
+import { useRouteError } from "react-router-dom";
 
-interface Props {
+interface ErrorBoundaryProps {
   children: React.ReactNode;
 }
 
-interface State {
-  hasError: boolean;
-  error?: Error;
-}
-
-export class ErrorBoundary extends React.Component<Props, State> {
-  constructor(props: Props) {
+export class ErrorBoundary extends React.Component<ErrorBoundaryProps, { hasError: boolean, error: Error | null }> {
+  constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, error: null };
   }
 
-  static getDerivedStateFromError(error: Error): State {
-    return {
-      hasError: true,
-      error
-    };
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    console.error("Application error:", error, errorInfo);
   }
 
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex items-center justify-center min-h-screen p-4">
-          <Alert variant="destructive" className="max-w-xl">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Something went wrong</AlertTitle>
-            <AlertDescription className="mt-2">
-              <p className="mb-4">{this.state.error?.message || 'An unexpected error occurred'}</p>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  this.setState({ hasError: false });
-                  window.location.reload();
-                }}
-              >
-                Try again
+        <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+          <div className="w-full max-w-md space-y-6">
+            <Alert variant="destructive">
+              <AlertTitle>Something went wrong</AlertTitle>
+              <AlertDescription className="pt-2">
+                {this.state.error?.message || "An unexpected error occurred"}
+              </AlertDescription>
+            </Alert>
+            
+            <div className="flex gap-4 justify-center mt-6">
+              <Button onClick={() => window.location.reload()}>
+                Try Again
               </Button>
-            </AlertDescription>
-          </Alert>
+              <Button variant="outline" onClick={() => {
+                this.setState({ hasError: false, error: null });
+              }}>
+                Reset Error Boundary
+              </Button>
+            </div>
+          </div>
         </div>
       );
     }
 
     return this.props.children;
   }
+}
+
+// This is a hook version for routes
+export function ErrorBoundaryRoute() {
+  const error = useRouteError() as any;
+  
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+      <div className="w-full max-w-md space-y-6">
+        <Alert variant="destructive">
+          <AlertTitle>Something went wrong</AlertTitle>
+          <AlertDescription className="pt-2">
+            {error?.statusText || error?.message || "An unexpected error occurred"}
+          </AlertDescription>
+        </Alert>
+        
+        <div className="flex gap-4 justify-center mt-6">
+          <Button onClick={() => window.location.reload()}>
+            Try Again
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 }

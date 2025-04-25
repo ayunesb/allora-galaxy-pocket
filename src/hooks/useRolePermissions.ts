@@ -1,22 +1,33 @@
 
-import { useRole } from './useRole';
-import { UserRole } from '@/types/invite';
+import { useUserRole } from "./useUserRole";
 
 export function useRolePermissions() {
-  const { role } = useRole();
+  const { role } = useUserRole();
   
-  const canEdit = role === 'admin' || role === 'editor';
   const isAdmin = role === 'admin';
+  const isDeveloper = role === 'developer';
+  const isClient = role === 'client';
+  const isViewer = role === 'viewer';
+  
+  const canEditStrategies = isAdmin || isDeveloper;
+  const canApproveStrategies = isAdmin || isDeveloper;
   const canManageUsers = isAdmin;
-  const canManagePlugins = isAdmin;
-  const canApproveContent = isAdmin || role === 'editor';
+  const canAccessAdminArea = isAdmin;
+  const canAccessDeveloperTools = isAdmin || isDeveloper;
+  const canConfigureSystem = isAdmin;
+  const canViewAuditLogs = isAdmin;
   
   return {
-    canEdit,
     isAdmin,
+    isDeveloper,
+    isClient,
+    isViewer,
+    canEditStrategies,
+    canApproveStrategies,
     canManageUsers,
-    canManagePlugins,
-    canApproveContent,
-    role
+    canAccessAdminArea,
+    canAccessDeveloperTools,
+    canConfigureSystem,
+    canViewAuditLogs
   };
 }

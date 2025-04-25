@@ -1,11 +1,11 @@
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
-  fallback?: ReactNode;
 }
 
 interface State {
@@ -15,67 +15,73 @@ interface State {
 }
 
 export class WorkspaceErrorBoundary extends Component<Props, State> {
-  public state: State = {
-    hasError: false,
-    error: null,
-    errorInfo: null,
-  };
-
-  public static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error, errorInfo: null };
+  constructor(props: Props) {
+    super(props);
+    this.state = {
+      hasError: false,
+      error: null,
+      errorInfo: null
+    };
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("Workspace component error:", error, errorInfo);
-    this.setState({ error, errorInfo });
+  static getDerivedStateFromError(error: Error): State {
+    return {
+      hasError: true,
+      error,
+      errorInfo: null
+    };
   }
 
-  private handleReset = () => {
-    this.setState({ hasError: false, error: null, errorInfo: null });
-  };
+  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+    this.setState({
+      error,
+      errorInfo
+    });
+    
+    // Log error to an error monitoring service
+    console.error('Workspace error:', error, errorInfo);
+  }
 
-  private handleRefresh = () => {
+  handleRefresh = (): void => {
     window.location.reload();
   };
 
-  public render() {
+  handleReset = (): void => {
+    this.setState({
+      hasError: false,
+      error: null,
+      errorInfo: null
+    });
+  };
+
+  render(): ReactNode {
     if (this.state.hasError) {
-      return this.props.fallback || (
-        <div className="p-4 border border-red-200 bg-red-50 dark:bg-red-900/10 dark:border-red-800 rounded-md">
-          <div className="flex items-center mb-3">
-            <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 mr-2" />
-            <h3 className="font-semibold text-red-600 dark:text-red-400">
-              Workspace Error
-            </h3>
-          </div>
-          
-          <div className="text-sm text-red-600/70 dark:text-red-400/70 mb-4">
-            <p>An error occurred while loading workspace components:</p>
-            <p className="font-mono text-xs mt-2 p-2 bg-red-100 dark:bg-red-900/20 rounded overflow-auto">
-              {this.state.error?.message || "Unknown error"}
-            </p>
-          </div>
-          
-          <div className="flex space-x-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={this.handleReset}
-              className="border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/20"
-            >
-              Try Again
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={this.handleRefresh}
-              className="border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/20"
-            >
-              <RefreshCw className="h-4 w-4 mr-1" />
-              Refresh Page
-            </Button>
-          </div>
-        </div>
+      return (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex flex-col items-center justify-center text-center">
+              <AlertTriangle className="h-12 w-12 text-amber-500 mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Workspace Error</h3>
+              <p className="text-muted-foreground mb-4 max-w-md">
+                An error occurred while loading the workspace section. Please try again or contact support if this issue persists.
+              </p>
+              <div className="flex gap-3">
+                <Button onClick={this.handleReset} variant="default">
+                  Try Again
+                </Button>
+                <Button onClick={this.handleRefresh} variant="outline">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh Page
+                </Button>
+              </div>
+              {this.state.error && import.meta.env.DEV && (
+                <div className="mt-6 text-left w-full p-4 bg-muted rounded-md overflow-auto max-h-40">
+                  <p className="font-mono text-xs text-red-500">{this.state.error.toString()}</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       );
     }
 

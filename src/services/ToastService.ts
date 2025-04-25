@@ -1,39 +1,44 @@
 
 import { toast, ToastOptions } from "sonner";
 
-interface ToastParams {
-  title: string;
+interface ToastMessage {
+  title?: string;
   description?: string;
+  message?: string;
 }
 
-type ToastOptionsType = Omit<ToastOptions, 'description'>;
+type ToastParam = string | ToastMessage;
 
 export class ToastService {
-  static success({ title, description }: ToastParams, options?: ToastOptionsType) {
-    return toast.success(title, { 
-      description, 
-      ...options 
-    });
+  static normalizeParams(params: ToastParam): [string, string | undefined, ToastOptions | undefined] {
+    if (typeof params === 'string') {
+      return [params, undefined, undefined];
+    }
+    
+    // Handle both message and description formats
+    const message = params.title || params.message || '';
+    const description = params.description;
+    
+    return [message, description, {}];
   }
-
-  static error({ title, description }: ToastParams, options?: ToastOptionsType) {
-    return toast.error(title, { 
-      description, 
-      ...options 
-    });
+  
+  static success(params: ToastParam, options?: ToastOptions) {
+    const [message, description, defaultOptions] = this.normalizeParams(params);
+    toast.success(message, { ...defaultOptions, ...options, description });
   }
-
-  static warning({ title, description }: ToastParams, options?: ToastOptionsType) {
-    return toast.warning(title, { 
-      description, 
-      ...options 
-    });
+  
+  static error(params: ToastParam, options?: ToastOptions) {
+    const [message, description, defaultOptions] = this.normalizeParams(params);
+    toast.error(message, { ...defaultOptions, ...options, description });
   }
-
-  static info({ title, description }: ToastParams, options?: ToastOptionsType) {
-    return toast.info(title, { 
-      description, 
-      ...options 
-    });
+  
+  static warning(params: ToastParam, options?: ToastOptions) {
+    const [message, description, defaultOptions] = this.normalizeParams(params);
+    toast.warning(message, { ...defaultOptions, ...options, description });
+  }
+  
+  static info(params: ToastParam, options?: ToastOptions) {
+    const [message, description, defaultOptions] = this.normalizeParams(params);
+    toast.info(message, { ...defaultOptions, ...options, description });
   }
 }

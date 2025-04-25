@@ -1,19 +1,9 @@
 
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import React, { useState, useContext, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { Tenant } from '@/types/tenant';
-import { TenantContext } from '@/contexts/TenantContext';
-
-interface TenantContextType {
-  tenant: Tenant | null;
-  setTenant: (tenant: Tenant | null) => void;
-  isLoading: boolean;
-  refreshTenant: () => Promise<void>;
-  updateTenantProfile: (updatedTenant: Partial<Tenant>) => Promise<void>;
-}
-
-const TenantProviderContext = createContext<TenantContextType | undefined>(undefined);
+import { TenantContext, TenantContextType } from '@/contexts/TenantContext';
 
 export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [tenant, setTenant] = useState<Tenant | null>(null);
@@ -30,19 +20,31 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       setIsLoading(true);
       
-      // Get the current tenant for the authenticated user
-      const { data, error } = await supabase
-        .from('tenants')
-        .select('*')
-        .eq('id', user.app_metadata?.tenant_id || '')
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching tenant:', error);
-        throw error;
+      // Get tenant ID from local storage or user metadata
+      const savedTenantId = localStorage.getItem("tenant_id") || user?.app_metadata?.tenant_id;
+      
+      if (!savedTenantId) {
+        setTenant(null);
+        setIsLoading(false);
+        return;
       }
       
-      setTenant(data || null);
+      // Get the current tenant for the authenticated user
+      const { data, error } = await supabase
+        .from('tenant_profiles')
+        .select('*')
+        .eq('id', savedTenantId)
+        .single();
+
+      if (error) {
+        if (error.code !== 'PGRST116') { // PGRST116 = no rows returned
+          console.error('Error fetching tenant:', error);
+          throw error;
+        }
+        setTenant(null);
+      } else {
+        setTenant(data);
+      }
     } catch (error) {
       console.error('Error in refreshTenant:', error);
     } finally {
@@ -57,7 +59,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     const { data, error } = await supabase
-      .from('tenants')
+      .from('tenant_profiles')
       .update(updatedTenant)
       .eq('id', tenant.id)
       .select()
@@ -78,7 +80,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, [user, refreshTenant]);
 
   return (
-    <TenantProviderContext.Provider 
+    <TenantContext.Provider 
       value={{ 
         tenant, 
         setTenant, 
@@ -88,12 +90,12 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }}
     >
       {children}
-    </TenantProviderContext.Provider>
+    </TenantContext.Provider>
   );
 };
 
 export const useTenant = (): TenantContextType => {
-  const context = useContext(TenantProviderContext);
+  const context = useContext(TenantContext);
   
   if (context === undefined) {
     throw new Error('useTenant must be used within a TenantProvider');

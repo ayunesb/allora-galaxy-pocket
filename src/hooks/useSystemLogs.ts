@@ -1,53 +1,82 @@
 
+import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "./useAuth";
-import { useTenant } from "./useTenant";
+import { useAuth } from "@/hooks/useAuth";
+import { useTenant } from "@/hooks/useTenant";
+
+interface LogParams {
+  event_type: string;
+  message: string;
+  meta?: Record<string, any>;
+  severity?: 'info' | 'warning' | 'error' | 'critical';
+}
 
 export function useSystemLogs() {
   const { user } = useAuth();
   const { tenant } = useTenant();
+  
+  const logActivity = useCallback(
+    async ({ event_type, message, meta = {}, severity = 'info' }: LogParams) => {
+      try {
+        if (!user || !tenant) return;
+        
+        await supabase.from("system_logs").insert({
+          event_type,
+          message,
+          user_id: user.id,
+          tenant_id: tenant.id,
+          meta: {
+            ...meta,
+            severity
+          }
+        });
+      } catch (error) {
+        console.error("Failed to log activity:", error);
+      }
+    },
+    [user, tenant]
+  );
 
-  const logActivity = async ({ 
-    event_type, 
-    message, 
-    meta = {}
-  }: {
-    event_type: string;
-    message: string;
-    meta?: Record<string, any>;
-  }) => {
-    try {
-      if (!user) return;
-      
-      await supabase.from('activity_logs').insert({
-        user_id: user.id,
-        tenant_id: tenant?.id,
+  const logSecurityEvent = useCallback(
+    async (message: string, event_type = "SECURITY_EVENT", meta = {}) => {
+      return logActivity({
         event_type,
         message,
-        meta
+        meta: { ...meta, security: true },
+        severity: 'warning'
       });
-    } catch (error) {
-      console.error("Failed to log activity:", error);
-    }
-  };
-
-  const logSecurityEvent = async (
-    message: string,
-    event_type = "SECURITY_EVENT",
-    meta = {}
-  ) => {
-    try {
-      await supabase.from('security_logs').insert({
-        user_id: user?.id || null,
-        tenant_id: tenant?.id || null,
-        event_type,
-        message,
-        meta
+    },
+    [logActivity]
+  );
+  
+  const logJourneyStep = useCallback(
+    async (step: string, status: string, details = {}) => {
+      return logActivity({
+        event_type: "JOURNEY_STEP",
+        message: `${step}: ${status}`,
+        meta: details,
+        severity: 'info'
       });
-    } catch (error) {
-      console.error("Failed to log security event:", error);
-    }
-  };
+    },
+    [logActivity]
+  );
+  
+  const verifyModuleImplementation = useCallback(
+    async (module: string, isImplemented: boolean, details = {}) => {
+      return logActivity({
+        event_type: "MODULE_VERIFICATION",
+        message: `${module} verification: ${isImplemented ? 'PASS' : 'FAIL'}`,
+        meta: { ...details, implemented: isImplemented },
+        severity: isImplemented ? 'info' : 'warning'
+      });
+    },
+    [logActivity]
+  );
 
-  return { logActivity, logSecurityEvent };
+  return {
+    logActivity,
+    logSecurityEvent,
+    logJourneyStep,
+    verifyModuleImplementation
+  };
 }

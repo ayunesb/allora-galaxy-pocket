@@ -1,34 +1,51 @@
+import { useEffect, useRef } from "react";
+import { useAuth } from "./useAuth";
 
-import { useEffect, useState } from 'react';
-import { useAuth } from './useAuth';
-
-export function useSessionRefresh(refreshInterval = 3600000) { // Default: 1 hour
+export function useSessionRefresh() {
   const { session, refreshSession } = useAuth();
-  const [lastRefreshed, setLastRefreshed] = useState<number>(Date.now());
+  const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Don't set up refresh if there's no session
-    if (!session) return;
-    
-    // Calculate time until expiry (with 5-minute buffer)
-    const sessionExpiryTime = new Date(session.expires_at || 0).getTime();
-    const timeUntilExpiry = sessionExpiryTime - Date.now() - 300000; // 5 min buffer
-    
-    // Determine when to refresh - either at our interval or before expiry
-    const timeToRefresh = Math.min(
-      refreshInterval,
-      timeUntilExpiry > 0 ? timeUntilExpiry : refreshInterval / 2
-    );
+    const setupRefreshTimer = () => {
+      // Clear any existing timer
+      if (refreshTimerRef.current) {
+        clearTimeout(refreshTimerRef.current);
+        refreshTimerRef.current = null;
+      }
 
-    // Set up the refresh interval
-    const intervalId = setInterval(() => {
-      refreshSession().then(() => {
-        setLastRefreshed(Date.now());
-      });
-    }, timeToRefresh);
+      if (!session) return;
 
-    return () => clearInterval(intervalId);
-  }, [session, refreshSession, refreshInterval, lastRefreshed]);
+      // Calculate when the token expires (5 minutes before actual expiry)
+      const expiresAt = session.expires_at; // seconds since epoch
+      if (!expiresAt) return;
+      
+      const expiresAtDate = new Date(expiresAt * 1000);
+      const now = new Date();
+      
+      // Calculate time until expiry with 5-minute buffer
+      let timeUntilExpiry = expiresAtDate.getTime() - now.getTime() - 5 * 60 * 1000;
+      
+      // If token is already expired or expiring in less than 30 seconds, refresh now
+      if (timeUntilExpiry < 30 * 1000) {
+        refreshSession();
+        return;
+      }
 
-  return { lastRefreshed };
+      // Otherwise set timer to refresh before expiry
+      refreshTimerRef.current = setTimeout(() => {
+        refreshSession();
+      }, timeUntilExpiry);
+    };
+
+    setupRefreshTimer();
+
+    // Cleanup function
+    return () => {
+      if (refreshTimerRef.current) {
+        clearTimeout(refreshTimerRef.current);
+      }
+    };
+  }, [session, refreshSession]);
+
+  return null;
 }
