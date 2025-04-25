@@ -1,16 +1,17 @@
 
+import React from "react";
 import { PlusCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { TenantOption } from "../hooks/useAvailableTenants";
+import type { Tenant } from "@/types/tenant";
 
 interface WorkspaceSelectorProps {
   selected: string;
   onTenantChange: (value: string) => void;
-  availableTenants: TenantOption[];
+  availableTenants: Tenant[];
   highlight: boolean;
   isOnboarding: boolean;
-  tenant: any;
+  tenant: Tenant | null;
   isCreating: boolean;
   onCreateWorkspace: () => void;
   userExists: boolean;

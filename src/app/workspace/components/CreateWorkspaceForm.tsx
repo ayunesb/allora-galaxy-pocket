@@ -5,43 +5,33 @@ import { Button } from '@/components/ui/button';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Loader2 } from 'lucide-react';
-import { createDefaultWorkspace } from '@/utils/workspaceUtils';
-import { useToast } from '@/hooks/use-toast';
+import { useWorkspaceCreation, WorkspaceFormData } from '@/hooks/useWorkspaceCreation';
+import { useTenant } from '@/hooks/useTenant';
 import { useAuth } from '@/hooks/useAuth';
 
-interface FormData {
-  workspaceName: string;
-}
-
 export function CreateWorkspaceForm() {
-  const { toast } = useToast();
   const { user } = useAuth();
-  const form = useForm<FormData>();
-  const [isCreating, setIsCreating] = React.useState(false);
+  const { setTenant } = useTenant();
+  const { isCreating, createWorkspace } = useWorkspaceCreation();
+  
+  const form = useForm<WorkspaceFormData>({
+    defaultValues: {
+      name: '',
+      themeMode: 'light',
+      themeColor: 'indigo'
+    }
+  });
 
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = async (data: WorkspaceFormData) => {
     if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to create a workspace",
-        variant: "destructive"
-      });
       return;
     }
 
-    setIsCreating(true);
-    try {
-      await createDefaultWorkspace(() => {
-        form.reset();
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create workspace",
-        variant: "destructive"
-      });
-    } finally {
-      setIsCreating(false);
+    const workspace = await createWorkspace(data);
+    
+    if (workspace) {
+      setTenant(workspace);
+      form.reset();
     }
   };
 
@@ -50,7 +40,7 @@ export function CreateWorkspaceForm() {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
-          name="workspaceName"
+          name="name"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Workspace Name</FormLabel>
@@ -62,7 +52,7 @@ export function CreateWorkspaceForm() {
           )}
         />
 
-        <Button type="submit" disabled={isCreating}>
+        <Button type="submit" disabled={isCreating || !user}>
           {isCreating ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

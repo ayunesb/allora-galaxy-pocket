@@ -1,22 +1,23 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
+import { ToastService } from "@/services/ToastService";
+import { Tenant } from "@/types/tenant";
 
 /**
  * Creates a default workspace for a new user
- * @param toast Toast function to display messages
+ * Part of the Auth → Onboarding user journey flow
  * @param onSuccess Optional callback function on successful workspace creation
  * @returns The newly created workspace or null if creation failed
  */
-export async function createDefaultWorkspace(toast: any, onSuccess?: () => void) {
+export async function createDefaultWorkspace(onSuccess?: () => void): Promise<Tenant | null> {
   try {
     const { data: user } = await supabase.auth.getUser();
     
     if (!user?.user?.id) {
-      toast({
+      ToastService.error({
         title: "Authentication required",
-        description: "Please sign in to create a workspace",
-        variant: "destructive"
+        description: "Please sign in to create a workspace"
       });
       return null;
     }
@@ -72,13 +73,17 @@ export async function createDefaultWorkspace(toast: any, onSuccess?: () => void)
       onSuccess();
     }
     
-    return tenant;
+    ToastService.success({
+      title: "Workspace created",
+      description: `Your new workspace "${workspaceName}" is ready to use`
+    });
+    
+    return tenant as Tenant;
   } catch (error: any) {
     console.error("[createDefaultWorkspace] Unexpected error:", error);
-    toast({
+    ToastService.error({
       title: "Error creating workspace",
-      description: error.message || "An unexpected error occurred",
-      variant: "destructive"
+      description: error.message || "An unexpected error occurred"
     });
     return null;
   }
