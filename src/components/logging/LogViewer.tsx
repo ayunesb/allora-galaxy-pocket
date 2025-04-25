@@ -29,8 +29,11 @@ export function LogViewer({
   // Function to determine badge variant based on log severity or type
   const getLogSeverityVariant = (log: SystemLog) => {
     if (log.severity) {
-      return log.severity === 'error' ? 'destructive' : 
-             log.severity === 'warning' ? 'warning' : 'secondary';
+      const severity = log.severity.toLowerCase();
+      return severity === 'error' ? 'destructive' : 
+             severity === 'warning' ? 'warning' : 
+             severity === 'success' ? 'default' : 
+             'secondary';
     }
     
     // Fallback to checking event_type

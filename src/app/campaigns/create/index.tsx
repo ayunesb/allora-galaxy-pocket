@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
@@ -34,7 +35,7 @@ import { AlertCircle, Check, ArrowLeft } from "lucide-react";
 import { useSystemLogs } from "@/hooks/useSystemLogs";
 import LoadingOverlay from "@/components/ui/LoadingOverlay";
 import { Checkbox } from "@/components/ui/checkbox";
-import { showToast } from "@/utils/toast-utils";
+import { ToastService } from "@/services/ToastService";
 
 export default function CampaignCreatePage() {
   const navigate = useNavigate();
@@ -102,7 +103,8 @@ export default function CampaignCreatePage() {
       } catch (err: any) {
         console.error("Error fetching strategies:", err);
         setError(err.message || "Failed to load strategies");
-        showToast.error("Error loading strategies", {
+        ToastService.error({
+          title: "Error loading strategies", 
           description: err.message || "Please try again"
         });
       } finally {
@@ -137,21 +139,24 @@ export default function CampaignCreatePage() {
     e.preventDefault();
     
     if (!tenant?.id) {
-      showToast.error("Missing workspace", {
-        description: "Please select a workspace first"
+      ToastService.error({ 
+        title: "Missing workspace", 
+        description: "Please select a workspace first" 
       });
       return;
     }
     
     if (!name.trim()) {
-      showToast.error("Campaign name required", {
+      ToastService.error({
+        title: "Campaign name required", 
         description: "Please provide a name for your campaign"
       });
       return;
     }
     
     if (channels.length === 0) {
-      showToast.error("Please select channels", {
+      ToastService.error({
+        title: "Please select channels", 
         description: "Select at least one channel for your campaign"
       });
       return;
@@ -189,7 +194,8 @@ export default function CampaignCreatePage() {
         }
       });
       
-      showToast.success("Campaign created", {
+      ToastService.success({
+        title: "Campaign created",
         description: "Your campaign has been created successfully"
       });
       
@@ -207,7 +213,8 @@ export default function CampaignCreatePage() {
     } catch (err: any) {
       console.error("Error creating campaign:", err);
       setError(err.message || "Failed to create campaign");
-      showToast.error("Campaign creation failed", {
+      ToastService.error({
+        title: "Campaign creation failed",
         description: err.message || "Please try again"
       });
     } finally {

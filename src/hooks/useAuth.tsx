@@ -5,6 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuthState } from '@/hooks/auth/useAuthState';
 import { useAuthSetup } from '@/hooks/auth/useAuthSetup';
 import { useSessionRefresh } from '@/hooks/auth/useSessionRefresh';
+import { useAuthActions } from '@/hooks/auth/useAuthActions';
+import { ToastService } from '@/services/ToastService';
 
 interface AuthContextType {
   user: User | null;
@@ -35,6 +37,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useAuthSetup(setSession, setUser, setIsLoading);
   
   useSessionRefresh();
+  
+  const { login: authLogin, signup, logout, refreshSession } = useAuthActions(setIsLoading, setAuthError);
 
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
@@ -69,24 +73,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) {
       console.error('Sign out error:', error);
       setAuthError(error.message);
+      ToastService.error({
+        title: "Sign out failed",
+        description: error.message
+      });
+    } else {
+      ToastService.success({
+        title: "Signed out successfully"
+      });
     }
     
     setIsLoading(false);
   };
 
-  const refreshSession = async () => {
+  const login = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.refreshSession();
-      if (error) throw error;
+      await authLogin(email, password);
     } catch (error: any) {
-      console.error('Failed to refresh session:', error);
       throw error;
     }
-  };
-
-  const login = async (email: string, password: string) => {
-    const { error } = await signIn(email, password);
-    if (error) throw error;
   };
 
   const value = {

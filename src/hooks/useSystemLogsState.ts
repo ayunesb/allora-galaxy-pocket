@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/hooks/useTenant';
 import { SystemLog } from '@/types/systemLog';
-import { toast } from "sonner";
+import { ToastService } from '@/services/ToastService';
 
 export function useSystemLogsState() {
   const { tenant } = useTenant();
@@ -34,7 +34,10 @@ export function useSystemLogsState() {
     } catch (err) {
       console.error("Failed to fetch logs:", err);
       setError(err);
-      toast.error("Failed to retrieve system logs");
+      ToastService.error({
+        title: "Failed to retrieve system logs",
+        description: err instanceof Error ? err.message : "Unknown error occurred"
+      });
     } finally {
       setIsLoading(false);
     }
