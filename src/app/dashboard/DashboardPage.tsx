@@ -5,6 +5,7 @@ import { DashboardHeader } from "./components/DashboardHeader";
 import { KPISection } from "./components/KPISection";
 import { StrategySection } from "./components/StrategySection";
 import { CampaignSection } from "./components/CampaignSection";
+import { RoadmapCard } from "./components/RoadmapCard";
 import { useStrategyAndCampaigns } from "./hooks/useStrategyAndCampaigns";
 
 export default function DashboardPage() {
@@ -34,6 +35,10 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <StrategySection strategies={strategies} />
         <CampaignSection campaigns={campaigns} />
+      </div>
+      
+      <div className="mt-6">
+        <RoadmapCard />
       </div>
     </div>
   );
