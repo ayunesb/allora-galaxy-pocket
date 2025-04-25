@@ -112,7 +112,8 @@ export function useAuthActions(
     }
   };
 
-  const refreshSession = async (): Promise<boolean> => {
+  // Update the refreshSession function to not return a boolean
+  const refreshSession = async (): Promise<void> => {
     try {
       setIsLoading(true);
       const { data, error } = await supabase.auth.refreshSession();
@@ -123,13 +124,9 @@ export function useAuthActions(
           title: "Failed to refresh authentication",
           description: error.message
         });
-        return false;
       }
-      
-      return true;
     } catch (error) {
       console.error("Session refresh exception:", error);
-      return false;
     } finally {
       setIsLoading(false);
     }

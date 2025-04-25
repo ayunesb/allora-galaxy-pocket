@@ -16,7 +16,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
-  refreshSession: () => Promise<void>;
+  refreshSession: () => Promise<void>; // Changed from Promise<boolean> to Promise<void>
   login: (email: string, password: string) => Promise<void>;
 }
 
@@ -94,6 +94,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Updated refreshSession wrapper to match the expected return type
+  const handleRefreshSession = async (): Promise<void> => {
+    await refreshSession();
+    // No return value needed as the function is Promise<void>
+  };
+
   const value = {
     user,
     session,
@@ -102,7 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signIn,
     signUp,
     signOut,
-    refreshSession,
+    refreshSession: handleRefreshSession, // Using the wrapper function
     login
   };
 
