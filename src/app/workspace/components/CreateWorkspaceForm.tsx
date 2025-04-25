@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
@@ -31,18 +30,9 @@ export function CreateWorkspaceForm() {
 
     setIsCreating(true);
     try {
-      // Update the createDefaultWorkspace call to match its expected signature
-      await createDefaultWorkspace({
-        name: data.workspaceName,
-        themeMode: 'light',
-        themeColor: 'indigo'
+      await createDefaultWorkspace(toast, () => {
+        form.reset();
       });
-
-      toast({
-        title: "Success",
-        description: "Workspace created successfully"
-      });
-      form.reset();
     } catch (error: any) {
       toast({
         title: "Error",
