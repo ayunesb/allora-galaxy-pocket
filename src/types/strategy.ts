@@ -12,4 +12,6 @@ export interface Strategy {
   status?: string | null;
   approved_at?: string | null;
   metrics_baseline?: Record<string, any>;
+  tags?: string[];
+  generated_by?: string;
 }

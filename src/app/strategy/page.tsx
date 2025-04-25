@@ -15,10 +15,10 @@ import { useTenant } from "@/hooks/useTenant";
 import { supabase } from "@/integrations/supabase/client";
 import { OnboardingProfile } from "@/types/onboarding"; 
 import { Strategy } from "@/types/strategy";
-import { toast } from "sonner";
 import { AlertCircle, Settings, Sparkles, Plus } from "lucide-react";
 import { useSystemLogs } from "@/hooks/useSystemLogs";
 import LoadingOverlay from "@/components/ui/LoadingOverlay";
+import { ToastService } from "@/services/ToastService";
 
 export default function StrategyPage() {
   const location = useLocation();
@@ -36,7 +36,8 @@ export default function StrategyPage() {
     
     if (state?.fromOnboarding && state?.profile) {
       setOnboardingProfile(state.profile);
-      toast("Ready to create your first strategy", {
+      ToastService.info({
+        title: "Ready to create your first strategy",
         description: "Let's grow your business with data-driven strategies"
       });
       
@@ -74,9 +75,9 @@ export default function StrategyPage() {
       } catch (err: any) {
         console.error("Failed to fetch strategies:", err);
         setError("Failed to load strategies. Please refresh the page.");
-        toast("Error loading strategies", {
-          description: err.message || "Please try again",
-          variant: "destructive"
+        ToastService.error({
+          title: "Error loading strategies",
+          description: err.message || "Please try again"
         });
       } finally {
         setLoading(false);

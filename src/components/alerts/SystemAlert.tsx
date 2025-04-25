@@ -32,6 +32,7 @@ export function SystemAlert({
       case 'warning':
         return 'warning';
       case 'success':
+        return 'default';
       case 'info':
       default:
         return 'default';
