@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import WorkspaceSwitcher from './WorkspaceSwitcher';
 import { CreateWorkspaceForm } from './components/CreateWorkspaceForm';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Settings, Users } from 'lucide-react';
+import { ChevronRight, Settings, Users, Building } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useTenant } from '@/hooks/useTenant';
 import { WorkspaceErrorBoundary } from './components/WorkspaceErrorBoundary';
@@ -52,14 +52,23 @@ export default function WorkspacePage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
+              <div className="grid gap-4 md:grid-cols-3">
+                <Link to="/workspace/users" className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
                   <Users className="h-5 w-5 text-primary" />
                   <div>
                     <h3 className="font-medium">Workspace Users</h3>
                     <p className="text-sm text-muted-foreground">Manage team access</p>
                   </div>
-                </div>
+                </Link>
+                
+                <Link to="/workspace/environment" className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
+                  <Building className="h-5 w-5 text-primary" />
+                  <div>
+                    <h3 className="font-medium">Environment</h3>
+                    <p className="text-sm text-muted-foreground">Configure workspace environment</p>
+                  </div>
+                </Link>
+                
                 <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
                   <Settings className="h-5 w-5 text-primary" />
                   <div>

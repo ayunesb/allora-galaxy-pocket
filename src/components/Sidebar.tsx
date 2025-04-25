@@ -13,7 +13,7 @@ import {
   User, 
   Users, 
   Wallet,
-  Buildings,
+  Building,
 } from "lucide-react";
 
 const Sidebar = () => {
@@ -98,7 +98,7 @@ const Sidebar = () => {
               : "text-muted-foreground hover:bg-muted hover:text-foreground"
             }`}
           >
-            <Buildings className="mr-3 h-5 w-5" />
+            <Building className="mr-3 h-5 w-5" />
             Workspace
           </Link>
           
@@ -185,6 +185,18 @@ const Sidebar = () => {
               >
                 <File className="mr-3 h-5 w-5" />
                 Security Audit
+              </Link>
+              
+              <Link
+                to="/admin/logs"
+                className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
+                  isActive("/admin/logs") 
+                  ? "bg-primary/10 text-primary" 
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                <Database className="mr-3 h-5 w-5" />
+                System Logs
               </Link>
             </div>
           </div>
