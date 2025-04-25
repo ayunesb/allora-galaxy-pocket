@@ -53,10 +53,10 @@ export default function WorkspaceUsersPage() {
       // Fix the TypeScript error by properly mapping the data structure
       const formattedUsers = data.map(item => ({
         id: item.user_id,
-        email: item.users?.email || 'No email',
+        email: item.users ? (item.users as any).email || 'No email' : 'No email',
         role: item.role,
         created_at: item.created_at,
-        last_sign_in: item.users?.last_sign_in_at,
+        last_sign_in: item.users ? (item.users as any).last_sign_in_at : undefined,
       }));
       
       setUsers(formattedUsers);

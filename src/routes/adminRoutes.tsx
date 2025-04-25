@@ -1,18 +1,14 @@
 
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
-import AdminDashboard from '@/app/admin/dashboard/page';
-import SecurityAudit from '@/app/admin/security-audit/page';
+import AdminDashboard from '@/components/admin/AdminDashboard';
+import AdminLogsPage from '@/pages/admin/logs/page';
 import RlsAuditReport from '@/app/admin/security-audit/RlsAuditReport';
-import AdminLogsPage from '@/app/admin/logs/page';
-import JourneyVerificationPage from '@/app/admin/testing/journey-verification';
+import SecurityDashboard from '@/app/admin/security-audit/SecurityDashboard';
 
-// Define admin routes
 export const adminRoutes: RouteObject[] = [
   { path: "/admin", element: <AdminDashboard /> },
-  { path: "/admin/dashboard", element: <AdminDashboard /> },
-  { path: "/admin/security-audit", element: <SecurityAudit /> },
-  { path: "/admin/security-audit/rls", element: <RlsAuditReport /> },
   { path: "/admin/logs", element: <AdminLogsPage /> },
-  { path: "/admin/testing/journey", element: <JourneyVerificationPage /> },
+  { path: "/admin/security-audit", element: <RlsAuditReport /> },
+  { path: "/admin/security-dashboard", element: <SecurityDashboard /> },
 ];
