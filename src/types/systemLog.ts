@@ -10,6 +10,7 @@ export interface SystemLog {
   // Add timestamp field as an alias to created_at for backward compatibility
   timestamp?: string | Date;
   severity?: string;
+  service?: string;
   status?: 'success' | 'error' | 'warning';
 }
 

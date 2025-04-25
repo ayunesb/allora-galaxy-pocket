@@ -1,15 +1,10 @@
+
 import { useState } from "react";
 import { useSystemLogs } from "@/hooks/useSystemLogs";
 import { SystemLog as BaseSystemLog } from "@/types/systemLog";
 
 export interface SystemLog extends BaseSystemLog {
-  id: string;
-  severity: string;
-  service: string;
-  timestamp: string | Date;
-  message: string;
-  event_type?: string;
-  user_id?: string;
+  // Any additional fields needed for the UI that might not be in the base SystemLog type
 }
 
 export interface LogFilter {
@@ -46,7 +41,7 @@ export function useSystemLogsWithFilters() {
       const cutoffDate = new Date();
       cutoffDate.setDate(now.getDate() - filters.dateRange);
       
-      const logDate = new Date(log.timestamp);
+      const logDate = new Date(log.timestamp || log.created_at);
       if (logDate < cutoffDate) {
         return false;
       }

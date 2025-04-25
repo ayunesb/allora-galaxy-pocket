@@ -93,9 +93,9 @@ export function useSecurityDashboard() {
   const overallScore = calculateOverallScore();
   const securityScores = getSecurityScores();
   
-  // Fix: Use timestamp property instead of created_at for SystemLog type
-  const lastEventDate = securityLogs[0]?.timestamp 
-    ? new Date(securityLogs[0].timestamp).toLocaleString() 
+  // Use timestamp property or created_at for SystemLog type
+  const lastEventDate = securityLogs[0]?.timestamp || securityLogs[0]?.created_at
+    ? new Date(securityLogs[0].timestamp || securityLogs[0].created_at).toLocaleString() 
     : undefined;
 
   const hasCriticalIssues = results.some(r => r.securityScore < 40);
