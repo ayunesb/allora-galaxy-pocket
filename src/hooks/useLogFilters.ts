@@ -1,60 +1,91 @@
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { SystemLog } from '@/types/systemLog';
 import { LogFilters, DEFAULT_FILTERS } from '@/types/logFilters';
-import { subDays } from 'date-fns';
 
 export function useLogFilters(logs: SystemLog[]) {
   const [filters, setFilters] = useState<LogFilters>(DEFAULT_FILTERS);
 
   // Apply filters to logs
   const filteredLogs = useMemo(() => {
-    if (!logs || logs.length === 0) return [];
-    
-    return logs.filter(log => {
-      // Apply search filter
-      if (filters.searchTerm && !log.message.toLowerCase().includes(filters.searchTerm.toLowerCase()) && 
-          !log.event_type.toLowerCase().includes(filters.searchTerm.toLowerCase())) {
-        return false;
-      }
-      
-      // Apply event type filter
-      if (filters.eventType !== 'all' && log.event_type !== filters.eventType) {
-        return false;
-      }
-      
-      // Apply severity filter
-      if (filters.severity !== 'all' && log.severity !== filters.severity) {
+    return logs.filter((log) => {
+      // Filter by event type
+      if (filters.eventType && filters.eventType !== 'all' && log.event_type !== filters.eventType) {
         return false;
       }
 
-      // Apply service filter
-      if (filters.service && filters.service !== 'all' && log.service !== filters.service) {
-        return false;
+      // Filter by severity
+      if (filters.severity && filters.severity !== 'all') {
+        const logSeverity = log.severity || 'info';
+        if (logSeverity !== filters.severity) {
+          return false;
+        }
       }
-      
-      // Apply date range filter
-      if (filters.dateRange && filters.dateRange > 0) {
-        const cutoffDate = subDays(new Date(), filters.dateRange);
+
+      // Filter by date range
+      if (filters.dateRange) {
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - filters.dateRange);
         const logDate = new Date(log.created_at);
+        
         if (logDate < cutoffDate) {
           return false;
         }
       }
-      
-      // Apply user filter
-      if (filters.userId && log.user_id !== filters.userId) {
+
+      // Filter by specific date range if set
+      if (filters.dateFrom && filters.dateTo) {
+        const logDate = new Date(log.created_at);
+        const dateFrom = new Date(filters.dateFrom);
+        const dateTo = new Date(filters.dateTo);
+        
+        if (logDate < dateFrom || logDate > dateTo) {
+          return false;
+        }
+      }
+
+      // Filter by user ID
+      if (filters.userId && filters.userId !== 'all' && log.user_id !== filters.userId) {
         return false;
       }
-      
+
+      // Filter by tenant ID
+      if (filters.tenantId && filters.tenantId !== 'all' && log.tenant_id !== filters.tenantId) {
+        return false;
+      }
+
+      // Filter by service
+      if (filters.service && filters.service !== 'all') {
+        const logService = log.service || 'unknown';
+        if (logService !== filters.service) {
+          return false;
+        }
+      }
+
+      // Search through text fields
+      if (filters.searchTerm || filters.search) {
+        const searchText = (filters.searchTerm || filters.search || '').toLowerCase();
+        if (searchText) {
+          const messageMatch = log.message.toLowerCase().includes(searchText);
+          const eventMatch = log.event_type.toLowerCase().includes(searchText);
+          const metaMatch = log.meta ? JSON.stringify(log.meta).toLowerCase().includes(searchText) : false;
+          
+          if (!messageMatch && !eventMatch && !metaMatch) {
+            return false;
+          }
+        }
+      }
+
       return true;
     });
   }, [logs, filters]);
 
+  // Update filters
   const updateFilters = (newFilters: Partial<LogFilters>) => {
-    setFilters(current => ({ ...current, ...newFilters }));
+    setFilters((prev) => ({ ...prev, ...newFilters }));
   };
 
+  // Reset filters to default
   const resetFilters = () => {
     setFilters(DEFAULT_FILTERS);
   };
