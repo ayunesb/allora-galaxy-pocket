@@ -1,12 +1,11 @@
 
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
-import App from './App';
-import ErrorPage from './ErrorPage';
-import HomePage from './app/page';
-import DashboardPage from './app/dashboard/page';
+import ErrorPage from '@/ErrorPage';
+import HomePage from '@/app/page';
+import DashboardPage from '@/app/dashboard/page';
 
-// Let's create placeholder components for the missing pages
+// Placeholder components for missing pages
 const OnboardingPage = () => <div className="p-8">Onboarding Page</div>;
 const VaultPage = () => <div className="p-8">Vault Page</div>;
 const StrategyPage = () => <div className="p-8">Strategy Page</div>;
@@ -25,14 +24,15 @@ const WorkspacePage = () => <div className="p-8">Workspace Page</div>;
 const PerformancePage = () => <div className="p-8">Performance Page</div>;
 const AgentPerformancePage = () => <div className="p-8">Agent Performance Page</div>;
 const PluginsSubmitPage = () => <div className="p-8">Plugin Submit Page</div>;
+const AdminLogsPage = () => <div className="p-8">Admin Logs Page</div>;
 
 import { systemRoutes } from '@/app/system/routes';
 
-// Export routes config instead of a RouterProvider component
-const appRoutes: RouteObject[] = [
+// Base route configuration without App component
+export const baseRoutes: RouteObject[] = [
   {
     path: '/',
-    element: <App />,
+    element: null, // This will be replaced with App component in App.tsx
     errorElement: <ErrorPage />,
     children: [
       {
@@ -84,6 +84,10 @@ const appRoutes: RouteObject[] = [
         element: <AdminUsersPage />,
       },
       {
+        path: '/admin/logs',
+        element: <AdminLogsPage />,
+      },
+      {
         path: '/auth/login',
         element: <AuthLoginPage />,
       },
@@ -119,5 +123,3 @@ const appRoutes: RouteObject[] = [
     ],
   },
 ];
-
-export default appRoutes;

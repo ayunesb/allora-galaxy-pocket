@@ -7,21 +7,34 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { TenantProvider } from "@/hooks/useTenant";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import { Toaster } from "sonner";
-import appRoutes from "./AppRoutes";
+import { baseRoutes } from "./routes/appRoutesConfig";
+import { Outlet } from "react-router-dom";
+
+// This is the App component that will be used as the root route element
+function AppLayout() {
+  return (
+    <AuthProvider>
+      <TenantProvider>
+        <Outlet />
+        <Toaster richColors closeButton position="top-right" />
+      </TenantProvider>
+    </AuthProvider>
+  );
+}
 
 function App() {
   const queryClient = new QueryClient();
-  const router = createBrowserRouter(appRoutes);
+  
+  // Clone the base routes and add the App component as the root element
+  const routes = JSON.parse(JSON.stringify(baseRoutes));
+  routes[0].element = <AppLayout />;
+  
+  const router = createBrowserRouter(routes);
 
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="light" storageKey="allora-theme-preference">
-        <AuthProvider>
-          <TenantProvider>
-            <RouterProvider router={router} />
-            <Toaster richColors closeButton position="top-right" />
-          </TenantProvider>
-        </AuthProvider>
+        <RouterProvider router={router} />
       </ThemeProvider>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
