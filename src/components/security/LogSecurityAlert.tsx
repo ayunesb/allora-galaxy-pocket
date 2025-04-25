@@ -14,6 +14,10 @@ interface LogSecurityAlertProps {
   onDismiss?: () => void;
 }
 
+/**
+ * Component for displaying and logging security alerts
+ * Supports different severity levels and acknowledgment
+ */
 export function LogSecurityAlert({ 
   title, 
   description, 

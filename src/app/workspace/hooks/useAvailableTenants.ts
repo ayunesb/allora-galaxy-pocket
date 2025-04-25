@@ -3,6 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tenant } from "@/types/tenant";
 
+/**
+ * Hook to fetch available tenants for the current user
+ * @returns List of available tenants and loading state
+ */
 export function useAvailableTenants() {
   const query = useQuery<Tenant[], Error>({
     queryKey: ["available-tenants"],
