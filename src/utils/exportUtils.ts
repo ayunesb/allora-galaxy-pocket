@@ -1,14 +1,14 @@
 
-import { SystemLog } from '@/types/systemLog';
 import { format } from 'date-fns';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { SystemLog } from '@/types/systemLog';
 
 /**
  * Export logs to CSV or PDF format
  */
-export async function exportLogs(logs: SystemLog[], exportFormat: 'csv' | 'pdf') {
+export async function exportLogs(logs: SystemLog[], exportFormat: 'csv' | 'pdf'): Promise<void> {
   if (!logs || logs.length === 0) {
     throw new Error('No logs to export');
   }
@@ -26,7 +26,7 @@ export async function exportLogs(logs: SystemLog[], exportFormat: 'csv' | 'pdf')
 /**
  * Export logs to CSV format
  */
-function exportLogsToCSV(logs: SystemLog[], filename: string) {
+function exportLogsToCSV(logs: SystemLog[], filename: string): void {
   // Generate CSV header row
   const header = ['Timestamp', 'Event Type', 'Severity', 'Service', 'Message'];
   
@@ -53,7 +53,7 @@ function exportLogsToCSV(logs: SystemLog[], filename: string) {
 /**
  * Export logs to PDF format
  */
-function exportLogsToPDF(logs: SystemLog[], filename: string) {
+function exportLogsToPDF(logs: SystemLog[], filename: string): void {
   // Create new PDF document
   const doc = new jsPDF();
   
