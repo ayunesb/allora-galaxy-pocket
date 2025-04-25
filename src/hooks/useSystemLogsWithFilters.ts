@@ -1,8 +1,8 @@
-
 import { useState } from "react";
 import { useSystemLogs } from "@/hooks/useSystemLogs";
+import { SystemLog as BaseSystemLog } from "@/types/systemLog";
 
-export type SystemLog = {
+export interface SystemLog extends BaseSystemLog {
   id: string;
   severity: string;
   service: string;
@@ -10,7 +10,7 @@ export type SystemLog = {
   message: string;
   event_type?: string;
   user_id?: string;
-};
+}
 
 export interface LogFilter {
   search: string;
@@ -28,24 +28,19 @@ export function useSystemLogsWithFilters() {
     userId: ""
   });
 
-  // Filter logs based on the current filters
   const filteredLogs = initialLogs.filter(log => {
-    // Filter by search text
     if (filters.search && !log.message.toLowerCase().includes(filters.search.toLowerCase())) {
       return false;
     }
     
-    // Filter by event type
     if (filters.eventType !== "all" && log.event_type !== filters.eventType) {
       return false;
     }
     
-    // Filter by user ID
     if (filters.userId && log.user_id !== filters.userId) {
       return false;
     }
     
-    // Filter by date range (assuming timestamp is a string that can be parsed)
     if (filters.dateRange > 0) {
       const now = new Date();
       const cutoffDate = new Date();
@@ -60,7 +55,6 @@ export function useSystemLogsWithFilters() {
     return true;
   });
 
-  // Pagination logic
   const itemsPerPage = 10;
   const [currentPage, setCurrentPage] = useState(1);
   
@@ -84,19 +78,16 @@ export function useSystemLogsWithFilters() {
     }
   };
   
-  // Get paginated logs
   const paginatedLogs = filteredLogs.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
-  // Function to update filters
   const updateFilters = (newFilters: Partial<LogFilter>) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
-    setCurrentPage(1); // Reset to first page when filters change
+    setCurrentPage(1);
   };
 
-  // Reset filters to default values
   const resetFilters = () => {
     setFilters({
       search: "",
@@ -109,7 +100,7 @@ export function useSystemLogsWithFilters() {
 
   return {
     logs: paginatedLogs,
-    setLogs: () => {}, // Placeholder, actual implementation relies on useSystemLogs
+    setLogs: () => {},
     filters,
     updateFilters,
     resetFilters,

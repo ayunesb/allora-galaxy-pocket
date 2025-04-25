@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { SystemLog } from './useSystemLogsWithFilters';
+import { SystemLog } from '@/types/systemLog';
 
 export function useSystemLogs() {
   const [logs, setLogs] = useState<SystemLog[]>([]);

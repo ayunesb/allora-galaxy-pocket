@@ -7,6 +7,10 @@ export interface SystemLog {
   event_type: string;
   message: string;
   meta?: Record<string, any>;
+  // Add timestamp field as an alias to created_at for backward compatibility
+  timestamp?: string | Date;
+  severity?: string;
+  status?: 'success' | 'error' | 'warning';
 }
 
 export interface SystemLogFilter {

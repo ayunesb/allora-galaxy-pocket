@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useSecurityAudit, SecurityAuditIssue } from "./useSecurityAudit";
 import { useSystemLogs } from "@/hooks/useSystemLogs";
+import { SystemLog } from "@/types/systemLog"; // Using the SystemLog from types folder
 
 interface SecurityScores {
   high: number;
@@ -91,8 +92,10 @@ export function useSecurityDashboard() {
 
   const overallScore = calculateOverallScore();
   const securityScores = getSecurityScores();
-  const lastEventDate = securityLogs[0]?.created_at 
-    ? new Date(securityLogs[0].created_at).toLocaleString() 
+  
+  // Fix: Use timestamp property instead of created_at for SystemLog type
+  const lastEventDate = securityLogs[0]?.timestamp 
+    ? new Date(securityLogs[0].timestamp).toLocaleString() 
     : undefined;
 
   const hasCriticalIssues = results.some(r => r.securityScore < 40);
