@@ -1,111 +1,112 @@
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useSystemLogs } from "@/hooks/useSystemLogs";
-import { SystemLog as BaseSystemLog } from "@/types/systemLog";
+import { SystemLog } from "@/types/systemLog";
 
-export interface SystemLog extends BaseSystemLog {
-  // Any additional fields needed for the UI that might not be in the base SystemLog type
-}
-
-export interface LogFilter {
+type LogFilters = {
   search: string;
-  dateRange: number;
+  dateRange: number; // in days
   eventType: string;
-  userId: string;
-}
+};
 
 export function useSystemLogsWithFilters() {
-  const { logs: initialLogs, isLoading, getRecentLogs } = useSystemLogs();
-  const [filters, setFilters] = useState<LogFilter>({
+  const { logs: allLogs, isLoading, getRecentLogs } = useSystemLogs();
+  const [filters, setFilters] = useState<LogFilters>({
     search: "",
-    dateRange: 7,
+    dateRange: 7, // Default to last 7 days
     eventType: "all",
-    userId: ""
   });
-
-  const filteredLogs = initialLogs.filter(log => {
-    if (filters.search && !log.message.toLowerCase().includes(filters.search.toLowerCase())) {
-      return false;
-    }
-    
-    if (filters.eventType !== "all" && log.event_type !== filters.eventType) {
-      return false;
-    }
-    
-    if (filters.userId && log.user_id !== filters.userId) {
-      return false;
-    }
-    
-    if (filters.dateRange > 0) {
-      const now = new Date();
-      const cutoffDate = new Date();
-      cutoffDate.setDate(now.getDate() - filters.dateRange);
-      
-      const logDate = new Date(log.timestamp || log.created_at);
-      if (logDate < cutoffDate) {
-        return false;
-      }
-    }
-    
-    return true;
-  });
-
-  const itemsPerPage = 10;
   const [currentPage, setCurrentPage] = useState(1);
-  
-  const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
-  
-  const nextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-  
-  const prevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-  
-  const goToPage = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
-  };
-  
-  const paginatedLogs = filteredLogs.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+  const logsPerPage = 10;
+
+  // Apply filters to logs
+  const filteredLogs = useCallback(() => {
+    if (!allLogs) return [];
+
+    return allLogs.filter((log) => {
+      // Filter by search term
+      const searchMatch = !filters.search
+        ? true
+        : (log.message && log.message.toLowerCase().includes(filters.search.toLowerCase())) ||
+          (log.event_type && log.event_type.toLowerCase().includes(filters.search.toLowerCase())) ||
+          (log.service && log.service.toLowerCase().includes(filters.search.toLowerCase()));
+
+      // Filter by event type
+      const eventTypeMatch =
+        filters.eventType === "all" ? true : log.event_type === filters.eventType;
+
+      // Filter by date range
+      const dateRangeMatch = !filters.dateRange
+        ? true
+        : new Date(log.timestamp || log.created_at) >=
+          new Date(Date.now() - filters.dateRange * 24 * 60 * 60 * 1000);
+
+      return searchMatch && eventTypeMatch && dateRangeMatch;
+    });
+  }, [allLogs, filters]);
+
+  // Get paginated logs
+  const getPaginatedLogs = useCallback(() => {
+    const filtered = filteredLogs();
+    const startIndex = (currentPage - 1) * logsPerPage;
+    return filtered.slice(startIndex, startIndex + logsPerPage);
+  }, [filteredLogs, currentPage]);
+
+  // Calculate total pages
+  const totalPages = Math.max(1, Math.ceil(filteredLogs().length / logsPerPage));
+
+  // Update filters
+  const updateFilters = useCallback(
+    (newFilters: Partial<LogFilters>) => {
+      setFilters((prev) => ({ ...prev, ...newFilters }));
+      setCurrentPage(1); // Reset to first page when filters change
+    },
+    []
   );
 
-  const updateFilters = (newFilters: Partial<LogFilter>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
-    setCurrentPage(1);
-  };
-
-  const resetFilters = () => {
+  // Reset filters
+  const resetFilters = useCallback(() => {
     setFilters({
       search: "",
       dateRange: 7,
       eventType: "all",
-      userId: ""
     });
     setCurrentPage(1);
-  };
+  }, []);
+
+  // Pagination controls
+  const nextPage = useCallback(() => {
+    if (currentPage < totalPages) {
+      setCurrentPage((prev) => prev + 1);
+    }
+  }, [currentPage, totalPages]);
+
+  const prevPage = useCallback(() => {
+    if (currentPage > 1) {
+      setCurrentPage((prev) => prev - 1);
+    }
+  }, [currentPage]);
+
+  const goToPage = useCallback(
+    (page: number) => {
+      if (page >= 1 && page <= totalPages) {
+        setCurrentPage(page);
+      }
+    },
+    [totalPages]
+  );
 
   return {
-    logs: paginatedLogs,
-    setLogs: () => {},
+    logs: getPaginatedLogs(),
     filters,
     updateFilters,
     resetFilters,
+    isLoading,
+    getRecentLogs,
     currentPage,
     totalPages,
     nextPage,
     prevPage,
     goToPage,
-    isLoading,
-    getRecentLogs,
-    pagination: { currentPage, totalPages, goToPage }
   };
 }
