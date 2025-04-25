@@ -1,19 +1,15 @@
 
-/**
- * SystemLog interface representing system log entries
- */
 export interface SystemLog {
   id: string;
+  tenant_id: string;
+  user_id?: string;
   event_type: string;
   message: string;
-  severity?: LogSeverity;
-  service?: string;
+  meta?: {
+    severity?: 'info' | 'warning' | 'error' | 'success';
+    [key: string]: any;
+  };
   created_at: string;
   timestamp?: string;
-  meta?: Record<string, any>;
-  tenant_id?: string;
-  user_id?: string;
-  status?: 'success' | 'error' | 'warning';
+  severity?: string;
 }
-
-export type LogSeverity = 'info' | 'warning' | 'error' | 'all';

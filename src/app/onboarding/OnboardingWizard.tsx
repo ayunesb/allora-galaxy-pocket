@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useTenant } from "@/hooks/useTenant";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/components/ui/theme-provider";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/toast";
 import { OnboardingForm } from "./components/OnboardingForm";
 import { WorkspaceRequirement } from "./components/WorkspaceRequirement";
 import { AuthRequirement } from "./components/AuthRequirement";
@@ -13,12 +13,12 @@ import LoadingOverlay from "@/components/ui/LoadingOverlay";
 import { useStepNavigation } from "./components/StepNavigator";
 import { useOnboardingSubmission } from "./hooks/useOnboardingSubmission";
 import { steps } from "./steps";
+import { toast } from "sonner";
 
 export default function OnboardingWizard() {
   const { tenant, isLoading: tenantLoading } = useTenant();
   const { user, isLoading: authLoading } = useAuth();
   const { theme } = useTheme();
-  const { toast } = useToast();
   const [step, setStep] = useState(0);
   const [profile, setProfile] = useState<OnboardingProfile>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -32,15 +32,13 @@ export default function OnboardingWizard() {
   useEffect(() => {
     if (!tenantLoading && !tenant && !authLoading) {
       setWorkspaceError(true);
-      toast({
-        title: "Workspace required",
-        description: "Please select or create a workspace to continue.",
-        variant: "destructive"
+      toast("Workspace required", {
+        description: "Please select or create a workspace to continue."
       });
     } else if (tenant) {
       setWorkspaceError(false);
     }
-  }, [tenant, tenantLoading, authLoading, toast]);
+  }, [tenant, tenantLoading, authLoading]);
 
   if (tenantLoading || authLoading) {
     return (
@@ -61,10 +59,8 @@ export default function OnboardingWizard() {
         onContinue={() => {
           if (!tenant) {
             setWorkspaceError(true);
-            toast({
-              title: "Workspace required",
-              description: "Please select or create a workspace above.",
-              variant: "destructive"
+            toast("Workspace required", {
+              description: "Please select or create a workspace above."
             });
             return;
           }
@@ -76,17 +72,57 @@ export default function OnboardingWizard() {
 
   const handleOnboardingCompletion = async (finalProfile: OnboardingProfile) => {
     try {
+      setCreatingWorkspace(true);
+      
       const result = await completeOnboarding(finalProfile);
+      
       if (result.success) {
+        // Log the successful onboarding completion
+        try {
+          await supabase.from("system_logs").insert({
+            tenant_id: tenant.id,
+            event_type: "ONBOARDING_COMPLETED",
+            message: `Onboarding completed for ${finalProfile.companyName}`,
+            meta: {
+              industry: finalProfile.industry,
+              teamSize: finalProfile.teamSize,
+              launchMode: finalProfile.launch_mode
+            }
+          });
+        } catch (logError) {
+          console.error("Failed to log onboarding completion:", logError);
+        }
+        
+        // Show success toast with guidance to next step
+        toast("Onboarding complete!", {
+          description: "Let's create your first growth strategy"
+        });
+        
         setTimeout(() => {
-          navigate("/dashboard", { replace: true });
-        }, 500);
+          navigate("/strategy", { 
+            replace: true,
+            state: { 
+              fromOnboarding: true,
+              profile: finalProfile
+            }
+          });
+        }, 800);
       } else {
         setFormError(result.error || "Unknown error, please try again.");
+        toast("Onboarding failed", {
+          description: result.error || "Please try again",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error("[handleOnboardingCompletion] Unexpected error:", error);
       setFormError("A system error occurred. Please try again or contact support.");
+      toast("System error", {
+        description: "Please try again or contact support",
+        variant: "destructive"
+      });
+    } finally {
+      setCreatingWorkspace(false);
     }
   };
 
@@ -105,7 +141,7 @@ export default function OnboardingWizard() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background dark:bg-gray-900 p-4">
-      <LoadingOverlay show={isSubmitting} label="Setting up your OS..." />
+      <LoadingOverlay show={isSubmitting || creatingWorkspace} label={creatingWorkspace ? "Setting up your workspace..." : "Processing onboarding..."} />
       <OnboardingForm
         step={step}
         totalSteps={steps.length}
