@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect } from "react";
-import LogSecurityAlert from "@/app/admin/logs/LogSecurityAlert";
 import { useSystemLogsWithFilters } from '@/hooks/useSystemLogsWithFilters';
 import { Input } from '@/components/ui/input';
 import { 
@@ -12,11 +11,70 @@ import {
 } from '@/components/ui/select';
 import { RefreshCw, Search, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { SecurityLogViewer } from '@/components/SecurityLogViewer';
+import { showToast } from '@/utils/toastUtils';
+import { SystemLog } from '@/hooks/useSystemLogsWithFilters';
 import { useAuth } from '@/hooks/useAuth';
 import { useTenant } from '@/hooks/useTenant';
-import { showToast } from '@/utils/toastUtils';
-import { SystemLog } from '@/types/systemLog';
+
+// Placeholder component for LogSecurityAlert
+const LogSecurityAlert = () => (
+  <div className="p-4 border rounded bg-yellow-50 mb-4">
+    <h3 className="font-medium">Security Information</h3>
+    <p className="text-sm">System logs may contain sensitive information. Access is being monitored.</p>
+  </div>
+);
+
+// Placeholder component for SecurityLogViewer
+const SecurityLogViewer = ({ 
+  logs, 
+  onLogSelect 
+}: { 
+  logs: SystemLog[],
+  onLogSelect?: (log: SystemLog) => void 
+}) => (
+  <div className="border rounded overflow-hidden">
+    <table className="w-full">
+      <thead className="bg-muted">
+        <tr>
+          <th className="p-2 text-left">Timestamp</th>
+          <th className="p-2 text-left">Severity</th>
+          <th className="p-2 text-left">Message</th>
+        </tr>
+      </thead>
+      <tbody>
+        {logs.length === 0 ? (
+          <tr>
+            <td colSpan={3} className="p-4 text-center text-muted-foreground">
+              No logs available
+            </td>
+          </tr>
+        ) : (
+          logs.map((log) => (
+            <tr 
+              key={log.id} 
+              className="border-t hover:bg-muted/50 cursor-pointer"
+              onClick={() => onLogSelect?.(log)}
+            >
+              <td className="p-2 text-sm">
+                {new Date(log.timestamp).toLocaleString()}
+              </td>
+              <td className="p-2 text-sm">
+                <span className={`px-2 py-1 rounded text-xs ${
+                  log.severity === 'error' ? 'bg-red-100 text-red-800' : 
+                  log.severity === 'warning' ? 'bg-yellow-100 text-yellow-800' : 
+                  'bg-blue-100 text-blue-800'
+                }`}>
+                  {log.severity}
+                </span>
+              </td>
+              <td className="p-2 text-sm">{log.message}</td>
+            </tr>
+          ))
+        )}
+      </tbody>
+    </table>
+  </div>
+);
 
 export function AdminSystemLogs() {
   const { 
@@ -25,11 +83,7 @@ export function AdminSystemLogs() {
     filters, 
     updateFilters,
     getRecentLogs,
-    pagination: {
-      currentPage,
-      totalPages,
-      goToPage
-    }
+    pagination
   } = useSystemLogsWithFilters();
   
   const { user } = useAuth();

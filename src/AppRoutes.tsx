@@ -7,6 +7,7 @@ import { TenantProvider } from "@/hooks/useTenant";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import routes from "./routes";
 import { Toaster } from "@/components/ui/toaster";
+import { ThemeProvider } from "@/components/ui/theme-provider";
 
 function AppRoutes() {
   const queryClient = new QueryClient();
@@ -16,10 +17,12 @@ function AppRoutes() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TenantProvider>
-          <div className="min-h-screen bg-background text-foreground">
-            <RouterProvider router={router} />
-            <Toaster />
-          </div>
+          <ThemeProvider defaultTheme="light" storageKey="allora-theme-preference">
+            <div className="min-h-screen bg-background text-foreground">
+              <RouterProvider router={router} />
+              <Toaster />
+            </div>
+          </ThemeProvider>
         </TenantProvider>
       </AuthProvider>
       <ReactQueryDevtools initialIsOpen={false} />

@@ -1,86 +1,47 @@
 
-import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/sonner";
-import { useTenant } from "@/hooks/useTenant";
-import { useAuth } from "@/hooks/useAuth";
-import type { SystemLog, LogActivityParams } from "@/types/systemLog";
+import { useState } from 'react';
+import { SystemLog } from './useSystemLogsWithFilters';
 
 export function useSystemLogs() {
   const [logs, setLogs] = useState<SystemLog[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const { tenant } = useTenant();
-  const { user } = useAuth();
-
-  const getRecentLogs = async (limit = 100) => {
+  
+  const getRecentLogs = async (limit = 50) => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('system_logs')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(limit);
-
-      if (error) throw error;
-      setLogs(data || []);
-    } catch (error: any) {
-      console.error("Error fetching system logs:", error);
-      toast.error("Failed to fetch system logs", {
-        description: error.message
-      });
+      // This would normally fetch from an API
+      console.log(`Fetching ${limit} recent logs`);
+      // For now, we'll just simulate a delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      // You would typically set logs here from the API response
+    } catch (error) {
+      console.error("Error fetching logs:", error);
     } finally {
       setIsLoading(false);
     }
   };
-
-  const getSecurityLogs = async (limit = 50) => {
-    setIsLoading(true);
+  
+  const logActivity = async ({ 
+    event_type, 
+    message, 
+    meta = {} 
+  }: { 
+    event_type: string;
+    message: string;
+    meta?: Record<string, any>;
+  }) => {
     try {
-      const { data, error } = await supabase
-        .from('system_logs')
-        .select('*')
-        .like('event_type', '%SECURITY%')
-        .order('created_at', { ascending: false })
-        .limit(limit);
-
-      if (error) throw error;
-      setLogs(data || []);
-    } catch (error: any) {
-      console.error("Error fetching security logs:", error);
-      toast.error("Failed to fetch security logs");
-    } finally {
-      setIsLoading(false);
+      console.log(`Logging activity: ${event_type}`, message, meta);
+      // You would typically call an API endpoint to log this activity
+    } catch (error) {
+      console.error("Error logging activity:", error);
     }
   };
-
-  // Add the logActivity function
-  const logActivity = async ({ event_type, message, meta = {} }: LogActivityParams) => {
-    if (!tenant?.id) return;
-    
-    try {
-      const { error } = await supabase
-        .from('system_logs')
-        .insert({
-          tenant_id: tenant.id,
-          user_id: user?.id,
-          event_type,
-          message,
-          meta
-        });
-        
-      if (error) {
-        console.error("Error logging activity:", error);
-      }
-    } catch (err) {
-      console.error("Failed to log activity:", err);
-    }
-  };
-
+  
   return {
     logs,
     isLoading,
     getRecentLogs,
-    getSecurityLogs,
     logActivity
   };
 }

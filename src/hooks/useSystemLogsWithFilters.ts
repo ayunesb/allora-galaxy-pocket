@@ -2,12 +2,14 @@
 import { useState } from "react";
 import { useSystemLogs } from "@/hooks/useSystemLogs";
 
-export type Log = {
+export type SystemLog = {
   id: string;
   severity: string;
   service: string;
   timestamp: string | Date;
   message: string;
+  event_type?: string;
+  user_id?: string;
 };
 
 export interface LogFilter {
