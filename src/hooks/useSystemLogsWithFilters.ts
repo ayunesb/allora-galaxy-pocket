@@ -1,7 +1,7 @@
 
-import { useLogFilters } from "./logs/useLogFilters";
-import { useFilteredLogs } from "./logs/useFilteredLogs";
-import { useLogPagination } from "./logs/useLogPagination";
+import { useLogFilters } from "@/hooks/logs/useLogFilters";
+import { useFilteredLogs } from "@/hooks/logs/useFilteredLogs";
+import { useLogPagination } from "@/hooks/logs/useLogPagination";
 
 export function useSystemLogsWithFilters() {
   const { filters, updateFilters, clearFilters } = useLogFilters();

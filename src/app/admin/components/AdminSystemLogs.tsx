@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useSystemLogsWithFilters } from '@/hooks/useSystemLogsWithFilters';
 import { Input } from '@/components/ui/input';
