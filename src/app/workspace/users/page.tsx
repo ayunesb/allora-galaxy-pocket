@@ -10,8 +10,26 @@ import { useTenantValidation } from '@/hooks/useTenantValidation';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { WorkspaceErrorBoundary } from '../components/WorkspaceErrorBoundary';
-import { LoadingState } from '../components/LoadingState';
-import { User, UserPlus, Trash2, ShieldCheck, Shield } from 'lucide-react';
+import { InviteUserModal } from './components/InviteUserModal';
+import { PendingInvites } from './components/PendingInvites';
+import { User, UserPlus, Trash2, ShieldCheck, Shield, RefreshCw } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type WorkspaceUser = {
   id: string;
@@ -28,6 +46,9 @@ export default function WorkspaceUsersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<string>('members');
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   
   const fetchUsers = async () => {
     if (!tenant) return;
@@ -50,7 +71,7 @@ export default function WorkspaceUsersPage() {
       
       if (error) throw error;
       
-      // Fix the TypeScript error by properly mapping the data structure
+      // Format the data properly
       const formattedUsers = data.map(item => ({
         id: item.user_id,
         email: item.users ? (item.users as any).email || 'No email' : 'No email',
@@ -78,6 +99,73 @@ export default function WorkspaceUsersPage() {
     }
   }, [tenant, isValid]);
   
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    if (!tenant) return;
+    
+    try {
+      const { error } = await supabase
+        .from('tenant_user_roles')
+        .update({ role: newRole })
+        .eq('tenant_id', tenant.id)
+        .eq('user_id', userId);
+      
+      if (error) throw error;
+      
+      toast({
+        title: 'Role updated',
+        description: 'User role has been updated successfully',
+      });
+      
+      // Update the local state
+      setUsers(users.map(user => 
+        user.id === userId ? { ...user, role: newRole } : user
+      ));
+      
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update user role',
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  const openRemoveDialog = (userId: string) => {
+    setSelectedUserId(userId);
+    setIsRemoveDialogOpen(true);
+  };
+  
+  const handleRemoveUser = async () => {
+    if (!tenant || !selectedUserId) return;
+    
+    try {
+      const { error } = await supabase
+        .from('tenant_user_roles')
+        .delete()
+        .eq('tenant_id', tenant.id)
+        .eq('user_id', selectedUserId);
+      
+      if (error) throw error;
+      
+      toast({
+        title: 'User removed',
+        description: 'User has been removed from the workspace',
+      });
+      
+      // Update local state
+      setUsers(users.filter(user => user.id !== selectedUserId));
+      setIsRemoveDialogOpen(false);
+      setSelectedUserId(null);
+      
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: 'Failed to remove user',
+        variant: 'destructive',
+      });
+    }
+  };
+  
   const getRoleBadge = (role: string) => {
     switch (role.toLowerCase()) {
       case 'owner':
@@ -94,7 +182,11 @@ export default function WorkspaceUsersPage() {
   };
   
   if (isValidating || isLoading) {
-    return <LoadingState />;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
   }
   
   if (!tenant) {
@@ -113,11 +205,37 @@ export default function WorkspaceUsersPage() {
       <div className="container mx-auto py-8">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold">Workspace Users</h1>
-          <Button className="flex items-center gap-2">
+          <Button className="flex items-center gap-2" onClick={() => setIsInviteModalOpen(true)}>
             <UserPlus className="h-4 w-4" />
             Invite User
           </Button>
         </div>
+        
+        <InviteUserModal 
+          isOpen={isInviteModalOpen} 
+          onClose={() => setIsInviteModalOpen(false)}
+          onInviteSuccess={fetchUsers}
+        />
+        
+        <AlertDialog 
+          open={isRemoveDialogOpen} 
+          onOpenChange={setIsRemoveDialogOpen}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Remove user?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will remove the user from this workspace. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction variant="destructive" onClick={handleRemoveUser}>
+                Remove
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
         
         <Card>
           <Tabs defaultValue="members" value={activeTab} onValueChange={setActiveTab}>
@@ -143,6 +261,13 @@ export default function WorkspaceUsersPage() {
             
             <CardContent className="pt-6">
               <TabsContent value="members" className="m-0">
+                <div className="flex justify-end mb-4">
+                  <Button variant="outline" size="sm" onClick={fetchUsers}>
+                    <RefreshCw className="h-3 w-3 mr-2" />
+                    Refresh
+                  </Button>
+                </div>
+                
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -158,7 +283,9 @@ export default function WorkspaceUsersPage() {
                       users.map((user) => (
                         <TableRow key={user.id}>
                           <TableCell>{user.email}</TableCell>
-                          <TableCell>{getRoleBadge(user.role)}</TableCell>
+                          <TableCell>
+                            {getRoleBadge(user.role)}
+                          </TableCell>
                           <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
                           <TableCell>
                             {user.last_sign_in 
@@ -167,10 +294,26 @@ export default function WorkspaceUsersPage() {
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <Button size="sm" variant="outline">
-                                <Shield className="h-4 w-4" />
-                              </Button>
-                              <Button size="sm" variant="outline" className="text-red-500">
+                              <Select
+                                defaultValue={user.role}
+                                onValueChange={(value) => handleRoleChange(user.id, value)}
+                              >
+                                <SelectTrigger className="w-[100px] h-8">
+                                  <SelectValue placeholder="Role" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="owner">Owner</SelectItem>
+                                  <SelectItem value="admin">Admin</SelectItem>
+                                  <SelectItem value="member">Member</SelectItem>
+                                  <SelectItem value="viewer">Viewer</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Button 
+                                size="icon"
+                                variant="outline" 
+                                className="h-8 w-8 text-red-500"
+                                onClick={() => openRemoveDialog(user.id)}
+                              >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
@@ -189,9 +332,7 @@ export default function WorkspaceUsersPage() {
               </TabsContent>
               
               <TabsContent value="invites" className="m-0">
-                <div className="flex flex-col items-center justify-center py-8">
-                  <p className="text-muted-foreground">No pending invites</p>
-                </div>
+                <PendingInvites />
               </TabsContent>
               
               <TabsContent value="permissions" className="m-0">
