@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
@@ -30,7 +31,7 @@ export function CreateWorkspaceForm() {
 
     setIsCreating(true);
     try {
-      await createDefaultWorkspace(toast, () => {
+      await createDefaultWorkspace(() => {
         form.reset();
       });
     } catch (error: any) {

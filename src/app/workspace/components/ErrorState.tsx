@@ -1,8 +1,8 @@
 
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { AlertCircle, RefreshCw } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import React from 'react';
+import { AlertCircle, RefreshCw } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 
 interface ErrorStateProps {
   error: string;
@@ -10,35 +10,22 @@ interface ErrorStateProps {
   onRefresh: () => void;
 }
 
-export const ErrorState: React.FC<ErrorStateProps> = ({ 
-  error,
-  onRetry,
-  onRefresh
-}) => {
+export function ErrorState({ error, onRetry, onRefresh }: ErrorStateProps) {
   return (
-    <div className="mt-2">
-      <Alert variant="destructive" className="mb-4">
-        <AlertCircle className="h-4 w-4 mr-2" />
-        <AlertTitle>Error loading workspaces</AlertTitle>
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
-      
-      <div className="flex flex-col gap-2 mt-4">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={onRetry}
-        >
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Retry
-        </Button>
-        <Button 
-          size="sm" 
-          onClick={onRefresh}
-        >
-          Refresh Page
-        </Button>
-      </div>
-    </div>
+    <Alert variant="destructive">
+      <AlertCircle className="h-4 w-4" />
+      <AlertTitle>Error loading workspaces</AlertTitle>
+      <AlertDescription className="mt-2">
+        <p className="mb-2">{error}</p>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={onRetry}>
+            Try Again
+          </Button>
+          <Button variant="outline" size="sm" onClick={onRefresh}>
+            Refresh Page
+          </Button>
+        </div>
+      </AlertDescription>
+    </Alert>
   );
-};
+}

@@ -1,23 +1,12 @@
 
-import React from "react";
-import { Skeleton } from "@/components/ui/skeleton";
+import React from 'react';
+import { Loader2 } from 'lucide-react';
 
-export const LoadingState: React.FC = () => {
+export function LoadingState() {
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <Skeleton className="h-4 w-[150px]" />
-        <Skeleton className="h-10 w-full" />
-      </div>
-      
-      <div className="space-y-3">
-        <Skeleton className="h-4 w-[100px]" />
-        <div className="space-y-2">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-        </div>
-      </div>
+    <div className="flex items-center justify-center p-4">
+      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      <span className="ml-2">Loading workspaces...</span>
     </div>
   );
-};
+}

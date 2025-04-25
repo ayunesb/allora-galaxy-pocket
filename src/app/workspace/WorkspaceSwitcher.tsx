@@ -1,4 +1,3 @@
-
 import { useTenant } from "@/hooks/useTenant";
 import { useLocation } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -58,14 +57,13 @@ export default function WorkspaceSwitcher({ highlight = false }) {
     setIsCreating(true);
     try {
       console.log("[WorkspaceSwitcher] Creating new workspace for user:", user.id);
-      const newWorkspace = await createDefaultWorkspace(toast, () => {
+      const newWorkspace = await createDefaultWorkspace(() => {
         console.log("[WorkspaceSwitcher] Workspace created, refreshing tenant list");
         retryFetch();
       });
       
       if (newWorkspace) {
         console.log("[WorkspaceSwitcher] New workspace created:", newWorkspace.id, newWorkspace.name);
-        // Cast to Tenant to ensure type compatibility
         setTenant(newWorkspace as Tenant);
         setSelected(newWorkspace.id);
         localStorage.setItem("tenant_id", newWorkspace.id);
@@ -98,7 +96,6 @@ export default function WorkspaceSwitcher({ highlight = false }) {
     if (selectedTenant) {
       console.log("[WorkspaceSwitcher] Switching to tenant:", selectedTenant.name, selectedTenant.id);
       setSelected(value);
-      // Cast to Tenant to ensure type compatibility
       setTenant(selectedTenant as Tenant);
       localStorage.setItem("tenant_id", value);
 
@@ -107,7 +104,6 @@ export default function WorkspaceSwitcher({ highlight = false }) {
         description: `Now working in "${selectedTenant.name}"`,
       });
       
-      // If on onboarding page, refresh to apply tenant change properly
       if (isOnboarding) {
         setTimeout(() => {
           window.location.href = "/onboarding";
