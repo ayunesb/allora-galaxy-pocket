@@ -1,101 +1,136 @@
 
-import React from 'react';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, AlertCircle } from 'lucide-react';
-import { SystemLog } from '@/types/systemLog';
-import { LogPagination } from '@/app/dashboard/team-activity/components/LogPagination';
+import React from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { SystemLog } from "@/types/systemLog";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface AdminSystemLogsTableProps {
   logs: SystemLog[];
   isLoading: boolean;
   currentPage: number;
   totalPages: number;
-  onPageChange: (page: number) => void;
+  onNextPage: () => void;
+  onPrevPage: () => void;
+  onGoToPage: (page: number) => void;
 }
 
-export function AdminSystemLogsTable({ 
-  logs, 
-  isLoading, 
+export function AdminSystemLogsTable({
+  logs,
+  isLoading,
   currentPage,
   totalPages,
-  onPageChange
+  onNextPage,
+  onPrevPage,
+  onGoToPage,
 }: AdminSystemLogsTableProps) {
-  // Determine log severity for styling
-  const getSeverityVariant = (log: SystemLog) => {
-    if (log.event_type.includes('ERROR') || log.event_type.includes('SECURITY')) {
-      return 'destructive';
-    } else if (log.event_type.includes('WARNING')) {
-      return 'warning';
-    } else {
-      return 'outline';
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat("en-US", {
+      dateStyle: "short",
+      timeStyle: "medium",
+    }).format(date);
+  };
+
+  const getBadgeVariant = (severity?: string) => {
+    switch (severity) {
+      case "error":
+        return "destructive";
+      case "warning":
+        return "warning";
+      case "info":
+      default:
+        return "secondary";
     }
   };
 
   if (isLoading) {
     return (
-      <div className="flex justify-center py-8">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="space-y-3">
+        {Array.from({ length: 5 }).map((_, index) => (
+          <div key={index} className="flex items-center space-x-4">
+            <Skeleton className="h-4 w-[250px]" />
+            <Skeleton className="h-4 w-[100px]" />
+            <Skeleton className="h-4 w-[100px]" />
+            <Skeleton className="h-4 w-[100px]" />
+          </div>
+        ))}
       </div>
     );
   }
 
   if (logs.length === 0) {
     return (
-      <div className="text-center py-8 border rounded-md bg-muted/10">
-        <AlertCircle className="mx-auto h-8 w-8 text-muted-foreground" />
-        <p className="mt-2 text-muted-foreground">No logs found</p>
+      <div className="py-12 text-center">
+        <p className="text-muted-foreground">No logs found matching your filters.</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="border rounded-md">
+    <div>
+      <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Timestamp</TableHead>
               <TableHead>Event Type</TableHead>
-              <TableHead className="hidden md:table-cell">User</TableHead>
               <TableHead>Message</TableHead>
+              <TableHead>Severity</TableHead>
+              <TableHead>Service</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {logs.map((log) => (
               <TableRow key={log.id}>
-                <TableCell className="whitespace-nowrap">
-                  {new Date(log.created_at).toLocaleString()}
+                <TableCell className="font-mono text-xs">
+                  {formatDate(log.timestamp || log.created_at)}
                 </TableCell>
+                <TableCell className="font-medium">{log.event_type}</TableCell>
+                <TableCell>{log.message}</TableCell>
                 <TableCell>
-                  <Badge variant={getSeverityVariant(log)}>
-                    {log.event_type}
+                  <Badge variant={getBadgeVariant(log.severity)}>
+                    {log.severity || "info"}
                   </Badge>
                 </TableCell>
-                <TableCell className="hidden md:table-cell">
-                  {log.user_id ? log.user_id.substring(0, 8) : 'System'}
-                </TableCell>
-                <TableCell className="max-w-md truncate">
-                  {log.message}
-                </TableCell>
+                <TableCell>{log.service}</TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
 
-      <LogPagination 
-        currentPage={currentPage} 
-        totalPages={totalPages} 
-        onPageChange={onPageChange} 
-      />
+      {totalPages > 1 && (
+        <div className="flex items-center justify-end space-x-2 py-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onPrevPage}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </Button>
+          <div className="text-sm">
+            Page {currentPage} of {totalPages}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onNextPage}
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
