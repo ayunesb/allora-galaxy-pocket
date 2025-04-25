@@ -1,8 +1,8 @@
+
 import { useTenant } from "@/hooks/useTenant";
 import { useState, useEffect } from "react";
 import type { TenantOption } from "./useAvailableTenants";
 import { useToast } from "@/hooks/use-toast";
-import { Tenant } from "@/types/tenant";
 
 export function useInitializeSelectedTenant(tenants: TenantOption[], loading: boolean, error: string | null) {
   const { setTenant } = useTenant();

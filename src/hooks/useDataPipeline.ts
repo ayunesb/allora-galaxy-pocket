@@ -1,9 +1,9 @@
 
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useTenant } from "@/hooks/useTenant";
+import { useTenant } from "./useTenant";
 
-interface PipelineEvent {
+interface PipelineEventData {
   event_type: string;
   source: string;
   target: string;
@@ -14,45 +14,37 @@ export function useDataPipeline() {
   const { tenant } = useTenant();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  const logPipelineEvent = async (event: PipelineEvent) => {
+
+  const logPipelineEvent = async (eventData: PipelineEventData): Promise<string | null> => {
     if (!tenant?.id) {
-      console.error("Cannot log pipeline event: No tenant ID available");
-      return {
-        success: false,
-        error: "No tenant ID available"
-      };
+      setError("No active workspace found");
+      return null;
     }
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
-      const { error } = await supabase
-        .from("data_pipeline_events")
-        .insert({
-          tenant_id: tenant.id,
-          event_type: event.event_type,
-          source: event.source,
-          target: event.target,
-          metadata: event.metadata || {}
-        });
-        
-      if (error) throw error;
-      
-      return { success: true };
+      const { data, error: insertError } = await supabase.from('data_pipeline_events').insert({
+        tenant_id: tenant.id,
+        event_type: eventData.event_type,
+        source: eventData.source,
+        target: eventData.target,
+        metadata: eventData.metadata || {}
+      }).select('id').single();
+
+      if (insertError) throw insertError;
+
+      return data.id;
     } catch (err: any) {
-      console.error("Pipeline event error:", err);
+      console.error("Error logging pipeline event:", err);
       setError(err.message || "Failed to log pipeline event");
-      return {
-        success: false,
-        error: err.message
-      };
+      return null;
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   return {
     logPipelineEvent,
     isLoading,
