@@ -1,46 +1,105 @@
 
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
-import AdminDashboardPage from '@/app/admin/dashboard/page';
-import SystemMonitoringPage from '@/app/admin/monitoring/page';
-import UserManagementPage from '@/app/admin/user-management/page';
-import SettingsPage from '@/app/admin/settings/page';
+import AdminDashboard from '@/app/admin/dashboard/page';
+import AdminAnalytics from '@/app/admin/analytics/page';
+import AdminSettings from '@/app/admin/settings/page';
+import AdminUsersPage from '@/app/admin/users/page';
+import AdminPluginsPage from '@/app/admin/plugins/gallery/page';
+import AdminSecurityAuditPage from '@/app/admin/security-audit/page';
+import AdminTenantsPage from '@/app/admin/tenants/page';
+import AdminMonitoringPage from '@/app/admin/monitoring/page';
+import AdminBillingPanel from '@/app/admin/billing/BillingPanel';
 import AdminLogsPage from '@/app/admin/logs/page';
-import RlsAuditReport from "@/app/admin/security-audit/RlsAuditReport";
-import SecurityDashboard from "@/app/admin/security-audit/SecurityDashboard";
-import SecurityAuditPage from '@/app/admin/security-audit/page';
+import RoleGuard from '@/guards/RoleGuard';
 
 export const adminRoutes: RouteObject[] = [
-  {
-    path: '/admin',
-    element: <AdminDashboardPage />,
+  { 
+    path: '/admin', 
+    element: (
+      <RoleGuard allowedRoles={['admin', 'super_admin']}>
+        <AdminDashboard />
+      </RoleGuard>
+    ) 
   },
-  {
-    path: '/admin/monitoring',
-    element: <SystemMonitoringPage />,
+  { 
+    path: '/admin/dashboard', 
+    element: (
+      <RoleGuard allowedRoles={['admin', 'super_admin']}>
+        <AdminDashboard />
+      </RoleGuard>
+    ) 
   },
-  {
-    path: '/admin/user-management',
-    element: <UserManagementPage />,
+  { 
+    path: '/admin/analytics', 
+    element: (
+      <RoleGuard allowedRoles={['admin', 'super_admin']}>
+        <AdminAnalytics />
+      </RoleGuard>
+    ) 
   },
-  {
-    path: '/admin/logs',
-    element: <AdminLogsPage />,
+  { 
+    path: '/admin/settings', 
+    element: (
+      <RoleGuard allowedRoles={['admin', 'super_admin']}>
+        <AdminSettings />
+      </RoleGuard>
+    ) 
   },
-  {
-    path: '/admin/security-audit',
-    element: <SecurityAuditPage />,
+  { 
+    path: '/admin/users', 
+    element: (
+      <RoleGuard allowedRoles={['admin', 'super_admin']}>
+        <AdminUsersPage />
+      </RoleGuard>
+    ) 
   },
-  {
-    path: '/admin/security-audit/rls',
-    element: <RlsAuditReport />,
+  { 
+    path: '/admin/plugins', 
+    element: (
+      <RoleGuard allowedRoles={['admin', 'super_admin']}>
+        <AdminPluginsPage />
+      </RoleGuard>
+    ) 
   },
-  {
-    path: '/admin/security-audit/dashboard',
-    element: <SecurityDashboard />,
+  { 
+    path: '/admin/security-audit', 
+    element: (
+      <RoleGuard allowedRoles={['admin', 'super_admin']}>
+        <AdminSecurityAuditPage />
+      </RoleGuard>
+    ) 
   },
-  {
-    path: '/admin/settings',
-    element: <SettingsPage />,
+  { 
+    path: '/admin/tenants', 
+    element: (
+      <RoleGuard allowedRoles={['admin', 'super_admin']}>
+        <AdminTenantsPage />
+      </RoleGuard>
+    ) 
+  },
+  { 
+    path: '/admin/monitoring', 
+    element: (
+      <RoleGuard allowedRoles={['admin', 'super_admin']}>
+        <AdminMonitoringPage />
+      </RoleGuard>
+    ) 
+  },
+  { 
+    path: '/admin/billing', 
+    element: (
+      <RoleGuard allowedRoles={['admin', 'super_admin', 'billing_admin']}>
+        <AdminBillingPanel />
+      </RoleGuard>
+    ) 
+  },
+  { 
+    path: '/admin/logs', 
+    element: (
+      <RoleGuard allowedRoles={['admin', 'super_admin']}>
+        <AdminLogsPage />
+      </RoleGuard>
+    ) 
   }
 ];
