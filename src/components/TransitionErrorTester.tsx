@@ -72,7 +72,7 @@ export function TransitionErrorTester({ fromStep, toStep, currentStep }: Transit
         <LogAlert
           title="Transition Successful"
           description={`Successfully transitioned from ${fromStep} to ${toStep}`}
-          severity="success"
+          severity="info"
           onDismiss={() => setIsSuccess(false)}
         />
       )}

@@ -100,7 +100,7 @@ export default function JourneyVerificationPage() {
           event_type: result.verified ? 'MODULE_VERIFICATION_SUCCESS' : 'MODULE_VERIFICATION_FAILURE',
           message: `Module ${module} verification ${result.verified ? 'passed' : 'failed'}`,
           meta: result,
-          severity: result.verified ? 'success' : 'warning'
+          severity: result.verified ? 'info' : 'warning'
         });
       } catch (error) {
         console.error(`Verification failed for ${module}:`, error);

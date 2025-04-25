@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ToastService } from '@/services/ToastService';
@@ -20,10 +19,7 @@ export function useAuthActions(
       const { data, error } = await supabase.auth.signInWithPassword({ 
         email, 
         password,
-        options: {
-          // Use the rememberMe state to determine if we should persist the session
-          persistSession: rememberMe
-        }
+        // Remove persistSession as it's not supported in the current Supabase version
       });
       
       if (error) throw error;
@@ -52,10 +48,7 @@ export function useAuthActions(
       const { data, error } = await supabase.auth.signUp({ 
         email, 
         password,
-        options: {
-          // Always persist session on signup
-          persistSession: true
-        }
+        // Remove persistSession as it's not supported in the current Supabase version
       });
       
       if (error) throw error;
