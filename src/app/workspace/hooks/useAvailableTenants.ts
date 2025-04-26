@@ -30,8 +30,7 @@ export function useAvailableTenants() {
         created_at: tenant.created_at,
         updated_at: tenant.updated_at,
         usage_credits: tenant.usage_credits,
-        slack_webhook_url: tenant.slack_webhook_url,
-        role: tenant.role
+        slack_webhook_url: tenant.slack_webhook_url
       }));
     }
   });

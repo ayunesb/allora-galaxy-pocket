@@ -9,8 +9,10 @@ import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import { Toaster } from "sonner";
 import { baseRoutes } from "./routes/appRoutesConfig";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { RouteDebugger } from "./components/RouteDebugger";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+
+// Create router outside of component to avoid re-creation on renders
+const router = createBrowserRouter(baseRoutes);
 
 function App() {
   const queryClient = new QueryClient({
@@ -21,9 +23,6 @@ function App() {
       }
     }
   });
-  
-  // Create a new router with the baseRoutes
-  const router = createBrowserRouter(baseRoutes);
   
   return (
     <ErrorBoundary>
@@ -37,7 +36,6 @@ function App() {
                 </div>
               }>
                 <Toaster richColors closeButton position="top-right" />
-                {import.meta.env.DEV && <RouteDebugger />}
                 <RouterProvider router={router} />
               </Suspense>
             </ThemeProvider>
