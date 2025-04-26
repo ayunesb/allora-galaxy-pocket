@@ -10,16 +10,12 @@ interface TopbarProps {
 }
 
 const Topbar: React.FC<TopbarProps> = ({ title = 'Dashboard' }) => {
-  const { collapsed, setCollapsed } = useSidebar();
-
-  const handleToggleSidebar = () => {
-    setCollapsed(!collapsed);
-  };
+  const { toggleSidebar } = useSidebar();
 
   return (
     <div className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 border-b bg-background">
       <div className="flex items-center">
-        <Button variant="ghost" size="icon" onClick={handleToggleSidebar}>
+        <Button variant="ghost" size="icon" onClick={toggleSidebar}>
           <Menu className="h-5 w-5" />
           <span className="sr-only">Toggle sidebar</span>
         </Button>
