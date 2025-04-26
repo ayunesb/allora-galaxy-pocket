@@ -1,4 +1,3 @@
-
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
@@ -21,29 +20,24 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   const [authError, setAuthError] = useState<string | null>(null);
   const { logActivity, logSecurityEvent } = useSystemLogs();
   
-  // Special cases where we don't need to check onboarding
   const skipOnboardingCheck = location.pathname === "/onboarding" || 
                              location.pathname === "/workspace" ||
                              location.pathname.startsWith("/auth/");
   
-  // Use session refresh hook
   useSessionRefresh();
 
-  // Use onboarding check hook
   const { data: onboardingComplete, isLoading: onboardingLoading } = useOnboardingCheck(
     user,
     tenant,
     shouldCheckOnboarding && !skipOnboardingCheck
   );
 
-  // Handle retry for auth errors
   const handleRetry = async () => {
     try {
       setAuthAttempts(prev => prev + 1);
       setAuthError(null);
       await refreshSession();
       
-      // Log retry attempt
       if (user) {
         logActivity({
           event_type: "AUTH_RETRY",
@@ -55,7 +49,6 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
       const e = error as Error;
       setAuthError(e.message || "Authentication failed after retry");
       
-      // Log retry failure
       if (user) {
         logActivity({
           event_type: "AUTH_RETRY_FAILED",
@@ -71,9 +64,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     }
   };
 
-  // Log security events for unauthorized access attempts
   if (user && !authLoading && !tenantLoading && !onboardingLoading) {
-    // If user is trying to access protected route without tenant
     if (!tenant && !location.pathname.startsWith("/auth/") && 
         location.pathname !== "/onboarding" && location.pathname !== "/workspace") {
       logSecurityEvent(
@@ -83,7 +74,6 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
       );
     }
     
-    // If user is trying to access route without completing onboarding
     if (tenant && onboardingComplete === false && !skipOnboardingCheck) {
       logSecurityEvent(
         "Attempted access before onboarding completion",
@@ -93,7 +83,6 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     }
   }
 
-  // Handle auth error display
   if (authError) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-background">
@@ -116,7 +105,6 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     );
   }
 
-  // Show loading state
   if (authLoading || tenantLoading || (shouldCheckOnboarding && !skipOnboardingCheck && onboardingLoading)) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
@@ -125,7 +113,6 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     );
   }
 
-  // Handle routing logic
   if (!user) {
     if (location.pathname.startsWith("/auth/")) {
       return <>{children}</>;
@@ -157,12 +144,13 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     return <Navigate to="/onboarding" state={{ from: location.pathname }} replace />;
   }
 
-  // User journey tracking - log successful navigation
   if (user && tenant) {
     logActivity({
       event_type: "USER_NAVIGATION",
       message: `User navigated to ${location.pathname}`,
       meta: { path: location.pathname }
+    }).then(() => {
+      // Successfully logged navigation
     }).catch(e => console.error("Failed to log navigation:", e));
   }
 

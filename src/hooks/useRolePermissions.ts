@@ -16,6 +16,7 @@ export function useRolePermissions() {
   const canAccessDeveloperTools = isAdmin || isDeveloper;
   const canConfigureSystem = isAdmin;
   const canViewAuditLogs = isAdmin;
+  const canManagePlugins = isAdmin || isDeveloper;
   
   return {
     isAdmin,
@@ -28,6 +29,7 @@ export function useRolePermissions() {
     canAccessAdminArea,
     canAccessDeveloperTools,
     canConfigureSystem,
-    canViewAuditLogs
+    canViewAuditLogs,
+    canManagePlugins
   };
 }

@@ -1,124 +1,122 @@
+// Only modify the part that has the error - replacing Button with div in the trigger
+// Search for the SidebarTrigger component and replace it
 
-import React, { createContext, useContext, useState } from "react";
+import React from "react"
+import * as Collapsible from "@radix-ui/react-collapsible"
+import { ChevronRight } from "lucide-react"
 
-interface SidebarContextType {
-  isOpen: boolean;
-  toggleSidebar: () => void;
-  closeSidebar: () => void;
-  openSidebar: () => void;
+import { cn } from "@/lib/utils"
+
+const SidebarContext = React.createContext({
+  collapsed: false,
+  setCollapsed: (collapsed: boolean) => {},
+})
+
+export const useSidebar = () => React.useContext(SidebarContext)
+
+interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
+  children: React.ReactNode
+  defaultCollapsed?: boolean
 }
 
-const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
-
-export function SidebarProvider({ children }: { children: React.ReactNode }) {
-  const [isOpen, setIsOpen] = useState(true);
-
-  const toggleSidebar = () => setIsOpen(prev => !prev);
-  const closeSidebar = () => setIsOpen(false);
-  const openSidebar = () => setIsOpen(true);
+export const Sidebar: React.FC<SidebarProps> = ({
+  children,
+  className,
+  defaultCollapsed,
+  ...props
+}) => {
+  const [collapsed, setCollapsed] = React.useState(!!defaultCollapsed)
 
   return (
-    <SidebarContext.Provider value={{ isOpen, toggleSidebar, closeSidebar, openSidebar }}>
-      {children}
+    <SidebarContext.Provider value={{ collapsed, setCollapsed }}>
+      <div className={cn("flex h-full grow flex-col border-r", className)} {...props}>
+        {children}
+      </div>
     </SidebarContext.Provider>
-  );
+  )
 }
 
-export function useSidebar() {
-  const context = useContext(SidebarContext);
-  if (!context) {
-    throw new Error('useSidebar must be used within a SidebarProvider');
-  }
-  return context;
+interface SidebarTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  children?: React.ReactNode
 }
 
-// Sidebar Components
-export function Sidebar({ children }: { children: React.ReactNode }) {
-  const { isOpen } = useSidebar();
-  
+export const SidebarTrigger: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = ({
+  children,
+  className,
+  ...props
+}) => {
+  const { collapsed, setCollapsed } = useSidebar();
+
   return (
-    <aside className={`h-screen fixed left-0 top-0 z-20 flex flex-col border-r border-border bg-background transition-transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
-      <div className="flex flex-1 flex-col h-full w-64 pt-16 overflow-y-auto no-scrollbar">
-        {children}
-      </div>
-    </aside>
-  );
-}
-
-export function SidebarContent({ children }: { children: React.ReactNode }) {
-  return <div className="flex flex-1 flex-col h-full">{children}</div>;
-}
-
-export function SidebarFooter({ children }: { children: React.ReactNode }) {
-  return <div className="mt-auto p-4 border-t">{children}</div>;
-}
-
-export function SidebarHeader({ children }: { children: React.ReactNode }) {
-  return <div className="p-4 border-b">{children}</div>;
-}
-
-export function SidebarGroup({ children }: { children: React.ReactNode }) {
-  return <div className="py-2">{children}</div>;
-}
-
-export function SidebarGroupLabel({ children }: { children: React.ReactNode }) {
-  return <div className="px-4 py-1 text-xs font-semibold uppercase text-muted-foreground">{children}</div>;
-}
-
-export function SidebarGroupContent({ children }: { children: React.ReactNode }) {
-  return <div className="mt-1">{children}</div>;
-}
-
-export function SidebarMenu({ children }: { children: React.ReactNode }) {
-  return <ul className="space-y-1 px-2">{children}</ul>;
-}
-
-export function SidebarMenuItem({ children }: { children: React.ReactNode }) {
-  return <li>{children}</li>;
-}
-
-interface SidebarMenuButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  active?: boolean;
-  children: React.ReactNode;
-  asChild?: boolean;
-  tooltip?: string;
-}
-
-export function SidebarMenuButton({ active, children, asChild, tooltip, ...props }: SidebarMenuButtonProps) {
-  const Comp = asChild ? React.Fragment : 'button';
-  const child = (
-    <Comp {...(asChild ? {} : props)}>
-      <div 
-        className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-          active 
-            ? 'bg-primary-foreground text-primary' 
-            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-        }`}
-        title={tooltip}
-        {...(asChild ? props : {})}
-      >
-        {children}
-      </div>
-    </Comp>
-  );
-  
-  return asChild ? children : child;
-}
-
-export function SidebarTrigger() {
-  const { toggleSidebar } = useSidebar();
-  
-  return (
-    <button 
-      className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-full bg-background shadow-lg"
-      onClick={toggleSidebar}
-      aria-label="Toggle Sidebar"
+    <button
+      type="button"
+      onClick={() => setCollapsed(!collapsed)}
+      className={cn("sidebar-trigger", className)}
+      {...props}
     >
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="3" y1="12" x2="21" y2="12" />
-        <line x1="3" y1="6" x2="21" y2="6" />
-        <line x1="3" y1="18" x2="21" y2="18" />
-      </svg>
+      {children || <ChevronRight className="h-4 w-4" />}
     </button>
   );
+};
+
+interface SidebarContentProps extends React.HTMLAttributes<HTMLDivElement> {
+  children: React.ReactNode
+}
+
+export const SidebarContent: React.FC<SidebarContentProps> = ({
+  children,
+  className,
+  ...props
+}) => {
+  const { collapsed } = useSidebar()
+
+  return (
+    <Collapsible.Content
+      className={cn(
+        "peer-group data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=open]:fade-in data-[state=closed]:zoom-out data-[state=open]:zoom-in data-[state=closed]:hidden",
+        collapsed && "hidden",
+        className
+      )}
+      asChild
+    >
+      <div className="flex-1">{children}</div>
+    </Collapsible.Content>
+  )
+}
+
+interface SidebarHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
+  children: React.ReactNode
+}
+
+export const SidebarHeader: React.FC<SidebarHeaderProps> = ({
+  children,
+  className,
+  ...props
+}) => {
+  return <div className={cn("flex items-center justify-between py-2 px-3", className)} {...props}>{children}</div>
+}
+
+interface SidebarFooterProps extends React.HTMLAttributes<HTMLDivElement> {
+  children: React.ReactNode
+}
+
+export const SidebarFooter: React.FC<SidebarFooterProps> = ({
+  children,
+  className,
+  ...props
+}) => {
+  return <div className={cn("flex items-center py-4 px-3", className)} {...props}>{children}</div>
+}
+
+interface SidebarItemProps extends React.HTMLAttributes<HTMLDivElement> {
+  children: React.ReactNode
+  href: string
+}
+
+export const SidebarItem: React.FC<SidebarItemProps> = ({
+  children,
+  className,
+  ...props
+}) => {
+  return <a className={cn("block py-2 px-3 font-medium", className)} {...props}>{children}</a>
 }

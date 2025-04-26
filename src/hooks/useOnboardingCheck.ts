@@ -1,34 +1,38 @@
 
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { User } from "@supabase/supabase-js";
-import { Tenant } from "@/types/tenant";
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { User } from '@supabase/supabase-js';
+import { Tenant } from '@/types/tenant';
 
-export function useOnboardingCheck(
+/**
+ * Hook to check if a user has completed onboarding
+ */
+export const useOnboardingCheck = (
   user: User | null,
   tenant: Tenant | null,
   enabled = true
-) {
+) => {
   return useQuery({
-    queryKey: ["onboarding-check", user?.id, tenant?.id],
+    queryKey: ['onboarding-status', user?.id, tenant?.id],
     queryFn: async () => {
       if (!user || !tenant) return false;
       
       const { data, error } = await supabase
-        .from("company_profiles")
-        .select("id")
-        .eq("tenant_id", tenant.id)
+        .from('company_profiles')
+        .select('*')
+        .eq('tenant_id', tenant.id)
         .single();
-        
-      if (error && error.code !== 'PGRST116') {
-        console.error("Error checking onboarding status:", error);
-        throw error;
+      
+      if (error || !data) {
+        return false;
       }
       
-      return !!data;
+      // Check if essential fields are filled
+      return Boolean(data.name && data.industry && data.team_size);
     },
-    enabled: !!user && !!tenant && enabled,
-    staleTime: 60000, // 1 minute
-    cacheTime: 300000, // 5 minutes
+    // Cache for 5 minutes unless invalidated
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    enabled: Boolean(enabled && user && tenant),
   });
-}
+};

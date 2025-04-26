@@ -1,81 +1,73 @@
 
-import { useState, useCallback, useMemo } from 'react';
-import { SystemLog } from '@/types/systemLog';
-import { useSystemLogs } from '@/hooks/useSystemLogs';
-import { useLogFilters } from '@/hooks/useLogFilters';
-import { useLogPagination } from '@/hooks/useLogPagination';
-import { ToastService } from '@/services/ToastService';
+import { useState, useEffect } from 'react';
+import { useSystemLogs } from './useSystemLogs';
 import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from './useTenant';
 
 export function useSystemLogsWithFilters() {
-  const { 
-    logActivity, 
-    logSecurityEvent, 
-    verifyModuleImplementation,
-    isLogging 
-  } = useSystemLogs();
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [filters, setFilters] = useState({});
+  const { tenant } = useTenant();
+  const { logActivity } = useSystemLogs();
   
-  // Local state for logs since useSystemLogs doesn't provide them directly
-  const [logs, setLogs] = useState<SystemLog[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<Error | null>(null);
+  // Initialize with empty implementations that will be properly set up
+  const logSecurityEvent = async (message: string, eventType: string, meta?: any) => {
+    return logActivity({
+      event_type: 'SECURITY_' + eventType,
+      message,
+      meta,
+      severity: 'warning'
+    });
+  };
   
-  const { filters, updateFilters, resetFilters, filteredLogs } = useLogFilters(logs);
-  
-  const pagination = useLogPagination({
-    totalItems: filteredLogs.length
-  });
+  const isLogging = false;
 
-  // Fetch recent logs
-  const getRecentLogs = useCallback(async (limit: number = 100) => {
-    setIsLoading(true);
+  const fetchLogs = async () => {
+    if (!tenant) return;
+    setLoading(true);
+    
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('system_logs')
         .select('*')
-        .order('created_at', { ascending: false })
-        .limit(limit);
+        .eq('tenant_id', tenant.id)
+        .order('created_at', { ascending: false });
+      
+      // Apply filters
+      if (filters.eventType) {
+        query = query.eq('event_type', filters.eventType);
+      }
+      
+      if (filters.startDate && filters.endDate) {
+        query = query
+          .gte('created_at', filters.startDate)
+          .lte('created_at', filters.endDate);
+      }
+      
+      const { data, error } = await query;
       
       if (error) throw error;
-      
       setLogs(data || []);
-      setError(null);
-    } catch (err: any) {
-      setError(err);
-      ToastService.error({
-        title: 'Error fetching logs',
-        description: err.message
-      });
+    } catch (error) {
+      console.error('Error fetching logs:', error);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, []);
-
-  // Get paginated logs
-  const getPaginatedLogs = useMemo(() => {
-    if (!filteredLogs.length) return [];
-
-    const startIndex = (pagination.currentPage - 1) * pagination.logsPerPage;
-    return filteredLogs.slice(startIndex, startIndex + pagination.logsPerPage);
-  }, [filteredLogs, pagination.currentPage, pagination.logsPerPage]);
-
+  };
+  
+  useEffect(() => {
+    if (tenant?.id) {
+      fetchLogs();
+    }
+  }, [tenant?.id, filters]);
+  
   return {
-    logs: getPaginatedLogs,
-    allLogs: logs,
-    filters,
-    pagination,
-    isLoading,
-    error,
-    updateFilters,
-    resetFilters,
-    getRecentLogs,
-    logActivity,
+    logs,
+    loading,
+    setFilters,
+    fetchLogs,
     logSecurityEvent,
-    verifyModuleImplementation,
-    isLogging,
-    nextPage: pagination.nextPage,
-    prevPage: pagination.prevPage,
-    goToPage: pagination.goToPage,
-    setLogsPerPage: pagination.setLogsPerPage
+    isLogging
   };
 }

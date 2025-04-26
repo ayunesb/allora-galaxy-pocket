@@ -14,23 +14,29 @@ export interface SystemLogEntry {
 export function useSystemLogs() {
   const { user } = useAuth();
   const { tenant } = useTenant();
+  const [isLogging, setIsLogging] = React.useState(false);
 
   const logActivity = useMutation({
     mutationFn: async (entry: SystemLogEntry) => {
       if (!tenant?.id) return;
       
-      const { error } = await supabase
-        .from('system_logs')
-        .insert({
-          tenant_id: tenant.id,
-          user_id: user?.id,
-          event_type: entry.event_type,
-          message: entry.message,
-          meta: entry.meta || {},
-          severity: entry.severity || 'info'
-        });
-        
-      if (error) throw error;
+      setIsLogging(true);
+      try {
+        const { error } = await supabase
+          .from('system_logs')
+          .insert({
+            tenant_id: tenant.id,
+            user_id: user?.id,
+            event_type: entry.event_type,
+            message: entry.message,
+            meta: entry.meta || {},
+            severity: entry.severity || 'info'
+          });
+          
+        if (error) throw error;
+      } finally {
+        setIsLogging(false);
+      }
     }
   });
   
@@ -40,6 +46,15 @@ export function useSystemLogs() {
       message: `User navigated from ${from} to ${to}`,
       meta: { from, to, ...meta },
       severity: 'info'
+    });
+  };
+  
+  const logSecurityEvent = async (message: string, eventType: string, meta?: Record<string, any>) => {
+    return logActivity.mutate({
+      event_type: 'SECURITY_' + eventType,
+      message,
+      meta: meta || {},
+      severity: 'warning'
     });
   };
   
@@ -55,9 +70,31 @@ export function useSystemLogs() {
     };
   };
   
+  const getRecentLogs = async (limit = 10) => {
+    if (!tenant?.id) return [];
+    
+    const { data, error } = await supabase
+      .from('system_logs')
+      .select('*')
+      .eq('tenant_id', tenant.id)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    
+    if (error) {
+      console.error('Error fetching recent logs:', error);
+      return [];
+    }
+    
+    return data || [];
+  };
+  
   return {
     logActivity: logActivity.mutate,
     logJourneyStep,
+    logSecurityEvent,
     verifyModuleImplementation,
+    isLogging,
+    logs: [],
+    getRecentLogs
   };
 }

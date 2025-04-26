@@ -1,89 +1,88 @@
 
-import { useState } from "react";
-import { useTheme } from "@/components/ui/theme-provider";
-import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Paintbrush, Moon, Sun } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { useTheme } from '@/components/ui/theme-provider';
+import { useTenant } from '@/hooks/useTenant';
 
-const COLORS = ["indigo", "emerald", "rose", "slate", "violet", "amber"];
-
-export default function ThemeCustomizer() {
-  const { theme, themeColor, setTheme, updateThemeColor } = useTheme();
-  const { toast } = useToast();
-  const [color, setColor] = useState(themeColor);
-  const [mode, setMode] = useState(theme);
+export const ThemeCustomizer: React.FC = () => {
+  const { theme, setTheme } = useTheme();
+  const { tenant, updateTenantProfile } = useTenant();
   
-  const handleSave = async () => {
+  const themeColor = tenant?.theme_color || 'indigo';
+
+  const themeColors = [
+    'indigo',
+    'blue',
+    'green',
+    'red',
+    'orange',
+    'purple',
+  ];
+  
+  const handleColorChange = async (color: string) => {
     try {
-      setTheme(mode);
-      await updateThemeColor(color);
-      
-      toast({
-        title: "Theme updated",
-        description: "Your changes have been applied successfully"
+      await updateTenantProfile({
+        theme_color: color
       });
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update theme",
-        variant: "destructive"
-      });
+      console.error('Failed to update theme color:', error);
     }
   };
-
+  
   return (
     <Card>
       <CardContent className="pt-6 space-y-4">
-        <div className="flex items-center gap-2 mb-4">
-          <Paintbrush className="h-4 w-4" />
-          <h2 className="text-lg font-semibold">Theme Customizer</h2>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Primary Color</Label>
-          <Select value={color} onValueChange={setColor}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {COLORS.map((c) => (
-                <SelectItem key={c} value={c} className="capitalize">
-                  {c}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Theme Mode</Label>
-          <div className="grid grid-cols-2 gap-2">
+        <div>
+          <h3 className="text-lg font-medium">Theme Mode</h3>
+          <p className="text-sm text-muted-foreground">
+            Choose between light, dark, or system theme
+          </p>
+          <div className="flex gap-2 mt-2">
             <Button
-              variant={mode === "light" ? "default" : "outline"}
-              onClick={() => setMode("light")}
-              className="flex items-center justify-center gap-2"
+              variant={theme === 'light' ? 'default' : 'outline'}
+              onClick={() => setTheme('light')}
+              size="sm"
             >
-              <Sun className="h-4 w-4" />
               Light
             </Button>
             <Button
-              variant={mode === "dark" ? "default" : "outline"}
-              onClick={() => setMode("dark")}
-              className="flex items-center justify-center gap-2"
+              variant={theme === 'dark' ? 'default' : 'outline'}
+              onClick={() => setTheme('dark')}
+              size="sm"
             >
-              <Moon className="h-4 w-4" />
               Dark
+            </Button>
+            <Button
+              variant={theme === 'system' ? 'default' : 'outline'}
+              onClick={() => setTheme('system')}
+              size="sm"
+            >
+              System
             </Button>
           </div>
         </div>
-
-        <Button onClick={handleSave} className="w-full">
-          Apply Theme
-        </Button>
+        
+        <div>
+          <h3 className="text-lg font-medium">Theme Color</h3>
+          <p className="text-sm text-muted-foreground">
+            Select your primary brand color
+          </p>
+          <div className="grid grid-cols-3 gap-2 mt-2">
+            {themeColors.map((color) => (
+              <Button
+                key={color}
+                variant={color === themeColor ? 'default' : 'outline'}
+                onClick={() => handleColorChange(color)}
+                size="sm"
+                className="capitalize"
+              >
+                {color}
+              </Button>
+            ))}
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
-}
+};

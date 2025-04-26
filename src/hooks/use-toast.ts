@@ -1,15 +1,17 @@
 
-import { toast, ToastOptions } from "sonner";
+import { toast } from "sonner";
 
-type ToastProps = ToastOptions & {
+type ToastProps = {
   title?: string;
   description?: string;
   variant?: "default" | "destructive";
+  duration?: number;
+  [key: string]: any;
 };
 
 export function useToast() {
   return {
-    toast: (props: ToastProps) => {
+    toast: (props: ToastProps | string) => {
       if (typeof props === "string") {
         return toast(props);
       }
@@ -68,5 +70,15 @@ export function useToast() {
         ...rest
       });
     },
+    promise: <T>(
+      promise: Promise<T>,
+      messages: {
+        loading?: string;
+        success?: string | ((data: T) => string);
+        error?: string | ((error: unknown) => string);
+      }
+    ) => {
+      return toast.promise(promise, messages);
+    }
   };
 }

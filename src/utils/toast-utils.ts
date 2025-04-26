@@ -46,6 +46,9 @@ export const showToast = {
       error?: string | ((error: unknown) => string);
     }
   ) => {
-    return ToastService.promise(promise, messages);
+    return toast.promise(promise, messages);
   }
 };
+
+// Import toast directly for the promise function
+import { toast } from 'sonner';
