@@ -5,6 +5,7 @@ import HomePage from '@/app/page';
 import DashboardPage from '@/app/dashboard/page';
 import NotFound from '@/pages/NotFound';
 import StrategyDetail from '@/app/strategy/[id]';
+import { RouteDebugger } from "@/components/RouteDebugger";
 
 // Use dynamic imports for lazy loading
 const OnboardingPage = React.lazy(() => import('@/app/onboarding/page'));
@@ -31,6 +32,14 @@ const AdminLogsPage = () => <div className="p-8">Admin Logs Page</div>;
 
 import { systemRoutes } from '@/app/system/routes';
 
+// Route wrapper with debug component
+const RouteWithDebugger = ({ element }) => (
+  <>
+    {element}
+    {import.meta.env.DEV && <RouteDebugger />}
+  </>
+);
+
 // Base route configuration
 export const baseRoutes: RouteObject[] = [
   {
@@ -40,17 +49,17 @@ export const baseRoutes: RouteObject[] = [
     children: [
       {
         path: '/',
-        element: <HomePage />,
+        element: <RouteWithDebugger element={<HomePage />} />,
       },
       {
         path: '/dashboard',
-        element: <DashboardPage />,
+        element: <RouteWithDebugger element={<DashboardPage />} />,
       },
       {
         path: '/onboarding',
         element: (
           <React.Suspense fallback={<div className="p-8 flex justify-center items-center">Loading...</div>}>
-            <OnboardingPage />
+            <RouteWithDebugger element={<OnboardingPage />} />
           </React.Suspense>
         ),
       },
@@ -58,7 +67,7 @@ export const baseRoutes: RouteObject[] = [
         path: '/vault',
         element: (
           <React.Suspense fallback={<div className="p-8 flex justify-center items-center">Loading...</div>}>
-            <VaultPage />
+            <RouteWithDebugger element={<VaultPage />} />
           </React.Suspense>
         ),
       },
@@ -66,7 +75,7 @@ export const baseRoutes: RouteObject[] = [
         path: '/strategy',
         element: (
           <React.Suspense fallback={<div className="p-8 flex justify-center items-center">Loading...</div>}>
-            <StrategyPage />
+            <RouteWithDebugger element={<StrategyPage />} />
           </React.Suspense>
         ),
       },
@@ -78,7 +87,7 @@ export const baseRoutes: RouteObject[] = [
         path: '/vault/strategy-detail/:id',
         element: (
           <React.Suspense fallback={<div className="p-8 flex justify-center items-center">Loading...</div>}>
-            <VaultStrategyDetail />
+            <RouteWithDebugger element={<VaultStrategyDetail />} />
           </React.Suspense>
         ),
       },
