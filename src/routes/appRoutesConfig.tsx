@@ -5,14 +5,14 @@ import ErrorPage from '@/ErrorPage';
 import HomePage from '@/app/page';
 import DashboardPage from '@/app/dashboard/page';
 import NotFound from '@/pages/NotFound';
+import StrategyDetail from '@/app/strategy/[id]';
 
 // Use dynamic imports for lazy loading
-const OnboardingPage = React.lazy(() => import('../app/onboarding/page'));
-const VaultPage = React.lazy(() => import('../app/vault/page'));
-const StrategyPage = React.lazy(() => import('../app/strategy/page'));
+const OnboardingPage = React.lazy(() => import('@/app/onboarding/OnboardingWizard'));
+const VaultPage = React.lazy(() => import('@/app/vault/page'));
+const StrategyPage = React.lazy(() => import('@/app/strategy/page'));
 
 // Placeholder components for missing pages
-const StrategyDetailsPage = () => <div className="p-8">Strategy Details Page</div>;
 const CampaignsCenter = () => <div className="p-8">Campaigns Center</div>;
 const LaunchPage = () => <div className="p-8">Launch Page</div>;
 const InsightsKpisPage = () => <div className="p-8">Insights KPIs Page</div>;
@@ -49,7 +49,7 @@ export const baseRoutes: RouteObject[] = [
       {
         path: '/onboarding',
         element: (
-          <React.Suspense fallback={<div>Loading...</div>}>
+          <React.Suspense fallback={<div className="p-8 flex justify-center items-center">Loading...</div>}>
             <OnboardingPage />
           </React.Suspense>
         ),
@@ -57,7 +57,7 @@ export const baseRoutes: RouteObject[] = [
       {
         path: '/vault',
         element: (
-          <React.Suspense fallback={<div>Loading...</div>}>
+          <React.Suspense fallback={<div className="p-8 flex justify-center items-center">Loading...</div>}>
             <VaultPage />
           </React.Suspense>
         ),
@@ -65,14 +65,14 @@ export const baseRoutes: RouteObject[] = [
       {
         path: '/strategy',
         element: (
-          <React.Suspense fallback={<div>Loading...</div>}>
+          <React.Suspense fallback={<div className="p-8 flex justify-center items-center">Loading...</div>}>
             <StrategyPage />
           </React.Suspense>
         ),
       },
       {
-        path: '/strategy/:strategyId',
-        element: <StrategyDetailsPage />,
+        path: '/strategy/:id',
+        element: <StrategyDetail />,
       },
       {
         path: '/campaigns/center',

@@ -1,340 +1,350 @@
 
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
 import { 
   Card, 
   CardContent, 
   CardDescription, 
   CardHeader, 
-  CardTitle, 
-  CardFooter 
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { supabase } from "@/integrations/supabase/client";
-import { Strategy } from "@/types/strategy";
-import { useTenant } from "@/hooks/useTenant";
-import { useAuth } from "@/hooks/useAuth";
-import { ToastService } from "@/services/ToastService";
-import { AlertCircle, ArrowRight, PlusCircle, LineChart } from "lucide-react";
-import { StrategyViewer } from "@/components/StrategyViewer";
-import { UnifiedSecurityAlert } from "@/components/security/UnifiedSecurityAlert";
-import { StrategyPerformanceTracker } from "@/components/strategy-performance/StrategyPerformanceTracker";
-import { useSystemLogs } from "@/hooks/useSystemLogs";
-import LoadingOverlay from "@/components/ui/LoadingOverlay";
+  CardTitle 
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { 
+  ArrowLeft, 
+  Calendar, 
+  Users, 
+  Target, 
+  BarChart3,
+  ChevronRight,
+  Tag
+} from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { StrategyErrorBoundary } from './components/StrategyErrorBoundary';
+import { Skeleton } from '@/components/ui/skeleton';
 
-export default function StrategyDetail() {
+const StrategyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const { tenant } = useTenant();
-  const { user } = useAuth();
-  const { logActivity } = useSystemLogs();
-  const [strategy, setStrategy] = useState<Strategy | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [campaigns, setCampaigns] = useState([]);
-
-  useEffect(() => {
-    if (!id || !tenant?.id) return;
-
-    const fetchStrategyAndCampaigns = async () => {
-      setLoading(true);
-      setError(null);
-      
-      try {
-        const { data: strategyData, error: strategyError } = await supabase
-          .from('strategies')
-          .select('*')
-          .eq('id', id)
-          .eq('tenant_id', tenant.id)
-          .single();
-
-        if (strategyError) throw strategyError;
-        
-        setStrategy(strategyData);
-
-        // Handle async activity logging safely
-        try {
-          await logActivity({
-            event_type: "STRATEGY_VIEW",
-            message: `Strategy "${strategyData.title}" viewed`,
-            meta: { strategy_id: id }
-          });
-        } catch (logError) {
-          console.error("Error logging activity:", logError);
-        }
-
-        const { data: campaignData, error: campaignError } = await supabase
-          .from('campaigns')
-          .select('*')
-          .eq('strategy_id', id)
-          .eq('tenant_id', tenant.id)
-          .order('created_at', { ascending: false });
-
-        if (campaignError) throw campaignError;
-        
-        setCampaigns(campaignData || []);
-        
-      } catch (err: any) {
-        console.error("Error fetching strategy data:", err);
-        setError(err.message || "Failed to load strategy");
-        ToastService.error({
-          title: "Error loading strategy",
-          description: err.message || "Please try again"
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStrategyAndCampaigns();
-  }, [id, tenant?.id]);
-
-  const handleCreateCampaign = () => {
-    if (!strategy) return;
-    
-    // Handle async activity logging safely using an IIFE
-    (async () => {
-      try {
-        await logActivity({
-          event_type: "USER_JOURNEY",
-          message: "User initiated campaign creation from strategy",
-          meta: {
-            from: "strategy_detail",
-            to: "campaign_create",
-            strategy_id: strategy.id
-          }
-        });
-      } catch (error) {
-        console.error("Failed to log activity:", error);
-      }
-    })();
-    
-    navigate("/campaigns/create", {
-      state: {
-        strategyId: strategy.id,
-        strategyTitle: strategy.title,
-        returnPath: `/strategy/${strategy.id}`
-      }
-    });
-  };
-
-  const handleViewCampaign = (campaignId: string) => {
-    navigate(`/campaigns/${campaignId}`);
-  };
-
-  const handleApprove = async () => {
-    try {
-      if (!strategy || strategy.status === 'approved') return;
-      
-      const { error } = await supabase
+  
+  const { data: strategy, isLoading, error } = useQuery({
+    queryKey: ['strategy', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
         .from('strategies')
-        .update({
-          status: 'approved',
-          approved_at: new Date().toISOString()
-        })
-        .eq('id', strategy.id);
+        .select('*')
+        .eq('id', id)
+        .single();
       
       if (error) throw error;
-      
-      setStrategy({ ...strategy, status: 'approved' });
-      
-      ToastService.success({
-        title: "Strategy approved",
-        description: "You can now create campaigns for this strategy"
-      });
-      
-      // Handle async activity logging safely
-      try {
-        await logActivity({
-          event_type: "STRATEGY_APPROVED",
-          message: `Strategy "${strategy.title}" approved`,
-          meta: { strategy_id: strategy.id }
-        });
-      } catch (logError) {
-        console.error("Error logging approval activity:", logError);
-      }
-    } catch (err: any) {
-      console.error("Error approving strategy:", err);
-      ToastService.error({
-        title: "Approval failed",
-        description: err.message || "Please try again"
-      });
+      return data;
+    }
+  });
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex items-center mb-6">
+          <Button variant="ghost" className="mr-4" asChild>
+            <Link to="/strategy"><ArrowLeft className="h-4 w-4 mr-2" /> Back</Link>
+          </Button>
+          <Skeleton className="h-8 w-48" />
+        </div>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-32 mb-2" />
+            <Skeleton className="h-4 w-64" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error || !strategy) {
+    return (
+      <div className="container mx-auto p-6">
+        <Card className="border-red-200 bg-red-50">
+          <CardHeader>
+            <CardTitle className="text-red-700">Strategy Not Found</CardTitle>
+            <CardDescription>
+              The strategy you are looking for could not be loaded.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild>
+              <Link to="/strategy"><ArrowLeft className="h-4 w-4 mr-2" /> Back to Strategies</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Status badge color helper
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'approved': return 'bg-emerald-100 text-emerald-800';
+      case 'pending': return 'bg-amber-100 text-amber-800';
+      case 'draft': return 'bg-slate-100 text-slate-800';
+      case 'rejected': return 'bg-rose-100 text-rose-800';
+      default: return 'bg-blue-100 text-blue-800';
     }
   };
 
-  if (loading) {
-    return <LoadingOverlay show={true} label="Loading strategy details..." />;
-  }
-
-  if (error) {
-    return (
-      <div className="container mx-auto p-6">
-        <Alert variant="destructive" className="mb-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-        <Button variant="outline" onClick={() => navigate("/strategy")}>
-          Back to Strategies
-        </Button>
-      </div>
-    );
-  }
-
-  if (!strategy) {
-    return (
-      <div className="container mx-auto p-6">
-        <Alert className="mb-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Strategy not found</AlertTitle>
-          <AlertDescription>The requested strategy could not be found.</AlertDescription>
-        </Alert>
-        <Button variant="outline" onClick={() => navigate("/strategy")}>
-          Back to Strategies
-        </Button>
-      </div>
-    );
-  }
-
   return (
-    <div className="container mx-auto p-6 space-y-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{strategy.title}</h1>
-          <p className="text-muted-foreground">
-            {strategy.status === 'approved' ? 'Active Strategy' : 'Pending Strategy'} •{' '}
-            Created {new Date(strategy.created_at).toLocaleDateString()}
-          </p>
-        </div>
-        <div className="flex gap-2 mt-4 md:mt-0">
-          <Button
-            variant="outline"
-            onClick={() => navigate("/strategy")}
-          >
-            Back to Strategies
-          </Button>
-          {strategy.status === 'approved' && (
-            <Button onClick={handleApprove} className="flex gap-2">
-              <PlusCircle className="h-4 w-4" /> Create Campaign
+    <StrategyErrorBoundary>
+      <div className="container mx-auto p-6">
+        <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-6">
+          <div className="flex items-center">
+            <Button variant="ghost" className="mr-4" asChild>
+              <Link to="/strategy"><ArrowLeft className="h-4 w-4 mr-2" /> Back</Link>
             </Button>
-          )}
+            <h1 className="text-2xl font-bold">{strategy.title}</h1>
+            <Badge className={`ml-3 ${getStatusColor(strategy.status)}`}>
+              {strategy.status?.charAt(0).toUpperCase() + strategy.status?.slice(1) || 'Draft'}
+            </Badge>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline">Edit</Button>
+            <Button>Create Campaign</Button>
+          </div>
         </div>
-      </div>
 
-      {strategy.status !== 'approved' && (
-        <UnifiedSecurityAlert
-          title="Strategy Pending Approval"
-          description="This strategy needs to be approved before campaigns can be created."
-          severity="medium"
-          source="strategy_system"
-          actionable={true}
-        />
-      )}
-
-      <Tabs defaultValue="overview" className="w-full">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="overview" className="space-y-6 p-1">
-          <StrategyViewer 
-            strategy={strategy} 
-            onApprove={handleApprove}
-          />
-        </TabsContent>
-        
-        <TabsContent value="campaigns" className="space-y-6 p-1">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-xl">Strategy Campaigns</CardTitle>
-              <CardDescription>
-                Campaigns executing this growth strategy
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {campaigns.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground mb-4">No campaigns have been created for this strategy yet.</p>
-                  {strategy.status === 'approved' && (
-                    <Button onClick={handleCreateCampaign} className="flex gap-2 mx-auto">
-                      <PlusCircle className="h-4 w-4" /> Create First Campaign
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {campaigns.map((campaign: any) => (
-                    <Card key={campaign.id} className="overflow-hidden">
-                      <div className="flex flex-col md:flex-row justify-between gap-4 p-4">
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-lg">{campaign.name}</h3>
-                          <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                            {campaign.description || "No description available"}
-                          </p>
-                          
-                          <div className="flex items-center gap-2 mt-3">
-                            <span className={`px-2 py-0.5 text-xs rounded-full ${
-                              campaign.execution_status === 'in_progress' 
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' 
-                                : campaign.execution_status === 'paused'
-                                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
-                                : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
-                            }`}>
-                              {campaign.execution_status?.toUpperCase() || "PENDING"}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              Created {new Date(campaign.created_at).toLocaleDateString()}
-                            </span>
-                          </div>
-                        </div>
-                        
-                        <Button 
-                          variant="secondary"
-                          size="sm"
-                          className="flex items-center gap-1 self-end md:self-center"
-                          onClick={() => handleViewCampaign(campaign.id)}
-                        >
-                          View <ArrowRight className="h-4 w-4 ml-1" />
-                        </Button>
+        <Tabs defaultValue="overview" className="mb-6">
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="kpis">KPIs</TabsTrigger>
+            <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
+            <TabsTrigger value="versions">Versions</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="overview" className="mt-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Description</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">
+                      {strategy.description || "No description provided."}
+                    </p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Target Audience</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="bg-muted/50 p-4 rounded-md flex items-start">
+                      <Users className="h-5 w-5 mr-3 text-primary mt-0.5" />
+                      <div>
+                        <h3 className="font-medium mb-1">Audience Profile</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {strategy.target_audience || "No target audience defined."}
+                        </p>
                       </div>
-                    </Card>
-                  ))}
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Goals</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {strategy.goals && strategy.goals.length > 0 ? (
+                        strategy.goals.map((goal, index) => (
+                          <div key={index} className="bg-muted/50 p-4 rounded-md flex items-start">
+                            <Target className="h-5 w-5 mr-3 text-primary mt-0.5" />
+                            <div>
+                              <p className="text-sm">{goal}</p>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="bg-muted/50 p-4 rounded-md text-center text-muted-foreground">
+                          No goals have been defined for this strategy.
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Strategy Details</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex justify-between py-2 border-b">
+                      <span className="text-sm text-muted-foreground">Created</span>
+                      <span className="text-sm font-medium">{new Date(strategy.created_at).toLocaleDateString()}</span>
+                    </div>
+                    
+                    {strategy.updated_at && (
+                      <div className="flex justify-between py-2 border-b">
+                        <span className="text-sm text-muted-foreground">Updated</span>
+                        <span className="text-sm font-medium">{new Date(strategy.updated_at).toLocaleDateString()}</span>
+                      </div>
+                    )}
+                    
+                    <div className="flex justify-between py-2 border-b">
+                      <span className="text-sm text-muted-foreground">Status</span>
+                      <Badge className={getStatusColor(strategy.status)}>
+                        {strategy.status?.charAt(0).toUpperCase() + strategy.status?.slice(1) || 'Draft'}
+                      </Badge>
+                    </div>
+                    
+                    {strategy.impact_score !== undefined && (
+                      <div className="flex justify-between py-2 border-b">
+                        <span className="text-sm text-muted-foreground">Impact Score</span>
+                        <span className="text-sm font-medium">{strategy.impact_score}</span>
+                      </div>
+                    )}
+                    
+                    <div className="flex justify-between py-2 border-b">
+                      <span className="text-sm text-muted-foreground">Version</span>
+                      <span className="text-sm font-medium">{strategy.version || 1}</span>
+                    </div>
+                    
+                    {strategy.is_public !== undefined && (
+                      <div className="flex justify-between py-2 border-b">
+                        <span className="text-sm text-muted-foreground">Visibility</span>
+                        <span className="text-sm font-medium">{strategy.is_public ? 'Public' : 'Private'}</span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Tags</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {strategy.tags && strategy.tags.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {strategy.tags.map((tag, index) => (
+                          <Badge key={index} variant="outline" className="flex items-center gap-1">
+                            <Tag className="h-3 w-3" />
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No tags added.</p>
+                    )}
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Marketing Channels</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {strategy.channels && strategy.channels.length > 0 ? (
+                      <div className="space-y-2">
+                        {strategy.channels.map((channel, index) => (
+                          <div key={index} className="flex items-center">
+                            <ChevronRight className="h-4 w-4 text-primary mr-2" />
+                            <span>{channel}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No marketing channels defined.</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="kpis" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Key Performance Indicators</CardTitle>
+                <CardDescription>Track and measure strategy success</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {strategy.kpis && strategy.kpis.length > 0 ? (
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {strategy.kpis.map((kpi, index) => (
+                      <Card key={index} className="bg-muted/50">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm">{kpi}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex items-center">
+                            <BarChart3 className="h-4 w-4 text-primary mr-2" />
+                            <span className="text-sm">No data yet</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-8">
+                    <BarChart3 className="h-12 w-12 text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground mb-4">No KPIs have been defined</p>
+                    <Button variant="outline">Add KPI Metrics</Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="campaigns" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Related Campaigns</CardTitle>
+                <CardDescription>Campaigns based on this strategy</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col items-center justify-center py-8">
+                  <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground mb-4">No campaigns created yet</p>
+                  <Button>Create Campaign</Button>
                 </div>
-              )}
-            </CardContent>
-            {campaigns.length > 0 && strategy.status === 'approved' && (
-              <CardFooter className="border-t bg-muted/40 px-6 py-4">
-                <Button onClick={handleCreateCampaign} className="flex gap-2">
-                  <PlusCircle className="h-4 w-4" /> Create Another Campaign
-                </Button>
-              </CardFooter>
-            )}
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="performance" className="p-1">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-xl flex items-center gap-2">
-                <LineChart className="h-5 w-5" /> Performance Tracking
-              </CardTitle>
-              <CardDescription>
-                Monitor this strategy's impact on key business metrics
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-2">
-              <StrategyPerformanceTracker 
-                strategyId={strategy.id} 
-                initialMetrics={strategy.metrics_baseline || {}}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="versions" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Version History</CardTitle>
+                <CardDescription>Track changes to your strategy over time</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="bg-muted/50 p-4 rounded-lg border-l-4 border-primary">
+                    <div className="flex justify-between items-start mb-1">
+                      <div className="font-medium">Version {strategy.version || 1} (Current)</div>
+                      <Badge variant="outline">{strategy.status}</Badge>
+                    </div>
+                    <div className="text-sm text-muted-foreground mb-2">
+                      {new Date(strategy.created_at).toLocaleDateString()} • Initial version
+                    </div>
+                    <Button variant="outline" size="sm">View</Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </StrategyErrorBoundary>
   );
-}
+};
+
+export default StrategyDetail;

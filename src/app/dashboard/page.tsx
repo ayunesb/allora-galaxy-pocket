@@ -1,207 +1,202 @@
 
 import React from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAuth } from "@/hooks/useAuth";
-import { useTenant } from "@/hooks/useTenant";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { Loader2, AlertCircle, PlusCircle } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Link } from "react-router-dom";
-import { useSystemLogs } from "@/hooks/useSystemLogs";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { PlusCircle, TrendingUp, Calendar, Settings, Clock } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
-export default function DashboardPage() {
-  const { user, isLoading: authLoading } = useAuth();
-  const { tenant, isLoading: tenantLoading } = useTenant();
-  const { toast } = useToast();
-  const { logActivity } = useSystemLogs();
-  
-  const { data: companyProfile, isLoading: profileLoading } = useQuery({
-    queryKey: ['company-profile', tenant?.id],
+const DashboardPage: React.FC = () => {
+  const { data: strategies = [] } = useQuery({
+    queryKey: ['recent-strategies'],
     queryFn: async () => {
-      if (!tenant?.id) return null;
-      
-      const { data, error } = await supabase
-        .from('company_profiles')
+      const { data } = await supabase
+        .from('strategies')
         .select('*')
-        .eq('tenant_id', tenant.id)
-        .single();
-        
-      if (error) {
-        console.error("Error fetching company profile:", error);
-        if (error.code !== 'PGRST116') { // No rows found
-          toast({
-            title: "Error loading company data",
-            description: "Please refresh and try again",
-            variant: "destructive"
-          });
-        }
-        return null;
-      }
-      
-      return data;
-    },
-    enabled: !!tenant?.id,
-    retry: 1
-  });
-  
-  const { data: strategies = [], isLoading: strategiesLoading } = useQuery({
-    queryKey: ['strategies', tenant?.id],
-    queryFn: async () => {
-      if (!tenant?.id) return [];
-      
-      const { data, error } = await supabase
-        .from('vault_strategies')
-        .select('*')
-        .eq('tenant_id', tenant.id)
-        .order('created_at', { ascending: false });
-        
-      if (error) {
-        console.error("Error fetching strategies:", error);
-        toast({
-          title: "Error loading strategies",
-          description: "Please refresh and try again",
-          variant: "destructive"
-        });
-        return [];
-      }
-      
+        .order('created_at', { ascending: false })
+        .limit(3);
       return data || [];
-    },
-    enabled: !!tenant?.id,
-    retry: 1
+    }
   });
 
-  const isLoading = authLoading || tenantLoading || profileLoading || strategiesLoading;
-  
-  // Check authentication
-  if (!authLoading && !user) {
-    return <Navigate to="/onboarding" replace />;
-  }
-  
-  // Check if onboarding is complete
-  const onboardingComplete = !!companyProfile;
-  if (!isLoading && !onboardingComplete) {
-    return <Navigate to="/onboarding" replace />;
-  }
+  const { data: kpiMetrics = [] } = useQuery({
+    queryKey: ['kpi-metrics'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('kpi_metrics')
+        .select('*')
+        .limit(4);
+      return data || [];
+    }
+  });
 
   return (
-    <div className="container mx-auto py-8 px-4 space-y-6">
-      {isLoading ? (
-        <div className="flex items-center justify-center p-8">
-          <Loader2 className="animate-spin mr-2 h-6 w-6" />
-          <span>Loading dashboard...</span>
+    <div className="container mx-auto p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm">
+            <Clock className="h-4 w-4 mr-2" /> Last 30 Days
+          </Button>
+          <Button variant="outline" size="sm">
+            <Settings className="h-4 w-4" />
+          </Button>
         </div>
-      ) : (
-        <>
-          {/* Welcome section */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Welcome to Allora OS</h1>
-            <p className="text-muted-foreground">
-              {companyProfile?.name ? `${companyProfile.name}'s dashboard` : 'Your dashboard'}
-            </p>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        {kpiMetrics.length > 0 ? (
+          kpiMetrics.map((metric: any) => (
+            <Card key={metric.id} className="bg-card">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  {metric.metric}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{metric.value}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  <span className="text-emerald-500 font-medium">↑ 12%</span> vs last month
+                </p>
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          Array(4).fill(0).map((_, i) => (
+            <Card key={i} className="bg-card">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  {['Conversion Rate', 'Active Campaigns', 'ROI', 'Engagement'][i]}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {['4.6%', '8', '$2,410', '68%'][i]}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  <span className={i % 2 === 0 ? "text-emerald-500 font-medium" : "text-rose-500 font-medium"}>
+                    {i % 2 === 0 ? '↑ 12%' : '↓ 8%'}
+                  </span> vs last month
+                </p>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+
+      {/* Recent Strategies */}
+      <Card className="mb-6">
+        <CardHeader className="pb-3">
+          <div className="flex justify-between items-center">
+            <CardTitle>Recent Strategies</CardTitle>
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/strategy">View All</Link>
+            </Button>
           </div>
-          
-          {/* Strategy section */}
-          <section className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-semibold">Your Strategies</h2>
-              <Link to="/vault">
-                <Button variant="outline" size="sm">
+        </CardHeader>
+        <CardContent>
+          {strategies.length > 0 ? (
+            <div className="space-y-4">
+              {strategies.map((strategy: any) => (
+                <div key={strategy.id} className="flex items-center justify-between border-b pb-4">
+                  <div className="flex flex-col">
+                    <span className="font-medium">{strategy.title}</span>
+                    <span className="text-sm text-muted-foreground">
+                      {strategy.status} • {new Date(strategy.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <Link to={`/strategy/${strategy.id}`}>
+                    <Button size="sm" variant="outline">View</Button>
+                  </Link>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-8 flex flex-col items-center justify-center border rounded-md border-dashed">
+              <p className="text-muted-foreground mb-4">No recent strategies</p>
+              <Link to="/strategy">
+                <Button>
                   <PlusCircle className="h-4 w-4 mr-2" />
                   Create Strategy
                 </Button>
               </Link>
             </div>
-            
-            {strategies && strategies.length > 0 ? (
-              <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                {strategies.map((strategy) => (
-                  <Card key={strategy.id} className="hover:shadow-md transition-shadow">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-lg">{strategy.title}</CardTitle>
-                      <CardDescription className="line-clamp-2">
-                        {strategy.description || 'No description available'}
-                      </CardDescription>
-                      <p className="text-xs mt-1 text-muted-foreground">
-                        📈 Impact Score: {strategy.impact_score ?? "N/A"}
-                      </p>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">
-                          Created: {new Date(strategy.created_at).toLocaleDateString()}
-                        </span>
-                        <Link to={`/strategy/${strategy.id}`}>
-                          <Button variant="ghost" size="sm">View</Button>
-                        </Link>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Upcoming Calendar */}
+      <Card className="mb-6">
+        <CardHeader className="pb-3">
+          <div className="flex justify-between items-center">
+            <CardTitle>Upcoming Campaigns</CardTitle>
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/campaigns">View Calendar</Link>
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="bg-muted/40 p-4 rounded-md">
+              <div className="flex items-center mb-2">
+                <Calendar className="h-4 w-4 mr-2 text-primary" />
+                <span className="font-medium">Content Marketing Push</span>
               </div>
-            ) : (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center p-6">
-                  <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
-                  <p className="text-center mb-4">No strategies found. Get started by creating your first strategy!</p>
-                  <Link to="/strategy">
-                    <Button>
-                      <PlusCircle className="h-4 w-4 mr-2" />
-                      Create First Strategy
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            )}
-          </section>
-          
-          {/* Quick links */}
-          <section>
-            <h2 className="text-2xl font-semibold mb-4">Quick Actions</h2>
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Campaigns</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="mb-4">Launch marketing campaigns across multiple channels.</p>
-                  <Link to="/campaigns/center">
-                    <Button variant="outline" className="w-full">Go to Campaigns</Button>
-                  </Link>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle>Launch</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="mb-4">Push new strategies to your marketing channels.</p>
-                  <Link to="/launch">
-                    <Button variant="outline" className="w-full">Go to Launch</Button>
-                  </Link>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle>Insights</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="mb-4">Track KPIs and monitor performance metrics.</p>
-                  <Link to="/insights/kpis">
-                    <Button variant="outline" className="w-full">View Insights</Button>
-                  </Link>
-                </CardContent>
-              </Card>
+              <div className="text-sm text-muted-foreground">April 28 - May 15, 2025</div>
             </div>
-          </section>
-        </>
-      )}
+            <div className="bg-muted/40 p-4 rounded-md">
+              <div className="flex items-center mb-2">
+                <Calendar className="h-4 w-4 mr-2 text-primary" />
+                <span className="font-medium">Product Launch</span>
+              </div>
+              <div className="text-sm text-muted-foreground">May 10, 2025</div>
+            </div>
+            <div className="bg-muted/40 p-4 rounded-md">
+              <div className="flex items-center mb-2">
+                <Calendar className="h-4 w-4 mr-2 text-primary" />
+                <span className="font-medium">Quarterly Review</span>
+              </div>
+              <div className="text-sm text-muted-foreground">June 30, 2025</div>
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter className="pt-0">
+          <Button variant="outline" className="w-full" asChild>
+            <Link to="/campaigns/create">
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Schedule Campaign
+            </Link>
+          </Button>
+        </CardFooter>
+      </Card>
+
+      {/* Performance Overview */}
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle>Performance Overview</CardTitle>
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/performance">
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Details
+              </Link>
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="h-64 flex items-center justify-center border border-dashed rounded-md">
+            <div className="text-center">
+              <TrendingUp className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
+              <p className="text-muted-foreground">Performance metrics will appear here</p>
+              <Button variant="outline" size="sm" className="mt-3">Connect Analytics</Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
-}
+};
+
+export default DashboardPage;

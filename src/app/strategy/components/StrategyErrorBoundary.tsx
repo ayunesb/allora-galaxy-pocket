@@ -3,6 +3,7 @@ import React from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface Props {
   children: React.ReactNode;
@@ -33,21 +34,26 @@ export class StrategyErrorBoundary extends React.Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex items-center justify-center min-h-screen p-4">
-          <Alert variant="destructive" className="max-w-xl">
+        <div className="flex items-center justify-center p-6">
+          <Alert variant="destructive" className="max-w-xl border border-destructive">
             <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Strategy loading failed</AlertTitle>
-            <AlertDescription className="mt-2">
-              <p className="mb-4">{this.state.error?.message || 'An unexpected error occurred'}</p>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  this.setState({ hasError: false });
-                  window.location.reload();
-                }}
-              >
-                Try again
-              </Button>
+            <AlertTitle className="mb-2">Strategy loading failed</AlertTitle>
+            <AlertDescription className="space-y-4">
+              <p>{this.state.error?.message || 'An unexpected error occurred while loading strategy data.'}</p>
+              <div className="flex gap-3 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    this.setState({ hasError: false });
+                    window.location.reload();
+                  }}
+                >
+                  Try again
+                </Button>
+                <Button asChild>
+                  <Link to="/strategy">Back to strategies</Link>
+                </Button>
+              </div>
             </AlertDescription>
           </Alert>
         </div>
