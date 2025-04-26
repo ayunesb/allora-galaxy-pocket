@@ -1,4 +1,3 @@
-
 import { useCallback, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { AuthError } from '@supabase/supabase-js';
@@ -113,7 +112,8 @@ export function useAuthOperations() {
         throw refreshError;
       }
       
-      return data?.session;
+      // The function should return void as per the context type
+      // but we still perform the refresh operation
     } catch (error: any) {
       console.error("Failed to refresh session:", error);
       setError(error.message || "Failed to refresh authentication session");
