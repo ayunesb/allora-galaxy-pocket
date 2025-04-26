@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useCreditsManager } from "@/hooks/useCreditsManager";
@@ -113,12 +112,10 @@ export const generateCampaign = async (input: CampaignInput, tenantId: string, s
   }
 };
 
-// React hook for campaign generation
 export const useCampaignGenerator = () => {
   const { tenant } = useTenant();
   const { useCredits } = useCreditsManager();
   
-  // Generate a campaign with billing integration
   const generateCampaignWithBilling = async (input: CampaignInput, strategy?: Strategy) => {
     if (!tenant?.id) {
       toast.error("Cannot generate campaign", {
@@ -127,7 +124,6 @@ export const useCampaignGenerator = () => {
       return { success: false, error: "No tenant context" };
     }
     
-    // Campaign generation costs 3 credits
     const creditSuccess = await useCredits(3, "Campaign Generation", "Campaign_Agent");
     if (!creditSuccess) {
       toast.error("Not enough credits", {
@@ -139,7 +135,6 @@ export const useCampaignGenerator = () => {
     return await generateCampaign(input, tenant.id, strategy);
   };
   
-  // Generate a campaign based on an existing strategy
   const generateCampaignFromStrategy = async (strategy: Strategy) => {
     if (!strategy) {
       toast.error("No strategy provided");
@@ -156,7 +151,6 @@ export const useCampaignGenerator = () => {
     return await generateCampaignWithBilling(input, strategy);
   };
   
-  // Track campaign execution status updates
   const updateCampaignExecutionStatus = async (campaignId: string, status: string, metrics?: Record<string, any>) => {
     if (!tenant?.id || !campaignId) {
       return { success: false, error: "Missing required information" };
@@ -172,7 +166,6 @@ export const useCampaignGenerator = () => {
       }
       
       if (metrics) {
-        // Get current metrics to merge with new ones
         const { data: currentCampaign } = await supabase
           .from("campaigns")
           .select("execution_metrics")
@@ -194,7 +187,6 @@ export const useCampaignGenerator = () => {
       
       if (error) throw error;
       
-      // Log status change
       await supabase
         .from('system_logs')
         .insert({
@@ -211,7 +203,6 @@ export const useCampaignGenerator = () => {
     }
   };
   
-  // Get campaign execution metrics
   const getCampaignExecutionMetrics = async (campaignId: string) => {
     if (!tenant?.id || !campaignId) {
       return { success: false, error: "Missing required information" };

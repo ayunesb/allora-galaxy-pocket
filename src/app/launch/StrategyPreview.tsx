@@ -52,12 +52,13 @@ export default function StrategyPreview(props: StrategyPreviewProps) {
     .filter(Boolean)
     .join("\n");
 
-  // For AI creation explanation, pass all available props in a Strategy object
+  // Determine valid strategy status or default to 'draft'
   const strategyStatus: Strategy['status'] = 
     (status === 'draft' || status === 'pending' || status === 'approved' || status === 'rejected') 
       ? status as Strategy['status'] 
       : 'draft';
 
+  // For AI creation explanation, pass all available props in a Strategy object
   const testConversation = getAICreationConversation({
     id: props.id,
     title,

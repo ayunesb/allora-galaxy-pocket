@@ -16,12 +16,19 @@ export interface Strategy {
   updated_at?: string;
   version?: number;
   is_public?: boolean;
-  // Add missing properties
+  
+  // Marketing strategy properties
   industry?: string;
-  goal?: string;
-  confidence?: string;
-  metrics_baseline?: Record<string, any>;
-  generated_by?: string;
+  goal?: string;  // Single primary goal (different from goals array)
+  confidence?: string; // AI confidence level in the strategy
+  metrics_baseline?: Record<string, any>; // Baseline metrics for KPI tracking
+  generated_by?: string; // Agent that generated the strategy
+  assigned_agent?: string; // Agent assigned to the strategy
+  health_score?: number; // Health score for the strategy
+  approved_at?: string; // When the strategy was approved
+  execution_status?: string; // Current execution status
+  execution_metrics?: Record<string, any>; // Metrics related to execution
+  onboarding_data?: Record<string, any>; // Data from onboarding used for strategy
 }
 
 export interface StrategyVersionDiff {
