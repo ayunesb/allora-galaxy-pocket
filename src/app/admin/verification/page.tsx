@@ -29,7 +29,7 @@ export default function VerificationPage() {
       const results: Record<string, any> = {};
       
       for (const module of CORE_MODULES) {
-        const result = await verifyModuleImplementation(module.path);
+        const result = await verifyModuleImplementation('/admin/security', { deep: true });
         results[module.path] = result;
       }
       

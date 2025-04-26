@@ -9,7 +9,7 @@ export interface ThemeProviderProps {
 }
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  const { theme } = useTheme()
+  const { theme } = useTheme();
   
   // Apply theme to document body as well as the wrapper div
   useEffect(() => {
@@ -23,7 +23,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   }, [theme]);
   
   return (
-    <div className={theme}>
+    <div className={theme || "light"}>
       <div className="bg-background text-foreground min-h-screen">
         {children}
       </div>

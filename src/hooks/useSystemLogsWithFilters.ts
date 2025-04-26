@@ -1,72 +1,145 @@
 
 import { useState, useEffect } from 'react';
 import { useSystemLogs } from './useSystemLogs';
-import { supabase } from '@/integrations/supabase/client';
-import { useTenant } from './useTenant';
+import { toast } from 'sonner';
+
+type Filters = {
+  searchTerm?: string;
+  dateRange?: number;
+  eventType?: string;
+  userId?: string;
+};
+
+type PaginationState = {
+  currentPage: number;
+  totalPages: number;
+  pageSize: number;
+};
 
 export function useSystemLogsWithFilters() {
-  const [logs, setLogs] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [filters, setFilters] = useState({});
-  const { tenant } = useTenant();
-  const { logActivity } = useSystemLogs();
+  const { logs: allLogs, getRecentLogs, isLogging, logSecurityEvent } = useSystemLogs();
+  const [logs, setLogs] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [filters, setFilters] = useState<Filters>({
+    searchTerm: '',
+    dateRange: 7,
+    eventType: 'all',
+    userId: 'all'
+  });
   
-  // Initialize with empty implementations that will be properly set up
-  const logSecurityEvent = async (message: string, eventType: string, meta?: any) => {
-    return logActivity({
-      event_type: 'SECURITY_' + eventType,
-      message,
-      meta,
-      severity: 'warning'
-    });
+  const [pagination, setPagination] = useState<PaginationState>({
+    currentPage: 1,
+    totalPages: 1,
+    pageSize: 10
+  });
+
+  useEffect(() => {
+    applyFilters();
+  }, [filters, allLogs]);
+
+  const applyFilters = () => {
+    let filteredData = [...allLogs];
+    
+    if (filters.eventType && filters.eventType !== 'all') {
+      filteredData = filteredData.filter(log => 
+        log.event_type?.toLowerCase().includes(filters.eventType?.toLowerCase() || '')
+      );
+    }
+    
+    if (filters.dateRange && filters.dateRange > 0) {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - (filters.dateRange || 7));
+      filteredData = filteredData.filter(log => 
+        new Date(log.created_at) >= cutoffDate
+      );
+    }
+    
+    if (filters.searchTerm) {
+      const searchTerm = filters.searchTerm.toLowerCase();
+      filteredData = filteredData.filter(log => 
+        log.message?.toLowerCase().includes(searchTerm) || 
+        log.event_type?.toLowerCase().includes(searchTerm)
+      );
+    }
+    
+    const totalPages = Math.ceil(filteredData.length / pagination.pageSize);
+    
+    setPagination(prev => ({
+      ...prev,
+      totalPages: Math.max(1, totalPages),
+      currentPage: Math.min(prev.currentPage, Math.max(1, totalPages))
+    }));
+    
+    // Apply pagination
+    const startIndex = (pagination.currentPage - 1) * pagination.pageSize;
+    const paginatedLogs = filteredData.slice(startIndex, startIndex + pagination.pageSize);
+    
+    setLogs(paginatedLogs);
   };
-  
-  const isLogging = false;
+
+  const updateFilters = (newFilters: Partial<Filters>) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+    setPagination(prev => ({ ...prev, currentPage: 1 })); // Reset to page 1 when changing filters
+  };
+
+  const resetFilters = () => {
+    setFilters({
+      searchTerm: '',
+      dateRange: 7,
+      eventType: 'all',
+      userId: 'all'
+    });
+    setPagination(prev => ({ ...prev, currentPage: 1 }));
+  };
 
   const fetchLogs = async () => {
-    if (!tenant) return;
-    setLoading(true);
-    
+    setIsLoading(true);
     try {
-      let query = supabase
-        .from('system_logs')
-        .select('*')
-        .eq('tenant_id', tenant.id)
-        .order('created_at', { ascending: false });
-      
-      // Apply filters
-      if (filters.eventType) {
-        query = query.eq('event_type', filters.eventType);
-      }
-      
-      if (filters.startDate && filters.endDate) {
-        query = query
-          .gte('created_at', filters.startDate)
-          .lte('created_at', filters.endDate);
-      }
-      
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      setLogs(data || []);
+      await getRecentLogs(100); // Fetch more logs for client-side filtering
     } catch (error) {
       console.error('Error fetching logs:', error);
+      toast.error('Failed to fetch system logs');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
-  
-  useEffect(() => {
-    if (tenant?.id) {
-      fetchLogs();
+
+  // Pagination controls
+  const nextPage = () => {
+    if (pagination.currentPage < pagination.totalPages) {
+      setPagination(prev => ({ ...prev, currentPage: prev.currentPage + 1 }));
     }
-  }, [tenant?.id, filters]);
-  
+  };
+
+  const prevPage = () => {
+    if (pagination.currentPage > 1) {
+      setPagination(prev => ({ ...prev, currentPage: prev.currentPage - 1 }));
+    }
+  };
+
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= pagination.totalPages) {
+      setPagination(prev => ({ ...prev, currentPage: page }));
+    }
+  };
+
+  // Initial fetch
+  useEffect(() => {
+    fetchLogs();
+  }, []);
+
   return {
     logs,
-    loading,
-    setFilters,
+    allLogs,
+    isLoading,
+    filters,
+    updateFilters,
+    resetFilters,
     fetchLogs,
+    pagination,
+    nextPage,
+    prevPage,
+    goToPage,
     logSecurityEvent,
     isLogging
   };

@@ -1,4 +1,5 @@
 
+import { useState } from 'react';
 import { useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
@@ -14,7 +15,8 @@ export interface SystemLogEntry {
 export function useSystemLogs() {
   const { user } = useAuth();
   const { tenant } = useTenant();
-  const [isLogging, setIsLogging] = React.useState(false);
+  const [isLogging, setIsLogging] = useState(false);
+  const [logs, setLogs] = useState<any[]>([]);
 
   const logActivity = useMutation({
     mutationFn: async (entry: SystemLogEntry) => {
@@ -41,7 +43,7 @@ export function useSystemLogs() {
   });
   
   const logJourneyStep = async (from: string, to: string, meta?: Record<string, any>) => {
-    return logActivity.mutate({
+    return logActivity.mutateAsync({
       event_type: 'USER_JOURNEY',
       message: `User navigated from ${from} to ${to}`,
       meta: { from, to, ...meta },
@@ -50,7 +52,7 @@ export function useSystemLogs() {
   };
   
   const logSecurityEvent = async (message: string, eventType: string, meta?: Record<string, any>) => {
-    return logActivity.mutate({
+    return logActivity.mutateAsync({
       event_type: 'SECURITY_' + eventType,
       message,
       meta: meta || {},
@@ -85,7 +87,9 @@ export function useSystemLogs() {
       return [];
     }
     
-    return data || [];
+    const results = data || [];
+    setLogs(results);
+    return results;
   };
   
   return {
@@ -94,7 +98,7 @@ export function useSystemLogs() {
     logSecurityEvent,
     verifyModuleImplementation,
     isLogging,
-    logs: [],
+    logs,
     getRecentLogs
   };
 }

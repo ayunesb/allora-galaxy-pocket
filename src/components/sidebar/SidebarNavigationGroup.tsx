@@ -1,14 +1,8 @@
 
 import { NavLink } from "react-router-dom";
 import { LucideIcon } from "lucide-react";
-import {
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-} from "@/components/ui/sidebar";
+import { SidebarSection, SidebarItem } from "@/components/ui/sidebar";
+import { useSidebar } from "@/hooks/useSidebar";
 
 interface NavigationItem {
   icon: LucideIcon;
@@ -23,30 +17,27 @@ interface SidebarNavigationGroupProps {
 }
 
 export function SidebarNavigationGroup({ label, items, show = true }: SidebarNavigationGroupProps) {
+  const { collapsed } = useSidebar();
+  
   if (!show || items.length === 0) return null;
 
   return (
-    <SidebarGroup>
-      <SidebarGroupLabel>{label}</SidebarGroupLabel>
-      <SidebarGroupContent>
-        <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.path}>
-              <SidebarMenuButton asChild tooltip={item.label}>
-                <NavLink
-                  to={item.path}
-                  className={({ isActive }) =>
-                    `w-full ${isActive ? "data-[active=true]" : ""}`
-                  }
-                >
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.label}</span>
-                </NavLink>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
-      </SidebarGroupContent>
-    </SidebarGroup>
+    <SidebarSection title={collapsed ? undefined : label}>
+      {items.map((item) => (
+        <NavLink
+          key={item.path}
+          to={item.path}
+          className={({ isActive }) => "block no-underline"}
+        >
+          {({ isActive }) => (
+            <SidebarItem
+              isActive={isActive}
+              icon={<item.icon className="h-4 w-4" />}
+              label={item.label}
+            />
+          )}
+        </NavLink>
+      ))}
+    </SidebarSection>
   );
 }

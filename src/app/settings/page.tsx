@@ -1,40 +1,46 @@
 
 import React from 'react';
-import { RoleChangeRequestForm } from './components/RoleChangeRequestForm';
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
-} from "@/components/ui/tabs";
-import ThemeCustomizer from "@/components/settings/ThemeCustomizer";
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Settings, PaintBucket, Bell, Key } from 'lucide-react';
+import { ThemeCustomizer } from '@/components/settings/ThemeCustomizer';
+import { NotificationSettings } from '@/components/settings/NotificationSettings';
+import { APIKeySettings } from '@/components/settings/ApiKeySettings';
 
 export default function SettingsPage() {
   return (
-    <div className="container mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold mb-8">Settings</h1>
+    <div className="container mx-auto py-6">
+      <div className="flex items-center mb-6">
+        <Settings className="h-6 w-6 mr-2" />
+        <h1 className="text-2xl font-bold">Settings</h1>
+      </div>
       
-      <Tabs defaultValue="account" className="max-w-4xl">
+      <Tabs defaultValue="appearance" className="w-full">
         <TabsList className="mb-6">
-          <TabsTrigger value="account">Account</TabsTrigger>
-          <TabsTrigger value="appearance">Appearance</TabsTrigger>
-          <TabsTrigger value="role-request">Role Request</TabsTrigger>
+          <TabsTrigger value="appearance" className="flex items-center gap-2">
+            <PaintBucket className="h-4 w-4" />
+            <span>Appearance</span>
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="flex items-center gap-2">
+            <Bell className="h-4 w-4" />
+            <span>Notifications</span>
+          </TabsTrigger>
+          <TabsTrigger value="api" className="flex items-center gap-2">
+            <Key className="h-4 w-4" />
+            <span>API</span>
+          </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="account">
-          <div className="text-sm text-muted-foreground">
-            Account management options coming soon.
-          </div>
-        </TabsContent>
-        
         <TabsContent value="appearance">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <ThemeCustomizer />
-          </div>
+          <ThemeCustomizer />
         </TabsContent>
         
-        <TabsContent value="role-request">
-          <RoleChangeRequestForm />
+        <TabsContent value="notifications">
+          <NotificationSettings />
+        </TabsContent>
+        
+        <TabsContent value="api">
+          <APIKeySettings />
         </TabsContent>
       </Tabs>
     </div>

@@ -1,116 +1,50 @@
 
-import { useState } from "react";
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
-} from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
-import ThemeCustomizer from "@/components/settings/ThemeCustomizer";
-import ApiKeyForm from "@/app/admin/settings/ApiKeyForm";
-import AutonomyToggle from "@/app/admin/settings/AutonomyToggle";
-import { useToast } from "@/hooks/use-toast";
+import React from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Settings, PaintBucket, Bell, Key } from 'lucide-react';
+import { ThemeCustomizer } from '@/components/settings/ThemeCustomizer';
+import { NotificationSettings } from '@/components/settings/NotificationSettings';
+import { APIKeySettings } from '@/components/settings/ApiKeySettings';
 
-export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState("account");
-  const { toast } = useToast();
-
-  const handleStripeKeySave = (value: string) => {
-    if (!value) return;
-    toast({
-      title: "Stripe API Updated",
-      description: "Your Stripe API key has been securely saved"
-    });
-  };
-
-  const handleHubSpotKeySave = (value: string) => {
-    if (!value) return;
-    toast({
-      title: "HubSpot API Updated",
-      description: "Your HubSpot API key has been securely saved"
-    });
-  };
-
+const SettingsPage: React.FC = () => {
   return (
-    <div className="container mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold mb-8">Settings</h1>
+    <div className="container mx-auto py-6">
+      <div className="flex items-center mb-6">
+        <Settings className="h-6 w-6 mr-2" />
+        <h1 className="text-2xl font-bold">Settings</h1>
+      </div>
       
-      <Tabs 
-        value={activeTab} 
-        onValueChange={setActiveTab}
-        className="max-w-4xl"
-      >
+      <Tabs defaultValue="appearance" className="w-full">
         <TabsList className="mb-6">
-          <TabsTrigger value="account">Account</TabsTrigger>
-          <TabsTrigger value="appearance">Appearance</TabsTrigger>
-          <TabsTrigger value="integrations">Integrations</TabsTrigger>
-          <TabsTrigger value="advanced">Advanced</TabsTrigger>
+          <TabsTrigger value="appearance" className="flex items-center gap-2">
+            <PaintBucket className="h-4 w-4" />
+            <span>Appearance</span>
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="flex items-center gap-2">
+            <Bell className="h-4 w-4" />
+            <span>Notifications</span>
+          </TabsTrigger>
+          <TabsTrigger value="api" className="flex items-center gap-2">
+            <Key className="h-4 w-4" />
+            <span>API</span>
+          </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="account">
-          <Card>
-            <CardContent className="pt-6 space-y-4">
-              <h2 className="text-lg font-semibold">Account Settings</h2>
-              <p className="text-sm text-muted-foreground">
-                Manage your account settings and preferences
-              </p>
-              
-              {/* Account settings would go here */}
-              <div className="text-sm text-muted-foreground">
-                This section will contain account management options, profile information, and subscription details.
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
         <TabsContent value="appearance">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <ThemeCustomizer />
-          </div>
+          <ThemeCustomizer />
         </TabsContent>
         
-        <TabsContent value="integrations">
-          <div className="space-y-6">
-            <ApiKeyForm
-              label="Stripe API Key"
-              placeholder="sk_test_..."
-              onSave={handleStripeKeySave}
-            />
-            <ApiKeyForm
-              label="HubSpot API Key"
-              placeholder="pat_eu1_..."
-              onSave={handleHubSpotKeySave}
-            />
-            <Card>
-              <CardContent className="pt-6">
-                <h2 className="text-lg font-semibold mb-4">Connected Services</h2>
-                <p className="text-sm text-muted-foreground">
-                  Manage connections to third-party services and APIs
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+        <TabsContent value="notifications">
+          <NotificationSettings />
         </TabsContent>
         
-        <TabsContent value="advanced">
-          <div className="space-y-6">
-            <AutonomyToggle />
-            <Card>
-              <CardContent className="pt-6">
-                <h2 className="text-lg font-semibold mb-4">Data Management</h2>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Export or delete your account data
-                </p>
-                <div className="flex gap-4">
-                  <button className="text-sm underline text-primary">Export Data</button>
-                  <button className="text-sm underline text-destructive">Delete Account</button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        <TabsContent value="api">
+          <APIKeySettings />
         </TabsContent>
       </Tabs>
     </div>
   );
-}
+};
+
+export default SettingsPage;

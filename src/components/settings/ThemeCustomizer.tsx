@@ -22,9 +22,11 @@ export const ThemeCustomizer: React.FC = () => {
   
   const handleColorChange = async (color: string) => {
     try {
-      await updateTenantProfile({
-        theme_color: color
-      });
+      if (updateTenantProfile && tenant?.id) {
+        await updateTenantProfile({
+          theme_color: color
+        });
+      }
     } catch (error) {
       console.error('Failed to update theme color:', error);
     }

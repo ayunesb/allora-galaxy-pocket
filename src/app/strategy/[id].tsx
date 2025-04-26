@@ -53,13 +53,13 @@ export default function StrategyDetail() {
         
         setStrategy(strategyData);
 
-        await logActivity({
-          event_type: 'STRATEGY_VIEWED',
-          message: `User viewed strategy: ${strategy.title}`,
-          meta: { strategy_id: strategy.id }
-        }).then(() => {
-          // Successfully logged
-        }).catch(err => console.error('Failed to log strategy view:', err));
+        logActivity({
+          event_type: "STRATEGY_VIEW",
+          message: `Strategy "${strategyData.title}" viewed`,
+          meta: { strategy_id: id }
+        }).catch(err => {
+          console.error("Error logging activity:", err);
+        });
 
         const { data: campaignData, error: campaignError } = await supabase
           .from('campaigns')
@@ -134,7 +134,7 @@ export default function StrategyDetail() {
         description: "You can now create campaigns for this strategy"
       });
       
-      await logActivity({
+      logActivity({
         event_type: "STRATEGY_APPROVED",
         message: `Strategy "${strategy.title}" approved`,
         meta: { strategy_id: strategy.id }

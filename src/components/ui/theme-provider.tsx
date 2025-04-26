@@ -16,10 +16,16 @@ export function ThemeProvider({
   )
 }
 
+// Create a proper context hook that uses next-themes
 export const useTheme = () => {
-  const context = React.useContext(NextThemesProvider.createContext({}));
+  const context = React.useContext(NextThemesProvider.context);
   if (!context) {
     throw new Error("useTheme must be used within a ThemeProvider");
   }
-  return context;
+  return {
+    theme: context.theme,
+    setTheme: context.setTheme,
+    resolvedTheme: context.resolvedTheme,
+    systemTheme: context.systemTheme,
+  };
 }

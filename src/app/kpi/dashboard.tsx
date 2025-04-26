@@ -1,6 +1,5 @@
-
-import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Card,
   CardContent,
@@ -15,416 +14,376 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { supabase } from "@/integrations/supabase/client";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar"
+import { CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { cn } from "@/lib/utils"
+import { format } from "date-fns"
+import { DateRange } from "react-day-picker"
 import { useTenant } from "@/hooks/useTenant";
-import { ToastService } from "@/services/ToastService";
-import { 
-  AlertCircle, 
-  ArrowLeft, 
-  BarChart as BarChartIcon, 
-  TrendingUp, 
-  LineChart as LineChartIcon,
-  Plus
-} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useSystemLogs } from "@/hooks/useSystemLogs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import LoadingOverlay from "@/components/ui/LoadingOverlay";
 
+interface KpiData {
+  date: string;
+  value: number;
+}
+
+interface CampaignData {
+  id: string;
+  name: string;
+}
+
+interface FilterState {
+  dateRange: DateRange | undefined;
+  campaigns: string[];
+  metrics: string[];
+}
+
+const initialFilters: FilterState = {
+  dateRange: undefined,
+  campaigns: [],
+  metrics: [],
+};
+
 export default function KpiDashboard() {
-  const location = useLocation();
+  const { id: campaignId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { tenant } = useTenant();
+  const { user } = useAuth();
   const { logActivity } = useSystemLogs();
-  
-  const campaignId = location.state?.campaignId;
-  const campaignName = location.state?.campaignName;
-  const returnPath = location.state?.returnPath || "/campaigns";
-  
+  const [kpiData, setKpiData] = useState<KpiData[]>([]);
+  const [campaigns, setCampaigns] = useState<CampaignData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [kpiMetrics, setKpiMetrics] = useState<any[]>([]);
-  const [kpiTrends, setKpiTrends] = useState<any[]>([]);
-  const [campaign, setCampaign] = useState<any>(null);
-  const [metricKeys, setMetricKeys] = useState<string[]>([]);
-  
+  const [selectedFilters, setSelectedFilters] = useState<FilterState>(initialFilters);
+  const [availableMetrics, setAvailableMetrics] = useState<string[]>([]);
+  const [availableCampaigns, setAvailableCampaigns] = useState<CampaignData[]>([]);
+  const [isFiltering, setIsFiltering] = useState(false);
+  const returnPath = window.history.state?.returnPath || "/campaigns";
+
   useEffect(() => {
-    if (!tenant?.id) return;
-    
-    const fetchKpiData = async () => {
+    const fetchInitialData = async () => {
       setLoading(true);
       setError(null);
       
       try {
-        // Log that user accessed KPI dashboard
-        await logActivity({
-          event_type: "KPI_DASHBOARD_ACCESS",
-          message: campaignId 
-            ? `KPI dashboard accessed for campaign ${campaignName || campaignId}`
-            : "Main KPI dashboard accessed",
-          meta: campaignId ? { campaign_id: campaignId } : {}
-        });
+        // Fetch available campaigns
+        const { data: campaignsData, error: campaignsError } = await supabase
+          .from('campaigns')
+          .select('id, name')
+          .eq('tenant_id', tenant?.id);
+          
+        if (campaignsError) throw campaignsError;
+        setAvailableCampaigns(campaignsData || []);
         
-        // Fetch current KPI metrics
+        // Fetch available metrics (example: page_views, clicks, conversions)
         const { data: metricsData, error: metricsError } = await supabase
           .from('kpi_metrics')
-          .select('*')
-          .eq('tenant_id', tenant.id)
-          .order('created_at', { ascending: false });
+          .select('kpi_name')
+          .eq('tenant_id', tenant?.id);
           
         if (metricsError) throw metricsError;
+        setAvailableMetrics(metricsData?.map(m => m.kpi_name) || []);
         
-        setKpiMetrics(metricsData || []);
-        
-        // Extract unique metric keys
-        const keys = Array.from(new Set(metricsData?.map(m => m.metric) || []));
-        setMetricKeys(keys);
-        
-        // Fetch historical KPI data for trends
-        const { data: trendsData, error: trendsError } = await supabase
-          .from('kpi_metrics_history')
-          .select('*')
-          .eq('tenant_id', tenant.id)
-          .order('recorded_at', { ascending: true });
-          
-        if (trendsError) throw trendsError;
-        
-        setKpiTrends(trendsData || []);
-        
-        // If we have a campaignId, fetch the campaign details
+        // Apply initial filters if campaignId is present
         if (campaignId) {
-          const { data: campaignData, error: campaignError } = await supabase
-            .from('campaigns')
-            .select('*')
-            .eq('id', campaignId)
-            .single();
-            
-          if (campaignError && campaignError.code !== 'PGRST116') {
-            console.error("Error fetching campaign:", campaignError);
-          } else {
-            setCampaign(campaignData);
-          }
+          setSelectedFilters(prev => ({
+            ...prev,
+            campaigns: [campaignId]
+          }));
         }
-      } catch (err: any) {
-        console.error("Error fetching KPI data:", err);
-        setError(err.message || "Failed to load KPI data");
-        ToastService.error({
-          title: "Error loading KPI data",
-          description: err.message || "Please try again"
+        
+        // Log KPI dashboard view
+        logActivity({
+          event_type: "KPI_DASHBOARD_VIEW",
+          message: "KPI Dashboard viewed",
+          meta: { filters: selectedFilters }
+        }).catch(error => {
+          console.error("Failed to log KPI dashboard view:", error);
         });
+        
+      } catch (err: any) {
+        console.error("Error fetching initial data:", err);
+        setError(err.message || "Failed to load initial data");
       } finally {
         setLoading(false);
       }
     };
     
-    fetchKpiData();
-  }, [tenant?.id, campaignId, campaignName]);
-  
-  // Transform metrics data for visualization
-  const prepareChartData = () => {
-    const chartData: any[] = [];
-    
-    // Group metrics by date
-    const metricsByDate = kpiMetrics.reduce((acc, metric) => {
-      const date = new Date(metric.created_at).toLocaleDateString();
+    if (tenant?.id && user?.id) {
+      fetchInitialData();
+    }
+  }, [tenant?.id, user?.id, campaignId]);
+
+  useEffect(() => {
+    const fetchKpiData = async () => {
+      setIsFiltering(true);
+      setError(null);
       
-      if (!acc[date]) acc[date] = {};
-      
-      acc[date][metric.metric] = metric.value;
-      acc[date].date = date;
-      
-      return acc;
-    }, {});
+      try {
+        let query = supabase
+          .from('kpi_metrics')
+          .select('*')
+          .eq('tenant_id', tenant?.id);
+          
+        // Apply date range filter
+        if (selectedFilters.dateRange?.from && selectedFilters.dateRange?.to) {
+          query = query.gte('date', format(selectedFilters.dateRange.from, 'yyyy-MM-dd'));
+          query = query.lte('date', format(selectedFilters.dateRange.to, 'yyyy-MM-dd'));
+        }
+        
+        // Apply campaign filter
+        if (selectedFilters.campaigns.length > 0) {
+          query = query.in('campaign_id', selectedFilters.campaigns);
+        }
+        
+        // Apply metrics filter
+        if (selectedFilters.metrics.length > 0) {
+          query = query.in('kpi_name', selectedFilters.metrics);
+        }
+        
+        const { data, error } = await query;
+        if (error) throw error;
+        
+        // Transform data for recharts
+        const transformedData = data?.map(item => ({
+          date: item.date,
+          value: item.value,
+          name: item.kpi_name
+        })) || [];
+        
+        setKpiData(transformedData);
+        
+        // Fetch campaigns based on selected filters
+        const { data: campaignsData, error: campaignsError } = await supabase
+          .from('campaigns')
+          .select('id, name')
+          .eq('tenant_id', tenant?.id)
+          .in('id', selectedFilters.campaigns);
+          
+        if (campaignsError) throw campaignsError;
+        setCampaigns(campaignsData || []);
+        
+      } catch (err: any) {
+        console.error("Error fetching KPI data:", err);
+        setError(err.message || "Failed to load KPI data");
+      } finally {
+        setIsFiltering(false);
+      }
+    };
     
-    // Convert to array for chart
-    Object.values(metricsByDate).forEach(dateMetrics => {
-      chartData.push(dateMetrics);
-    });
-    
-    // Sort by date
-    chartData.sort((a: any, b: any) => {
-      return new Date(a.date).getTime() - new Date(b.date).getTime();
-    });
-    
-    return chartData;
+    if (tenant?.id) {
+      fetchKpiData();
+    }
+  }, [tenant?.id, selectedFilters]);
+
+  const handleFilterChange = (filterType: string, value: any) => {
+    setSelectedFilters(prev => ({
+      ...prev,
+      [filterType]: value
+    }));
   };
-  
-  const chartData = prepareChartData();
+
+  const handleCampaignSelect = (campaignId: string) => {
+    setSelectedFilters(prev => {
+      const isSelected = prev.campaigns.includes(campaignId);
+      return {
+        ...prev,
+        campaigns: isSelected
+          ? prev.campaigns.filter(id => id !== campaignId)
+          : [...prev.campaigns, campaignId]
+      };
+    });
+  };
+
+  const handleMetricSelect = (metric: string) => {
+    setSelectedFilters(prev => {
+      const isSelected = prev.metrics.includes(metric);
+      return {
+        ...prev,
+        metrics: isSelected
+          ? prev.metrics.filter(m => m !== metric)
+          : [...prev.metrics, metric]
+      };
+    });
+  };
+
+  const groupedData = kpiData.reduce((acc, item) => {
+    const { date, value, name } = item;
+    if (!acc[date]) {
+      acc[date] = {};
+    }
+    acc[date][name] = value;
+    return acc;
+  }, {});
+
+  const chartData = Object.entries(groupedData).map(([date, values]) => ({
+    date,
+    ...values,
+  }));
+
+  const metricColors = {
+    page_views: '#8884d8',
+    clicks: '#82ca9d',
+    conversions: '#ffc658',
+  };
 
   if (loading) {
-    return <LoadingOverlay show={true} label="Loading KPI data..." />;
+    return <LoadingOverlay show={true} label="Loading dashboard..." />;
   }
 
   return (
     <div className="container mx-auto p-6 space-y-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => navigate(returnPath)}
-            className="flex items-center gap-1 mr-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">KPI Dashboard</h1>
-            <p className="text-muted-foreground">
-              {campaign ? `Metrics for campaign: ${campaign.name}` : 'Overview of all key performance indicators'}
-            </p>
-          </div>
-        </div>
-        
-        <Button
-          onClick={() => navigate("/kpi/add")}
-          className="flex items-center gap-2"
-        >
-          <Plus className="h-4 w-4" /> Add Metric
+      <div className="flex justify-between items-center">
+        <Button variant="ghost" onClick={() => navigate(returnPath)}>
+          ← Back
         </Button>
+        <h1 className="text-3xl font-bold">KPI Dashboard</h1>
       </div>
-      
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Filters</CardTitle>
+          <CardDescription>Customize your KPI view</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label>Date Range</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-[280px] justify-start text-left font-normal",
+                      !selectedFilters.dateRange?.from && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {selectedFilters.dateRange?.from ? (
+                      selectedFilters.dateRange.to ? (
+                        <>
+                          {format(selectedFilters.dateRange.from, "MMM dd, yyyy")} -{" "}
+                          {format(selectedFilters.dateRange.to, "MMM dd, yyyy")}
+                        </>
+                      ) : (
+                        format(selectedFilters.dateRange.from, "MMM dd, yyyy")
+                      )
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="range"
+                    defaultMonth={selectedFilters.dateRange?.from}
+                    selected={selectedFilters.dateRange}
+                    onSelect={(dateRange) => handleFilterChange('dateRange', dateRange)}
+                    numberOfMonths={2}
+                    pagedNavigation
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div>
+              <Label>Campaigns</Label>
+              <Select onValueChange={(value) => handleCampaignSelect(value)}>
+                <SelectTrigger className="w-[280px]">
+                  <SelectValue placeholder="Select a campaign" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableCampaigns.map((campaign) => (
+                    <SelectItem key={campaign.id} value={campaign.id}>
+                      {campaign.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Metrics</Label>
+              <Select onValueChange={(value) => handleMetricSelect(value)}>
+                <SelectTrigger className="w-[280px]">
+                  <SelectValue placeholder="Select a metric" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableMetrics.map((metric) => (
+                    <SelectItem key={metric} value={metric}>
+                      {metric}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+        <div className="text-red-500">{error}</div>
       )}
-      
-      {kpiMetrics.length === 0 ? (
-        <Card className="bg-muted/40">
-          <CardContent className="flex flex-col items-center justify-center p-10 text-center">
-            <BarChartIcon className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-xl font-medium">No KPI data yet</h3>
-            <p className="text-muted-foreground mb-6 max-w-md">
-              Start tracking your key performance indicators to measure the impact of your campaigns
-            </p>
-            <Button onClick={() => navigate("/kpi/add")} className="flex gap-2 items-center">
-              <Plus className="h-4 w-4" /> Add First Metric
-            </Button>
+
+      {isFiltering ? (
+        <LoadingOverlay show={true} label="Filtering data..." />
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>KPI Chart</CardTitle>
+            <CardDescription>
+              Visual representation of key performance indicators
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {chartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={400}>
+                <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  {availableMetrics.map(metric => (
+                    <Bar key={metric} dataKey={metric} fill={metricColors[metric] || '#8884d8'} />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="text-center py-8">No data available for the selected filters.</div>
+            )}
           </CardContent>
         </Card>
-      ) : (
-        <Tabs defaultValue="overview" className="w-full">
-          <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="trends">Trends</TabsTrigger>
-            {campaign && <TabsTrigger value="campaign">Campaign Impact</TabsTrigger>}
-          </TabsList>
-          
-          <TabsContent value="overview" className="space-y-6 pt-2">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Array.from(new Set(kpiMetrics.map(m => m.metric))).map(metric => {
-                // Find the most recent value for this metric
-                const latestMetric = kpiMetrics
-                  .filter(m => m.metric === metric)
-                  .sort((a, b) => {
-                    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-                  })[0];
-                
-                // Find the previous value for comparison
-                const previousMetrics = kpiMetrics
-                  .filter(m => m.metric === metric)
-                  .sort((a, b) => {
-                    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-                  });
-                
-                const previousMetric = previousMetrics.length > 1 ? previousMetrics[1] : null;
-                const percentChange = previousMetric 
-                  ? ((latestMetric.value - previousMetric.value) / previousMetric.value * 100).toFixed(1)
-                  : null;
-                
-                return (
-                  <Card key={metric} className="overflow-hidden">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base">{metric}</CardTitle>
-                      <CardDescription>
-                        {new Date(latestMetric.created_at).toLocaleDateString()}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex justify-between items-end">
-                        <div>
-                          <p className="text-3xl font-semibold">{latestMetric.value}</p>
-                        </div>
-                        
-                        {percentChange !== null && (
-                          <div className={`flex items-center text-sm ${
-                            Number(percentChange) > 0 
-                              ? 'text-green-600 dark:text-green-400' 
-                              : Number(percentChange) < 0
-                                ? 'text-red-600 dark:text-red-400'
-                                : 'text-muted-foreground'
-                          }`}>
-                            {Number(percentChange) > 0 && '+'}{percentChange}%
-                            <TrendingUp className={`h-4 w-4 ml-1 ${
-                              Number(percentChange) < 0 ? 'rotate-180' : ''
-                            }`} />
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <LineChartIcon className="h-5 w-5" /> Performance Overview
-                </CardTitle>
-                <CardDescription>
-                  Combined view of all key metrics
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip />
-                      {metricKeys.map((key, index) => (
-                        <Line
-                          key={key}
-                          type="monotone"
-                          dataKey={key}
-                          stroke={`hsl(${index * (360 / metricKeys.length)}, 70%, 50%)`}
-                          activeDot={{ r: 6 }}
-                        />
-                      ))}
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="trends" className="space-y-6 pt-2">
-            {metricKeys.map((metric, index) => (
-              <Card key={metric}>
-                <CardHeader>
-                  <CardTitle className="text-lg">{metric} Trend</CardTitle>
-                  <CardDescription>
-                    Historical performance data
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-72">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart 
-                        data={chartData.filter(d => d[metric] !== undefined)}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                        <XAxis dataKey="date" />
-                        <YAxis />
-                        <Tooltip />
-                        <Bar 
-                          dataKey={metric}
-                          fill={`hsl(${index * (360 / metricKeys.length)}, 70%, 50%)`}
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </TabsContent>
-          
-          {campaign && (
-            <TabsContent value="campaign" className="space-y-6 pt-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Campaign Impact</CardTitle>
-                  <CardDescription>
-                    Metrics related to campaign: {campaign.name}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {/* Display campaign-specific metrics */}
-                    {campaign.metrics && Object.keys(campaign.metrics).length > 0 ? (
-                      Object.entries(campaign.metrics).map(([key, value]: [string, any]) => (
-                        <Card key={key} className="bg-muted/30">
-                          <CardContent className="p-4">
-                            <p className="text-xs text-muted-foreground mb-1">{key}</p>
-                            <p className="text-2xl font-semibold">{value}</p>
-                          </CardContent>
-                        </Card>
-                      ))
-                    ) : (
-                      <div className="col-span-full text-center py-4 text-muted-foreground">
-                        No campaign-specific metrics available yet
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="pt-4 border-t">
-                    <h3 className="text-lg font-medium mb-4">Impact on Key Metrics</h3>
-                    
-                    {/* Show metrics before/after campaign start */}
-                    {campaign.execution_start_date && (
-                      <div className="h-80">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={chartData}>
-                            <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                            <XAxis 
-                              dataKey="date" 
-                              // Mark campaign start date
-                              ticks={[
-                                ...chartData.map(d => d.date),
-                                new Date(campaign.execution_start_date).toLocaleDateString()
-                              ]}
-                            />
-                            <YAxis />
-                            <Tooltip />
-                            {/* Draw a vertical line at campaign start */}
-                            {/* Render each metric line */}
-                            {metricKeys.map((key, index) => (
-                              <Line
-                                key={key}
-                                type="monotone"
-                                dataKey={key}
-                                stroke={`hsl(${index * (360 / metricKeys.length)}, 70%, 50%)`}
-                                activeDot={{ r: 6 }}
-                              />
-                            ))}
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          )}
-        </Tabs>
       )}
-      
-      <div className="flex justify-between pt-4">
-        <Button variant="outline" onClick={() => navigate(returnPath)}>
-          Back
-        </Button>
-        <Button 
-          onClick={() => {
-            // Log KPI review completion
-            logActivity({
-              event_type: "KPI_REVIEW_COMPLETED",
-              message: campaignId 
-                ? `KPI review completed for campaign ${campaignName || campaignId}`
-                : "KPI dashboard review completed",
-              meta: campaignId ? { campaign_id: campaignId } : {}
-            }).catch(err => console.error("Failed to log KPI review:", err));
-            
-            // Navigate back
-            navigate(returnPath);
-          }}
-        >
-          Complete Review
-        </Button>
-      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Selected Campaigns</CardTitle>
+          <CardDescription>
+            List of campaigns included in this dashboard view
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {campaigns.length > 0 ? (
+            <ul className="list-disc list-inside">
+              {campaigns.map(campaign => (
+                <li key={campaign.id}>{campaign.name}</li>
+              ))}
+            </ul>
+          ) : (
+            <div className="text-center py-4">No campaigns selected.</div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

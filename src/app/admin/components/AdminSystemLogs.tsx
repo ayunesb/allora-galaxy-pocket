@@ -3,9 +3,7 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSystemLogsWithFilters } from "@/hooks/useSystemLogsWithFilters";
 import { AdminSystemLogsTable } from "./AdminSystemLogsTable";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RefreshCw } from "lucide-react";
 import { AdminLogsFilterPanel } from "./AdminLogsFilterPanel";
 
@@ -17,27 +15,15 @@ export function AdminSystemLogs() {
     updateFilters,
     resetFilters,
     isLoading,
-    getRecentLogs,
+    fetchLogs,
     pagination,
     nextPage,
     prevPage,
     goToPage,
   } = useSystemLogsWithFilters();
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    updateFilters({ searchTerm: e.target.value });
-  };
-
-  const handleDateRangeChange = (value: string) => {
-    updateFilters({ dateRange: parseInt(value, 10) });
-  };
-
-  const handleEventTypeChange = (value: string) => {
-    updateFilters({ eventType: value });
-  };
-
   const handleRefresh = () => {
-    getRecentLogs();
+    fetchLogs();
   };
 
   return (

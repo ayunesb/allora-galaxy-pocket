@@ -1,3 +1,4 @@
+
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
@@ -145,12 +146,11 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   }
 
   if (user && tenant) {
+    // Fix void promise handling
     logActivity({
       event_type: "USER_NAVIGATION",
       message: `User navigated to ${location.pathname}`,
       meta: { path: location.pathname }
-    }).then(() => {
-      // Successfully logged navigation
     }).catch(e => console.error("Failed to log navigation:", e));
   }
 

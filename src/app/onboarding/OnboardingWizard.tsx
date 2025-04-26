@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTenant } from "@/hooks/useTenant";
@@ -10,7 +9,6 @@ import { AuthRequirement } from "./components/AuthRequirement";
 import { OnboardingProfile } from "@/types/onboarding";
 import LoadingOverlay from "@/components/ui/LoadingOverlay";
 import { useStepNavigation } from "./components/StepNavigator";
-import { useOnboardingSubmission } from "./hooks/useOnboardingSubmission";
 import { steps } from "./steps";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
