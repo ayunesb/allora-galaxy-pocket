@@ -1,59 +1,51 @@
 
 import { useState } from 'react';
-import { useSystemLogs } from './useSystemLogs';
 import { useTenant } from './useTenant';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
+import { OnboardingProfile } from '@/types/onboarding';
+import { ToastService } from '@/services/ToastService';
+import { useSystemLogs } from './useSystemLogs';
 
 export function useOnboardingSubmission() {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { logActivity, logJourneyStep } = useSystemLogs();
   const { tenant, updateTenantProfile } = useTenant();
   const navigate = useNavigate();
+  const { logActivity } = useSystemLogs();
 
-  const submitOnboardingData = async (formData: any) => {
+  const completeOnboarding = async (profile: OnboardingProfile) => {
     if (!tenant) {
-      toast.error('No active workspace found');
-      return;
+      ToastService.error("No active workspace found");
+      return { success: false, error: "No active workspace found" };
     }
 
     setIsSubmitting(true);
 
     try {
-      // Log the journey step from onboarding to dashboard
-      await logJourneyStep('onboarding', 'dashboard', {
-        formData: { ...formData, tenant_id: tenant.id }
-      });
-
       // Update tenant profile with onboarding data
       await updateTenantProfile({
         ...tenant,
         onboarding_completed: true,
-        ...formData
       });
 
       // Log activity
-      await logActivity({
-        event_type: 'ONBOARDING_COMPLETED',
-        message: 'User completed onboarding process',
-        meta: {
-          tenant_id: tenant.id,
-          formData: formData
-        },
-        severity: 'info'
-      });
+      try {
+        await logActivity({
+          event_type: 'ONBOARDING_COMPLETED',
+          message: 'User completed onboarding process',
+          meta: {
+            tenant_id: tenant.id,
+            profile: profile
+          },
+          severity: 'info'
+        });
+      } catch (logError) {
+        console.error("Failed to log onboarding activity:", logError);
+      }
 
-      // Navigate to dashboard
-      navigate('/dashboard');
-      
-      toast.success('Onboarding completed!', {
-        description: 'Welcome to your new workspace'
-      });
+      return { success: true };
     } catch (error: any) {
       console.error('Onboarding submission error:', error);
-      toast.error('Failed to complete onboarding', {
-        description: error.message
-      });
+      return { success: false, error: error.message || "Failed to complete onboarding" };
     } finally {
       setIsSubmitting(false);
     }
@@ -61,6 +53,6 @@ export function useOnboardingSubmission() {
 
   return {
     isSubmitting,
-    submitOnboardingData
+    completeOnboarding
   };
 }

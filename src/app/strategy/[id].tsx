@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
@@ -53,13 +54,16 @@ export default function StrategyDetail() {
         
         setStrategy(strategyData);
 
-        logActivity({
-          event_type: "STRATEGY_VIEW",
-          message: `Strategy "${strategyData.title}" viewed`,
-          meta: { strategy_id: id }
-        }).catch(err => {
-          console.error("Error logging activity:", err);
-        });
+        // Handle async activity logging safely
+        try {
+          await logActivity({
+            event_type: "STRATEGY_VIEW",
+            message: `Strategy "${strategyData.title}" viewed`,
+            meta: { strategy_id: id }
+          });
+        } catch (logError) {
+          console.error("Error logging activity:", logError);
+        }
 
         const { data: campaignData, error: campaignError } = await supabase
           .from('campaigns')
@@ -90,15 +94,20 @@ export default function StrategyDetail() {
   const handleCreateCampaign = () => {
     if (!strategy) return;
     
-    logActivity({
-      event_type: "USER_JOURNEY",
-      message: "User initiated campaign creation from strategy",
-      meta: {
-        from: "strategy_detail",
-        to: "campaign_create",
-        strategy_id: strategy.id
-      }
-    }).catch(err => console.error("Failed to log activity:", err));
+    // Handle async activity logging safely
+    try {
+      logActivity({
+        event_type: "USER_JOURNEY",
+        message: "User initiated campaign creation from strategy",
+        meta: {
+          from: "strategy_detail",
+          to: "campaign_create",
+          strategy_id: strategy.id
+        }
+      }).catch(err => console.error("Failed to log activity:", err));
+    } catch (error) {
+      console.error("Error logging activity:", error);
+    }
     
     navigate("/campaigns/create", {
       state: {
@@ -115,7 +124,7 @@ export default function StrategyDetail() {
 
   const handleApprove = async () => {
     try {
-      if (strategy.status === 'approved') return;
+      if (!strategy || strategy.status === 'approved') return;
       
       const { error } = await supabase
         .from('strategies')
@@ -134,11 +143,16 @@ export default function StrategyDetail() {
         description: "You can now create campaigns for this strategy"
       });
       
-      logActivity({
-        event_type: "STRATEGY_APPROVED",
-        message: `Strategy "${strategy.title}" approved`,
-        meta: { strategy_id: strategy.id }
-      });
+      // Handle async activity logging safely
+      try {
+        await logActivity({
+          event_type: "STRATEGY_APPROVED",
+          message: `Strategy "${strategy.title}" approved`,
+          meta: { strategy_id: strategy.id }
+        });
+      } catch (logError) {
+        console.error("Error logging approval activity:", logError);
+      }
     } catch (err: any) {
       console.error("Error approving strategy:", err);
       ToastService.error({

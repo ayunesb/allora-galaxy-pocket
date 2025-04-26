@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTenant } from "@/hooks/useTenant";
@@ -11,8 +12,8 @@ import LoadingOverlay from "@/components/ui/LoadingOverlay";
 import { useStepNavigation } from "./components/StepNavigator";
 import { steps } from "./steps";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { useSystemLogs } from "@/hooks/useSystemLogs";
+import { useOnboardingSubmission } from "@/hooks/useOnboardingSubmission";
 
 export default function OnboardingWizard() {
   const { tenant, isLoading: tenantLoading } = useTenant();

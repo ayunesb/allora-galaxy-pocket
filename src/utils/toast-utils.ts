@@ -1,5 +1,6 @@
 
 import { ToastService } from "@/services/ToastService";
+import { toast } from 'sonner';
 
 /**
  * Standardized toast utilities that wrap the ToastService 
@@ -49,6 +50,3 @@ export const showToast = {
     return toast.promise(promise, messages);
   }
 };
-
-// Import toast directly for the promise function
-import { toast } from 'sonner';

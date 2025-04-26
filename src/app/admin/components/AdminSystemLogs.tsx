@@ -26,6 +26,13 @@ export function AdminSystemLogs() {
     fetchLogs();
   };
 
+  // Creating a properly typed pagination object that includes logsPerPage
+  const paginationWithLogsPerPage = {
+    currentPage: pagination.currentPage,
+    totalPages: pagination.totalPages,
+    logsPerPage: 20 // Default to 20 logs per page or get from pagination if available
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <Card>
@@ -42,7 +49,7 @@ export function AdminSystemLogs() {
             <AdminSystemLogsTable
               logs={logs}
               isLoading={isLoading}
-              pagination={pagination}
+              pagination={paginationWithLogsPerPage}
               onNextPage={nextPage}
               onPrevPage={prevPage}
               onGoToPage={goToPage}

@@ -40,22 +40,30 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
       await refreshSession();
       
       if (user) {
-        logActivity({
-          event_type: "AUTH_RETRY",
-          message: `Authentication retry attempt ${authAttempts + 1}`,
-          meta: { retry_count: authAttempts + 1 }
-        });
+        try {
+          await logActivity({
+            event_type: "AUTH_RETRY",
+            message: `Authentication retry attempt ${authAttempts + 1}`,
+            meta: { retry_count: authAttempts + 1 }
+          });
+        } catch (error) {
+          console.error("Failed to log auth retry:", error);
+        }
       }
     } catch (error) {
       const e = error as Error;
       setAuthError(e.message || "Authentication failed after retry");
       
       if (user) {
-        logActivity({
-          event_type: "AUTH_RETRY_FAILED",
-          message: `Authentication retry failed: ${e.message}`,
-          meta: { retry_count: authAttempts + 1, error: e.message }
-        });
+        try {
+          await logActivity({
+            event_type: "AUTH_RETRY_FAILED",
+            message: `Authentication retry failed: ${e.message}`,
+            meta: { retry_count: authAttempts + 1, error: e.message }
+          });
+        } catch (logError) {
+          console.error("Failed to log auth retry failure:", logError);
+        }
       }
       
       ToastService.error({
@@ -68,19 +76,27 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   if (user && !authLoading && !tenantLoading && !onboardingLoading) {
     if (!tenant && !location.pathname.startsWith("/auth/") && 
         location.pathname !== "/onboarding" && location.pathname !== "/workspace") {
-      logSecurityEvent(
-        "Attempted access without workspace",
-        "TENANT_MISSING",
-        { path: location.pathname, user_id: user.id }
-      );
+      try {
+        logSecurityEvent(
+          "Attempted access without workspace",
+          "TENANT_MISSING",
+          { path: location.pathname, user_id: user.id }
+        );
+      } catch (error) {
+        console.error("Failed to log security event:", error);
+      }
     }
     
     if (tenant && onboardingComplete === false && !skipOnboardingCheck) {
-      logSecurityEvent(
-        "Attempted access before onboarding completion",
-        "ONBOARDING_INCOMPLETE",
-        { path: location.pathname, user_id: user.id, tenant_id: tenant.id }
-      );
+      try {
+        logSecurityEvent(
+          "Attempted access before onboarding completion",
+          "ONBOARDING_INCOMPLETE",
+          { path: location.pathname, user_id: user.id, tenant_id: tenant.id }
+        );
+      } catch (error) {
+        console.error("Failed to log security event:", error);
+      }
     }
   }
 
@@ -146,12 +162,16 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   }
 
   if (user && tenant) {
-    // Fix void promise handling
-    logActivity({
-      event_type: "USER_NAVIGATION",
-      message: `User navigated to ${location.pathname}`,
-      meta: { path: location.pathname }
-    }).catch(e => console.error("Failed to log navigation:", e));
+    // Handle async activity logging properly
+    try {
+      logActivity({
+        event_type: "USER_NAVIGATION",
+        message: `User navigated to ${location.pathname}`,
+        meta: { path: location.pathname }
+      }).catch(e => console.error("Failed to log navigation:", e));
+    } catch (error) {
+      console.error("Failed to log navigation activity:", error);
+    }
   }
 
   return <>{children}</>;
