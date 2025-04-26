@@ -1,105 +1,93 @@
 
-import { useParams } from "react-router-dom";
-import { Card, CardContent } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
-import { StrategyHeader } from "./StrategyHeader";
-import { StrategyActions } from "./StrategyActions";
-import { StrategyTabs } from "./StrategyTabs";
-import { StrategyVersions } from "./StrategyVersions";
-import { StrategyKPIEvaluation } from "./StrategyKPIEvaluation";
-import { StrategyRecommendations } from "./StrategyRecommendations";
-import { StrategyFeedbackForm } from "@/components/StrategyFeedbackForm";
-import { StrategyPerformanceTracker } from "@/components/StrategyPerformanceTracker";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useCallback } from "react";
 import { useStrategyDetail } from "@/hooks/useStrategyDetail";
-import { useQueryClient } from "@tanstack/react-query";
+import { Strategy, StrategyVersion } from "@/types/strategy";
+import { StrategyDetailHeader } from "./StrategyDetailHeader";
+import { StrategyVersions } from "./StrategyVersions";
+import { StrategyVersionComparison } from "./StrategyVersionComparison";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
-export function StrategyDetailContent() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  
-  const {
-    strategy,
-    isLoading,
+interface StrategyDetailContentProps {
+  strategyId: string;
+}
+
+export function StrategyDetailContent({ strategyId }: StrategyDetailContentProps) {
+  const { 
+    strategy, 
+    versions, 
+    isLoading, 
     error,
-    comparisonData,
-    versions,
-    handleApprove,
-    handleDecline,
-    handleRegenerate,
-    handleCreateVersion,
-    handleCompareVersions
-  } = useStrategyDetail(id);
+    createNewVersion 
+  } = useStrategyDetail(strategyId);
+
+  const [selectedVersions, setSelectedVersions] = useState<{
+    v1: StrategyVersion | null;
+    v2: StrategyVersion | null;
+  }>({
+    v1: null,
+    v2: null
+  });
+
+  const handleSelectVersions = useCallback((v1: StrategyVersion, v2: StrategyVersion) => {
+    setSelectedVersions({ v1, v2 });
+  }, []);
+
+  const handleCreateNewVersion = useCallback(async (comment: string) => {
+    if (strategy) {
+      await createNewVersion(comment);
+    }
+  }, [strategy, createNewVersion]);
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-8 px-4 flex justify-center">
-        <Loader2 className="animate-spin h-6 w-6" />
+      <div className="flex items-center justify-center p-8 min-h-[400px]">
+        <LoadingSpinner size={40} label="Loading strategy details..." />
       </div>
     );
   }
 
   if (error || !strategy) {
     return (
-      <div className="container mx-auto py-8 px-4">
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-          {error ? (error as Error).message : "Strategy not found"}
-        </div>
-      </div>
+      <Alert variant="destructive" className="my-4">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          {error || "Failed to load strategy details"}
+        </AlertDescription>
+      </Alert>
     );
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <Card>
-        <StrategyHeader 
-          strategy={strategy}
-          onNavigate={navigate}
-        />
-        
-        <CardContent>
-          <StrategyTabs strategy={strategy}>
-            {{
-              overview: <p>{strategy.description}</p>,
-              goals: <p>{strategy.goal || strategy.goals?.join(', ') || "No specific goals defined for this strategy."}</p>,
-              performance: (
-                <StrategyPerformanceTracker 
-                  strategyId={strategy.id} 
-                  initialMetrics={strategy.metrics_baseline || {}}
-                />
-              ),
-              versions: (
-                <StrategyVersions
-                  strategy={strategy}
-                  versions={versions || []}
-                  onCreateVersion={(comment: string) => handleCreateVersion(comment)}
-                  onCompareVersions={(v1: number, v2: number) => handleCompareVersions(v1, v2)}
-                  comparisonData={comparisonData}
-                />
-              ),
-              feedback: (
-                <StrategyFeedbackForm 
-                  strategyId={strategy.id}
-                  onFeedbackSubmitted={() => queryClient.invalidateQueries({ queryKey: ['strategy-feedback', id] })}
-                />
-              ),
-              evaluation: (
-                <StrategyKPIEvaluation strategyId={strategy.id} />
-              ),
-              recommendations: (
-                <StrategyRecommendations strategyId={strategy.id} />
-              )
-            }}
-          </StrategyTabs>
-        </CardContent>
+    <div className="space-y-8">
+      <StrategyDetailHeader 
+        strategy={strategy as Strategy} 
+      />
 
-        <StrategyActions
-          onApprove={handleApprove}
-          onDecline={handleDecline}
-          onRegenerate={handleRegenerate}
-        />
-      </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1">
+          <StrategyVersions 
+            versions={versions}
+            onCreateVersion={handleCreateNewVersion}
+            onCompareVersions={handleSelectVersions}
+          />
+        </div>
+        <div className="lg:col-span-2">
+          {selectedVersions.v1 && selectedVersions.v2 ? (
+            <StrategyVersionComparison 
+              v1={selectedVersions.v1} 
+              v2={selectedVersions.v2} 
+            />
+          ) : (
+            <div className="border rounded-lg p-6 bg-background">
+              <p className="text-center text-muted-foreground">
+                Select two versions to compare
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

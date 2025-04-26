@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { useSessionRefresh } from "@/hooks/useSessionRefresh";
 import { useOnboardingCheck } from "@/hooks/useOnboardingCheck";
 import { ToastService } from "@/services/ToastService";
-import { useSystemLogs } from "@/hooks/useSystemLogs";
 
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, session, isLoading: authLoading, refreshSession } = useAuth();
@@ -18,14 +18,15 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   const [shouldCheckOnboarding, setShouldCheckOnboarding] = useState(true);
   const [authAttempts, setAuthAttempts] = useState(0);
   const [authError, setAuthError] = useState<string | null>(null);
-  const { logActivity, logSecurityEvent } = useSystemLogs();
   
   const skipOnboardingCheck = location.pathname === "/onboarding" || 
                              location.pathname === "/workspace" ||
                              location.pathname.startsWith("/auth/");
   
+  // Use session refresh hook
   useSessionRefresh();
 
+  // Onboarding check will be activated when user and tenant are available
   const { data: onboardingComplete, isLoading: onboardingLoading } = useOnboardingCheck(
     user,
     tenant,
@@ -38,32 +39,11 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
       setAuthError(null);
       await refreshSession();
       
-      if (user) {
-        try {
-          await logActivity({
-            event_type: "AUTH_RETRY",
-            message: `Authentication retry attempt ${authAttempts + 1}`,
-            meta: { retry_count: authAttempts + 1 }
-          });
-        } catch (error) {
-          console.error("Failed to log auth retry:", error);
-        }
-      }
+      // Log activity if implementation exists
+      console.log("Authentication retry attempt", authAttempts + 1);
     } catch (error) {
       const e = error as Error;
       setAuthError(e.message || "Authentication failed after retry");
-      
-      if (user) {
-        try {
-          await logActivity({
-            event_type: "AUTH_RETRY_FAILED",
-            message: `Authentication retry failed: ${e.message}`,
-            meta: { retry_count: authAttempts + 1, error: e.message }
-          });
-        } catch (logError) {
-          console.error("Failed to log auth retry failure:", logError);
-        }
-      }
       
       ToastService.error({
         title: "Authentication failed",
@@ -72,40 +52,16 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     }
   };
 
-  if (user && !authLoading && !tenantLoading && !onboardingLoading) {
-    if (!tenant && !location.pathname.startsWith("/auth/") && 
-        location.pathname !== "/onboarding" && location.pathname !== "/workspace") {
-      try {
-        (async () => {
-          await logSecurityEvent(
-            "Attempted access without workspace",
-            "TENANT_MISSING",
-            { path: location.pathname, user_id: user.id }
-          );
-        })().catch(error => {
-          console.error("Failed to log security event:", error);
-        });
-      } catch (error) {
-        console.error("Failed to log security event:", error);
-      }
-    }
-    
-    if (tenant && onboardingComplete === false && !skipOnboardingCheck) {
-      try {
-        (async () => {
-          await logSecurityEvent(
-            "Attempted access before onboarding completion",
-            "ONBOARDING_INCOMPLETE",
-            { path: location.pathname, user_id: user.id, tenant_id: tenant.id }
-          );
-        })().catch(error => {
-          console.error("Failed to log security event:", error);
-        });
-      } catch (error) {
-        console.error("Failed to log security event:", error);
-      }
-    }
-  }
+  // Provide detailed console logging for debugging
+  console.log("RequireAuth state:", {
+    user: !!user,
+    tenant: !!tenant,
+    authLoading,
+    tenantLoading,
+    onboardingComplete,
+    onboardingLoading,
+    path: location.pathname
+  });
 
   if (authError) {
     return (
@@ -168,23 +124,6 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     return <Navigate to="/onboarding" state={{ from: location.pathname }} replace />;
   }
 
-  if (user && tenant) {
-    try {
-      (async () => {
-        try {
-          await logActivity({
-            event_type: "USER_NAVIGATION",
-            message: `User navigated to ${location.pathname}`,
-            meta: { path: location.pathname }
-          });
-        } catch (e) {
-          console.error("Failed to log navigation:", e);
-        }
-      })();
-    } catch (error) {
-      console.error("Failed to log navigation activity:", error);
-    }
-  }
-
+  // All checks passed, render the protected component
   return <>{children}</>;
 }

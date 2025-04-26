@@ -22,33 +22,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Try to recover session on initial load
-    const getInitialSession = async () => {
-      setIsLoading(true);
-      
-      try {
-        // Get existing session first
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("Error retrieving session:", error.message);
-        }
-        
-        if (data?.session) {
-          setSession(data.session);
-          setUser(data.session.user);
-          console.info("Initial session loaded successfully");
-        } else {
-          console.info("No active session found");
-        }
-      } catch (error) {
-        console.error("Failed to get initial session:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    // Set up auth state change listener
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
         console.info("Auth event:", event);
@@ -70,7 +44,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
-    // Get initial session
+    // Try to recover session on initial load
+    const getInitialSession = async () => {
+      try {
+        // Get existing session first
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Error retrieving session:", error.message);
+        }
+        
+        if (data?.session) {
+          setSession(data.session);
+          setUser(data.session.user);
+          console.info("Initial session loaded successfully");
+        } else {
+          console.info("No active session found");
+        }
+      } catch (error) {
+        console.error("Failed to get initial session:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     getInitialSession();
 
     return () => {
@@ -82,6 +79,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       const response = await supabase.auth.signInWithPassword({ email, password });
+      
+      // Log detailed response for debugging
+      console.log("Sign in response:", response);
+      
       return response;
     } catch (error) {
       console.error("Sign in error:", error);
