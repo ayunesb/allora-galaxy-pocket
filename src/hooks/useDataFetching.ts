@@ -1,6 +1,6 @@
 
 import { UseQueryResult, useQuery } from "@tanstack/react-query";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { useState, useEffect } from "react";
 
 interface DataFetchingState<T> {
@@ -12,6 +12,11 @@ interface DataFetchingState<T> {
   isRefetching: boolean;
 }
 
+/**
+ * Enhanced hook for data fetching with centralized error handling
+ * @param query The React Query result object
+ * @returns Standardized data state with error handling
+ */
 export function useDataFetching<T>(query: UseQueryResult<T, Error>): DataFetchingState<T> {
   const { isLoading, isError, error, data, refetch, isRefetching } = query;
   const [hasShownError, setHasShownError] = useState(false);
@@ -27,6 +32,9 @@ export function useDataFetching<T>(query: UseQueryResult<T, Error>): DataFetchin
         }
       });
       setHasShownError(true);
+      
+      // Log error to console for debugging
+      console.error("Data fetching error:", error);
     }
     
     // Reset flag when error is resolved
@@ -45,7 +53,11 @@ export function useDataFetching<T>(query: UseQueryResult<T, Error>): DataFetchin
   };
 }
 
-// Helper hook to wrap around useQuery with better error handling
+/**
+ * Helper function to create a typed query hook with error handling
+ * @param queryFn The API query function
+ * @returns A hook that handles loading, error states, and data fetching
+ */
 export function createQueryHook<TParams, TResult>(
   queryFn: (params: TParams) => Promise<TResult>
 ) {

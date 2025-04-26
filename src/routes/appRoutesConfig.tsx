@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import ErrorPage from '@/ErrorPage';
@@ -11,8 +10,10 @@ import StrategyDetail from '@/app/strategy/[id]';
 const OnboardingPage = React.lazy(() => import('@/app/onboarding/OnboardingWizard'));
 const VaultPage = React.lazy(() => import('@/app/vault/page'));
 const StrategyPage = React.lazy(() => import('@/app/strategy/page'));
+const VaultStrategyDetail = React.lazy(() => import('@/app/vault/strategy-detail/[id]'));
 
-// Placeholder components for missing pages
+// Placeholder components for missing pages - keep these as temporary solutions
+// Until we implement full features
 const CampaignsCenter = () => <div className="p-8">Campaigns Center</div>;
 const LaunchPage = () => <div className="p-8">Launch Page</div>;
 const InsightsKpisPage = () => <div className="p-8">Insights KPIs Page</div>;
@@ -73,6 +74,14 @@ export const baseRoutes: RouteObject[] = [
       {
         path: '/strategy/:id',
         element: <StrategyDetail />,
+      },
+      {
+        path: '/vault/strategy-detail/:id',
+        element: (
+          <React.Suspense fallback={<div className="p-8 flex justify-center items-center">Loading...</div>}>
+            <VaultStrategyDetail />
+          </React.Suspense>
+        ),
       },
       {
         path: '/campaigns/center',

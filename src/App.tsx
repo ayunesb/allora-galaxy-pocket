@@ -16,13 +16,11 @@ function App() {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
-        // Add global error handling for data fetching
+        // Add global retry configuration
         retry: 1,
         staleTime: 5000,
-        // Add global error handling
-        onError: (error) => {
-          console.error("Query error:", error);
-        }
+        // Remove the incorrect onError property - this is causing the build error
+        // Error handling should be done at the component level using the useDataFetching hook
       }
     }
   });
