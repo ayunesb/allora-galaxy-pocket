@@ -27,6 +27,10 @@ export function useAvailableTenants() {
         theme_mode: tenant.theme_mode,
         enable_auto_approve: tenant.enable_auto_approve,
         isDemo: tenant.is_demo,
+        created_at: tenant.created_at,
+        updated_at: tenant.updated_at,
+        usage_credits: tenant.usage_credits,
+        slack_webhook_url: tenant.slack_webhook_url,
         role: tenant.role
       }));
     }

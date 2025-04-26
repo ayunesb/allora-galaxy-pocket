@@ -8,7 +8,7 @@ import { LogSeverity } from '@/types/systemLog';
 interface LogAlertProps {
   title: string;
   description: string;
-  severity: LogSeverity;
+  severity: LogSeverity | 'success'; // Added 'success' as a valid type
   onDismiss?: () => void;
   actionLabel?: string;
   onAction?: () => void;

@@ -1,5 +1,5 @@
 
-export type LogSeverity = 'debug' | 'info' | 'warning' | 'error' | 'critical';
+export type LogSeverity = 'debug' | 'info' | 'warning' | 'error' | 'critical' | 'success';
 
 export interface SystemLog {
   id: string;

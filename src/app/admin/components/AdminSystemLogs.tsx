@@ -6,11 +6,11 @@ import { AdminSystemLogsTable } from "./AdminSystemLogsTable";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { AdminLogsFilterPanel } from "./AdminLogsFilterPanel";
+import { LogFilters } from "@/types/logFilters";
 
 export function AdminSystemLogs() {
   const {
     logs,
-    allLogs,
     filters,
     updateFilters,
     resetFilters,
@@ -43,7 +43,10 @@ export function AdminSystemLogs() {
           </Button>
         </CardHeader>
         <CardContent>
-          <AdminLogsFilterPanel filters={filters} onFilterChange={updateFilters} />
+          <AdminLogsFilterPanel 
+            filters={filters as LogFilters} 
+            onFilterChange={updateFilters} 
+          />
           
           <div className="mt-6">
             <AdminSystemLogsTable
