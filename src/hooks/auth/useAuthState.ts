@@ -1,44 +1,55 @@
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { ToastService } from '@/services/ToastService';
+import { toast } from 'sonner';
 
 export function useAuthState() {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [authError, setAuthError] = useState<string | null>(null);
+  const [authInitialized, setAuthInitialized] = useState(false);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, currentSession) => {
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
+      (event, currentSession) => {
+        if (currentSession) {
+          setSession(currentSession);
+          setUser(currentSession.user);
+        } else {
+          setSession(null);
+          setUser(null);
+        }
         
-        // Handle auth events
+        // Handle auth events with toast notifications
         if (event === 'SIGNED_OUT') {
-          ToastService.info({
-            title: "Logged out",
-            description: "You have been successfully logged out"
-          });
+          toast.info("You have been logged out");
         } else if (event === 'SIGNED_IN') {
-          ToastService.success({
-            title: "Logged in",
-            description: "You have been successfully logged in"
-          });
+          toast.success("Logged in successfully");
         } else if (event === 'TOKEN_REFRESHED') {
           console.log('Token refreshed successfully');
+        } else if (event === 'USER_UPDATED') {
+          toast.info("User profile updated");
         }
+        
+        setIsLoading(false);
+        setAuthInitialized(true);
       }
     );
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
+    // Get initial session
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (error) {
+        console.error("Error retrieving session:", error.message);
+      }
+      
+      if (data?.session) {
+        setSession(data.session);
+        setUser(data.session.user);
+      }
+      
       setIsLoading(false);
+      setAuthInitialized(true);
     });
 
     return () => {
@@ -50,10 +61,8 @@ export function useAuthState() {
     user,
     session,
     isLoading,
-    authError,
+    authInitialized,
     setUser,
-    setSession,
-    setIsLoading,
-    setAuthError
+    setSession
   };
 }
