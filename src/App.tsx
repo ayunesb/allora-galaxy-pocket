@@ -10,7 +10,6 @@ import { Toaster } from "sonner";
 import { baseRoutes } from "./routes/appRoutesConfig";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { RouteDebugger } from "./components/RouteDebugger";
-import { ErrorState } from "@/components/ui/error-state";
 
 function App() {
   const queryClient = new QueryClient({
@@ -18,8 +17,7 @@ function App() {
       queries: {
         // Add global error handling for data fetching
         retry: 1,
-        staleTime: 5000,
-        errorBoundary: true
+        staleTime: 5000
       }
     }
   });
@@ -27,7 +25,7 @@ function App() {
   const routes = JSON.parse(JSON.stringify(baseRoutes));
   
   routes[0].element = (
-    <ErrorBoundary fallbackComponent={<ErrorState />}>
+    <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <TenantProvider>

@@ -1,106 +1,47 @@
 
-import React, { useEffect } from "react";
-import { useLocation } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle, Plus } from "lucide-react";
-import { ToastService } from "@/services/ToastService";
-import LoadingOverlay from "@/components/ui/LoadingOverlay";
-import { StrategyCard } from "./components/StrategyCard";
-import { EmptyStrategiesState } from "./components/EmptyStrategiesState";
-import { useStrategies } from "./hooks/useStrategies";
+import React from 'react';
+import { useStrategies } from './hooks/useStrategies';
+import { Button } from '@/components/ui/button';
+import { PlusCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import StrategyCard from './components/StrategyCard';
+import { EmptyStrategiesState } from './components/EmptyStrategiesState';
+import { StrategyErrorBoundary } from './components/StrategyErrorBoundary';
 
-export default function StrategyPage() {
-  const location = useLocation();
-  const {
-    loading,
-    error,
-    strategies,
-    setOnboardingProfile,
-    handleCreateStrategy,
-    handleStrategySelect
-  } = useStrategies();
-
-  useEffect(() => {
-    const state = location.state as { fromOnboarding?: boolean; profile?: any } | null;
-    
-    if (state?.fromOnboarding && state?.profile) {
-      setOnboardingProfile(state.profile);
-      ToastService.info({
-        title: "Ready to create your first strategy",
-        description: "Let's grow your business with data-driven strategies"
-      });
-    }
-  }, [location, setOnboardingProfile]);
-
-  if (loading) {
-    return <LoadingOverlay show={true} label="Loading strategies..." />;
+const StrategyPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { strategies, isLoading, error } = useStrategies();
+  
+  if (isLoading) {
+    return <div className="p-8 text-center">Loading strategies...</div>;
   }
-
+  
   return (
-    <div className="container mx-auto py-10 space-y-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Growth Strategies</h1>
-          <p className="text-muted-foreground">Create and manage your business growth strategies</p>
+    <StrategyErrorBoundary fallback={<div className="p-8">Failed to load strategies</div>}>
+      <div className="container mx-auto p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Marketing Strategies</h1>
+          <Button 
+            onClick={() => navigate('/strategy-gen')}
+            className="flex items-center gap-2"
+          >
+            <PlusCircle size={16} />
+            Create Strategy
+          </Button>
         </div>
         
-        <Button onClick={handleCreateStrategy} className="flex gap-2 items-center">
-          <Plus className="h-4 w-4" /> Create Strategy
-        </Button>
+        {strategies && strategies.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {strategies.map((strategy) => (
+              <StrategyCard key={strategy.id} strategy={strategy} />
+            ))}
+          </div>
+        ) : (
+          <EmptyStrategiesState />
+        )}
       </div>
-
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-      
-      <Tabs defaultValue="active" className="w-full">
-        <TabsList>
-          <TabsTrigger value="active">Active Strategies</TabsTrigger>
-          <TabsTrigger value="archived">Archived</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="active" className="space-y-4">
-          {strategies.length === 0 ? (
-            <EmptyStrategiesState onCreateStrategy={handleCreateStrategy} />
-          ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {strategies
-                .filter(s => s.status !== 'archived')
-                .map(strategy => (
-                  <StrategyCard
-                    key={strategy.id}
-                    strategy={strategy}
-                    onClick={handleStrategySelect}
-                  />
-                ))}
-            </div>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="archived" className="space-y-4">
-          {strategies.filter(s => s.status === 'archived').length === 0 ? (
-            <EmptyStrategiesState onCreateStrategy={handleCreateStrategy} />
-          ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {strategies
-                .filter(s => s.status === 'archived')
-                .map(strategy => (
-                  <StrategyCard
-                    key={strategy.id}
-                    strategy={strategy}
-                    onClick={handleStrategySelect}
-                  />
-                ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
-    </div>
+    </StrategyErrorBoundary>
   );
-}
+};
+
+export default StrategyPage;

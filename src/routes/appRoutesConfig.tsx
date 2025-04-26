@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import ErrorPage from '@/ErrorPage';
@@ -5,10 +6,10 @@ import HomePage from '@/app/page';
 import DashboardPage from '@/app/dashboard/page';
 import NotFound from '@/pages/NotFound';
 
-// Replace placeholder components with actual lazy-loaded components
-const OnboardingPage = React.lazy(() => import('@/app/onboarding/page'));
-const VaultPage = React.lazy(() => import('@/app/vault/page'));
-const StrategyPage = React.lazy(() => import('@/app/strategy/page'));
+// Use dynamic imports for lazy loading
+const OnboardingPage = React.lazy(() => import('../app/onboarding/page'));
+const VaultPage = React.lazy(() => import('../app/vault/page'));
+const StrategyPage = React.lazy(() => import('../app/strategy/page'));
 
 // Placeholder components for missing pages
 const StrategyDetailsPage = () => <div className="p-8">Strategy Details Page</div>;
@@ -63,7 +64,11 @@ export const baseRoutes: RouteObject[] = [
       },
       {
         path: '/strategy',
-        element: <StrategyPage />,
+        element: (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <StrategyPage />
+          </React.Suspense>
+        ),
       },
       {
         path: '/strategy/:strategyId',
