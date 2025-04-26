@@ -8,7 +8,6 @@ import { TenantProvider } from "@/hooks/useTenant";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import { Toaster } from "sonner";
 import { baseRoutes } from "./routes/appRoutesConfig";
-import { Outlet } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { RouteDebugger } from "./components/RouteDebugger";
 
@@ -26,7 +25,7 @@ function App() {
           <TenantProvider>
             <ThemeProvider defaultTheme="light" storageKey="allora-theme-preference">
               <>
-                <Outlet />
+                <RouterProvider router={createBrowserRouter(routes)} />
                 <Toaster richColors closeButton position="top-right" />
                 {import.meta.env.DEV && <RouteDebugger />}
               </>
@@ -38,9 +37,7 @@ function App() {
     </ErrorBoundary>
   );
   
-  const router = createBrowserRouter(routes);
-
-  return <RouterProvider router={router} />;
+  return <RouterProvider router={createBrowserRouter(routes)} />;
 }
 
 export default App;

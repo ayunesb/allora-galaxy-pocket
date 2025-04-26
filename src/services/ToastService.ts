@@ -1,3 +1,4 @@
+
 import { toast } from "sonner";
 
 type ToastProps = {
@@ -60,7 +61,11 @@ export const ToastService = {
     },
     options?: { duration?: number }
   ) => {
-    return toast.promise(promise, messages, options);
+    // Combine messages and options for the correct toast.promise API
+    return toast.promise(promise, {
+      ...messages,
+      ...(options || {})
+    });
   },
   
   dismiss: (toastId?: string) => {

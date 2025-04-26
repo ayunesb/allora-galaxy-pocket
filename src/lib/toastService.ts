@@ -1,3 +1,4 @@
+
 import { toast } from "sonner";
 
 interface ToastOptions {
@@ -53,16 +54,21 @@ export const showWarning = (message: string, options?: ToastOptions) => {
  * @param messages Object containing loading, success, and error messages
  * @param options Additional configuration options
  */
-export const showPromise = (
-  promise: Promise<any>,
+export const showPromise = <T>(
+  promise: Promise<T>,
   messages: { 
     loading: string; 
-    success: string; 
-    error: string;
+    success: string | ((data: T) => string); 
+    error: string | ((error: unknown) => string);
   },
   options?: ToastOptions
 ) => {
-  return toast.promise(promise, messages, options);
+  // The toast.promise API accepts only two arguments: the promise and the messages object
+  // The options can be passed as part of the messages object
+  return toast.promise(promise, {
+    ...messages,
+    ...options
+  });
 };
 
 /**
