@@ -4,20 +4,20 @@ import { useStrategies } from './hooks/useStrategies';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import StrategyCard from './components/StrategyCard';
+import { StrategyCard } from './components/StrategyCard';
 import { EmptyStrategiesState } from './components/EmptyStrategiesState';
 import { StrategyErrorBoundary } from './components/StrategyErrorBoundary';
 
 const StrategyPage: React.FC = () => {
   const navigate = useNavigate();
-  const { strategies, isLoading, error } = useStrategies();
+  const { loading, error, strategies, handleCreateStrategy, handleStrategySelect } = useStrategies();
   
-  if (isLoading) {
+  if (loading) {
     return <div className="p-8 text-center">Loading strategies...</div>;
   }
   
   return (
-    <StrategyErrorBoundary fallback={<div className="p-8">Failed to load strategies</div>}>
+    <StrategyErrorBoundary>
       <div className="container mx-auto p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Marketing Strategies</h1>
@@ -33,11 +33,15 @@ const StrategyPage: React.FC = () => {
         {strategies && strategies.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {strategies.map((strategy) => (
-              <StrategyCard key={strategy.id} strategy={strategy} />
+              <StrategyCard 
+                key={strategy.id} 
+                strategy={strategy} 
+                onClick={handleStrategySelect} 
+              />
             ))}
           </div>
         ) : (
-          <EmptyStrategiesState />
+          <EmptyStrategiesState onCreateStrategy={handleCreateStrategy} />
         )}
       </div>
     </StrategyErrorBoundary>

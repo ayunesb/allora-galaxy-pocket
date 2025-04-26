@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { VaultItemsList } from './VaultItemsList';
+import VaultItemsList from './VaultItemsList';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 const VaultPage: React.FC = () => {
