@@ -3,14 +3,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { StrategyVersionComparison } from "@/components/StrategyVersionComparison";
-import type { Strategy } from "@/types/strategy";
+import type { Strategy, StrategyVersionDiff } from "@/types/strategy";
 
 interface StrategyVersionsProps {
   strategy: Strategy;
   versions: any[];
-  onCreateVersion: () => void;
+  onCreateVersion: (comment: string) => void;
   onCompareVersions: (v1: number, v2: number) => Promise<void>;
-  comparisonData: any;
+  comparisonData: StrategyVersionDiff | null;
 }
 
 export function StrategyVersions({ 
@@ -21,12 +21,23 @@ export function StrategyVersions({
   comparisonData
 }: StrategyVersionsProps) {
   const [showVersionComparison, setShowVersionComparison] = useState(false);
+  const [comment, setComment] = useState("");
+
+  const handleCreateVersion = () => {
+    if (comment.trim()) {
+      onCreateVersion(comment);
+      setComment("");
+    } else {
+      // Default comment if none provided
+      onCreateVersion("Version snapshot");
+    }
+  };
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="font-medium">Version History</h3>
-        <Button variant="outline" size="sm" onClick={onCreateVersion}>
+        <Button variant="outline" size="sm" onClick={handleCreateVersion}>
           Save Current Version
         </Button>
       </div>
