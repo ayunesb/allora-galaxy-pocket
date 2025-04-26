@@ -15,13 +15,17 @@ const AppSidebar = () => {
         <div className="px-3 py-2">
           <MainNavigation />
           
-          <SidebarSection title="Account">
-            <AccountLinks />
-          </SidebarSection>
-          
-          <SidebarSection title="Admin">
-            <AdminLinks />
-          </SidebarSection>
+          {!collapsed && (
+            <>
+              <SidebarSection title="Account">
+                <AccountLinks />
+              </SidebarSection>
+              
+              <SidebarSection title="Admin">
+                <AdminLinks />
+              </SidebarSection>
+            </>
+          )}
         </div>
       </ScrollArea>
     </aside>

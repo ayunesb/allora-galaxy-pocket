@@ -7,27 +7,32 @@ import {
   User, 
   Database 
 } from "lucide-react";
+import { useSidebar } from '@/hooks/useSidebar';
 
 interface SidebarLinkProps {
   to: string;
   icon: ReactNode;
-  children: React.ReactNode;
+  children: ReactNode;
   isActive: boolean;
 }
 
-const SidebarLink = ({ to, icon, children, isActive }: SidebarLinkProps) => (
-  <Link
-    to={to}
-    className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
-      isActive 
-      ? "bg-primary/10 text-primary" 
-      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-    }`}
-  >
-    <div className="mr-3 h-5 w-5">{icon}</div>
-    {children}
-  </Link>
-);
+const SidebarLink = ({ to, icon, children, isActive }: SidebarLinkProps) => {
+  const { collapsed } = useSidebar();
+  
+  return (
+    <Link
+      to={to}
+      className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
+        isActive 
+        ? "bg-primary/10 text-primary" 
+        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+      }`}
+    >
+      <div className="mr-3 h-5 w-5">{icon}</div>
+      {!collapsed && children}
+    </Link>
+  );
+};
 
 export const AccountLinks = () => {
   const location = useLocation();

@@ -1,7 +1,7 @@
 
 import React from "react";
 import { useLocation } from "react-router-dom";
-import { NavigationLink } from "./NavigationLink";
+import MainNavigationItem from "./MainNavigationItem";
 import {
   LayoutDashboard,
   FileText,
@@ -37,15 +37,16 @@ export const MainNavigation = () => {
   return (
     <nav className="space-y-1">
       {navigationItems.map((item) => (
-        <NavigationLink
+        <MainNavigationItem
           key={item.to}
           to={item.to}
           icon={item.icon}
+          label={item.label}
           isActive={isActive(item.to)}
-        >
-          {item.label}
-        </NavigationLink>
+        />
       ))}
     </nav>
   );
 };
+
+export default MainNavigation;
