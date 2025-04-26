@@ -50,5 +50,26 @@ export const ToastService = {
     }
     
     return toast(title || "", { description, ...rest });
+  },
+  
+  // New utility methods
+  promise: <T>(
+    promise: Promise<T>,
+    messages: {
+      loading: string;
+      success: string | ((data: T) => string);
+      error: string | ((error: unknown) => string);
+    },
+    options?: { duration?: number }
+  ) => {
+    return toast.promise(promise, messages, options);
+  },
+  
+  dismiss: (toastId?: string) => {
+    if (toastId) {
+      toast.dismiss(toastId);
+    } else {
+      toast.dismiss();
+    }
   }
 };

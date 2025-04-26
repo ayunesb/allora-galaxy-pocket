@@ -94,20 +94,22 @@ export default function StrategyDetail() {
   const handleCreateCampaign = () => {
     if (!strategy) return;
     
-    // Handle async activity logging safely
-    try {
-      logActivity({
-        event_type: "USER_JOURNEY",
-        message: "User initiated campaign creation from strategy",
-        meta: {
-          from: "strategy_detail",
-          to: "campaign_create",
-          strategy_id: strategy.id
-        }
-      }).catch(err => console.error("Failed to log activity:", err));
-    } catch (error) {
-      console.error("Error logging activity:", error);
-    }
+    // Handle async activity logging safely using an IIFE
+    (async () => {
+      try {
+        await logActivity({
+          event_type: "USER_JOURNEY",
+          message: "User initiated campaign creation from strategy",
+          meta: {
+            from: "strategy_detail",
+            to: "campaign_create",
+            strategy_id: strategy.id
+          }
+        });
+      } catch (error) {
+        console.error("Failed to log activity:", error);
+      }
+    })();
     
     navigate("/campaigns/create", {
       state: {
