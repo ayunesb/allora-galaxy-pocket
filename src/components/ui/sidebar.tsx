@@ -185,9 +185,7 @@ export const SidebarGroupContent = ({ children }: { children: ReactNode }) => <d
 export const SidebarMenu = ({ children }: { children: ReactNode }) => <div className="space-y-1">{children}</div>;
 export const SidebarMenuItem = ({ children }: { children: ReactNode }) => <div>{children}</div>;
 export const SidebarMenuButton = ({ children, asChild, tooltip }: { children: ReactNode; asChild?: boolean; tooltip?: string }) => (
-  <div className="px-1">
-    {children}
-  </div>
+  <div className="px-1">{children}</div>
 );
 export const SidebarRail = Sidebar;
 export const SidebarTrigger = () => null;
