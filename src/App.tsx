@@ -19,11 +19,12 @@ function App() {
         // Add global retry configuration
         retry: 1,
         staleTime: 5000,
+        // Remove the incorrect onError property - this is causing the build error
+        // Error handling should be done at the component level using the useDataFetching hook
       }
     }
   });
   
-  // Create a deep copy of routes to avoid modifying the original
   const routes = JSON.parse(JSON.stringify(baseRoutes));
   
   // Applying ErrorBoundary at the root to catch any unhandled errors
@@ -39,7 +40,6 @@ function App() {
                 </div>
               }>
                 <Toaster richColors closeButton position="top-right" />
-                {routes[0].children}
                 {import.meta.env.DEV && <RouteDebugger />}
               </Suspense>
             </ThemeProvider>

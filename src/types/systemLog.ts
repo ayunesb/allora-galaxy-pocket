@@ -1,13 +1,18 @@
 
-export type LogSeverity = 'info' | 'warning' | 'error' | 'critical' | 'success';
+export type LogSeverity = 'critical' | 'high' | 'medium' | 'low' | 'info' | 'error' | 'warning' | 'success';
 
 export interface SystemLog {
   id: string;
-  created_at: string;
-  tenant_id?: string;
-  user_id?: string;
   event_type: string;
   message: string;
-  meta?: Record<string, any>;
-  severity?: LogSeverity;
+  created_at: string;
+  timestamp?: string;
+  meta?: {
+    severity?: LogSeverity;
+    [key: string]: any;
+  };
+  user_id?: string;
+  tenant_id?: string;
+  service?: string;
+  severity?: LogSeverity; // Convenience accessor
 }

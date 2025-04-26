@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useTenant } from './useTenant';
 import { useNavigate } from 'react-router-dom';
 import { OnboardingProfile } from '@/types/onboarding';
-import { toast } from 'sonner';
+import { ToastService } from '@/services/ToastService';
 import { useSystemLogs } from './useSystemLogs';
 
 export function useOnboardingSubmission() {
@@ -14,7 +14,7 @@ export function useOnboardingSubmission() {
 
   const completeOnboarding = async (profile: OnboardingProfile) => {
     if (!tenant) {
-      toast.error("No active workspace found");
+      ToastService.error("No active workspace found");
       return { success: false, error: "No active workspace found" };
     }
 
