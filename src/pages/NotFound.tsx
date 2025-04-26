@@ -38,6 +38,12 @@ const NotFound = () => {
       suggestions.push('/campaigns/center', '/dashboard/insights');
     } else if (path.includes('plugin')) {
       suggestions.push('/plugins', '/plugins/marketplace');
+    } else if (path === '/login') {
+      suggestions.push('/auth/login');
+    } else if (path.includes('login')) {
+      suggestions.push('/login', '/auth/login');
+    } else if (path.includes('auth')) {
+      suggestions.push('/auth/login', '/auth/register');
     } else {
       suggestions.push('/dashboard', '/strategy', '/assistant');
     }

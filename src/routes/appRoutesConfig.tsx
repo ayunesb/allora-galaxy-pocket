@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import ErrorPage from '@/ErrorPage';
@@ -6,6 +7,7 @@ import DashboardPage from '@/app/dashboard/page';
 import NotFound from '@/pages/NotFound';
 import StrategyDetail from '@/app/strategy/[id]';
 import { RouteDebugger } from "@/components/RouteDebugger";
+import Login from '@/pages/auth/Login';
 
 // Use dynamic imports for lazy loading
 const OnboardingPage = React.lazy(() => import('@/app/onboarding/page'));
@@ -20,7 +22,6 @@ const InsightsKpisPage = () => <div className="p-8">Insights KPIs Page</div>;
 const AdminSecurityAuditPage = () => <div className="p-8">Admin Security Audit Page</div>;
 const AdminIntegrationsPage = () => <div className="p-8">Admin Integrations Page</div>;
 const AdminUsersPage = () => <div className="p-8">Admin Users Page</div>;
-const AuthLoginPage = () => <div className="p-8">Login Page</div>;
 const AuthRegisterPage = () => <div className="p-8">Register Page</div>;
 const AuthForgotPasswordPage = () => <div className="p-8">Forgot Password Page</div>;
 const AuthResetPasswordPage = () => <div className="p-8">Reset Password Page</div>;
@@ -120,8 +121,12 @@ export const baseRoutes: RouteObject[] = [
         element: <AdminLogsPage />,
       },
       {
+        path: '/login',
+        element: <RouteWithDebugger element={<Login />} />,
+      },
+      {
         path: '/auth/login',
-        element: <AuthLoginPage />,
+        element: <RouteWithDebugger element={<Login />} />,
       },
       {
         path: '/auth/register',

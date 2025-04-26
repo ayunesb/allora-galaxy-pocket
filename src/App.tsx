@@ -10,7 +10,6 @@ import { Toaster } from "sonner";
 import { baseRoutes } from "./routes/appRoutesConfig";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import { RouteDebugger } from "./components/RouteDebugger";
 
 // Create router outside of component to avoid re-creation on renders
 const router = createBrowserRouter(baseRoutes);
