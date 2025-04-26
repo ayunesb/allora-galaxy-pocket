@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 
 type ToastProps = {
@@ -52,7 +51,6 @@ export const ToastService = {
     return toast(title || "", { description, ...rest });
   },
   
-  // New utility methods
   promise: <T>(
     promise: Promise<T>,
     messages: {
