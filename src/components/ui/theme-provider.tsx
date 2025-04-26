@@ -17,5 +17,9 @@ export function ThemeProvider({
 }
 
 export const useTheme = () => {
-  return React.useContext(NextThemesProvider.Context);
+  const context = React.useContext(NextThemesProvider.Context);
+  if (!context) {
+    throw new Error("useTheme must be used within a ThemeProvider");
+  }
+  return context;
 }
