@@ -3,12 +3,13 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { StrategyVersionComparison } from "@/components/StrategyVersionComparison";
-import type { Strategy, StrategyVersionDiff } from "@/types/strategy";
+import { Input } from "@/components/ui/input";
+import type { Strategy, StrategyVersionDiff, StrategyVersion } from "@/types/strategy";
 
 interface StrategyVersionsProps {
   strategy: Strategy;
-  versions: any[];
-  onCreateVersion: (comment: string) => void;
+  versions: StrategyVersion[];
+  onCreateVersion: (comment: string) => Promise<void>;
   onCompareVersions: (v1: number, v2: number) => Promise<void>;
   comparisonData: StrategyVersionDiff | null;
 }
@@ -22,42 +23,76 @@ export function StrategyVersions({
 }: StrategyVersionsProps) {
   const [showVersionComparison, setShowVersionComparison] = useState(false);
   const [comment, setComment] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
 
-  const handleCreateVersion = () => {
-    if (comment.trim()) {
-      onCreateVersion(comment);
+  const handleCreateVersion = async () => {
+    if (isCreating) return;
+    
+    try {
+      setIsCreating(true);
+      const versionComment = comment.trim() || "Version snapshot";
+      await onCreateVersion(versionComment);
       setComment("");
-    } else {
-      // Default comment if none provided
-      onCreateVersion("Version snapshot");
+    } catch (error) {
+      console.error("Failed to create version:", error);
+    } finally {
+      setIsCreating(false);
+    }
+  };
+  
+  const handleCompare = async (v1: number, v2: number) => {
+    try {
+      await onCompareVersions(v1, v2);
+      setShowVersionComparison(true);
+    } catch (error) {
+      console.error("Failed to compare versions:", error);
     }
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
         <h3 className="font-medium">Version History</h3>
-        <Button variant="outline" size="sm" onClick={handleCreateVersion}>
-          Save Current Version
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <Input 
+            placeholder="Version comment (optional)"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            className="w-full sm:w-auto"
+          />
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleCreateVersion}
+            disabled={isCreating}
+            className="w-full sm:w-auto"
+          >
+            {isCreating ? "Saving..." : "Save Current Version"}
+          </Button>
+        </div>
       </div>
       
       {versions && versions.length > 0 ? (
         <div className="space-y-2">
           {versions.map((version, index) => (
             <div key={version.id} className="border rounded-lg p-3">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-2">
                 <div>
                   <span className="font-medium">Version {version.version}</span>
                   <span className="text-sm text-muted-foreground ml-2">
                     {format(new Date(version.created_at), 'PPp')}
                   </span>
+                  {version.comment && (
+                    <div className="text-sm text-muted-foreground mt-1">
+                      Comment: {version.comment}
+                    </div>
+                  )}
                 </div>
                 {index > 0 && (
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => onCompareVersions(versions[index].version, versions[index-1].version)}
+                    onClick={() => handleCompare(versions[index].version, versions[index-1].version)}
                   >
                     Compare with V{versions[index-1].version}
                   </Button>

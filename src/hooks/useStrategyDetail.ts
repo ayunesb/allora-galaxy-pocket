@@ -117,8 +117,8 @@ export function useStrategyDetail(strategyId?: string) {
     }
   });
   
-  const handleCreateVersion = async (comment: string) => {
-    if (!strategy) return;
+  const handleCreateVersion = async (comment: string): Promise<void> => {
+    if (!strategy) throw new Error("No strategy to version");
     
     try {
       const nextVersion = versions && versions.length > 0 
@@ -142,24 +142,69 @@ export function useStrategyDetail(strategyId?: string) {
       toast.error("Failed to create version", { 
         description: error.message || "An unexpected error occurred" 
       });
+      throw error; // Re-throw for the component to handle
     }
   };
   
-  const handleCompareVersions = (v1: StrategyVersion, v2: StrategyVersion) => {
-    // This function would compare two versions and show differences
-    // For this example, we'll just set a mock comparison
-    const diff: StrategyVersionDiff = {
-      added: ['new field'],
-      removed: ['old field'],
-      modified: {
-        description: {
-          before: v1.data.description,
-          after: v2.data.description
-        }
-      }
-    };
+  const handleCompareVersions = async (v1: number, v2: number): Promise<void> => {
+    if (!versions) throw new Error("No versions available to compare");
     
-    setComparisonData(diff);
+    try {
+      // Find the version objects based on version numbers
+      const version1 = versions.find(v => v.version === v1);
+      const version2 = versions.find(v => v.version === v2);
+      
+      if (!version1 || !version2) {
+        throw new Error("One or both versions not found");
+      }
+
+      // Generate a representation of the changes between the versions
+      // This is a simplified example - in a real app you'd probably do a more complex diff
+      const changes1 = JSON.stringify(version1.data, null, 2);
+      const changes2 = JSON.stringify(version2.data, null, 2);
+      
+      const older = {
+        version: version2.version,
+        changes: changes2,
+        created_at: version2.created_at
+      };
+      
+      const newer = {
+        version: version1.version,
+        changes: changes1,
+        created_at: version1.created_at
+      };
+      
+      // Find added, removed, and modified fields
+      const keys1 = Object.keys(version1.data || {});
+      const keys2 = Object.keys(version2.data || {});
+      
+      const added = keys1.filter(key => !keys2.includes(key));
+      const removed = keys2.filter(key => !keys1.includes(key));
+      
+      const modified: Record<string, {before: any, after: any}> = {};
+      keys1.filter(key => keys2.includes(key)).forEach(key => {
+        if (JSON.stringify(version1.data[key]) !== JSON.stringify(version2.data[key])) {
+          modified[key] = {
+            before: version2.data[key],
+            after: version1.data[key]
+          };
+        }
+      });
+      
+      setComparisonData({
+        older,
+        newer,
+        added,
+        removed,
+        modified
+      });
+    } catch (error: any) {
+      toast.error("Failed to compare versions", {
+        description: error.message || "An unexpected error occurred"
+      });
+      throw error;
+    }
   };
   
   return {

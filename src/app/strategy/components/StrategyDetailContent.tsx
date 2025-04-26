@@ -73,7 +73,7 @@ export function StrategyDetailContent() {
                 <StrategyVersions
                   strategy={strategy}
                   versions={versions || []}
-                  onCreateVersion={(comment: string) => handleCreateVersion(comment)} 
+                  onCreateVersion={(comment: string) => handleCreateVersion(comment)}
                   onCompareVersions={(v1: number, v2: number) => handleCompareVersions(v1, v2)}
                   comparisonData={comparisonData}
                 />

@@ -32,6 +32,16 @@ export interface Strategy {
 }
 
 export interface StrategyVersionDiff {
+  older: {
+    version: number;
+    changes: string;
+    created_at: string;
+  };
+  newer: {
+    version: number;
+    changes: string;
+    created_at: string;
+  };
   added: string[];
   removed: string[];
   modified: {
