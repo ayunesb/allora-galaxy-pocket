@@ -36,8 +36,8 @@ export const generateCampaign = async (input: CampaignInput, tenantId: string, s
           id: strategy.id,
           title: strategy.title,
           description: strategy.description,
-          industry: strategy.industry,
-          goal: strategy.goal
+          industry: strategy.industry || undefined,
+          goal: strategy.goal || strategy.goals?.[0] || undefined
         }
       : null;
     

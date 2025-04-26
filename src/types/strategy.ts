@@ -16,6 +16,12 @@ export interface Strategy {
   updated_at?: string;
   version?: number;
   is_public?: boolean;
+  // Add missing properties
+  industry?: string;
+  goal?: string;
+  confidence?: string;
+  metrics_baseline?: Record<string, any>;
+  generated_by?: string;
 }
 
 export interface StrategyVersionDiff {

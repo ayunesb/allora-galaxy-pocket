@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Check, X, ArrowRight } from "lucide-react";
@@ -75,7 +76,8 @@ export function StrategyApprovalFlow({ strategyId, onApproved, onDeclined }: Str
         target: "campaign",
         metadata: {
           strategy_id: strategy.id,
-          strategy_title: strategy.title
+          strategy_title: strategy.title,
+          industry: strategy.industry || 'unknown'
         }
       });
 
@@ -85,7 +87,7 @@ export function StrategyApprovalFlow({ strategyId, onApproved, onDeclined }: Str
         value: 1,
         metadata: {
           strategy_id: strategy.id,
-          industry: strategy.industry
+          industry: strategy.industry || 'unknown'
         }
       });
 

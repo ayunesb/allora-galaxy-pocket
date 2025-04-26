@@ -56,7 +56,7 @@ export function StrategyHeader({
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-2xl font-bold truncate">{strategy?.title}</h1>
-            <Badge variant={strategy?.status === "published" ? "default" : "outline"} className="whitespace-nowrap">
+            <Badge variant={strategy?.status === "approved" ? "default" : "outline"} className="whitespace-nowrap">
               {strategy?.status || "Draft"}
             </Badge>
           </div>

@@ -21,7 +21,7 @@ interface StrategyPreviewProps {
  */
 const getAICreationConversation = (strategy: Strategy) => (
   <div>
-    <span className="font-bold text-blue-600">AI Bot:</span> "To generate this strategy, I analyzed your industry {strategy.industry ?? "(unspecified)"} and primary goal: '{strategy.goal ?? "N/A"}'. I pulled best practices and recent success trends, then tailored an actionable plan to your use case."<br />
+    <span className="font-bold text-blue-600">AI Bot:</span> "To generate this strategy, I analyzed your industry {strategy.industry ?? "(unspecified)"} and primary goal: '{strategy.goal ?? strategy.goals?.[0] ?? "N/A"}'. I pulled best practices and recent success trends, then tailored an actionable plan to your use case."<br />
     <span className="font-bold text-gray-600">You:</span> "Why is this approach recommended?"<br />
     <span className="font-bold text-blue-600">AI Bot:</span> "It leverages fast follow-ups and automation, which have proven to increase conversion, especially for {strategy.industry ?? "your industry"}. Speed and personalization are key factors in high-performing campaigns."
   </div>
@@ -53,17 +53,22 @@ export default function StrategyPreview(props: StrategyPreviewProps) {
     .join("\n");
 
   // For AI creation explanation, pass all available props in a Strategy object
+  const strategyStatus: Strategy['status'] = 
+    (status === 'draft' || status === 'pending' || status === 'approved' || status === 'rejected') 
+      ? status as Strategy['status'] 
+      : 'draft';
+
   const testConversation = getAICreationConversation({
     id: props.id,
     title,
-    description,
-    created_at,
+    description: description || '',
+    created_at: created_at || '',
     updated_at,
-    tenant_id: props.tenant_id,
+    tenant_id: props.tenant_id || undefined,
     industry,
     goal,
     confidence,
-    status
+    status: strategyStatus
   });
 
   return (

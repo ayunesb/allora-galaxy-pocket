@@ -62,7 +62,7 @@ export function StrategyDetailContent() {
           <StrategyTabs strategy={strategy}>
             {{
               overview: <p>{strategy.description}</p>,
-              goals: <p>{strategy.goal || "No specific goals defined for this strategy."}</p>,
+              goals: <p>{strategy.goal || strategy.goals?.join(', ') || "No specific goals defined for this strategy."}</p>,
               performance: (
                 <StrategyPerformanceTracker 
                   strategyId={strategy.id} 
