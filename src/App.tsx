@@ -14,10 +14,11 @@ import { RouteDebugger } from "./components/RouteDebugger";
 function App() {
   const queryClient = new QueryClient();
   
-  // Clone the base routes and prepare for router
+  // Clone the base routes for the router
   const routes = JSON.parse(JSON.stringify(baseRoutes));
   
-  // Set up the root element with all providers in the correct order
+  // Set up the root element with all providers without RouterProvider
+  // We'll only use RouterProvider at the return statement
   routes[0].element = (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
@@ -25,7 +26,7 @@ function App() {
           <TenantProvider>
             <ThemeProvider defaultTheme="light" storageKey="allora-theme-preference">
               <>
-                <RouterProvider router={createBrowserRouter(routes)} />
+                {/* Router is managed at the root level, not here */}
                 <Toaster richColors closeButton position="top-right" />
                 {import.meta.env.DEV && <RouteDebugger />}
               </>
@@ -37,7 +38,9 @@ function App() {
     </ErrorBoundary>
   );
   
-  return <RouterProvider router={createBrowserRouter(routes)} />;
+  // Create the router once and return it
+  const router = createBrowserRouter(routes);
+  return <RouterProvider router={router} />;
 }
 
 export default App;
