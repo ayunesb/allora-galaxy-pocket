@@ -1,20 +1,9 @@
+
 import { useContext, createContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from './useAuth';
-
-// Define Tenant type using the proper theme_mode type
-export interface Tenant {
-  id: string;
-  name: string;
-  is_demo?: boolean;
-  theme_color?: string;
-  theme_mode?: "light" | "dark" | "system";
-  enable_auto_approve?: boolean;
-  usage_credits?: number;
-  slack_webhook_url?: string;
-  [key: string]: any;
-}
+import { Tenant } from '@/types/tenant'; // Import the correct Tenant type
 
 // Create context type
 interface TenantContextValue {
@@ -53,10 +42,10 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
       if (error) throw error;
       
       // Update local state
-      setTenant(prevTenant => ({
-        ...prevTenant!,
+      setTenant(prevTenant => prevTenant ? {
+        ...prevTenant,
         ...updates
-      }));
+      } : null);
       
       toast.success("Settings updated successfully");
     } catch (error: any) {
@@ -89,7 +78,12 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
             .single();
             
           if (!error && data) {
-            setTenant(data);
+            // Make sure theme_mode is set to a valid value
+            const tenantData: Tenant = {
+              ...data,
+              theme_mode: data.theme_mode || "light" // Ensure theme_mode is never undefined
+            };
+            setTenant(tenantData);
             setIsLoading(false);
             return;
           }
@@ -119,8 +113,13 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
           if (tenantError) throw tenantError;
           
           if (tenantData) {
-            setTenant(tenantData);
-            localStorage.setItem('selectedTenantId', tenantData.id);
+            // Make sure theme_mode is set to a valid value
+            const processedTenant: Tenant = {
+              ...tenantData,
+              theme_mode: tenantData.theme_mode || "light" // Ensure theme_mode is never undefined
+            };
+            setTenant(processedTenant);
+            localStorage.setItem('selectedTenantId', processedTenant.id);
           }
         }
       } catch (error) {
