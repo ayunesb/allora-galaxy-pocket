@@ -1,16 +1,15 @@
-
 import { useContext, createContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from './useAuth';
 
-// Define Tenant type
+// Define Tenant type using the proper theme_mode type
 export interface Tenant {
   id: string;
   name: string;
   is_demo?: boolean;
   theme_color?: string;
-  theme_mode?: string;
+  theme_mode?: "light" | "dark" | "system";
   enable_auto_approve?: boolean;
   usage_credits?: number;
   slack_webhook_url?: string;

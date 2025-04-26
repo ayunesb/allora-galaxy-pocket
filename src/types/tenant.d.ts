@@ -10,4 +10,5 @@ export interface Tenant {
   usage_credits?: number;
   created_at?: string;
   updated_at?: string;
+  onboarding_completed?: boolean;
 }

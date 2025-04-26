@@ -22,12 +22,14 @@ export function useOnboardingSubmission() {
 
     try {
       // Update tenant profile with onboarding data
-      await updateTenantProfile({
-        ...tenant,
-        onboarding_completed: true,
-      });
+      if (updateTenantProfile) {
+        await updateTenantProfile({
+          ...tenant,
+          onboarding_completed: true,
+        });
+      }
 
-      // Log activity
+      // Log activity - using async/await properly
       try {
         await logActivity({
           event_type: 'ONBOARDING_COMPLETED',

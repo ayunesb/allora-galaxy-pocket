@@ -78,20 +78,22 @@ export default function OnboardingWizard() {
       const result = await completeOnboarding(finalProfile);
       
       if (result.success) {
-        // Log the successful onboarding completion
-        try {
-          await logActivity({
-            event_type: "ONBOARDING_COMPLETED",
-            message: `Onboarding completed for ${finalProfile.companyName}`,
-            meta: {
-              industry: finalProfile.industry,
-              teamSize: finalProfile.teamSize,
-              launchMode: finalProfile.launch_mode
-            }
-          });
-        } catch (logError) {
-          console.error("Failed to log onboarding completion:", logError);
-        }
+        // Log the successful onboarding completion - use an IIFE to handle the Promise properly
+        (async () => {
+          try {
+            await logActivity({
+              event_type: "ONBOARDING_COMPLETED",
+              message: `Onboarding completed for ${finalProfile.companyName}`,
+              meta: {
+                industry: finalProfile.industry,
+                teamSize: finalProfile.teamSize,
+                launchMode: finalProfile.launch_mode
+              }
+            });
+          } catch (logError) {
+            console.error("Failed to log onboarding completion:", logError);
+          }
+        })();
         
         // Show success toast with guidance to next step
         toast("Onboarding complete!", {

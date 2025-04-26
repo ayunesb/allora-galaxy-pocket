@@ -1,4 +1,3 @@
-
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
@@ -77,11 +76,15 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     if (!tenant && !location.pathname.startsWith("/auth/") && 
         location.pathname !== "/onboarding" && location.pathname !== "/workspace") {
       try {
-        logSecurityEvent(
-          "Attempted access without workspace",
-          "TENANT_MISSING",
-          { path: location.pathname, user_id: user.id }
-        );
+        (async () => {
+          await logSecurityEvent(
+            "Attempted access without workspace",
+            "TENANT_MISSING",
+            { path: location.pathname, user_id: user.id }
+          );
+        })().catch(error => {
+          console.error("Failed to log security event:", error);
+        });
       } catch (error) {
         console.error("Failed to log security event:", error);
       }
@@ -89,11 +92,15 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     
     if (tenant && onboardingComplete === false && !skipOnboardingCheck) {
       try {
-        logSecurityEvent(
-          "Attempted access before onboarding completion",
-          "ONBOARDING_INCOMPLETE",
-          { path: location.pathname, user_id: user.id, tenant_id: tenant.id }
-        );
+        (async () => {
+          await logSecurityEvent(
+            "Attempted access before onboarding completion",
+            "ONBOARDING_INCOMPLETE",
+            { path: location.pathname, user_id: user.id, tenant_id: tenant.id }
+          );
+        })().catch(error => {
+          console.error("Failed to log security event:", error);
+        });
       } catch (error) {
         console.error("Failed to log security event:", error);
       }
@@ -162,13 +169,18 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   }
 
   if (user && tenant) {
-    // Handle async activity logging properly
     try {
-      logActivity({
-        event_type: "USER_NAVIGATION",
-        message: `User navigated to ${location.pathname}`,
-        meta: { path: location.pathname }
-      }).catch(e => console.error("Failed to log navigation:", e));
+      (async () => {
+        try {
+          await logActivity({
+            event_type: "USER_NAVIGATION",
+            message: `User navigated to ${location.pathname}`,
+            meta: { path: location.pathname }
+          });
+        } catch (e) {
+          console.error("Failed to log navigation:", e);
+        }
+      })();
     } catch (error) {
       console.error("Failed to log navigation activity:", error);
     }

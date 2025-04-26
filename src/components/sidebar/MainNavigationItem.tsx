@@ -23,7 +23,7 @@ const MainNavigationItem = ({ to, icon, label, isActive }: MainNavigationItemPro
       }`}
     >
       <div className="mr-3 h-5 w-5">
-        {React.isValidElement(icon) ? icon : null}
+        {icon}
       </div>
       {!collapsed && <span>{label}</span>}
     </Link>

@@ -29,22 +29,22 @@ export const SidebarProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const sidebarItems: SidebarItem[] = [
     {
       title: "Dashboard",
-      icon: <Home />,
+      icon: <Home size={20} />,
       path: "/dashboard",
     },
     {
       title: "Campaigns",
-      icon: <Rocket />,
+      icon: <Rocket size={20} />,
       path: "/campaigns",
     },
     {
       title: "Agents",
-      icon: <Users />,
+      icon: <Users size={20} />,
       path: "/agents",
     },
     {
       title: "Settings",
-      icon: <Settings />,
+      icon: <Settings size={20} />,
       path: "/settings",
     }
   ];

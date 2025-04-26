@@ -30,7 +30,7 @@ export function AdminSystemLogs() {
   const paginationWithLogsPerPage = {
     currentPage: pagination.currentPage,
     totalPages: pagination.totalPages,
-    logsPerPage: 20 // Default to 20 logs per page or get from pagination if available
+    logsPerPage: 20 // Default to 20 logs per page
   };
 
   return (
