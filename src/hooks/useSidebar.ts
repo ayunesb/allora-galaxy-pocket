@@ -7,15 +7,17 @@ interface SidebarContextType {
   toggleSidebar: () => void;
 }
 
-// Create context with default values
 const SidebarContext = createContext<SidebarContextType>({
   collapsed: false,
   setCollapsed: () => {},
   toggleSidebar: () => {}
 });
 
-// Create provider component
-export const SidebarProvider = ({ children }: { children: ReactNode }) => {
+interface SidebarProviderProps {
+  children: ReactNode;
+}
+
+export const SidebarProvider = ({ children }: SidebarProviderProps) => {
   const [collapsed, setCollapsed] = useState(false);
   
   const toggleSidebar = () => {
@@ -29,5 +31,4 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Hook to use the sidebar context
 export const useSidebar = () => useContext(SidebarContext);

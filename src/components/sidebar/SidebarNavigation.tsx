@@ -1,6 +1,7 @@
 
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { NavigationLink } from "./NavigationLink";
 import {
   LayoutDashboard,
   FileText,
@@ -12,29 +13,9 @@ import {
   CreditCard
 } from "lucide-react";
 
-interface NavigationLinkProps {
-  to: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-  isActive: boolean;
-}
-
-const NavigationLink = ({ to, icon, children, isActive }: NavigationLinkProps) => (
-  <Link
-    to={to}
-    className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
-      isActive 
-      ? "bg-primary/10 text-primary" 
-      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-    }`}
-  >
-    <div className="mr-3 h-5 w-5">{icon}</div>
-    {children}
-  </Link>
-);
-
 export const MainNavigation = () => {
   const location = useLocation();
+
   const isActive = (path: string) => {
     if (path === "/") {
       return location.pathname === "/";
@@ -42,71 +23,29 @@ export const MainNavigation = () => {
     return location.pathname.startsWith(path);
   };
 
+  const navigationItems = [
+    { to: "/dashboard", icon: <LayoutDashboard />, label: "Dashboard" },
+    { to: "/campaigns", icon: <FileText />, label: "Campaigns" },
+    { to: "/vault", icon: <Layers />, label: "Strategy Vault" },
+    { to: "/launch", icon: <Wallet />, label: "Launch" },
+    { to: "/agents", icon: <Users />, label: "Agents" },
+    { to: "/workspace", icon: <Building />, label: "Workspace" },
+    { to: "/academy", icon: <BookOpen />, label: "Academy" },
+    { to: "/billing", icon: <CreditCard />, label: "Billing" }
+  ];
+
   return (
     <nav className="space-y-1">
-      <NavigationLink 
-        to="/dashboard"
-        icon={<LayoutDashboard />}
-        isActive={isActive("/dashboard")}
-      >
-        Dashboard
-      </NavigationLink>
-      
-      <NavigationLink 
-        to="/campaigns"
-        icon={<FileText />}
-        isActive={isActive("/campaigns")}
-      >
-        Campaigns
-      </NavigationLink>
-      
-      <NavigationLink 
-        to="/vault"
-        icon={<Layers />}
-        isActive={isActive("/vault")}
-      >
-        Strategy Vault
-      </NavigationLink>
-      
-      <NavigationLink 
-        to="/launch"
-        icon={<Wallet />}
-        isActive={isActive("/launch")}
-      >
-        Launch
-      </NavigationLink>
-      
-      <NavigationLink 
-        to="/agents"
-        icon={<Users />}
-        isActive={isActive("/agents")}
-      >
-        Agents
-      </NavigationLink>
-      
-      <NavigationLink 
-        to="/workspace"
-        icon={<Building />}
-        isActive={isActive("/workspace")}
-      >
-        Workspace
-      </NavigationLink>
-      
-      <NavigationLink 
-        to="/academy"
-        icon={<BookOpen />}
-        isActive={isActive("/academy")}
-      >
-        Academy
-      </NavigationLink>
-      
-      <NavigationLink 
-        to="/billing"
-        icon={<CreditCard />}
-        isActive={isActive("/billing")}
-      >
-        Billing
-      </NavigationLink>
+      {navigationItems.map((item) => (
+        <NavigationLink
+          key={item.to}
+          to={item.to}
+          icon={item.icon}
+          isActive={isActive(item.to)}
+        >
+          {item.label}
+        </NavigationLink>
+      ))}
     </nav>
   );
 };
