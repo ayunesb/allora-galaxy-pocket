@@ -1,14 +1,16 @@
-
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import ErrorPage from '@/ErrorPage';
 import HomePage from '@/app/page';
 import DashboardPage from '@/app/dashboard/page';
+import NotFound from '@/pages/NotFound';
+
+// Replace placeholder components with actual lazy-loaded components
+const OnboardingPage = React.lazy(() => import('@/app/onboarding/page'));
+const VaultPage = React.lazy(() => import('@/app/vault/page'));
+const StrategyPage = React.lazy(() => import('@/app/strategy/page'));
 
 // Placeholder components for missing pages
-const OnboardingPage = () => <div className="p-8">Onboarding Page</div>;
-const VaultPage = () => <div className="p-8">Vault Page</div>;
-const StrategyPage = () => <div className="p-8">Strategy Page</div>;
 const StrategyDetailsPage = () => <div className="p-8">Strategy Details Page</div>;
 const CampaignsCenter = () => <div className="p-8">Campaigns Center</div>;
 const LaunchPage = () => <div className="p-8">Launch Page</div>;
@@ -45,11 +47,19 @@ export const baseRoutes: RouteObject[] = [
       },
       {
         path: '/onboarding',
-        element: <OnboardingPage />,
+        element: (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <OnboardingPage />
+          </React.Suspense>
+        ),
       },
       {
         path: '/vault',
-        element: <VaultPage />,
+        element: (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <VaultPage />
+          </React.Suspense>
+        ),
       },
       {
         path: '/strategy',
@@ -118,6 +128,10 @@ export const baseRoutes: RouteObject[] = [
       {
         path: '/plugins/submit',
         element: <PluginsSubmitPage />,
+      },
+      {
+        path: "*",
+        element: <NotFound />
       },
       ...systemRoutes,
     ],
