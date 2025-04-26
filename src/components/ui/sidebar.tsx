@@ -170,7 +170,7 @@ export const SidebarSection = ({
   );
 };
 
-// For compatibility with existing code - these can be adjusted to map to the components above
+// For compatibility with existing code - these map to the components above
 export const SidebarGroup = SidebarSection;
 export const SidebarGroupLabel = ({ children }: { children: ReactNode }) => {
   const { collapsed } = useSidebar();
@@ -184,7 +184,7 @@ export const SidebarGroupLabel = ({ children }: { children: ReactNode }) => {
 export const SidebarGroupContent = ({ children }: { children: ReactNode }) => <div>{children}</div>;
 export const SidebarMenu = ({ children }: { children: ReactNode }) => <div className="space-y-1">{children}</div>;
 export const SidebarMenuItem = ({ children }: { children: ReactNode }) => <div>{children}</div>;
-export const SidebarMenuButton = ({ children, asChild, ...props }: { children: ReactNode; asChild?: boolean; tooltip?: string }) => (
+export const SidebarMenuButton = ({ children }: { children: ReactNode; asChild?: boolean; tooltip?: string }) => (
   <div className="px-1">
     {children}
   </div>
