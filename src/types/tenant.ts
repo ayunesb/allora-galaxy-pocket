@@ -2,7 +2,7 @@
 export interface Tenant {
   id: string;
   name: string;
-  theme_mode: "light" | "dark" | "system";
+  theme_mode: "light" | "dark" | "system";  // Required field
   theme_color?: string;
   enable_auto_approve?: boolean;
   isDemo?: boolean;

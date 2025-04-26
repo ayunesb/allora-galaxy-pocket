@@ -1,7 +1,6 @@
 
 import React, { ReactNode } from "react";
 import { NavLink } from "react-router-dom";
-import { LucideIcon } from "lucide-react";
 import { SidebarSection, SidebarItem } from "@/components/ui/sidebar";
 import { useSidebar } from "@/hooks/useSidebar";
 
