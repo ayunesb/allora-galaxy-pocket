@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import ErrorPage from '@/ErrorPage';
@@ -13,8 +12,7 @@ const VaultPage = React.lazy(() => import('@/app/vault/page'));
 const StrategyPage = React.lazy(() => import('@/app/strategy/page'));
 const VaultStrategyDetail = React.lazy(() => import('@/app/vault/strategy-detail/[id]'));
 
-// Placeholder components for missing pages - keep these as temporary solutions
-// Until we implement full features
+// Placeholder components for missing pages
 const CampaignsCenter = () => <div className="p-8">Campaigns Center</div>;
 const LaunchPage = () => <div className="p-8">Launch Page</div>;
 const InsightsKpisPage = () => <div className="p-8">Insights KPIs Page</div>;
@@ -33,11 +31,11 @@ const AdminLogsPage = () => <div className="p-8">Admin Logs Page</div>;
 
 import { systemRoutes } from '@/app/system/routes';
 
-// Base route configuration without App component
+// Base route configuration
 export const baseRoutes: RouteObject[] = [
   {
     path: '/',
-    element: null, // This will be replaced with App component in App.tsx
+    element: null, // This will be replaced with Layout in App.tsx
     errorElement: <ErrorPage />,
     children: [
       {

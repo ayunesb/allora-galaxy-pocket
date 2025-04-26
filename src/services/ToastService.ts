@@ -1,78 +1,54 @@
 
-import { toast } from "sonner";
+import { toast } from 'sonner';
 
-type ToastProps = {
+interface ToastOptions {
   title?: string;
   description?: string;
   duration?: number;
-  variant?: "default" | "destructive";
-  [key: string]: any;
-};
+}
 
-export const ToastService = {
-  success: (props: ToastProps | string) => {
-    if (typeof props === "string") {
-      return toast.success(props);
-    }
-    const { title, description, ...rest } = props;
-    return toast.success(title || "", { description, ...rest });
-  },
-  error: (props: ToastProps | string) => {
-    if (typeof props === "string") {
-      return toast.error(props);
-    }
-    const { title, description, ...rest } = props;
-    return toast.error(title || "", { description, ...rest });
-  },
-  warning: (props: ToastProps | string) => {
-    if (typeof props === "string") {
-      return toast.warning(props);
-    }
-    const { title, description, ...rest } = props;
-    return toast.warning(title || "", { description, ...rest });
-  },
-  info: (props: ToastProps | string) => {
-    if (typeof props === "string") {
-      return toast.info(props);
-    }
-    const { title, description, ...rest } = props;
-    return toast.info(title || "", { description, ...rest });
-  },
-  toast: (props: ToastProps | string) => {
-    if (typeof props === "string") {
-      return toast(props);
-    }
-    
-    const { title, description, variant, ...rest } = props;
-    
-    if (variant === "destructive") {
-      return toast.error(title || "", { description, ...rest });
-    }
-    
-    return toast(title || "", { description, ...rest });
-  },
-  
-  promise: <T>(
-    promise: Promise<T>,
-    messages: {
-      loading: string;
-      success: string | ((data: T) => string);
-      error: string | ((error: unknown) => string);
-    },
-    options?: { duration?: number }
-  ) => {
-    // Combine messages and options for the correct toast.promise API
-    return toast.promise(promise, {
-      ...messages,
-      ...(options || {})
-    });
-  },
-  
-  dismiss: (toastId?: string) => {
-    if (toastId) {
-      toast.dismiss(toastId);
+export class ToastService {
+  static success(options: ToastOptions | string) {
+    if (typeof options === 'string') {
+      toast.success(options);
     } else {
-      toast.dismiss();
+      toast.success(options.title || 'Success', {
+        description: options.description,
+        duration: options.duration || 3000,
+      });
     }
   }
-};
+
+  static error(options: ToastOptions | string) {
+    if (typeof options === 'string') {
+      toast.error(options);
+    } else {
+      toast.error(options.title || 'Error', {
+        description: options.description,
+        duration: options.duration || 5000,
+      });
+    }
+  }
+
+  static info(options: ToastOptions | string) {
+    if (typeof options === 'string') {
+      toast.info(options);
+    } else {
+      toast.info(options.title || 'Information', {
+        description: options.description,
+        duration: options.duration || 3000,
+      });
+    }
+  }
+
+  static warning(options: ToastOptions | string) {
+    if (typeof options === 'string') {
+      toast.warning(options);
+    } else {
+      toast.warning(options.title || 'Warning', {
+        description: options.description,
+        duration: options.duration || 4000,
+      });
+    }
+  }
+}

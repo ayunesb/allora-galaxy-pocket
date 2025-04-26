@@ -1,20 +1,26 @@
 
 export interface LogFilters {
-  searchTerm?: string;
-  search?: string;
-  eventType?: string;
-  severity?: string;
-  dateRange?: number;
-  dateFrom?: string;
-  dateTo?: string;
-  userId?: string;
-  tenantId?: string;
-  service?: string;
+  eventType: string | null;
+  severity: string | null;
+  dateRange: number | null;
+  dateFrom: string | null;
+  dateTo: string | null;
+  userId: string | null;
+  tenantId: string | null;
+  service: string | null;
+  searchTerm: string | null;
+  search?: string | null;
 }
 
 export const DEFAULT_FILTERS: LogFilters = {
-  searchTerm: '',
-  eventType: 'all',
-  severity: 'all',
-  dateRange: 7 // last 7 days
+  eventType: null,
+  severity: null,
+  dateRange: 7,
+  dateFrom: null,
+  dateTo: null,
+  userId: null,
+  tenantId: null,
+  service: null,
+  searchTerm: null,
+  search: null
 };

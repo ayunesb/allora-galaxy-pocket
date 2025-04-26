@@ -16,18 +16,16 @@ function App() {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
-        // Add global retry configuration
         retry: 1,
         staleTime: 5000
       }
     }
   });
   
-  // Create a deep copy of the routes to avoid mutating the original
-  const routes = JSON.parse(JSON.stringify(baseRoutes));
+  // Create a new router with the baseRoutes
+  const router = createBrowserRouter(baseRoutes);
   
-  // Applying ErrorBoundary at the root to catch any unhandled errors
-  routes[0].element = (
+  return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
@@ -40,6 +38,7 @@ function App() {
               }>
                 <Toaster richColors closeButton position="top-right" />
                 {import.meta.env.DEV && <RouteDebugger />}
+                <RouterProvider router={router} />
               </Suspense>
             </ThemeProvider>
           </TenantProvider>
@@ -48,9 +47,6 @@ function App() {
       </QueryClientProvider>
     </ErrorBoundary>
   );
-  
-  const router = createBrowserRouter(routes);
-  return <RouterProvider router={router} />;
 }
 
 export default App;
