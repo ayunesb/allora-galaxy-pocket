@@ -22,7 +22,9 @@ const MainNavigationItem = ({ to, icon, label, isActive }: MainNavigationItemPro
         : "text-muted-foreground hover:bg-muted hover:text-foreground"
       }`}
     >
-      <div className="mr-3 h-5 w-5">{icon}</div>
+      <div className="mr-3 h-5 w-5">
+        {React.isValidElement(icon) ? icon : null}
+      </div>
       {!collapsed && <span>{label}</span>}
     </Link>
   );

@@ -2,7 +2,7 @@
 import React, { ReactNode } from 'react';
 import AppSidebar from './AppSidebar';
 import Topbar from './Topbar';
-import { SidebarProvider } from '@/hooks/useSidebar';
+import { SidebarProvider } from '@/contexts/SidebarContext';
 
 interface LayoutProps {
   children: ReactNode;
