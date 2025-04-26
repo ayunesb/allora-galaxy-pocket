@@ -30,7 +30,7 @@ function App() {
         <AuthProvider>
           <TenantProvider>
             <ThemeProvider defaultTheme="light" storageKey="allora-theme-preference">
-              <Suspense fallback={<div>Loading application...</div>}>
+              <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading application...</div>}>
                 <Toaster richColors closeButton position="top-right" />
                 {import.meta.env.DEV && <RouteDebugger />}
               </Suspense>

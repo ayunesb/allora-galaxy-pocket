@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,15 +10,26 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 
 export default function Login() {
   const { user, signIn, isLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from || '/dashboard';
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // If user is already logged in, redirect to dashboard or the page they came from
+  useEffect(() => {
+    if (user && !isLoading) {
+      navigate(from, { replace: true });
+    }
+  }, [user, isLoading, navigate, from]);
   
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,9 +37,14 @@ export default function Login() {
     setIsSubmitting(true);
     
     try {
-      const { error } = await signIn(email, password);
-      if (error) throw new Error(error.message);
-      navigate('/dashboard');
+      const { error: signInError } = await signIn(email, password);
+      
+      if (signInError) {
+        throw new Error(signInError.message);
+      }
+      
+      toast.success("Successfully logged in");
+      // Navigation is handled by the useEffect that watches for user changes
     } catch (error: any) {
       console.error('Login failed:', error.message);
       setError(error.message || 'Failed to login. Please check your credentials.');
@@ -37,8 +54,8 @@ export default function Login() {
   };
 
   // If user is already logged in, redirect to dashboard
-  if (user) {
-    return <Navigate to="/dashboard" replace />;
+  if (user && !isLoading) {
+    return <Navigate to={from} replace />;
   }
   
   return (
@@ -72,7 +89,7 @@ export default function Login() {
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
                 <Link 
-                  to="/auth/forgot-password"
+                  to="/auth/reset-password"
                   className="text-sm text-primary hover:underline"
                 >
                   Forgot password?

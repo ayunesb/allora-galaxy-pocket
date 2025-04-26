@@ -27,12 +27,16 @@ export function useSessionRefresh() {
       
       // If token is already expired or expiring in less than 30 seconds, refresh now
       if (timeUntilExpiry < 30 * 1000) {
+        console.log("Token expiring soon, refreshing now");
         refreshSession();
         return;
       }
 
+      console.log(`Setting up token refresh in ${Math.round(timeUntilExpiry / 1000 / 60)} minutes`);
+      
       // Otherwise set timer to refresh before expiry
       refreshTimerRef.current = setTimeout(() => {
+        console.log("Refreshing auth token via timer");
         refreshSession();
       }, timeUntilExpiry);
     };
