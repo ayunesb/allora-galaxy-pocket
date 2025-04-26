@@ -37,7 +37,6 @@ function App() {
               }>
                 <Toaster richColors closeButton position="top-right" />
                 <RouterProvider router={router} />
-                {/* RouteDebugger is now wrapped within RouterProvider context via routes */}
               </Suspense>
             </ThemeProvider>
           </TenantProvider>

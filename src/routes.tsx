@@ -47,7 +47,10 @@ const routes: RouteObject[] = [
       // Catch-all route - this should be LAST
       { path: "*", element: <NotFound /> }
     ],
-  }
+  },
+  
+  // Final catch-all route for the entire application
+  { path: "*", element: <NotFound /> }
 ];
 
 export default routes;

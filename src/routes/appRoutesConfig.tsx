@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import ErrorPage from '@/ErrorPage';
@@ -8,6 +7,7 @@ import NotFound from '@/pages/NotFound';
 import StrategyDetail from '@/app/strategy/[id]';
 import { RouteDebugger } from "@/components/RouteDebugger";
 import Login from '@/pages/auth/Login';
+import Signup from '@/pages/auth/Signup';
 
 // Use dynamic imports for lazy loading
 const OnboardingPage = React.lazy(() => import('@/app/onboarding/page'));
@@ -56,6 +56,7 @@ export const baseRoutes: RouteObject[] = [
         path: '/dashboard',
         element: <RouteWithDebugger element={<DashboardPage />} />,
       },
+      
       {
         path: '/onboarding',
         element: (
@@ -72,6 +73,7 @@ export const baseRoutes: RouteObject[] = [
           </React.Suspense>
         ),
       },
+      
       {
         path: '/strategy',
         element: (
@@ -129,8 +131,12 @@ export const baseRoutes: RouteObject[] = [
         element: <RouteWithDebugger element={<Login />} />,
       },
       {
+        path: '/auth/signup',
+        element: <RouteWithDebugger element={<Signup />} />,
+      },
+      {
         path: '/auth/register',
-        element: <AuthRegisterPage />,
+        element: <RouteWithDebugger element={<Signup />} />,
       },
       {
         path: '/auth/forgot-password',
@@ -140,6 +146,7 @@ export const baseRoutes: RouteObject[] = [
         path: '/auth/reset-password',
         element: <AuthResetPasswordPage />,
       },
+      
       {
         path: '/workspace',
         element: <WorkspacePage />,
@@ -156,6 +163,7 @@ export const baseRoutes: RouteObject[] = [
         path: '/plugins/submit',
         element: <PluginsSubmitPage />,
       },
+      
       {
         path: "*",
         element: <NotFound />
