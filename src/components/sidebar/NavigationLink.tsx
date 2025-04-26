@@ -1,10 +1,10 @@
 
-import React from "react";
+import React, { ReactNode } from "react";
 import { Link } from "react-router-dom";
 
 interface NavigationLinkProps {
   to: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   children: React.ReactNode;
   isActive: boolean;
 }

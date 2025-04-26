@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
   CreditCard, 
@@ -10,7 +10,7 @@ import {
 
 interface SidebarLinkProps {
   to: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   children: React.ReactNode;
   isActive: boolean;
 }
@@ -37,7 +37,7 @@ export const AccountLinks = () => {
     <div className="mt-1">
       <SidebarLink 
         to="/settings" 
-        icon={<Settings />}
+        icon={<Settings size={20} />}
         isActive={isActive("/settings")}
       >
         Settings
@@ -45,7 +45,7 @@ export const AccountLinks = () => {
       
       <SidebarLink 
         to="/profile" 
-        icon={<User />}
+        icon={<User size={20} />}
         isActive={isActive("/profile")}
       >
         Profile
@@ -62,7 +62,7 @@ export const AdminLinks = () => {
     <div className="mt-1">
       <SidebarLink 
         to="/admin/settings" 
-        icon={<Settings />}
+        icon={<Settings size={20} />}
         isActive={isActive("/admin/settings")}
       >
         Admin Settings
@@ -70,7 +70,7 @@ export const AdminLinks = () => {
       
       <SidebarLink 
         to="/admin/security-audit" 
-        icon={<Database />}
+        icon={<Database size={20} />}
         isActive={isActive("/admin/security-audit")}
       >
         Security Audit

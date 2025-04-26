@@ -24,14 +24,14 @@ export const MainNavigation = () => {
   };
 
   const navigationItems = [
-    { to: "/dashboard", icon: <LayoutDashboard />, label: "Dashboard" },
-    { to: "/campaigns", icon: <FileText />, label: "Campaigns" },
-    { to: "/vault", icon: <Layers />, label: "Strategy Vault" },
-    { to: "/launch", icon: <Wallet />, label: "Launch" },
-    { to: "/agents", icon: <Users />, label: "Agents" },
-    { to: "/workspace", icon: <Building />, label: "Workspace" },
-    { to: "/academy", icon: <BookOpen />, label: "Academy" },
-    { to: "/billing", icon: <CreditCard />, label: "Billing" }
+    { to: "/dashboard", icon: <LayoutDashboard size={20} />, label: "Dashboard" },
+    { to: "/campaigns", icon: <FileText size={20} />, label: "Campaigns" },
+    { to: "/vault", icon: <Layers size={20} />, label: "Strategy Vault" },
+    { to: "/launch", icon: <Wallet size={20} />, label: "Launch" },
+    { to: "/agents", icon: <Users size={20} />, label: "Agents" },
+    { to: "/workspace", icon: <Building size={20} />, label: "Workspace" },
+    { to: "/academy", icon: <BookOpen size={20} />, label: "Academy" },
+    { to: "/billing", icon: <CreditCard size={20} />, label: "Billing" }
   ];
 
   return (

@@ -1,11 +1,12 @@
 
+import React, { ReactNode } from "react";
 import { NavLink } from "react-router-dom";
 import { LucideIcon } from "lucide-react";
 import { SidebarSection, SidebarItem } from "@/components/ui/sidebar";
 import { useSidebar } from "@/hooks/useSidebar";
 
 interface NavigationItem {
-  icon: LucideIcon;
+  icon: ReactNode;
   label: string;
   path: string;
 }
@@ -32,7 +33,7 @@ export function SidebarNavigationGroup({ label, items, show = true }: SidebarNav
           {({ isActive }) => (
             <SidebarItem
               isActive={isActive}
-              icon={<item.icon className="h-4 w-4" />}
+              icon={item.icon}
               label={item.label}
             />
           )}
