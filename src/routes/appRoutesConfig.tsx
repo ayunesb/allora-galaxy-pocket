@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import ErrorPage from '@/ErrorPage';
@@ -7,7 +8,7 @@ import NotFound from '@/pages/NotFound';
 import StrategyDetail from '@/app/strategy/[id]';
 
 // Use dynamic imports for lazy loading
-const OnboardingPage = React.lazy(() => import('@/app/onboarding/OnboardingWizard'));
+const OnboardingPage = React.lazy(() => import('@/app/onboarding/page'));
 const VaultPage = React.lazy(() => import('@/app/vault/page'));
 const StrategyPage = React.lazy(() => import('@/app/strategy/page'));
 const VaultStrategyDetail = React.lazy(() => import('@/app/vault/strategy-detail/[id]'));

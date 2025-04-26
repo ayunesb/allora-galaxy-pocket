@@ -29,22 +29,20 @@ export function useOnboardingSubmission() {
         });
       }
 
-      // Log activity - using async/await properly with IIFE
-      (async () => {
-        try {
-          await logActivity({
-            event_type: 'ONBOARDING_COMPLETED',
-            message: 'User completed onboarding process',
-            meta: {
-              tenant_id: tenant.id,
-              profile: profile
-            },
-            severity: 'info'
-          });
-        } catch (logError) {
-          console.error("Failed to log onboarding activity:", logError);
-        }
-      })();
+      // Log activity
+      try {
+        await logActivity({
+          event_type: 'ONBOARDING_COMPLETED',
+          message: 'User completed onboarding process',
+          meta: {
+            tenant_id: tenant.id,
+            profile: profile
+          },
+          severity: 'info'
+        });
+      } catch (logError) {
+        console.error("Failed to log onboarding activity:", logError);
+      }
 
       return { success: true };
     } catch (error: any) {

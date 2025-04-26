@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from "react";
@@ -7,15 +8,17 @@ import { CheckCircle, AlertTriangle } from "lucide-react";
 import { useSystemLogs } from "@/hooks/useSystemLogs";
 import { toast } from "sonner";
 
+interface ModuleStatusEntry {
+  verified: boolean;
+  phase1Complete: boolean;
+  phase2Complete: boolean;
+  phase3Complete: boolean;
+  modulePath: string;
+  options: Record<string, any>;
+}
+
 interface ModuleStatus {
-  [key: string]: {
-    verified: boolean;
-    phase1Complete: boolean;
-    phase2Complete: boolean;
-    phase3Complete: boolean;
-    modulePath: string;
-    options: any;
-  };
+  [key: string]: ModuleStatusEntry;
 }
 
 export default function JourneyVerification() {
@@ -45,7 +48,14 @@ export default function JourneyVerification() {
       if (result && result.verified) {
         setModuleStatus(prev => ({
           ...prev,
-          [modulePath]: result
+          [modulePath]: {
+            verified: result.verified,
+            phase1Complete: result.phase1Complete,
+            phase2Complete: result.phase2Complete,
+            phase3Complete: result.phase3Complete,
+            modulePath: result.modulePath,
+            options: result.options || {}
+          }
         }));
         toast.success(`${modulePath} verification ${result.verified ? 'passed' : 'failed'}`);
       } else {

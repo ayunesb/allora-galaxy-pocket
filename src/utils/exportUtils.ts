@@ -34,7 +34,7 @@ function exportLogsToCSV(logs: SystemLog[], filename: string): void {
   const rows = logs.map(log => [
     format(new Date(log.created_at), 'yyyy-MM-dd HH:mm:ss'),
     log.event_type || '',
-    log.severity || 'info',
+    log.severity || log.meta?.severity || 'info',
     log.service || 'system',
     log.message || ''
   ]);
@@ -69,7 +69,7 @@ function exportLogsToPDF(logs: SystemLog[], filename: string): void {
   const tableData = logs.map(log => [
     format(new Date(log.created_at), 'yyyy-MM-dd HH:mm:ss'),
     log.event_type || '',
-    log.severity || 'info',
+    log.severity || log.meta?.severity || 'info',
     log.service || 'system',
     log.message || ''
   ]);

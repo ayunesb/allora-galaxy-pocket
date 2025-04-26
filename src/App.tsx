@@ -18,13 +18,12 @@ function App() {
       queries: {
         // Add global retry configuration
         retry: 1,
-        staleTime: 5000,
-        // Remove the incorrect onError property - this is causing the build error
-        // Error handling should be done at the component level using the useDataFetching hook
+        staleTime: 5000
       }
     }
   });
   
+  // Create a deep copy of the routes to avoid mutating the original
   const routes = JSON.parse(JSON.stringify(baseRoutes));
   
   // Applying ErrorBoundary at the root to catch any unhandled errors
