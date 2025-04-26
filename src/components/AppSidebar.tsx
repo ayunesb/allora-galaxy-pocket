@@ -2,43 +2,29 @@
 import React from 'react';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useSidebar } from '@/hooks/useSidebar';
-import { 
-  Sidebar, 
-  SidebarContent, 
-  SidebarHeader, 
-  SidebarFooter 
-} from "@/components/ui/sidebar";
+import { MainNavigation } from './sidebar/SidebarNavigation';
+import { AccountLinks, AdminLinks } from './sidebar/SidebarLinks';
+import SidebarSection from './sidebar/SidebarSection';
 
-interface SidebarContainerProps {
-  children: React.ReactNode;
-  className?: string;
-}
-
-const SidebarContainer = ({ children, className = '' }: SidebarContainerProps) => {
+const AppSidebar = () => {
   const { collapsed } = useSidebar();
   
   return (
-    <div className={`h-screen flex flex-col bg-card border-r transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'} ${className}`}>
-      {children}
-    </div>
-  );
-};
-
-const AppSidebar = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => {
-  return (
-    <Sidebar className={className} {...props}>
-      <SidebarHeader>
-        {/* Logo or branding can go here */}
-      </SidebarHeader>
-      <SidebarContent>
-        <ScrollArea className="flex-1 px-2">
-          {/* Navigation content will go here */}
-        </ScrollArea>
-      </SidebarContent>
-      <SidebarFooter>
-        {/* Footer content can go here */}
-      </SidebarFooter>
-    </Sidebar>
+    <aside className={`fixed left-0 top-0 bottom-0 bg-background border-r border-gray-200 pt-16 hidden md:block overflow-y-auto transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'}`}>
+      <ScrollArea className="h-full">
+        <div className="px-3 py-2">
+          <MainNavigation />
+          
+          <SidebarSection title="Account">
+            <AccountLinks />
+          </SidebarSection>
+          
+          <SidebarSection title="Admin">
+            <AdminLinks />
+          </SidebarSection>
+        </div>
+      </ScrollArea>
+    </aside>
   );
 };
 
