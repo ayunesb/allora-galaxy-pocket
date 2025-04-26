@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User, AuthError } from '@supabase/supabase-js';
 import { toast } from 'sonner';
@@ -8,6 +8,7 @@ type AuthContextType = {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
+  error: string | null;
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null; data: any | null; }>;
   signUp: (email: string, password: string, metadata?: object) => Promise<{ error: AuthError | null; data: any | null; }>;
   signOut: () => Promise<void>;
@@ -20,16 +21,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [authInitialized, setAuthInitialized] = useState(false);
 
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
-        console.info("Auth event:", event);
+        // First reset error state on any auth change
+        setError(null);
         
-        // Update states synchronously
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
+        if (currentSession) {
+          setSession(currentSession);
+          setUser(currentSession.user);
+        } else {
+          setSession(null);
+          setUser(null);
+        }
         
         // Handle auth events with toast notifications
         if (event === 'SIGNED_OUT') {
@@ -38,20 +46,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           toast.success("Logged in successfully");
         } else if (event === 'TOKEN_REFRESHED') {
           console.log('Token refreshed successfully');
+        } else if (event === 'USER_UPDATED') {
+          toast.info("User profile updated");
         }
         
+        // Ensure loading state is cleared regardless of event
         setIsLoading(false);
+        setAuthInitialized(true);
       }
     );
 
-    // Try to recover session on initial load
+    // Try to recover session on initial load, but only after subscription is set up
     const getInitialSession = async () => {
       try {
         // Get existing session first
-        const { data, error } = await supabase.auth.getSession();
+        const { data, error: sessionError } = await supabase.auth.getSession();
         
-        if (error) {
-          console.error("Error retrieving session:", error.message);
+        if (sessionError) {
+          console.error("Error retrieving session:", sessionError.message);
+          setError(sessionError.message);
         }
         
         if (data?.session) {
@@ -61,10 +74,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           console.info("No active session found");
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Failed to get initial session:", error);
+        setError(error.message || "Failed to initialize authentication");
       } finally {
         setIsLoading(false);
+        setAuthInitialized(true);
       }
     };
 
@@ -75,25 +90,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string) => {
     setIsLoading(true);
+    setError(null);
+    
     try {
       const response = await supabase.auth.signInWithPassword({ email, password });
       
-      // Log detailed response for debugging
-      console.log("Sign in response:", response);
+      if (response.error) {
+        setError(response.error.message);
+        toast.error("Login failed", { 
+          description: response.error.message 
+        });
+      }
       
       return response;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Sign in error:", error);
-      return { data: null, error: { message: "An unexpected error occurred", name: "AuthError" } as AuthError };
+      setError(error.message || "An unexpected error occurred during login");
+      toast.error("Login failed", { 
+        description: error.message || "Please check your credentials and try again" 
+      });
+      
+      return { 
+        data: null, 
+        error: { 
+          message: error.message || "An unexpected error occurred", 
+          name: "AuthError" 
+        } as AuthError 
+      };
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const signUp = async (email: string, password: string, metadata: object = {}) => {
+  const signUp = useCallback(async (email: string, password: string, metadata: object = {}) => {
     setIsLoading(true);
+    setError(null);
+    
     try {
       const response = await supabase.auth.signUp({ 
         email, 
@@ -103,62 +137,93 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       });
       
+      if (response.error) {
+        setError(response.error.message);
+        toast.error("Sign up failed", { 
+          description: response.error.message 
+        });
+      } else if (response.data?.user) {
+        toast.success("Account created successfully", {
+          description: "Please check your email for verification"
+        });
+      }
+      
       return response;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Sign up error:", error);
-      return { data: null, error: { message: "An unexpected error occurred", name: "AuthError" } as AuthError };
+      setError(error.message || "An unexpected error occurred during sign up");
+      toast.error("Sign up failed", { 
+        description: error.message || "Please try again" 
+      });
+      
+      return { 
+        data: null, 
+        error: { 
+          message: error.message || "An unexpected error occurred", 
+          name: "AuthError" 
+        } as AuthError 
+      };
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     setIsLoading(true);
+    setError(null);
+    
     try {
       await supabase.auth.signOut();
-      setSession(null);
-      setUser(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Sign out error:", error);
+      setError(error.message || "An unexpected error occurred during sign out");
       toast.error("Failed to sign out. Please try again.");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const refreshSession = async () => {
+  const refreshSession = useCallback(async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase.auth.refreshSession();
+      setError(null);
       
-      if (error) {
-        throw error;
+      const { data, error: refreshError } = await supabase.auth.refreshSession();
+      
+      if (refreshError) {
+        setError(refreshError.message);
+        throw refreshError;
       }
       
       if (data?.session) {
         setSession(data.session);
         setUser(data.session.user);
         console.log("Session refreshed successfully");
+      } else {
+        console.log("No session to refresh");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to refresh session:", error);
+      setError(error.message || "Failed to refresh authentication session");
+      throw error;
     } finally {
       setIsLoading(false);
     }
+  }, []);
+
+  const contextValue = {
+    user,
+    session,
+    isLoading,
+    error,
+    signIn,
+    signUp,
+    signOut,
+    refreshSession
   };
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        session,
-        isLoading,
-        signIn,
-        signUp,
-        signOut,
-        refreshSession
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

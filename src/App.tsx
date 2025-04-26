@@ -10,6 +10,7 @@ import { Toaster } from "sonner";
 import { baseRoutes } from "./routes/appRoutesConfig";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { RouteDebugger } from "./components/RouteDebugger";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 function App() {
   const queryClient = new QueryClient({
@@ -17,20 +18,29 @@ function App() {
       queries: {
         // Add global error handling for data fetching
         retry: 1,
-        staleTime: 5000
+        staleTime: 5000,
+        // Add global error handling
+        onError: (error) => {
+          console.error("Query error:", error);
+        }
       }
     }
   });
   
   const routes = JSON.parse(JSON.stringify(baseRoutes));
   
+  // Applying ErrorBoundary at the root to catch any unhandled errors
   routes[0].element = (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <TenantProvider>
             <ThemeProvider defaultTheme="light" storageKey="allora-theme-preference">
-              <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading application...</div>}>
+              <Suspense fallback={
+                <div className="flex items-center justify-center h-screen">
+                  <LoadingSpinner size={40} label="Loading application..." />
+                </div>
+              }>
                 <Toaster richColors closeButton position="top-right" />
                 {import.meta.env.DEV && <RouteDebugger />}
               </Suspense>

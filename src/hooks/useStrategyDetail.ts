@@ -14,7 +14,11 @@ export function useStrategyDetail(strategyId: string) {
 
   // Load strategy details and version history
   const fetchStrategyDetail = useCallback(async () => {
-    if (!strategyId) return;
+    if (!strategyId) {
+      setError("No strategy ID provided");
+      setIsLoading(false);
+      return;
+    }
     
     setIsLoading(true);
     setError(null);
@@ -95,8 +99,14 @@ export function useStrategyDetail(strategyId: string) {
 
   // Compare two versions and calculate differences
   const compareVersions = useCallback(async (v1: StrategyVersion, v2: StrategyVersion) => {
-    // Add comparison logic here if needed
-    console.log('Comparing versions:', v1.version, v2.version);
+    try {
+      console.log('Comparing versions:', v1.version, v2.version);
+      return { success: true };
+    } catch (err: any) {
+      console.error('Error comparing versions:', err);
+      toast.error('Failed to compare versions');
+      return { success: false, error: err.message };
+    }
   }, []);
 
   // Load data on component mount or when strategyId changes

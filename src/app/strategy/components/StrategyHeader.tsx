@@ -1,25 +1,16 @@
 
 import React from 'react';
-import { Button } from "@/components/ui/button";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink } from "@/components/ui/breadcrumb";
-import { Strategy } from "@/types/strategy";
-import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Share2, MoreHorizontal, Download } from "lucide-react";
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
-import { NavigateFunction } from "react-router-dom";
+import { Strategy } from '@/types/strategy';
+import { Button } from '@/components/ui/button';
+import { Share2, FileDown, Trash2, ArrowLeft } from 'lucide-react';
+import { NavigateFunction } from 'react-router-dom';
 
-export interface StrategyHeaderProps {
+interface StrategyHeaderProps {
   strategy: Strategy;
   onShare?: () => void;
   onExport?: () => void;
   onDelete?: () => void;
-  onNavigate?: NavigateFunction;
+  onNavigate: NavigateFunction;
 }
 
 export function StrategyHeader({ 
@@ -29,83 +20,73 @@ export function StrategyHeader({
   onDelete,
   onNavigate
 }: StrategyHeaderProps) {
-  const navigate = useNavigate();
-  const handleNavigateBack = () => {
-    if (onNavigate) {
-      onNavigate(-1);
-    } else {
-      navigate(-1);
-    }
-  };
-
   return (
-    <div className="mb-6">
-      <Breadcrumb className="mb-2 overflow-x-auto">
-        <BreadcrumbItem>
-          <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbItem>
-          <BreadcrumbLink href="/strategy">Strategies</BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbItem>
-          <BreadcrumbLink>{strategy?.title || "Strategy Details"}</BreadcrumbLink>
-        </BreadcrumbItem>
-      </Breadcrumb>
-      
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-2xl font-bold truncate">{strategy?.title}</h1>
-            <Badge variant={strategy?.status === "approved" ? "default" : "outline"} className="whitespace-nowrap">
-              {strategy?.status || "Draft"}
-            </Badge>
-          </div>
-          <p className="text-muted-foreground mt-1 line-clamp-2">{strategy?.description}</p>
-        </div>
+    <div className="flex flex-col space-y-4">
+      <div className="flex items-center justify-between">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => onNavigate('/strategy')}
+          className="flex items-center gap-1"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Strategies
+        </Button>
         
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleNavigateBack}
-            className="w-full sm:w-auto"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
+        <div className="flex items-center space-x-2">
+          {onShare && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onShare}
+              className="flex items-center gap-1"
+            >
+              <Share2 className="h-4 w-4" />
+              Share
+            </Button>
+          )}
           
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={onShare}
-            className="w-full sm:w-auto"
-          >
-            <Share2 className="h-4 w-4 mr-2" />
-            Share
-          </Button>
+          {onExport && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onExport}
+              className="flex items-center gap-1"
+            >
+              <FileDown className="h-4 w-4" />
+              Export
+            </Button>
+          )}
           
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={onExport}
-            className="w-full sm:w-auto"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={onDelete}>Delete</DropdownMenuItem>
-              <DropdownMenuItem>Duplicate</DropdownMenuItem>
-              <DropdownMenuItem>Archive</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {onDelete && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-destructive border-destructive hover:bg-destructive/10 flex items-center gap-1"
+              onClick={onDelete}
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete
+            </Button>
+          )}
+        </div>
+      </div>
+      
+      <div className="border-b pb-4">
+        <h1 className="text-2xl font-bold">{strategy.title}</h1>
+        {strategy.description && (
+          <p className="text-muted-foreground mt-1">{strategy.description}</p>
+        )}
+        
+        <div className="flex mt-2 flex-wrap gap-2">
+          {strategy.tags && strategy.tags.map((tag, index) => (
+            <span 
+              key={index}
+              className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full"
+            >
+              {tag}
+            </span>
+          ))}
         </div>
       </div>
     </div>

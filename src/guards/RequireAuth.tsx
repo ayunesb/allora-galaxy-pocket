@@ -1,15 +1,15 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import { AlertCircle } from "lucide-react";
+import { LoadingState } from "@/components/ui/loading-state";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useSessionRefresh } from "@/hooks/useSessionRefresh";
 import { useOnboardingCheck } from "@/hooks/useOnboardingCheck";
 import { ToastService } from "@/services/ToastService";
+import { AlertCircle } from "lucide-react";
 
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, session, isLoading: authLoading, refreshSession } = useAuth();
@@ -18,6 +18,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   const [shouldCheckOnboarding, setShouldCheckOnboarding] = useState(true);
   const [authAttempts, setAuthAttempts] = useState(0);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [navigationAttempted, setNavigationAttempted] = useState(false);
   
   const skipOnboardingCheck = location.pathname === "/onboarding" || 
                              location.pathname === "/workspace" ||
@@ -33,13 +34,44 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     shouldCheckOnboarding && !skipOnboardingCheck
   );
 
+  useEffect(() => {
+    // Prevent infinite loops by tracking navigation attempts
+    if (navigationAttempted) {
+      return;
+    }
+
+    if (!authLoading && !tenantLoading && !user && !location.pathname.startsWith("/auth/")) {
+      setNavigationAttempted(true);
+      console.log("RequireAuth: User not logged in, redirecting to login");
+    }
+
+    if (!authLoading && !tenantLoading && user && !tenant && 
+        !location.pathname.startsWith("/auth/") && 
+        location.pathname !== "/onboarding" && 
+        location.pathname !== "/workspace") {
+      setNavigationAttempted(true);
+      console.log("RequireAuth: No tenant selected, redirecting to workspace");
+    }
+
+    if (!authLoading && !tenantLoading && !onboardingLoading && 
+        user && tenant && onboardingComplete === false && !skipOnboardingCheck) {
+      setNavigationAttempted(true);
+      console.log("RequireAuth: Onboarding incomplete, redirecting to onboarding");
+    }
+
+    // Reset navigation tracking when route changes
+    return () => {
+      setNavigationAttempted(false);
+    };
+  }, [user, tenant, authLoading, tenantLoading, onboardingLoading, 
+      onboardingComplete, location.pathname, skipOnboardingCheck, navigationAttempted]);
+
   const handleRetry = async () => {
     try {
       setAuthAttempts(prev => prev + 1);
       setAuthError(null);
       await refreshSession();
       
-      // Log activity if implementation exists
       console.log("Authentication retry attempt", authAttempts + 1);
     } catch (error) {
       const e = error as Error;
@@ -51,17 +83,6 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
       });
     }
   };
-
-  // Provide detailed console logging for debugging
-  console.log("RequireAuth state:", {
-    user: !!user,
-    tenant: !!tenant,
-    authLoading,
-    tenantLoading,
-    onboardingComplete,
-    onboardingLoading,
-    path: location.pathname
-  });
 
   if (authError) {
     return (
@@ -88,7 +109,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   if (authLoading || tenantLoading || (shouldCheckOnboarding && !skipOnboardingCheck && onboardingLoading)) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
-        <LoadingSpinner size={40} label={authLoading ? "Loading authentication..." : "Preparing application..."} />
+        <LoadingState size="md" message={authLoading ? "Loading authentication..." : "Preparing application..."} />
       </div>
     );
   }
