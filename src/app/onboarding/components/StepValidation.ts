@@ -1,77 +1,68 @@
 
 import { OnboardingProfile } from "@/types/onboarding";
 
-/** Validate the required data for current `step` out of onboarding steps. */
 export const validateStep = (step: number, data: Partial<OnboardingProfile>): string | null => {
   switch (step) {
-    case 0:
-      if (!data.companyName?.trim()) {
-        return "Please provide your company name to continue.";
+    case 0: // Company details
+      if (!data.companyName || !data.companyName.trim()) {
+        return "Company name is required";
       }
       break;
-    case 1:
+      
+    case 1: // Industry
       if (!data.industry) {
-        return "Please select your industry.";
+        return "Please select an industry";
       }
       break;
-    case 2:
+      
+    case 2: // Team size
       if (!data.teamSize) {
-        return "Please select your team size.";
+        return "Please select your team size";
       }
       break;
-    case 3:
+      
+    case 3: // Revenue
       if (!data.revenue) {
-        return "Please select your revenue range.";
+        return "Please select your revenue range";
       }
       break;
-    case 4:
+      
+    case 4: // Sell type
       if (!data.sellType) {
-        return "Please select what you sell.";
+        return "Please select what you sell";
       }
       break;
-    case 5:
+      
+    case 5: // Tone
       if (!data.tone) {
-        return "Please select your brand's tone.";
+        return "Please select your brand tone";
       }
       break;
-    case 6:
-      if (!Array.isArray(data.challenges) || !data.challenges.length) {
-        return "Please add at least one business challenge.";
+      
+    case 6: // Challenges
+      if (!data.challenges || data.challenges.length === 0) {
+        return "Please add at least one business challenge";
       }
       break;
-    case 7:
-      if (!Array.isArray(data.channels) || !data.channels.length) {
-        return "Please select at least one channel.";
+      
+    case 7: // Channels
+      if (!data.channels || data.channels.length === 0) {
+        return "Please select at least one marketing channel";
       }
       break;
-    case 8:
-      if (!Array.isArray(data.tools)) {
-        return "Please select your tools (if any).";
+      
+    case 9: // Goals
+      if (!data.goals || data.goals.length === 0) {
+        return "Please add at least one business goal";
       }
       break;
-    case 9:
-      if (!Array.isArray(data.goals) || !data.goals.length) {
-        return "Please add at least one business goal.";
-      }
-      break;
-    case 10:
+      
+    case 10: // Launch mode
       if (!data.launch_mode) {
-        return "Please select a launch mode.";
+        return "Please select a launch mode";
       }
       break;
-    default:
-      break;
   }
-  return null;
-};
-
-/** Validate the complete profile, return the first step that is missing/invalid, or null if all steps valid. */
-export const getFirstInvalidStep = (profile: OnboardingProfile): number | null => {
-  for (let i = 0; i <= 10; i++) {
-    const stepProfile: Partial<OnboardingProfile> = profile;
-    if (validateStep(i, stepProfile)) {
-      return i;
-    }
-  }
+  
   return null;
 };

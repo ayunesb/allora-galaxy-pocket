@@ -5,9 +5,9 @@ import HomePage from '@/app/page';
 import DashboardPage from '@/app/dashboard/page';
 import NotFound from '@/pages/NotFound';
 import StrategyDetail from '@/app/strategy/[id]';
+import OnboardingPage from '@/app/onboarding/page';
 
 // Use dynamic imports for lazy loading
-const OnboardingPage = React.lazy(() => import('@/app/onboarding/OnboardingWizard'));
 const VaultPage = React.lazy(() => import('@/app/vault/page'));
 const StrategyPage = React.lazy(() => import('@/app/strategy/page'));
 const VaultStrategyDetail = React.lazy(() => import('@/app/vault/strategy-detail/[id]'));
@@ -49,11 +49,7 @@ export const baseRoutes: RouteObject[] = [
       },
       {
         path: '/onboarding',
-        element: (
-          <React.Suspense fallback={<div className="p-8 flex justify-center items-center">Loading...</div>}>
-            <OnboardingPage />
-          </React.Suspense>
-        ),
+        element: <OnboardingPage />,
       },
       {
         path: '/vault',
