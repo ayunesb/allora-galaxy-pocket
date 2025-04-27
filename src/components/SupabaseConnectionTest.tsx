@@ -3,24 +3,35 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, CheckCircle, XCircle } from "lucide-react";
+import { Loader2, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 export default function SupabaseConnectionTest() {
   const [isChecking, setIsChecking] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isRecursionError, setIsRecursionError] = useState(false);
   const { toast } = useToast();
 
   const checkConnection = async () => {
     setIsChecking(true);
     setErrorMessage(null);
+    setIsRecursionError(false);
     
     try {
       // Try to query a simple function to check connection
-      const { data, error } = await supabase.from('tenant_profiles').select('count').limit(1).single();
+      const { data, error } = await supabase
+        .from('system_config')
+        .select('count')
+        .limit(1);
       
       if (error) {
+        // Check if it's a recursion error
+        if (error.message && error.message.includes('infinite recursion detected')) {
+          setIsRecursionError(true);
+          throw new Error('Infinite recursion detected in an RLS policy. This is a configuration issue that requires administrative attention.');
+        }
         throw error;
       }
       
@@ -51,7 +62,6 @@ export default function SupabaseConnectionTest() {
 
   // Get the Supabase URL for display
   const getSupabaseUrl = () => {
-    // Use the URL directly since getClientRpcUrl() isn't available
     return import.meta.env.VITE_SUPABASE_URL || 'Not configured';
   };
 
@@ -96,7 +106,17 @@ export default function SupabaseConnectionTest() {
           </div>
         </div>
         
-        {errorMessage && (
+        {isRecursionError && (
+          <Alert variant="warning" className="bg-amber-50 border border-amber-200">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <AlertTitle className="text-amber-800">RLS Policy Error Detected</AlertTitle>
+            <AlertDescription className="text-amber-700">
+              Infinite recursion detected in tenant_user_roles RLS policy. This requires a database policy fix by an administrator.
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        {errorMessage && !isRecursionError && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-800">
             {errorMessage}
           </div>
