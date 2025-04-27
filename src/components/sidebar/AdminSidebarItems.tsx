@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { SidebarNavItem } from '@/types';
+import { SidebarNavItem } from '@/types/sidebar';
 import {
   LayoutDashboard,
   Users,
