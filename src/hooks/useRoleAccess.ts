@@ -34,7 +34,7 @@ export function useRoleAccess() {
       }
       
       // Now safely get the role
-      const { data: userRole, roleError } = await supabase
+      const { data: userRole, error: roleError } = await supabase
         .from('tenant_user_roles')
         .select('role')
         .eq('user_id', user.id)
