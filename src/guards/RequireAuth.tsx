@@ -10,10 +10,11 @@ import { useSessionRefresh } from "@/hooks/useSessionRefresh";
 import { useOnboardingCheck } from "@/hooks/useOnboardingCheck";
 import { ToastService } from "@/services/ToastService";
 import { AlertCircle, RefreshCw } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, session, isLoading: authLoading, refreshSession } = useAuth();
-  const { tenant, isLoading: tenantLoading } = useTenant();
+  const { tenant, isLoading: tenantLoading, refreshTenant } = useTenant();
   const location = useLocation();
   const [shouldCheckOnboarding, setShouldCheckOnboarding] = useState(true);
   const [authAttempts, setAuthAttempts] = useState(0);
@@ -65,6 +66,51 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     };
   }, [user, tenant, authLoading, tenantLoading, onboardingLoading, 
       onboardingComplete, location.pathname, skipOnboardingCheck, navigationAttempted]);
+
+  // Validate tenant access
+  useEffect(() => {
+    // If no user or tenant is selected, no validation needed
+    if (!user?.id || !tenant?.id || 
+        location.pathname.startsWith('/auth/') || 
+        location.pathname === '/workspace') return;
+
+    const validateTenantAccess = async () => {
+      try {
+        // Use the security definer function to validate tenant access
+        const { data, error } = await supabase.rpc(
+          "check_tenant_user_access",
+          { tenant_uuid: tenant.id, user_uuid: user.id }
+        );
+
+        if (error) {
+          console.error("Error validating tenant access:", error);
+          return;
+        }
+
+        // If user doesn't have access to the tenant
+        if (!data) {
+          console.error(`User ${user.id} attempted unauthorized access to tenant ${tenant.id}`);
+          
+          // Reset tenant selection
+          refreshTenant();
+          localStorage.removeItem('tenant_id');
+          
+          // Notify user
+          ToastService.error({
+            title: "Access denied",
+            description: "You don't have access to this workspace",
+          });
+
+          // Redirect to workspace switcher
+          setNavigationAttempted(true);
+        }
+      } catch (error) {
+        console.error("Error validating tenant access:", error);
+      }
+    };
+
+    validateTenantAccess();
+  }, [user?.id, tenant?.id, location.pathname]);
 
   const handleRetry = async () => {
     try {

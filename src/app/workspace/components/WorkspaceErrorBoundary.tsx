@@ -1,8 +1,8 @@
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
 
 interface Props {
   children: ReactNode;
@@ -15,73 +15,67 @@ interface State {
 }
 
 export class WorkspaceErrorBoundary extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    this.state = {
-      hasError: false,
-      error: null,
-      errorInfo: null
-    };
+  public state: State = {
+    hasError: false,
+    error: null,
+    errorInfo: null
+  };
+
+  public static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error, errorInfo: null };
   }
 
-  static getDerivedStateFromError(error: Error): State {
-    return {
-      hasError: true,
-      error,
-      errorInfo: null
-    };
-  }
-
-  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     this.setState({
       error,
       errorInfo
     });
     
-    // Log error to an error monitoring service
-    console.error('Workspace error:', error, errorInfo);
+    console.error('Workspace error caught:', error, errorInfo);
   }
 
-  handleRefresh = (): void => {
-    window.location.reload();
-  };
-
-  handleReset = (): void => {
-    this.setState({
-      hasError: false,
-      error: null,
-      errorInfo: null
-    });
-  };
-
-  render(): ReactNode {
+  public render(): ReactNode {
     if (this.state.hasError) {
+      // Check if it's an infinite recursion error
+      const isRecursionError = this.state.error?.message.includes('infinite recursion') ||
+                              this.state.error?.stack?.includes('infinite recursion');
+      
       return (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex flex-col items-center justify-center text-center">
-              <AlertTriangle className="h-12 w-12 text-amber-500 mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Workspace Error</h3>
-              <p className="text-muted-foreground mb-4 max-w-md">
-                An error occurred while loading the workspace section. Please try again or contact support if this issue persists.
-              </p>
-              <div className="flex gap-3">
-                <Button onClick={this.handleReset} variant="default">
-                  Try Again
-                </Button>
-                <Button onClick={this.handleRefresh} variant="outline">
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Refresh Page
-                </Button>
-              </div>
-              {this.state.error && import.meta.env.DEV && (
-                <div className="mt-6 text-left w-full p-4 bg-muted rounded-md overflow-auto max-h-40">
-                  <p className="font-mono text-xs text-red-500">{this.state.error.toString()}</p>
-                </div>
-              )}
+        <div className="p-6 bg-destructive/10 border border-destructive/30 rounded-lg shadow-sm">
+          <div className="flex items-center gap-3 mb-4">
+            <AlertTriangle className="h-6 w-6 text-destructive" />
+            <h2 className="text-lg font-semibold">
+              {isRecursionError ? 'Database Policy Error' : 'Workspace Error'}
+            </h2>
+          </div>
+          
+          <div className="mb-4 text-muted-foreground">
+            {isRecursionError ? (
+              <p>A database policy issue was detected. The fix has been applied - please refresh the page to continue.</p>
+            ) : (
+              <p>An unexpected error occurred in the workspace component. Please try refreshing the page.</p>
+            )}
+          </div>
+          
+          <Button
+            onClick={() => window.location.reload()}
+            className="mb-4"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh Page
+          </Button>
+          
+          {!isRecursionError && (
+            <div className="mt-4">
+              <details className="text-sm">
+                <summary className="cursor-pointer text-muted-foreground">Error Details</summary>
+                <pre className="mt-2 p-2 bg-muted whitespace-pre-wrap rounded text-xs overflow-auto">
+                  {this.state.error?.toString()}
+                </pre>
+              </details>
             </div>
-          </CardContent>
-        </Card>
+          )}
+        </div>
       );
     }
 

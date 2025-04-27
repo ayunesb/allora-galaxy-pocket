@@ -33,24 +33,17 @@ export function useRoleAccess() {
         return false;
       }
       
-      // Now safely get the role
-      const { data: userRole, error: roleError } = await supabase
-        .from('tenant_user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .eq('tenant_id', tenant.id)
-        .maybeSingle();
-      
-      if (roleError) {
-        console.error('Error fetching role:', roleError);
-        return false;
-      }
+      // If tenant access is confirmed, get the user's role safely
+      const { data: userRole } = await supabase.rpc(
+        "get_user_role_for_tenant",
+        { user_uuid: user.id, tenant_uuid: tenant.id }
+      );
       
       // Admin and owner roles have access to everything
-      if (userRole?.role === 'admin' || userRole?.role === 'owner') return true;
+      if (userRole === 'admin' || userRole === 'owner') return true;
       
       // For other roles, check specifically
-      return userRole?.role === role;
+      return userRole === role;
     } catch (error) {
       console.error('Error checking role access:', error);
       return false;
