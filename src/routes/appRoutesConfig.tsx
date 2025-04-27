@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { RouteObject } from 'react-router-dom';
+import { RouteObject, Navigate, Outlet } from 'react-router-dom';
 import { publicRoutes } from './publicRoutes';
 import { appRoutes } from './appRoutes';
 import { dashboardRoutes } from './dashboardRoutes';
@@ -35,7 +35,7 @@ export const baseRoutes: RouteObject[] = [
           <VerificationProvider>
             <Layout>
               <React.Suspense fallback={<div>Loading...</div>}>
-                <React.Outlet />
+                <Outlet />
               </React.Suspense>
             </Layout>
           </VerificationProvider>
@@ -45,7 +45,7 @@ export const baseRoutes: RouteObject[] = [
     errorElement: <ErrorPage />,
     children: [
       // Redirect from root to dashboard
-      { path: "/", element: <React.Navigate to="/dashboard" replace /> },
+      { path: "/", element: <Navigate to="/dashboard" replace /> },
       
       // App sections
       ...dashboardRoutes,
