@@ -61,6 +61,10 @@ const NotFound = () => {
       suggestions.push('/strategy', '/vault', '/launch');
     } else if (path.includes('workspace')) {
       suggestions.push('/workspace', '/workspace/users');
+    } else if (path.includes('billing')) {
+      suggestions.push('/billing', '/billing/history', '/billing/subscription', '/billing/usage');
+    } else if (path.includes('system')) {
+      suggestions.push('/system/connection-test');
     } else {
       suggestions.push('/dashboard', '/strategy', '/assistant', '/workspace');
     }

@@ -5,7 +5,7 @@ import ConnectionTestPage from './connection-test/page';
 
 export const systemRoutes: RouteObject[] = [
   {
-    path: 'system/connection-test',
+    path: '/system/connection-test',
     element: <ConnectionTestPage />,
   },
 ];
