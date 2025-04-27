@@ -3475,6 +3475,10 @@ export type Database = {
         Args: { _user_id: string; _tenant_id: string }
         Returns: boolean
       }
+      check_tenant_user_access: {
+        Args: { tenant_uuid: string; user_uuid: string }
+        Returns: boolean
+      }
       check_tenant_user_role: {
         Args: Record<PropertyKey, never>
         Returns: boolean
