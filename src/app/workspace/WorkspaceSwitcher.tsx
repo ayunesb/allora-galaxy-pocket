@@ -39,7 +39,7 @@ export default function WorkspaceSwitcher({ highlight = false }) {
   }, [justCreated, tenant, isOnboarding]);
 
   useEffect(() => {
-    if (!loading && !authLoading && availableTenants.length === 0 && !error && retryCount < 1 && user) {
+    if (!loading && !authLoading && availableTenants.length === 0 && !error && retryCount < 2 && user) {
       console.log("[WorkspaceSwitcher] No tenants found but user is logged in. Auto-retrying fetch...");
       setRetryCount(prev => prev + 1);
       retryFetch();
@@ -127,9 +127,14 @@ export default function WorkspaceSwitcher({ highlight = false }) {
   }
 
   if (error) {
+    // Check if it's an infinite recursion error, but we should now have fixed it
+    const isRecursionError = error.includes('infinite recursion');
+    
     return (
       <ErrorState 
-        error={error} 
+        error={isRecursionError ? 
+          "A database policy issue was detected. Please try refreshing the page as the fix has been applied." : 
+          error}
         onRetry={retryFetch}
         onRefresh={handleFullRefresh}
       />

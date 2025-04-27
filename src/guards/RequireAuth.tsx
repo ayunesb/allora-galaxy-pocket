@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useSessionRefresh } from "@/hooks/useSessionRefresh";
 import { useOnboardingCheck } from "@/hooks/useOnboardingCheck";
 import { ToastService } from "@/services/ToastService";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, RefreshCw } from "lucide-react";
 
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, session, isLoading: authLoading, refreshSession } = useAuth();
@@ -84,6 +84,10 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     }
   };
 
+  const handleReload = () => {
+    window.location.reload();
+  };
+
   if (authError) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-background">
@@ -109,7 +113,17 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   if (authLoading || tenantLoading || (shouldCheckOnboarding && !skipOnboardingCheck && onboardingLoading)) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
-        <LoadingState size="md" message={authLoading ? "Loading authentication..." : "Preparing application..."} />
+        <div className="text-center space-y-4">
+          <LoadingState size="md" message={authLoading ? "Loading authentication..." : "Preparing application..."} />
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleReload}
+            className="mt-4"
+          >
+            <RefreshCw className="mr-2 h-3 w-3" /> Refresh Page
+          </Button>
+        </div>
       </div>
     );
   }

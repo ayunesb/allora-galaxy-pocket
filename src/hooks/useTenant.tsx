@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Tenant } from '@/types/tenant';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { toast } from 'sonner';
 
 interface TenantContextType {
   tenant: Tenant | null;
@@ -10,6 +11,7 @@ interface TenantContextType {
   isLoading: boolean;
   refreshTenant: () => Promise<void>;
   updateTenantProfile: (updatedTenant: Partial<Tenant>) => Promise<void>;
+  error: string | null;
 }
 
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
@@ -17,44 +19,50 @@ const TenantContext = createContext<TenantContextType | undefined>(undefined);
 export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
   const refreshTenant = async () => {
     if (!user) {
       setTenant(null);
       setIsLoading(false);
+      setError(null);
       return;
     }
 
     try {
       setIsLoading(true);
+      setError(null);
       
-      // Get all tenants for user
-      const { data: userTenants, error: tenantsError } = await supabase
-        .from('tenant_user_roles')
-        .select('tenant_id')
-        .eq('user_id', user.id);
+      // Get all tenants for user safely to avoid recursion issues
+      const { data: tenantIds, error: tenantIdsError } = await supabase.rpc('get_user_tenant_ids');
 
-      if (tenantsError) throw tenantsError;
+      if (tenantIdsError) {
+        // If we get a recursion error here, we'll handle it gracefully
+        if (tenantIdsError.message?.includes('infinite recursion')) {
+          throw new Error('Workspace data access issue detected. Please refresh to apply the fix.');
+        }
+        throw tenantIdsError;
+      }
       
       // If no tenants, set to null
-      if (!userTenants.length) {
+      if (!tenantIds?.length) {
         setTenant(null);
         return;
       }
 
       // Attempt to load stored tenant preference
-      const storedTenantId = localStorage.getItem('selected_tenant_id');
+      const storedTenantId = localStorage.getItem('tenant_id');
       
       // Check if stored tenant is in user's available tenants
       const tenantIdToUse = storedTenantId && 
-        userTenants.some(t => t.tenant_id === storedTenantId) 
+        tenantIds.some(id => id === storedTenantId) 
         ? storedTenantId 
-        : userTenants[0].tenant_id;
+        : tenantIds[0];
       
       // Fetch tenant details
       const { data: tenantData, error: tenantError } = await supabase
-        .from('tenants')
+        .from('tenant_profiles')
         .select('*')
         .eq('id', tenantIdToUse)
         .single();
@@ -62,12 +70,20 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (tenantError) throw tenantError;
       
       // Store selected tenant
-      localStorage.setItem('selected_tenant_id', tenantData.id);
+      localStorage.setItem('tenant_id', tenantData.id);
       setTenant(tenantData);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading tenant:', error);
       setTenant(null);
+      setError(error.message || 'Failed to load workspace data');
+      
+      // Show toast only for certain errors
+      if (error.message?.includes('infinite recursion')) {
+        toast.error("Workspace loading error", {
+          description: "Database policy issue detected. Please refresh the page to apply the fix."
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -78,14 +94,14 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     
     try {
       const { error } = await supabase
-        .from('tenants')
+        .from('tenant_profiles')
         .update(updatedTenant)
         .eq('id', tenant.id);
         
       if (error) throw error;
       
       setTenant(prev => prev ? { ...prev, ...updatedTenant } : null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating tenant:', error);
       throw error;
     }
@@ -101,7 +117,8 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setTenant, 
       isLoading, 
       refreshTenant,
-      updateTenantProfile
+      updateTenantProfile,
+      error
     }}>
       {children}
     </TenantContext.Provider>

@@ -29,13 +29,11 @@ export function useTenantValidation() {
       try {
         setIsValidating(true);
         
-        // Use a direct query instead of RPC to avoid recursion issues
-        const { data, error } = await supabase
-          .from('tenant_user_roles')
-          .select('role')
-          .eq('tenant_id', tenant.id)
-          .eq('user_id', user.id)
-          .maybeSingle();
+        // Use security definer function to avoid recursion
+        const { data, error } = await supabase.rpc(
+          "check_tenant_user_access",
+          { tenant_uuid: tenant.id, user_uuid: user.id }
+        );
         
         if (error || !data) {
           console.error("Tenant validation error:", error?.message || "No access to tenant");

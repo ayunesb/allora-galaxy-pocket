@@ -18,24 +18,39 @@ export function useRoleAccess() {
     if (!user?.id || !tenant?.id) return false;
     
     try {
-      // Direct query instead of using RPC to avoid recursion issues
-      const { data: userRole, error } = await supabase
+      // Use the security definer function instead of directly querying
+      const { data, error } = await supabase.rpc(
+        "check_tenant_user_access", 
+        { tenant_uuid: tenant.id, user_uuid: user.id }
+      );
+      
+      if (error) {
+        console.error('Error checking role access:', error);
+        return false;
+      }
+      
+      if (!data) {
+        return false;
+      }
+      
+      // Now safely get the role
+      const { data: userRole, roleError } = await supabase
         .from('tenant_user_roles')
         .select('role')
         .eq('user_id', user.id)
         .eq('tenant_id', tenant.id)
         .maybeSingle();
       
-      if (error || !userRole) {
-        console.error('Error checking role access:', error || 'No role found');
+      if (roleError) {
+        console.error('Error fetching role:', roleError);
         return false;
       }
       
       // Admin and owner roles have access to everything
-      if (userRole.role === 'admin' || userRole.role === 'owner') return true;
+      if (userRole?.role === 'admin' || userRole?.role === 'owner') return true;
       
       // For other roles, check specifically
-      return userRole.role === role;
+      return userRole?.role === role;
     } catch (error) {
       console.error('Error checking role access:', error);
       return false;
