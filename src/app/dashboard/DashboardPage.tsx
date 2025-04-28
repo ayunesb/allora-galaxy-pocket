@@ -4,12 +4,12 @@ import { useStrategyAndCampaigns } from "./hooks/useStrategyAndCampaigns";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import ErrorAlert from "@/components/ui/ErrorAlert";
 import { Strategy } from "@/types/strategy";
-import { Campaign } from "@/types/campaign";
+import { Campaign, ExecutionStatus } from "@/types/campaign";
 
 export default function DashboardPage() {
   const { strategies, campaigns } = useStrategyAndCampaigns();
 
-  // Type-safe handling of strategy and campaign data
+  // Type-safe handling of strategy and campaign data with proper typing
   const typedStrategies: Strategy[] = strategies?.map(strategy => ({
     ...strategy,
     status: strategy.status as Strategy['status'],
@@ -21,6 +21,7 @@ export default function DashboardPage() {
   const typedCampaigns: Campaign[] = campaigns?.map(campaign => ({
     ...campaign,
     status: campaign.status as Campaign['status'],
+    execution_status: campaign.execution_status as ExecutionStatus,
     scripts: campaign.scripts as Record<string, string>,
     execution_metrics: campaign.execution_metrics as Record<string, any>
   })) || [];

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,9 +6,13 @@ import CampaignCard from "./CampaignCard";
 import CampaignRecap from "./CampaignRecap";
 import { Loader2 } from "lucide-react";
 import { useTenant } from "@/hooks/useTenant";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CampaignStatus } from "@/types/campaign";
 
 export default function CampaignPage() {
   const [selected, setSelected] = useState<number | null>(null);
+  const [status, setStatus] = useState<CampaignStatus>("active");
   const { tenant } = useTenant();
 
   const { data: campaigns, isLoading, error } = useQuery({
@@ -25,9 +28,7 @@ export default function CampaignPage() {
 
       if (error) throw error;
       
-      // Ensure the data conforms to the Campaign type
       return (data || []).map(campaign => {
-        // Cast the status to CampaignStatus to avoid type issues
         return {
           ...campaign,
           status: campaign.status as Campaign['status']
@@ -87,6 +88,40 @@ export default function CampaignPage() {
           description={campaigns[selected].description}
         />
       )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Campaign Status</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex space-x-2">
+            <Button 
+              variant={status === "active" ? "default" : "outline"}
+              onClick={() => setStatus("active")}
+            >
+              Active
+            </Button>
+            <Button 
+              variant={status === "draft" ? "default" : "outline"}
+              onClick={() => setStatus("draft")}
+            >
+              Draft
+            </Button>
+            <Button 
+              variant={status === "paused" ? "default" : "outline"}
+              onClick={() => setStatus("paused")}
+            >
+              Paused
+            </Button>
+            <Button 
+              variant={status === "completed" ? "default" : "outline"}
+              onClick={() => setStatus("completed")}
+            >
+              Completed
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

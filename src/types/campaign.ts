@@ -1,7 +1,8 @@
 
-// Add all the necessary campaign types
+// Update the Campaign and ExecutionStatus types
+
 export type CampaignStatus = 'active' | 'draft' | 'paused' | 'completed' | 'approved';
-export type ExecutionStatus = 'pending' | 'running' | 'completed' | 'failed' | 'successful';
+export type ExecutionStatus = 'pending' | 'running' | 'paused' | 'completed' | 'failed' | 'successful';
 
 export interface Campaign {
   id: string;

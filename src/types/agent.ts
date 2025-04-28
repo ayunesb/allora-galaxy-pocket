@@ -1,125 +1,56 @@
-export interface AgentMemory {
-  id: string;
-  agent_name: string;
-  context: string;
-  tenant_id: string;
-  type: string;
-  timestamp: string;
-  is_user_submitted: boolean;
-  ai_feedback?: string;
-  ai_rating?: number;
-  remix_count?: number;
-  xp_delta?: number;
-  summary?: string;
-  tags?: string[];
-}
+
+// Create or update the agent.ts file with missing AgentProfile and AgentFeedback types
 
 export interface AgentProfile {
   id: string;
   agent_name: string;
   role: string;
-  tone: string;
+  tone?: string;
   avatar_url?: string;
-  language: string;
-  enabled_tools: string[];
-  memory_scope: string[];
-  channels: string[];
-  memory_score?: number;
-  created_at: string;
-  updated_at: string;
+  enabled_tools?: string[];
+  language?: string;
+  channels?: string[];
+  memory_scope?: string[];
   tenant_id: string;
   created_by?: string;
+  memory_score?: number;
   last_memory_update?: string;
-  model_provider?: string;
-  prompt?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface AgentFeedback {
   id: string;
   agent: string;
-  type?: string;
-  feedback?: string;
-  rating?: number;
-  created_at: string;
-  tenant_id: string;
-  task_id?: string;
   from_agent?: string;
   to_agent?: string;
+  feedback?: string;
+  rating?: number;
+  type?: string;
+  task_id?: string;
   strategy_id?: string;
   campaign_id?: string;
+  tenant_id: string;
+  created_at: string;
 }
 
-export interface PromptPerformanceData {
+export interface AgentPromptVersion {
+  id: string;
   agent_name: string;
+  prompt: string;
   version: number;
-  success_rate: number;
-  upvotes: number;
-  downvotes: number;
-  total_executions: number;
-  last_executed: string;
-}
-
-export interface AgentTask {
-  id: string;
-  agent: string;
-  task_type: string;
-  status: string;
-  created_at: string;
-  executed_at?: string;
+  edited_by?: string;
+  explanation?: string;
   tenant_id: string;
-  prompt_version?: number;
-  payload?: any;
-  result?: any;
-  error?: string;
+  created_at: string;
 }
 
-export interface AgentMemoryLog {
+export interface AgentPromptVote {
   id: string;
   agent_name: string;
-  context: string;
+  voter_agent: string;
+  version: number;
+  vote: number;
   tenant_id: string;
-  type: string;
-  timestamp: string;
-  is_user_submitted: boolean;
-  ai_feedback?: string;
-  ai_rating?: number;
-  remix_count?: number;
-  xp_delta?: number;
-  summary?: string;
-  tags?: string[];
-}
-
-export interface AgentCollabMessage {
-  id: string;
-  agent: string;
-  message: string;
-  session_id: string;
   created_at: string;
-  tenant_id: string;
-}
-
-export interface ApprovalStatus {
-  id: string;
-  item_id: string;
-  item_type: 'campaign' | 'strategy' | 'pricing' | 'hire';
-  status: 'approved' | 'rejected' | 'pending';
-  approved_by?: string;
-  approved_at?: string;
-  tenant_id: string;
-  feedback?: string;
-}
-
-export interface Decision {
-  id: string;
-  strategy_id: string;
-  strategy_title?: string;
-  decision: string;
-  confidence_score: number;
-  auto_approved: boolean;
-  decision_made_at: string;
-  created_at: string;
-  strategies?: {
-    id: string;
-    title: string;
-  };
 }

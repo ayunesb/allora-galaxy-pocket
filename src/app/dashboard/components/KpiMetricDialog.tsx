@@ -24,14 +24,14 @@ interface KpiMetricDialogProps {
   onSuccess?: () => void;
 }
 
-export const KpiMetricDialog = ({ 
+export function KpiMetricDialog({ 
   open, 
   onOpenChange,
   selectedMetric,
   onSelectMetric,
   metric,
   onSuccess
-}: KpiMetricDialogProps) => {
+}: KpiMetricDialogProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [metricName, setMetricName] = useState(selectedMetric || metric?.kpi_name || "");
   const [metricValue, setMetricValue] = useState(metric?.value?.toString() || "");

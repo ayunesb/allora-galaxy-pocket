@@ -32,9 +32,9 @@ export default function KPISection() {
 
         if (metricsError) throw metricsError;
         
-        // Create a SQL function to alert user if this table doesn't exist
+        // Check if the kpi_alerts table exists
         try {
-          // Safely attempt to fetch alerts
+          // Attempt to fetch from kpi_alerts if it exists
           const { data: alertsData } = await supabase
             .from('kpi_alerts')
             .select('*')
@@ -46,8 +46,8 @@ export default function KPISection() {
             setAlerts(alertsData as KpiAlert[]);
           }
         } catch (alertError) {
-          console.log("KPI alerts table might not exist yet or other error:", alertError);
-          // No need to throw - we'll just have empty alerts
+          console.log("KPI alerts table might not exist yet:", alertError);
+          // Silently handle this error - not all installations will have kpi_alerts
         }
         
         setMetrics(metricsData || []);
@@ -66,16 +66,20 @@ export default function KPISection() {
     if (!tenant?.id) return;
     
     try {
+      // Try to update the alert status
       const { error } = await supabase
         .from('kpi_alerts')
         .update({ status: 'acknowledged' })
         .eq('id', alertId)
         .eq('tenant_id', tenant.id);
-        
-      if (error) throw error;
       
-      setAlerts(prev => prev.filter(a => a.id !== alertId));
-      toast.success("Alert acknowledged");
+      if (!error) {
+        setAlerts(prev => prev.filter(a => a.id !== alertId));
+        toast.success("Alert acknowledged");
+      } else {
+        console.error("Error acknowledging alert:", error);
+        toast.error("Failed to acknowledge alert");
+      }
     } catch (error) {
       console.error("Error acknowledging alert:", error);
       toast.error("Failed to acknowledge alert");
@@ -157,7 +161,7 @@ export default function KPISection() {
         </Button>
       </div>
       
-      {alerts.length > 0 && (
+      {alerts && alerts.length > 0 && (
         <div className="mb-4 space-y-2">
           {alerts.map((alert) => (
             <div 
@@ -166,7 +170,7 @@ export default function KPISection() {
             >
               <div className="flex items-center">
                 <AlertCircle className="h-4 w-4 text-amber-500 mr-2" />
-                <span className="text-sm">{alert.message}</span>
+                <span className="text-sm">{alert.message || alert.description}</span>
               </div>
               <Button 
                 variant="ghost" 

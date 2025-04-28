@@ -5,6 +5,18 @@ import { useTenant } from "@/hooks/useTenant";
 import { AgentFeedback } from "@/types/agent";
 import { toast } from "sonner";
 
+export interface FeedbackFormData {
+  agent?: string;
+  from_agent?: string;
+  to_agent?: string;
+  strategy_id?: string;
+  campaign_id?: string;
+  feedback?: string;
+  rating?: number;
+  type?: string;
+  task_id?: string;
+}
+
 export function useAgentFeedback() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<AgentFeedback[]>([]);
@@ -37,7 +49,7 @@ export function useAgentFeedback() {
     }
   }, [tenant?.id]);
 
-  const submitFeedback = useCallback(async (feedbackData: Partial<AgentFeedback>) => {
+  const submitFeedback = useCallback(async (feedbackData: FeedbackFormData) => {
     if (!tenant?.id) {
       toast.error("No active workspace");
       return false;
@@ -45,13 +57,16 @@ export function useAgentFeedback() {
 
     setIsSubmitting(true);
     try {
+      const insertData: Record<string, any> = {
+        ...feedbackData,
+        tenant_id: tenant.id,
+        created_at: new Date().toISOString(),
+        agent: feedbackData.agent || feedbackData.to_agent // Ensure agent field is set for backward compatibility
+      };
+      
       const { error } = await supabase
         .from("agent_feedback")
-        .insert({
-          ...feedbackData,
-          tenant_id: tenant.id,
-          created_at: new Date().toISOString()
-        });
+        .insert(insertData);
 
       if (error) throw error;
       

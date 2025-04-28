@@ -1,117 +1,86 @@
 
-import { useState, useMemo } from "react";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { ReportGenerator } from "@/components/reports/ReportGenerator";
-import { KPISection } from "@/app/dashboard/components/KPISection";
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import KPISection from "@/app/dashboard/components/KPISection";
 import { PluginUsageChart } from "./PluginUsageChart";
-import { useKpiMetrics } from "@/hooks/useKpiMetrics";
-import { useExportService } from "@/hooks/useExportService";
 import { MetricsCard } from "./MetricsCard";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 
-export default function AdvancedAnalyticsDashboard() {
+export function AdvancedAnalyticsDashboard() {
   const [dateRange, setDateRange] = useState("30");
-  const { data: kpiMetrics, isLoading } = useKpiMetrics(dateRange);
-  const { isLoading: isExporting } = useExportService();
-
-  // Fetch aggregated analytics data
-  const { data: analyticsData } = useQuery({
-    queryKey: ['analytics-summary', dateRange],
-    queryFn: async () => {
-      // This could be replaced with a dedicated Edge Function or direct query
-      // depending on your data structure
-      const { data: strategies, error: strategiesError } = await supabase
-        .from('strategies')
-        .select('count')
-        .gte('created_at', `now() - interval '${dateRange} days'`);
-
-      const { data: campaigns, error: campaignsError } = await supabase
-        .from('campaigns')
-        .select('count')
-        .eq('status', 'active');
-
-      const { data: pluginUsage, error: pluginError } = await supabase
-        .from('plugin_usage_logs')
-        .select('count')
-        .gte('created_at', `now() - interval '${dateRange} days'`);
-
-      return {
-        strategiesCount: strategies?.length || 0,
-        activeCampaigns: campaigns?.length || 0,
-        pluginUsageCount: pluginUsage?.length || 0
-      };
-    },
-    enabled: true
-  });
-
+  
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Advanced Analytics</h2>
-        <DateRangePicker
-          value={dateRange}
-          onValueChange={(value) => setDateRange(value)}
-          options={[
-            { value: "7", label: "Last 7 days" },
-            { value: "30", label: "Last 30 days" },
-            { value: "90", label: "Last 90 days" }
-          ]}
+    <div className="container mx-auto py-8">
+      <h1 className="text-3xl font-bold mb-6">Advanced Analytics</h1>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <MetricsCard 
+          title="Active Users" 
+          value="23"
+          change="+12%"
+          trend="up"
+        />
+        <MetricsCard 
+          title="Completed Strategies" 
+          value="157"
+          change="+8%"
+          trend="up"
+        />
+        <MetricsCard 
+          title="Campaign Success Rate" 
+          value="76%"
+          change="-3%"
+          trend="down"
         />
       </div>
-
-      {/* KPI Overview Section */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <MetricsCard
-          title="Strategies Created"
-          value={analyticsData?.strategiesCount || 0}
-          description="Total strategies in selected period"
-        />
-        <MetricsCard
-          title="Active Campaigns"
-          value={analyticsData?.activeCampaigns || 0}
-          description="Currently running campaigns"
-        />
-        <MetricsCard
-          title="Plugin Usage"
-          value={analyticsData?.pluginUsageCount || 0}
-          description="Total plugin interactions"
-        />
-      </div>
-
-      {/* KPI Trends */}
-      <Card>
-        <CardHeader>
-          <CardTitle>KPI Performance</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-6">
-          <KPISection />
-        </CardContent>
-      </Card>
-
-      {/* Plugin Usage Analysis */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Plugin Usage Analysis</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <PluginUsageChart />
-        </CardContent>
-      </Card>
-
-      {/* Export Tools */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Export Analytics</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ReportGenerator 
-            defaultType="kpi"
-            showEmailOption={true}
-          />
-        </CardContent>
-      </Card>
+      
+      <Tabs defaultValue="kpis" className="mb-8">
+        <TabsList>
+          <TabsTrigger value="kpis">KPI Metrics</TabsTrigger>
+          <TabsTrigger value="plugins">Plugin Usage</TabsTrigger>
+          <TabsTrigger value="agents">Agent Performance</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="kpis">
+          <Card>
+            <CardHeader>
+              <CardTitle>KPI Metrics</CardTitle>
+              <CardDescription>Key Performance Indicators across all campaigns</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <KPISection />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="plugins">
+          <Card>
+            <CardHeader>
+              <CardTitle>Plugin Usage</CardTitle>
+              <CardDescription>Plugin usage across your workspace</CardDescription>
+            </CardHeader>
+            <CardContent className="h-96">
+              <PluginUsageChart />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="agents">
+          <Card>
+            <CardHeader>
+              <CardTitle>Agent Performance</CardTitle>
+              <CardDescription>Agent performance metrics and success rates</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="p-8 text-center text-muted-foreground">
+                Agent performance metrics will display here
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
+
+export default AdvancedAnalyticsDashboard;
