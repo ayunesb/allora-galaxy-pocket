@@ -1,72 +1,82 @@
 
-import { toast } from "sonner";
+import { toast, ToastT } from "sonner";
 
 interface ToastOptions {
-  title?: string;
+  title: string;
   description?: string;
   duration?: number;
-  action?: {
-    label: string;
-    onClick: () => void;
-  };
+  id?: string | number;
+  position?: 'top-left' | 'top-right' | 'top-center' | 'bottom-left' | 'bottom-right' | 'bottom-center';
 }
 
-export const ToastService = {
-  /**
-   * Show a success toast notification
-   */
-  success: (options: ToastOptions) => {
+export class ToastService {
+  static success(options: ToastOptions): string | number {
     return toast.success(options.title, {
       description: options.description,
-      duration: options.duration,
-      action: options.action
+      duration: options.duration || 4000,
+      id: options.id,
+      position: options.position
     });
-  },
-
-  /**
-   * Show an error toast notification
-   */
-  error: (options: ToastOptions) => {
+  }
+  
+  static error(options: ToastOptions): string | number {
+    // Log errors to console for debugging
+    console.error(`Toast Error: ${options.title}${options.description ? ` - ${options.description}` : ''}`);
+    
     return toast.error(options.title, {
       description: options.description,
       duration: options.duration || 5000,
-      action: options.action
+      id: options.id,
+      position: options.position
     });
-  },
-
-  /**
-   * Show an information toast notification
-   */
-  info: (options: ToastOptions) => {
+  }
+  
+  static info(options: ToastOptions): string | number {
+    return toast.info(options.title, {
+      description: options.description,
+      duration: options.duration || 3000,
+      id: options.id,
+      position: options.position
+    });
+  }
+  
+  static warning(options: ToastOptions): string | number {
     return toast(options.title, {
       description: options.description,
-      duration: options.duration,
-      action: options.action
+      duration: options.duration || 4000,
+      id: options.id,
+      position: options.position
     });
-  },
-
-  /**
-   * Show a warning toast notification
-   */
-  warning: (options: ToastOptions) => {
-    return toast.warning(options.title, {
+  }
+  
+  static loading(options: ToastOptions): string | number {
+    return toast.loading(options.title, {
       description: options.description,
-      duration: options.duration,
-      action: options.action
+      id: options.id,
+      position: options.position
     });
-  },
-
-  /**
-   * Show a promise toast notification
-   */
-  promise: <T>(
+  }
+  
+  static dismiss(toastId?: string | number): void {
+    toast.dismiss(toastId);
+  }
+  
+  static promise<T>(
     promise: Promise<T>,
     options: {
       loading: string;
       success: string | ((data: T) => string);
       error: string | ((error: unknown) => string);
+      description?: string;
+      id?: string | number;
     }
-  ) => {
-    return toast.promise(promise, options);
+  ): Promise<T> {
+    return toast.promise(promise, {
+      loading: options.loading,
+      success: options.success,
+      error: options.error,
+      description: options.description,
+      id: options.id
+    });
   }
-};
+}

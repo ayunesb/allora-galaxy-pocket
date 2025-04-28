@@ -1,8 +1,9 @@
-import { supabase } from "@/integrations/supabase/client";
+
 import { toast } from "sonner";
 import { useCreditsManager } from "@/hooks/useCreditsManager";
 import { useTenant } from "@/hooks/useTenant";
 import type { Strategy } from "@/types/strategy";
+import { CampaignService } from "@/services/CampaignService";
 
 interface CampaignInput {
   strategyId?: string;
@@ -11,106 +12,6 @@ interface CampaignInput {
   channels?: string[];
   audience?: string;
 }
-
-interface CampaignScript {
-  channel: string;
-  content: string;
-  headline?: string;
-  cta?: string;
-}
-
-interface GeneratedCampaign {
-  name: string;
-  description: string;
-  scripts: CampaignScript[];
-}
-
-export const generateCampaign = async (input: CampaignInput, tenantId: string, strategy?: Strategy) => {
-  try {
-    const toastId = toast.loading("Generating campaign...");
-    
-    // Prepare strategy context if available
-    const strategyContext = strategy 
-      ? { 
-          id: strategy.id,
-          title: strategy.title,
-          description: strategy.description,
-          industry: strategy.industry || undefined,
-          goal: strategy.goal || strategy.goals?.[0] || undefined
-        }
-      : null;
-    
-    const response = await supabase.functions.invoke("generate-campaign", {
-      body: {
-        tenant_id: tenantId,
-        campaign_name: input.name,
-        campaign_description: input.description,
-        channels: input.channels || ["email", "social"],
-        audience: input.audience,
-        strategy: strategyContext
-      }
-    });
-    
-    if (response.error) {
-      throw new Error(`Campaign generation failed: ${response.error.message}`);
-    }
-    
-    const generatedCampaign: GeneratedCampaign = response.data;
-    
-    // Save the campaign to the database with execution tracking fields
-    const { data: campaign, error: saveError } = await supabase
-      .from("campaigns")
-      .insert({
-        name: input.name,
-        description: input.description || generatedCampaign.description,
-        scripts: generatedCampaign.scripts,
-        status: "draft",
-        tenant_id: tenantId,
-        strategy_id: strategy?.id, // Track the source strategy
-        execution_status: "pending", // Track execution status
-        execution_start_date: null,
-        execution_metrics: {
-          views: 0,
-          clicks: 0,
-          conversions: 0,
-          last_tracked: new Date().toISOString()
-        },
-        channels: input.channels || ["email", "social"],
-        audience: input.audience || "general"
-      })
-      .select()
-      .single();
-    
-    if (saveError) {
-      throw saveError;
-    }
-
-    // Log campaign creation to system logs for tracking
-    await supabase
-      .from('system_logs')
-      .insert({
-        tenant_id: tenantId,
-        event_type: 'CAMPAIGN_CREATED',
-        message: `Campaign "${input.name}" created from strategy "${strategy?.title || 'manual'}"`,
-        meta: {
-          campaign_id: campaign.id,
-          strategy_id: strategy?.id,
-          channels: input.channels
-        }
-      });
-    
-    toast.success("Campaign created successfully", { id: toastId });
-    return { success: true, data: campaign };
-    
-  } catch (err: any) {
-    console.error("Campaign generation error:", err);
-    toast.error("Failed to generate campaign", {
-      description: err.message || "An unexpected error occurred"
-    });
-    
-    return { success: false, error: err.message || "Unknown error" };
-  }
-};
 
 export const useCampaignGenerator = () => {
   const { tenant } = useTenant();
@@ -132,7 +33,35 @@ export const useCampaignGenerator = () => {
       return { success: false, error: "Insufficient credits" };
     }
     
-    return await generateCampaign(input, tenant.id, strategy);
+    const toastId = toast.loading("Generating campaign...");
+    
+    try {
+      // Generate the campaign
+      const result = await CampaignService.generateCampaign(input, tenant.id, strategy);
+      
+      if (!result.success) {
+        throw new Error(result.error || "Failed to generate campaign");
+      }
+      
+      // Save the campaign to the database
+      const saveResult = await CampaignService.saveCampaign(result.data, input, tenant.id);
+      
+      if (!saveResult.success) {
+        throw new Error(saveResult.error || "Failed to save campaign");
+      }
+      
+      toast.success("Campaign created successfully", { id: toastId });
+      return { success: true, data: saveResult.data };
+      
+    } catch (err: any) {
+      console.error("Campaign generation error:", err);
+      toast.error("Failed to generate campaign", {
+        description: err.message || "An unexpected error occurred",
+        id: toastId
+      });
+      
+      return { success: false, error: err.message || "Unknown error" };
+    }
   };
   
   const generateCampaignFromStrategy = async (strategy: Strategy) => {
@@ -145,7 +74,7 @@ export const useCampaignGenerator = () => {
       name: `Campaign for ${strategy.title || "Strategy"}`,
       description: `Campaign based on strategy: ${strategy.description?.substring(0, 100) || ""}...`,
       strategyId: strategy.id,
-      channels: ["email", "social", "content"] // Default channels
+      channels: strategy.channels || ["email", "social", "content"] // Use strategy channels if available
     };
     
     return await generateCampaignWithBilling(input, strategy);
@@ -156,51 +85,7 @@ export const useCampaignGenerator = () => {
       return { success: false, error: "Missing required information" };
     }
     
-    try {
-      const updatePayload: any = {
-        execution_status: status,
-      };
-      
-      if (status === "in_progress" && !metrics?.execution_start_date) {
-        updatePayload.execution_start_date = new Date().toISOString();
-      }
-      
-      if (metrics) {
-        const { data: currentCampaign } = await supabase
-          .from("campaigns")
-          .select("execution_metrics")
-          .eq("id", campaignId)
-          .single();
-          
-        updatePayload.execution_metrics = {
-          ...currentCampaign?.execution_metrics || {},
-          ...metrics,
-          last_tracked: new Date().toISOString()
-        };
-      }
-      
-      const { error } = await supabase
-        .from("campaigns")
-        .update(updatePayload)
-        .eq("id", campaignId)
-        .eq("tenant_id", tenant.id);
-      
-      if (error) throw error;
-      
-      await supabase
-        .from('system_logs')
-        .insert({
-          tenant_id: tenant.id,
-          event_type: 'CAMPAIGN_STATUS_UPDATED',
-          message: `Campaign status updated to "${status}"`,
-          meta: { campaign_id: campaignId, status }
-        });
-        
-      return { success: true };
-    } catch (err: any) {
-      console.error("Error updating campaign execution status:", err);
-      return { success: false, error: err.message };
-    }
+    return await CampaignService.updateCampaignExecution(campaignId, tenant.id, status, metrics);
   };
   
   const getCampaignExecutionMetrics = async (campaignId: string) => {
@@ -208,21 +93,7 @@ export const useCampaignGenerator = () => {
       return { success: false, error: "Missing required information" };
     }
     
-    try {
-      const { data, error } = await supabase
-        .from("campaigns")
-        .select("execution_metrics, execution_status, execution_start_date")
-        .eq("id", campaignId)
-        .eq("tenant_id", tenant.id)
-        .single();
-      
-      if (error) throw error;
-      
-      return { success: true, data };
-    } catch (err: any) {
-      console.error("Error fetching campaign execution metrics:", err);
-      return { success: false, error: err.message };
-    }
+    return await CampaignService.getCampaignExecutionMetrics(campaignId, tenant.id);
   };
   
   return {

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useTenant } from "@/hooks/useTenant";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { KpiAlert, KpiInsight, UnifiedAlert } from "@/types/kpi";
 
 export interface UnifiedKpiAlert extends UnifiedAlert {}
@@ -17,13 +17,14 @@ interface UseUnifiedKpiAlertsOptions {
 export function useUnifiedKpiAlerts(options?: UseUnifiedKpiAlertsOptions) {
   const { tenant } = useTenant();
   const [isLoading, setIsLoading] = useState(false);
+  const queryClient = useQueryClient();
   const daysToFetch = options?.days || 30;
   const activeOnly = options?.activeOnly || false;
   const severityFilter = options?.severity;
   
   // Query for kpi_alerts table
   const { 
-    data: kpiAlerts = [], 
+    data: rawKpiAlerts = [], 
     refetch: refreshKpiAlerts,
     error: alertsError
   } = useQuery({
@@ -49,20 +50,16 @@ export function useUnifiedKpiAlerts(options?: UseUnifiedKpiAlertsOptions) {
       
       if (error) throw error;
       
-      // Transform to unified format
-      return (data || []).map(item => ({
-        ...item,
-        description: item.description || '',
-        source_type: 'kpi_alert' as const
-      })) as UnifiedAlert[];
+      return data as KpiAlert[];
     },
     enabled: !!tenant?.id,
   });
   
   // Query for kpi_insights table
   const { 
-    data: kpiInsights = [],
-    refetch: refreshKpiInsights
+    data: rawKpiInsights = [],
+    refetch: refreshKpiInsights,
+    error: insightsError
   } = useQuery({
     queryKey: ['unified-kpi-alerts-source2', tenant?.id, daysToFetch, severityFilter],
     queryFn: async () => {
@@ -86,26 +83,46 @@ export function useUnifiedKpiAlerts(options?: UseUnifiedKpiAlertsOptions) {
       
       if (error) throw error;
       
-      // Transform insights into unified format
-      return (data || []).map(insight => ({
-        id: insight.id,
-        kpi_name: insight.kpi_name,
-        description: insight.insight,
-        severity: (insight.impact_level as 'low' | 'medium' | 'high') || 'medium',
-        status: insight.outcome === 'resolved' ? 'resolved' : 'pending',
-        current_value: undefined,
-        previous_value: undefined,
-        percent_change: undefined,
-        triggered_at: insight.created_at,
-        created_at: insight.created_at,
-        tenant_id: insight.tenant_id,
-        campaign_id: insight.campaign_id,
-        message: insight.suggested_action,
-        source_type: 'kpi_insight' as const,
-      })) as UnifiedAlert[];
+      return data as KpiInsight[];
     },
     enabled: !!tenant?.id,
   });
+  
+  // Transform insights into unified format
+  const unifiedInsights: UnifiedAlert[] = (rawKpiInsights || []).map(insight => ({
+    id: insight.id,
+    kpi_name: insight.kpi_name,
+    description: insight.insight,
+    severity: (insight.impact_level as 'low' | 'medium' | 'high') || 'medium',
+    status: insight.outcome === 'resolved' ? 'resolved' : 'pending',
+    current_value: undefined,
+    previous_value: undefined,
+    percent_change: undefined,
+    triggered_at: insight.created_at,
+    created_at: insight.created_at,
+    tenant_id: insight.tenant_id,
+    campaign_id: insight.campaign_id,
+    message: insight.suggested_action,
+    source_type: 'kpi_insight' as const,
+  }));
+  
+  // Transform alerts into unified format
+  const unifiedAlerts: UnifiedAlert[] = (rawKpiAlerts || []).map(alert => ({
+    ...alert,
+    description: alert.description || '',
+    source_type: 'kpi_alert' as const
+  }));
+  
+  // Combine both sources
+  const alerts: UnifiedAlert[] = [...unifiedAlerts, ...unifiedInsights];
+  
+  // Function to refresh all data
+  const refreshUnifiedAlerts = async () => {
+    await Promise.all([
+      refreshKpiAlerts(),
+      refreshKpiInsights()
+    ]);
+  };
   
   // Trigger KPI check functionality
   const triggerKpiCheck = async (tenantId?: string) => {
@@ -119,7 +136,7 @@ export function useUnifiedKpiAlerts(options?: UseUnifiedKpiAlertsOptions) {
     setIsLoading(true);
     
     try {
-      const { error } = await supabase.functions.invoke("kpi-alerts", {
+      const { error } = await supabase.functions.invoke("check-kpi-alerts", {
         body: { tenant_id: idToUse }
       });
       
@@ -147,33 +164,22 @@ export function useUnifiedKpiAlerts(options?: UseUnifiedKpiAlertsOptions) {
     try {
       setIsLoading(true);
       
-      if (sourceType === 'kpi_alert') {
-        const { error } = await supabase
-          .from('kpi_alerts')
-          .update({ 
-            status: 'resolved',
-            message: resolutionNote
-          })
-          .eq('id', alertId)
-          .eq('tenant_id', tenant.id);
-          
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('kpi_insights')
-          .update({ 
-            outcome: 'resolved',
-            suggested_action: resolutionNote
-          })
-          .eq('id', alertId)
-          .eq('tenant_id', tenant.id);
-          
-        if (error) throw error;
-      }
+      // Use the security definer function to resolve alerts
+      const { data, error } = await supabase.rpc('resolve_kpi_alert', {
+        alert_id: alertId,
+        resolution_note: resolutionNote
+      });
       
-      toast.success("Alert resolved successfully");
-      await refreshUnifiedAlerts();
-      return true;
+      if (error) throw error;
+      
+      if (data === true) {
+        toast.success("Alert resolved successfully");
+        await refreshUnifiedAlerts();
+        return true;
+      } else {
+        toast.error("Failed to resolve alert");
+        return false;
+      }
     } catch (err) {
       console.error("Error resolving alert:", err);
       toast.error(`Error resolving alert: ${(err as Error).message}`);
@@ -182,37 +188,16 @@ export function useUnifiedKpiAlerts(options?: UseUnifiedKpiAlertsOptions) {
       setIsLoading(false);
     }
   };
-  
-  // Refresh all data sources
-  const refreshUnifiedAlerts = async () => {
-    await Promise.all([refreshKpiAlerts(), refreshKpiInsights()]);
-  };
-  
-  // Combine both data sources
-  const unifiedAlerts: UnifiedAlert[] = [...kpiAlerts, ...kpiInsights];
-  
-  // Remove any duplicates by ID
-  const uniqueAlerts = unifiedAlerts.reduce((acc, current) => {
-    const exists = acc.find(item => item.id === current.id);
-    if (!exists) {
-      return [...acc, current];
-    }
-    return acc;
-  }, [] as UnifiedAlert[]);
-  
-  // Sort by created date
-  const sortedAlerts = uniqueAlerts.sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  );
-  
+
+  // Return unified data with original sources for backward compatibility
   return {
-    alerts: sortedAlerts,
-    rawKpiAlerts: kpiAlerts,
-    rawKpiInsights: kpiInsights,
+    alerts,
+    rawKpiAlerts,
+    rawKpiInsights,
     isLoading,
-    error: alertsError,
-    triggerKpiCheck,
+    error: alertsError || insightsError,
     resolveAlert,
+    triggerKpiCheck,
     refreshAlerts: refreshUnifiedAlerts
   };
 }

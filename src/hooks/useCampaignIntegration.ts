@@ -1,6 +1,5 @@
 
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from './useTenant';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from './useAuth';
@@ -8,6 +7,7 @@ import { useSystemLogs } from './useSystemLogs';
 import type { Strategy } from '@/types/strategy';
 import { toast as sonnerToast } from 'sonner';
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { CampaignService } from '@/services/CampaignService';
 
 export function useCampaignIntegration() {
   const [isLoading, setIsLoading] = useState(false);
@@ -29,44 +29,32 @@ export function useCampaignIntegration() {
 
     setIsLoading(true);
     try {
-      const scripts: Record<string, string> = {};
-      if (channels?.length) {
-        channels.forEach(channel => {
-          scripts[channel.toLowerCase()] = `${channel} script will be generated...`;
-        });
-      } else {
-        scripts.email = "Draft email script...";
-        scripts.social = "Draft social media post...";
+      const input = {
+        name: `Campaign based on: ${strategy.title}`,
+        description: strategy.description,
+        strategyId: strategy.id,
+        channels: channels || strategy.channels || ["email", "social"],
+        audience: strategy.target_audience
+      };
+      
+      // Generate campaign scripts
+      const result = await CampaignService.generateCampaign(input, tenant.id, strategy);
+      if (!result.success) {
+        throw new Error(result.error || "Failed to generate campaign");
       }
-
-      const { data, error } = await supabase
-        .from('campaigns')
-        .insert({
-          name: `Campaign based on: ${strategy.title}`,
-          description: strategy.description,
-          status: 'draft',
-          tenant_id: tenant.id,
-          scripts,
-          strategy_id: strategy.id,
-          execution_status: 'pending',
-          execution_metrics: {
-            views: 0,
-            clicks: 0,
-            conversions: 0,
-            last_updated: new Date().toISOString()
-          }
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
+      
+      // Save the campaign
+      const saveResult = await CampaignService.saveCampaign(result.data, input, tenant.id);
+      if (!saveResult.success) {
+        throw new Error(saveResult.error || "Failed to save campaign");
+      }
 
       await logActivity({
         event_type: 'campaign_created',
         message: `Campaign created from strategy: ${strategy.title}`,
         meta: {
           strategy_id: strategy.id,
-          campaign_id: data.id
+          campaign_id: saveResult.data.id
         }
       });
 
@@ -75,8 +63,11 @@ export function useCampaignIntegration() {
         description: "Strategy successfully converted to campaign draft"
       });
 
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+
       return true;
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error creating campaign:', err);
       toast({
         title: "Error",
@@ -90,21 +81,29 @@ export function useCampaignIntegration() {
   };
 
   const updateCampaignExecution = async (campaignId: string, data: any) => {
-    // Note: execution_start_date added to update
-    const { error } = await supabase
-      .from('campaigns')
-      .update({
-        execution_metrics: data.metrics,
-        execution_status: data.status,
-        execution_start_date: data.execution_start_date || new Date().toISOString()
-      })
-      .eq('id', campaignId);
+    if (!tenant?.id) return false;
+    
+    try {
+      const result = await CampaignService.updateCampaignExecution(
+        campaignId, 
+        tenant.id, 
+        data.status, 
+        data.metrics
+      );
+      
+      if (!result.success) {
+        throw new Error(result.error || "Failed to update campaign execution");
+      }
 
-    if (error) throw error;
-
-    // Invalidate queries
-    queryClient.invalidateQueries({ queryKey: ['campaign-detail', campaignId] });
-    queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+      // Invalidate queries
+      queryClient.invalidateQueries({ queryKey: ['campaign-detail', campaignId] });
+      queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+      
+      return true;
+    } catch (error) {
+      console.error("Error updating campaign execution:", error);
+      return false;
+    }
   };
 
   const updateCampaignExecutionStatus = async (
@@ -115,41 +114,16 @@ export function useCampaignIntegration() {
     if (!tenant?.id) return false;
 
     try {
-      // Get current metrics before updating
-      const { data: campaignData, error: fetchError } = await supabase
-        .from('campaigns')
-        .select('execution_metrics, execution_start_date')
-        .eq('id', campaignId)
-        .eq('tenant_id', tenant.id)
-        .single();
-        
-      if (fetchError) throw fetchError;
+      const result = await CampaignService.updateCampaignExecution(
+        campaignId,
+        tenant.id,
+        status,
+        metrics
+      );
       
-      // Merge existing metrics with new metrics
-      const existingMetrics = campaignData.execution_metrics || {};
-      const updatedMetrics = {
-        ...existingMetrics,
-        ...(metrics || {}),
-        last_updated: new Date().toISOString()
-      };
-      
-      // Add execution start date if starting campaign
-      const executionStartDate = status === 'running' && !campaignData.execution_start_date
-        ? { execution_start_date: new Date().toISOString() }
-        : {};
-        
-      // Update campaign with new status and metrics
-      const { error } = await supabase
-        .from('campaigns')
-        .update({ 
-          execution_status: status, 
-          execution_metrics: updatedMetrics,
-          ...executionStartDate
-        })
-        .eq('id', campaignId)
-        .eq('tenant_id', tenant.id);
-
-      if (error) throw error;
+      if (!result.success) {
+        throw new Error(result.error);
+      }
 
       await logActivity({
         event_type: 'campaign_status_updated',
@@ -161,8 +135,12 @@ export function useCampaignIntegration() {
         }
       });
       
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+      queryClient.invalidateQueries({ queryKey: ['campaign-detail', campaignId] });
+      
       return true;
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error updating campaign status:', err);
       sonnerToast.error('Error updating campaign status');
       return false;
@@ -173,17 +151,14 @@ export function useCampaignIntegration() {
     if (!tenant?.id) return null;
 
     try {
-      const { data, error } = await supabase
-        .from('campaigns')
-        .select('execution_metrics, execution_status, execution_start_date')
-        .eq('id', campaignId)
-        .eq('tenant_id', tenant.id)
-        .single();
-
-      if (error) throw error;
+      const result = await CampaignService.getCampaignExecutionMetrics(campaignId, tenant.id);
       
-      return data;
-    } catch (err) {
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      
+      return result.data;
+    } catch (err: any) {
       console.error('Error fetching campaign metrics:', err);
       return null;
     }
@@ -195,51 +170,21 @@ export function useCampaignIntegration() {
     outcomeValue: number,
     outcomeDetails?: Record<string, any>
   ) => {
-    if (!tenant?.id) return false;
+    if (!tenant?.id || !user?.id) return false;
     
     try {
-      // First update the campaign's execution metrics
-      const { data: campaign, error: fetchError } = await supabase
-        .from('campaigns')
-        .select('execution_metrics')
-        .eq('id', campaignId)
-        .eq('tenant_id', tenant.id)
-        .single();
-        
-      if (fetchError) throw fetchError;
+      const result = await CampaignService.trackCampaignOutcome(
+        campaignId,
+        tenant.id,
+        user.id,
+        outcomeType,
+        outcomeValue,
+        outcomeDetails
+      );
       
-      // Create new metrics object with updated values
-      const currentMetrics = campaign.execution_metrics || {};
-      const updatedMetrics = {
-        ...currentMetrics,
-        [outcomeType]: (currentMetrics[outcomeType] || 0) + outcomeValue,
-        last_updated: new Date().toISOString()
-      };
-      
-      // Update campaign metrics
-      const { error: updateError } = await supabase
-        .from('campaigns')
-        .update({
-          execution_metrics: updatedMetrics
-        })
-        .eq('id', campaignId)
-        .eq('tenant_id', tenant.id);
-        
-      if (updateError) throw updateError;
-      
-      // Insert record into campaign_outcomes table
-      const { error } = await supabase
-        .from('campaign_outcomes')
-        .insert({
-          campaign_id: campaignId,
-          tenant_id: tenant.id,
-          outcome_type: outcomeType,
-          outcome_value: outcomeValue,
-          details: outcomeDetails || {},
-          recorded_by: user?.id
-        });
-
-      if (error) throw error;
+      if (!result.success) {
+        throw new Error(result.error);
+      }
 
       await logActivity({
         event_type: 'campaign_outcome_recorded',
@@ -252,7 +197,7 @@ export function useCampaignIntegration() {
       });
 
       return true;
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error tracking campaign outcome:', err);
       toast({
         title: "Error",
@@ -263,7 +208,6 @@ export function useCampaignIntegration() {
     }
   };
   
-  // New method for generating a report on campaign performance
   const generateCampaignReport = async (campaignId: string) => {
     if (!tenant?.id) {
       toast({
@@ -276,18 +220,14 @@ export function useCampaignIntegration() {
     
     setIsLoading(true);
     try {
-      // Use the predict-campaign-performance function
-      const { data, error } = await supabase.functions.invoke('predict-campaign-performance', {
-        body: {
-          campaign_id: campaignId,
-          tenant_id: tenant.id
-        }
-      });
+      const result = await CampaignService.generateCampaignReport(campaignId, tenant.id);
       
-      if (error) throw error;
+      if (!result.success) {
+        throw new Error(result.error);
+      }
       
-      return data;
-    } catch (err) {
+      return result.data;
+    } catch (err: any) {
       console.error('Error generating campaign report:', err);
       toast({
         title: "Error", 

@@ -7,11 +7,54 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+type LogLevel = 'info' | 'error' | 'debug' | 'warn';
+
+// Logging utility
+function log(message: string, level: LogLevel = 'info', data?: any) {
+  const logEntry = {
+    timestamp: new Date().toISOString(),
+    level,
+    message,
+    ...(data ? { data } : {})
+  };
+  
+  console.log(JSON.stringify(logEntry));
+}
+
+// Error handling utility
+async function logError(supabase: any, functionName: string, error: any, tenantId?: string) {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  log(`Error in ${functionName}: ${errorMessage}`, 'error', { error, stack: error.stack });
+  
+  try {
+    await supabase.from('cron_job_logs').insert({
+      function_name: functionName,
+      status: 'error',
+      message: `Error: ${errorMessage}`,
+      ...(tenantId ? { tenant_id: tenantId } : {}),
+      duration_ms: 0,
+      error_details: {
+        message: errorMessage,
+        stack: error.stack
+      }
+    });
+  } catch (logError) {
+    console.error('Failed to log error:', logError);
+  }
+}
+
 serve(async (req) => {
+  const functionName = 'check-kpi-alerts';
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  let tenantId = null;
+  let threshold = 10; // Default threshold percentage
+  let requestBody = {};
+  const startTime = Date.now();
 
   try {
     const supabase = createClient(
@@ -20,16 +63,16 @@ serve(async (req) => {
     );
 
     // Parse request body if present
-    let tenantFilter = null;
-    let threshold = 10; // Default threshold percentage
-
     try {
-      const body = await req.json();
-      tenantFilter = body.tenant_id;
-      if (body.threshold) threshold = body.threshold;
+      requestBody = await req.json();
+      tenantId = requestBody.tenant_id;
+      if (requestBody.threshold) threshold = requestBody.threshold;
     } catch (e) {
       // No body or invalid JSON, use defaults
+      log('No valid request body provided, using defaults', 'warn');
     }
+
+    log(`Starting KPI check${tenantId ? ' for tenant ' + tenantId : ''}`, 'info', { threshold });
 
     // Get all KPI metrics to check for alerts
     const kpiQuery = supabase
@@ -37,8 +80,8 @@ serve(async (req) => {
       .select('tenant_id, metric, value')
       .order('recorded_at', { ascending: false });
     
-    if (tenantFilter) {
-      kpiQuery.eq('tenant_id', tenantFilter);
+    if (tenantId) {
+      kpiQuery.eq('tenant_id', tenantId);
     }
 
     const { data: kpiData, error: kpiError } = await kpiQuery;
@@ -56,6 +99,8 @@ serve(async (req) => {
         kpiMap.set(key, metric);
       }
     }
+    
+    log(`Retrieved ${kpiData.length} KPI metrics, ${kpiMap.size} unique metrics`, 'info');
     
     // Get historical data to compare
     const { data: historyData, error: historyError } = await supabase
@@ -76,14 +121,20 @@ serve(async (req) => {
       }
     }
 
+    log(`Retrieved ${historyData.length} KPI history metrics, ${historyMap.size} unique metrics`, 'info');
+
     // Compare current values with historical values and generate alerts
     const alerts = [];
+    const alertInserts = [];
 
     for (const [key, current] of kpiMap.entries()) {
       const history = historyMap.get(key);
       
       // Skip if no historical data to compare
-      if (!history) continue;
+      if (!history) {
+        log(`No history for ${key}, skipping alert check`, 'debug');
+        continue;
+      }
 
       const percentChange = history.value === 0 
         ? (current.value > 0 ? 100 : 0) 
@@ -102,44 +153,76 @@ serve(async (req) => {
         
         alerts.push(alert);
         
-        // Insert alert into agent_alerts table
-        await supabase.from('agent_alerts').insert({
+        // Prepare agent alert for insertion
+        alertInserts.push({
           tenant_id: current.tenant_id,
           alert_type: 'kpi_drop',
           agent: 'SystemMonitor',
-          message: `KPI Alert: ${current.metric} decreased by ${Math.abs(percentChange.toFixed(1))}% (from ${history.value} to ${current.value})`
+          message: `KPI Alert: ${current.metric} decreased by ${Math.abs(percentChange.toFixed(1))}% (from ${history.value} to ${current.value})`,
+          severity: percentChange <= -20 ? 'high' : 'medium',
+          status: 'triggered',
+          triggered_at: new Date().toISOString()
         });
         
-        // Create recovery strategy if specified in request
-        if (body?.generate_recovery && percentChange <= -15) {  // More severe drops
-          await supabase.functions.invoke('strategy-adjustments', {
-            body: { 
-              tenant_id: current.tenant_id,
-              metric: current.metric,
-              drop_percentage: Math.abs(percentChange)
-            }
+        // Create recovery strategy if specified in request and drop is severe
+        if (requestBody?.generate_recovery && percentChange <= -15) {
+          log(`Severe drop detected (${percentChange}%), generating recovery strategy`, 'info', { 
+            metric: current.metric,
+            tenant_id: current.tenant_id
           });
+          
+          try {
+            await supabase.functions.invoke('strategy-adjustments', {
+              body: { 
+                tenant_id: current.tenant_id,
+                metric: current.metric,
+                drop_percentage: Math.abs(percentChange)
+              }
+            });
+          } catch (strategyError) {
+            log(`Failed to generate recovery strategy`, 'error', { error: strategyError });
+            // Continue execution, don't fail the whole function
+          }
         }
       }
     }
 
+    // Batch insert alerts if any
+    if (alertInserts.length > 0) {
+      const { error: insertError } = await supabase
+        .from('agent_alerts')
+        .insert(alertInserts);
+        
+      if (insertError) {
+        log(`Failed to insert ${alertInserts.length} alerts`, 'error', { error: insertError });
+      } else {
+        log(`Successfully inserted ${alertInserts.length} alerts`, 'info');
+      }
+    }
+
+    const duration = Date.now() - startTime;
+
     // Log the check in system logs
     await supabase.from('cron_job_logs').insert({
-      function_name: 'check-kpi-alerts',
+      function_name: functionName,
       status: 'success',
-      message: `Checked ${kpiMap.size} KPIs, found ${alerts.length} alerts`
+      message: `Checked ${kpiMap.size} KPIs, found ${alerts.length} alerts`,
+      tenant_id: tenantId,
+      duration_ms: duration
     });
 
     return new Response(JSON.stringify({ 
       success: true, 
       alerts_count: alerts.length,
-      alerts 
+      alerts,
+      duration_ms: duration
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
     
   } catch (error) {
-    console.error('Error checking KPI alerts:', error);
+    const duration = Date.now() - startTime;
+    log(`Error checking KPI alerts:`, 'error', { error });
     
     // Log the error
     const supabase = createClient(
@@ -147,15 +230,12 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
     );
     
-    await supabase.from('cron_job_logs').insert({
-      function_name: 'check-kpi-alerts',
-      status: 'error',
-      message: `Error: ${error.message}`
-    });
+    await logError(supabase, functionName, error, tenantId);
     
     return new Response(JSON.stringify({ 
       error: 'Failed to check KPI alerts',
-      details: error.message
+      details: error.message || 'Unknown error',
+      request: requestBody
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
