@@ -23,9 +23,9 @@ export default function AgentMemoryConsole() {
       
       const formattedData = (data || []).map(item => ({
         ...item,
-        summary: item.summary || item.context.substring(0, 100),
+        summary: item.summary || item.context.substring(0, 100) + (item.context.length > 100 ? "..." : ""),
         tags: item.tags || []
-      }));
+      })) as AgentMemoryLog[];
       
       setLogs(formattedData);
     };

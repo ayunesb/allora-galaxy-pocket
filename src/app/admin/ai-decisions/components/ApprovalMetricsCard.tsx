@@ -8,7 +8,8 @@ import { ApprovalStats } from "@/types/decisions";
 async function fetchApprovalStats(): Promise<ApprovalStats> {
   const { data, error } = await supabase.rpc('count_strategy_approvals');
   if (error) throw error;
-  return data as ApprovalStats;
+  // Ensure we return a single object, not an array
+  return data as unknown as ApprovalStats;
 }
 
 export function ApprovalMetricsCard() {

@@ -23,9 +23,9 @@ export function useAccessTests() {
     try {
       for (const table of tables) {
         try {
-          // Try to select from the table
+          // Try to select from the table - use plain SQL query instead of builder
           const { data, error, count } = await supabase
-            .from(table.tablename)
+            .from(table.tablename as any)
             .select('*', { count: 'exact' })
             .limit(1);
 
@@ -57,9 +57,14 @@ export function useAccessTests() {
       setTestResults(results);
       setLastRun(new Date().toLocaleString());
       
-      // Log security audit run
+      // Log security audit run - need to get tenant ID
       try {
+        // Get the current tenant
+        const { data: tenantData } = await supabase.auth.getSession();
+        const tenant_id = tenantData?.session?.user?.id || '00000000-0000-0000-0000-000000000000';
+        
         await supabase.from('system_logs').insert({
+          tenant_id,
           event_type: 'SECURITY_AUDIT',
           message: 'Security access tests executed',
           meta: {

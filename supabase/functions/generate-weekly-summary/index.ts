@@ -1,94 +1,128 @@
 
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import OpenAI from "https://deno.land/x/openai@v4.24.0/mod.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.0";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { corsHeaders } from "../_shared/cors.ts";
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
+  // Handle CORS
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
-
+  
   try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // Parse request body
     const { tenantId } = await req.json();
-
-    // Initialize OpenAI and Supabase clients
-    const openai = new OpenAI({ apiKey: Deno.env.get('OPENAI_API_KEY')! });
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    );
-
-    // Get this week's decisions and stats
-    const weekStart = new Date();
-    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-
-    const { data: decisions } = await supabase
+    
+    if (!tenantId) {
+      return new Response(
+        JSON.stringify({ error: "Missing tenant ID" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
+    
+    // Get last week's date range
+    const today = new Date();
+    const lastWeekStart = new Date(today.setDate(today.getDate() - 7));
+    lastWeekStart.setHours(0, 0, 0, 0);
+    
+    // Get the decisions from the last week
+    const { data: decisions, error: decisionsError } = await supabase
       .from('strategies')
       .select('*')
       .eq('tenant_id', tenantId)
-      .gte('created_at', weekStart.toISOString());
-
-    const { data: stats } = await supabase
-      .from('strategy_approval_stats')
-      .select('*')
-      .eq('tenant_id', tenantId)
-      .single();
-
-    // Generate AI summary using collected data
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: "You are a business intelligence analyst. Generate a concise weekly summary of AI decision-making activities."
-        },
-        {
-          role: "user",
-          content: `Generate a weekly summary based on this data:
-          - Total decisions this week: ${decisions?.length || 0}
-          - AI approval rate: ${stats?.ai_percent || 0}%
-          - Human approvals: ${stats?.human_approved || 0}
-          - AI approvals: ${stats?.ai_approved || 0}
-
-          Format the summary in markdown with sections for:
-          1. Key Metrics
-          2. Notable Trends
-          3. Recommendations`
+      .gte('created_at', lastWeekStart.toISOString());
+      
+    if (decisionsError) {
+      throw decisionsError;
+    }
+    
+    // Calculate metrics
+    const totalDecisions = decisions?.length || 0;
+    const aiApproved = decisions?.filter(d => d.auto_approved).length || 0;
+    const aiApprovalRate = totalDecisions ? Math.round((aiApproved / totalDecisions) * 100) : 0;
+    
+    // Generate summary text
+    let summaryText = `# Weekly AI Decision Summary\n\n`;
+    summaryText += `For the week of ${lastWeekStart.toLocaleDateString()}\n\n`;
+    
+    if (totalDecisions > 0) {
+      summaryText += `## Statistics\n`;
+      summaryText += `- Total decisions: ${totalDecisions}\n`;
+      summaryText += `- AI-approved decisions: ${aiApproved} (${aiApprovalRate}%)\n`;
+      summaryText += `- Human-approved decisions: ${totalDecisions - aiApproved} (${100 - aiApprovalRate}%)\n\n`;
+      
+      summaryText += `## Top Strategy Types\n`;
+      
+      // Group by tags if available
+      const tagCounts: Record<string, number> = {};
+      decisions.forEach(d => {
+        if (d.tags && Array.isArray(d.tags)) {
+          d.tags.forEach(tag => {
+            tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+          });
         }
-      ]
-    });
-
-    const summary = response.choices[0].message.content;
-
-    // Store the summary
-    const { error } = await supabase
+      });
+      
+      // Sort tags by count
+      const sortedTags = Object.entries(tagCounts)
+        .sort(([, countA], [, countB]) => countB - countA)
+        .slice(0, 5);
+      
+      if (sortedTags.length > 0) {
+        sortedTags.forEach(([tag, count]) => {
+          summaryText += `- ${tag}: ${count} strategies\n`;
+        });
+      } else {
+        summaryText += `No strategy categories identified this week.\n`;
+      }
+    } else {
+      summaryText += `No decisions were made this week.\n`;
+    }
+    
+    // Save the summary to the database
+    const { data: summary, error: insertError } = await supabase
       .from('weekly_ai_summaries')
       .insert({
         tenant_id: tenantId,
-        summary,
-        week_start: weekStart.toISOString(),
-        metadata: { 
-          total_decisions: decisions?.length || 0,
-          ai_approval_rate: stats?.ai_percent || 0
+        summary: summaryText,
+        week_start: lastWeekStart.toISOString().split('T')[0],
+        metadata: {
+          total_decisions: totalDecisions,
+          ai_approval_rate: aiApprovalRate
         }
+      })
+      .select()
+      .single();
+      
+    if (insertError) {
+      throw insertError;
+    }
+    
+    // Log the action
+    await supabase
+      .from('system_logs')
+      .insert({
+        tenant_id: tenantId,
+        event_type: 'WEEKLY_SUMMARY_GENERATED',
+        message: `Generated weekly summary for week of ${lastWeekStart.toLocaleDateString()}`,
+        meta: { totalDecisions, aiApprovalRate }
       });
-
-    if (error) throw error;
-
-    return new Response(JSON.stringify({ summary }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    
+    return new Response(
+      JSON.stringify({ success: true, summary }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+    );
+    
   } catch (error) {
-    console.error('Error generating weekly summary:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error("Error generating weekly summary:", error);
+    
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+    );
   }
 });

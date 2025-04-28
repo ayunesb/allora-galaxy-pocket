@@ -1,3 +1,4 @@
+
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,11 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Award, Rocket } from "lucide-react";
 import { formatDistanceToNow } from 'date-fns';
-import { AgentMemory } from '@/types/agent';
+import { AgentMemoryLog } from '@/types/agent';
 import { MemoryComments } from '@/components/memory/MemoryComments';
 
 interface AgentMemoryListProps {
-  memories: AgentMemory[];
+  memories: AgentMemoryLog[];
   isLoading: boolean;
 }
 

@@ -7,7 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AgentMemoryFilter } from './components/AgentMemoryFilter';
 import { AgentMemoryList } from './components/AgentMemoryList';
 import { RemixLeaderboard } from '@/components/memory/RemixLeaderboard';
-import { AgentMemory } from '@/types/agent';
+import { AgentMemoryLog } from '@/types/agent';
 
 export default function AcademyPage() {
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
@@ -32,13 +32,19 @@ export default function AcademyPage() {
       }
       
       if (searchQuery) {
-        query = query.ilike('summary', `%${searchQuery}%`);
+        query = query.ilike('context', `%${searchQuery}%`);
       }
 
       const { data, error } = await query;
       
       if (error) throw error;
-      return data as AgentMemory[];
+      
+      // Format data with optional fields
+      return (data || []).map(item => ({
+        ...item,
+        summary: item.summary || item.context.substring(0, 100) + (item.context.length > 100 ? "..." : ""),
+        tags: item.tags || []
+      })) as AgentMemoryLog[];
     }
   });
 

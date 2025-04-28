@@ -14,3 +14,14 @@ export type AgentMemoryLog = {
   summary?: string;
   tags?: string[];
 };
+
+// Alias AgentMemory to AgentMemoryLog for backward compatibility
+export type AgentMemory = AgentMemoryLog;
+
+export interface AgentCollabMessage {
+  id: string;
+  session_id: string;
+  agent: string;
+  message: string;
+  created_at: string;
+}

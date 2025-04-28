@@ -27,43 +27,43 @@ export function useRlsData() {
   const fetchRlsTables = async () => {
     setIsLoading(true);
     try {
-      const { data: allTables, error: tablesError } = await supabase
-        .from("pg_tables")
-        .select("tablename")
-        .eq("schemaname", "public");
+      // Use direct SQL query for schema tables since they're not in the type system
+      const { data: allTables, error: tablesError } = await supabase.rpc('list_tables_with_rls_status');
 
       if (tablesError) throw tablesError;
       
       const tableResults: RlsTable[] = [];
       
       for (const table of allTables) {
-        const { data: rlsCheck, error: rlsError } = await supabase
-          .rpc("check_table_rls_status", { table_name: table.tablename });
+        if (!table.table_name) continue;
+        
+        const { data: rlsCheck, error: rlsError } = await supabase.rpc('check_table_tenant_rls_status', { 
+          table_name: table.table_name 
+        });
         
         if (rlsError) {
-          console.error(`Error checking RLS status for ${table.tablename}:`, rlsError);
+          console.error(`Error checking RLS status for ${table.table_name}:`, rlsError);
           continue;
         }
         
-        const isRlsEnabled = rlsCheck?.[0]?.rls_enabled || false;
+        const isRlsEnabled = rlsCheck?.[0]?.has_rls || false;
         
         let policies: RlsPolicy[] = [];
         if (isRlsEnabled) {
-          const { data: policyData, error: policyError } = await supabase
-            .from("pg_policies")
-            .select("*")
-            .eq("tablename", table.tablename)
-            .eq("schemaname", "public");
+          // Get policies for this table via RPC call
+          const { data: policyData, error: policyError } = await supabase.rpc('get_table_policies', {
+            table_name: table.table_name
+          });
             
           if (policyError) {
-            console.error(`Error fetching policies for ${table.tablename}:`, policyError);
-          } else {
+            console.error(`Error fetching policies for ${table.table_name}:`, policyError);
+          } else if (policyData) {
             policies = policyData;
           }
         }
         
         tableResults.push({
-          tablename: table.tablename,
+          tablename: table.table_name,
           rlsEnabled: isRlsEnabled,
           policies: policies
         });

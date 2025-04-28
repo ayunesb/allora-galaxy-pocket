@@ -38,12 +38,12 @@ export default function WeeklySummaryFeed() {
     // Cast the metadata to ensure it has the right properties
     const formattedSummaries: WeeklySummary[] = (data || []).map(item => ({
       ...item,
-      metadata: typeof item.metadata === 'string' 
-        ? { total_decisions: 0, ai_approval_rate: 0 } 
-        : {
-            total_decisions: item.metadata?.total_decisions || 0,
-            ai_approval_rate: item.metadata?.ai_approval_rate || 0
-          }
+      metadata: {
+        total_decisions: typeof item.metadata === 'object' && item.metadata !== null ? 
+          (item.metadata as any).total_decisions || 0 : 0,
+        ai_approval_rate: typeof item.metadata === 'object' && item.metadata !== null ? 
+          (item.metadata as any).ai_approval_rate || 0 : 0
+      }
     }));
 
     setSummaries(formattedSummaries);
