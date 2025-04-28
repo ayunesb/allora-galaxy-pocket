@@ -6,24 +6,7 @@ import { useTenant } from "@/hooks/useTenant";
 import { useQuery } from "@tanstack/react-query";
 import type { KpiAlert, KpiInsight, UnifiedAlert } from "@/types/kpi";
 
-export interface UnifiedKpiAlert {
-  id: string;
-  kpi_name: string;
-  description: string;
-  severity: 'low' | 'medium' | 'high';
-  status: 'pending' | 'resolved' | 'triggered';
-  created_at: string;
-  triggered_at?: string;
-  message?: string;
-  current_value?: number;
-  previous_value?: number;
-  percent_change?: number;
-  campaign_id?: string;
-  tenant_id: string;
-  source_type: 'kpi_alert' | 'kpi_insight';
-  threshold?: number;
-  condition?: string;
-}
+export interface UnifiedKpiAlert extends UnifiedAlert {}
 
 interface UseUnifiedKpiAlertsOptions {
   days?: number;
@@ -71,7 +54,7 @@ export function useUnifiedKpiAlerts(options?: UseUnifiedKpiAlertsOptions) {
         ...item,
         description: item.description || '',
         source_type: 'kpi_alert' as const
-      })) as UnifiedKpiAlert[];
+      })) as UnifiedAlert[];
     },
     enabled: !!tenant?.id,
   });
@@ -119,7 +102,7 @@ export function useUnifiedKpiAlerts(options?: UseUnifiedKpiAlertsOptions) {
         campaign_id: insight.campaign_id,
         message: insight.suggested_action,
         source_type: 'kpi_insight' as const,
-      })) as UnifiedKpiAlert[];
+      })) as UnifiedAlert[];
     },
     enabled: !!tenant?.id,
   });
@@ -206,7 +189,7 @@ export function useUnifiedKpiAlerts(options?: UseUnifiedKpiAlertsOptions) {
   };
   
   // Combine both data sources
-  const unifiedAlerts: UnifiedKpiAlert[] = [...kpiAlerts, ...kpiInsights];
+  const unifiedAlerts: UnifiedAlert[] = [...kpiAlerts, ...kpiInsights];
   
   // Remove any duplicates by ID
   const uniqueAlerts = unifiedAlerts.reduce((acc, current) => {
@@ -215,7 +198,7 @@ export function useUnifiedKpiAlerts(options?: UseUnifiedKpiAlertsOptions) {
       return [...acc, current];
     }
     return acc;
-  }, [] as UnifiedKpiAlert[]);
+  }, [] as UnifiedAlert[]);
   
   // Sort by created date
   const sortedAlerts = uniqueAlerts.sort(
