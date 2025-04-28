@@ -33,15 +33,16 @@ export default function AIDecisionsPage() {
     }
   });
   
-  const { data: approvalStatsData, isLoading: statsLoading, error: statsError } = useQuery({
+  const { data, isLoading: statsLoading, error: statsError } = useQuery({
     queryKey: ['approval-stats'],
     queryFn: async () => {
       const { data, error } = await supabase
         .rpc('count_strategy_approvals');
         
       if (error) throw error;
-      // Cast the result to match ApprovalStats interface
-      return data as ApprovalStats;
+      // Handle the case where data could be an array or a single object
+      // Type assertion to match our ApprovalStats interface
+      return data as unknown as ApprovalStats;
     }
   });
 
@@ -65,7 +66,8 @@ export default function AIDecisionsPage() {
     );
   }
 
-  const approvalStats = approvalStatsData || { total_approved: 0, ai_approved: 0, human_approved: 0 };
+  // Use safe defaults if data is missing
+  const approvalStats = data || { total_approved: 0, ai_approved: 0, human_approved: 0 };
   const aiApprovalRate = approvalStats.total_approved > 0 
     ? Math.round((approvalStats.ai_approved / approvalStats.total_approved) * 100) 
     : 0;

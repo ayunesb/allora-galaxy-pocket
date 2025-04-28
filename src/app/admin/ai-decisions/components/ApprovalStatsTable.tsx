@@ -2,9 +2,10 @@
 import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Strategy } from "@/types/strategy";
 
 export interface ApprovalStatsTableProps {
-  strategies: any[];
+  strategies: Strategy[];
 }
 
 export function ApprovalStatsTable({ strategies }: ApprovalStatsTableProps) {

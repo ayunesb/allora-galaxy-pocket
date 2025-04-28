@@ -4,27 +4,35 @@ import { useStrategyAndCampaigns } from "./hooks/useStrategyAndCampaigns";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import ErrorAlert from "@/components/ui/ErrorAlert";
 import { Strategy } from "@/types/strategy";
-import { Campaign, ExecutionStatus } from "@/types/campaign";
+import { Campaign } from "@/types/campaign";
 
 export default function DashboardPage() {
   const { strategies, campaigns } = useStrategyAndCampaigns();
 
-  // Type-safe handling of strategy and campaign data with proper typing
-  const typedStrategies: Strategy[] = strategies?.map(strategy => ({
-    ...strategy,
-    status: strategy.status as Strategy['status'],
-    metrics_baseline: strategy.metrics_baseline as Record<string, any>,
-    diagnosis: strategy.diagnosis as Record<string, any>,
-    onboarding_data: strategy.onboarding_data as Record<string, any>
-  })) || [];
+  // Type-safe handling of strategy and campaign data
+  const typedStrategies: Strategy[] = React.useMemo(() => {
+    if (!strategies) return [];
+    return strategies.map(strategy => ({
+      ...strategy,
+      status: strategy.status as Strategy['status'],
+      tags: Array.isArray(strategy.tags) ? strategy.tags : [],
+      metrics_baseline: strategy.metrics_baseline || {},
+      diagnosis: strategy.diagnosis || {},
+      onboarding_data: strategy.onboarding_data || {}
+    }));
+  }, [strategies]);
 
-  const typedCampaigns: Campaign[] = campaigns?.map(campaign => ({
-    ...campaign,
-    status: campaign.status as Campaign['status'],
-    execution_status: campaign.execution_status as ExecutionStatus,
-    scripts: campaign.scripts as Record<string, string>,
-    execution_metrics: campaign.execution_metrics as Record<string, any>
-  })) || [];
+  const typedCampaigns: Campaign[] = React.useMemo(() => {
+    if (!campaigns) return [];
+    return campaigns.map(campaign => ({
+      ...campaign,
+      status: campaign.status as Campaign['status'],
+      execution_status: campaign.execution_status as Campaign['execution_status'],
+      scripts: campaign.scripts || {},
+      execution_metrics: campaign.execution_metrics || {},
+      metrics: campaign.metrics || {}
+    }));
+  }, [campaigns]);
 
   return (
     <div className="container mx-auto py-8 px-4">

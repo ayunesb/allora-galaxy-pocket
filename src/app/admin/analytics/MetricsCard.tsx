@@ -5,17 +5,21 @@ import { TrendingUp, TrendingDown } from "lucide-react";
 
 export interface MetricsCardProps {
   title: string;
-  value: string;
+  value: string | number;
   trend?: string;
   change?: string;
+  description?: string;
 }
 
-export function MetricsCard({ title, value, trend, change }: MetricsCardProps) {
+export function MetricsCard({ title, value, trend, change, description }: MetricsCardProps) {
+  // Convert value to string to ensure proper display
+  const displayValue = typeof value === 'number' ? value.toString() : value;
+  
   return (
     <Card>
       <CardContent className="pt-6">
         <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
-        <div className="text-2xl font-bold mt-1">{value}</div>
+        <div className="text-2xl font-bold mt-1">{displayValue}</div>
         
         {trend && change && (
           <div className="flex items-center mt-2">
@@ -28,6 +32,10 @@ export function MetricsCard({ title, value, trend, change }: MetricsCardProps) {
               {change}
             </span>
           </div>
+        )}
+
+        {description && (
+          <p className="text-xs text-muted-foreground mt-1">{description}</p>
         )}
       </CardContent>
     </Card>

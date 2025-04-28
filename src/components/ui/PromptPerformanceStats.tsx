@@ -7,7 +7,7 @@ export interface PromptPerformanceStatsProps {
   downvotes: number;
 }
 
-export default function PromptPerformanceStats({ upvotes, downvotes }: PromptPerformanceStatsProps) {
+export function PromptPerformanceStats({ upvotes, downvotes }: PromptPerformanceStatsProps) {
   return (
     <div className="flex items-center space-x-4">
       <div className="flex items-center">
@@ -22,5 +22,4 @@ export default function PromptPerformanceStats({ upvotes, downvotes }: PromptPer
   );
 }
 
-// Also export named export
-export { PromptPerformanceStats };
+export default PromptPerformanceStats;

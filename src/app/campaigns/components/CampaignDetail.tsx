@@ -10,7 +10,7 @@ import ErrorAlert from "@/components/ui/ErrorAlert";
 import { Campaign } from "@/types/campaign";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CampaignScripts from "./CampaignScripts";
-import CampaignExecutionMetrics from "./CampaignExecutionMetrics";
+import { CampaignExecutionMetrics } from "./CampaignExecutionMetrics";
 import { ArrowLeft, Play, Pause } from "lucide-react";
 import { useCampaignIntegration } from "@/hooks/useCampaignIntegration";
 import { toast } from "sonner";

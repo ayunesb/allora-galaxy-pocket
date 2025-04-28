@@ -11,8 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function CampaignPage() {
+  // Only use allowed status values from type
   const [selected, setSelected] = useState<number | null>(null);
-  const [status, setStatus] = useState<CampaignStatus>("active");
+  const [status, setStatus] = useState<"active" | "draft" | "paused" | "completed">("active");
   const { tenant } = useTenant();
 
   const { data: campaigns, isLoading, error } = useQuery({
