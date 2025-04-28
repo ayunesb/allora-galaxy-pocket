@@ -1,4 +1,3 @@
-
 export interface AgentMemory {
   id: string;
   agent_name: string;
@@ -23,7 +22,7 @@ export interface AgentProfile {
   avatar_url?: string;
   language: string;
   enabled_tools?: string[];
-  memory_scope?: string[];
+  memory_scope: string[];
   channels?: string[];
   memory_score?: number;
   created_at: string;
@@ -42,11 +41,10 @@ export interface AgentFeedback {
   created_at: string;
   tenant_id: string;
   task_id?: string;
-  // Added missing properties
   from_agent?: string;
   to_agent?: string;
   strategy_id?: string;
-  campaign_id?: string; // Added to link feedback to campaigns
+  campaign_id?: string;
 }
 
 export interface PromptPerformanceData {
@@ -87,7 +85,6 @@ export interface AgentCollabMessage {
   tenant_id: string;
 }
 
-// New interface for campaign approval status
 export interface ApprovalStatus {
   id: string;
   item_id: string;
@@ -99,7 +96,6 @@ export interface ApprovalStatus {
   feedback?: string;
 }
 
-// New interface for decisions
 export interface Decision {
   id: string;
   strategy_id: string;

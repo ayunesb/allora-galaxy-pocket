@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
@@ -26,23 +27,23 @@ export default function RlsAuditReport() {
     ];
     
     tables.map(table => {
-      if (!table.hasRls) {
-        rows.push([table.tableName, 'No', '-', '-', '-', 'N/A']);
+      if (!table.rlsEnabled) {
+        rows.push([table.tablename, 'No', '-', '-', '-', 'N/A']);
         return;
       }
       
       if (!table.policies || table.policies.length === 0) {
-        rows.push([table.tableName, 'Yes', 'NO POLICIES', '-', '-', 'CRITICAL: RLS enabled but no policies']);
+        rows.push([table.tablename, 'Yes', 'NO POLICIES', '-', '-', 'CRITICAL: RLS enabled but no policies']);
         return;
       }
       
-      const testResult = testResults.find(r => r.tableName === table.tableName);
+      const testResult = testResults.find(r => r.tableName === table.tablename);
       table.policies.forEach(policy => {
         const definition = policy.definition.toLowerCase();
         const hasAuthUid = definition.includes('auth.uid()');
         const hasTenantReference = definition.includes('tenant_id') || definition.includes('user_id');
         rows.push([
-          table.tableName,
+          table.tablename,
           'Yes',
           policy.policyname,
           policy.command,

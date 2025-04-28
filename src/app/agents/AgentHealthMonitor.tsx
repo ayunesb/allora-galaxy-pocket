@@ -1,134 +1,170 @@
 
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import ErrorAlert from '@/components/ui/ErrorAlert';
-
-interface HealthMetric {
-  timestamp: string;
-  value: number;
-}
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface AgentHealthMonitorProps {
   agentName: string;
 }
 
+interface HealthData {
+  health_score: number;
+  alertCount: number;
+  last_check: string;
+  status: 'healthy' | 'warning' | 'critical';
+}
+
 export default function AgentHealthMonitor({ agentName }: AgentHealthMonitorProps) {
-  const [metrics, setMetrics] = useState<HealthMetric[]>([]);
+  const [healthData, setHealthData] = useState<HealthData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    async function fetchHealthMetrics() {
+    const fetchHealthData = async () => {
       if (!agentName) {
-        setMetrics([]);
         setLoading(false);
         return;
       }
-      
+
       try {
         setLoading(true);
-        // Fetch agent performance metrics
-        const { data, error } = await supabase
-          .from('agent_performance_logs')
-          .select('created_at, metrics')
+        // Get agent health metrics
+        const { data: agentData, error: agentError } = await supabase
+          .from('agent_profiles')
+          .select('memory_score')
           .eq('agent_name', agentName)
-          .order('created_at', { ascending: true });
-          
-        if (error) throw error;
+          .single();
+
+        if (agentError) throw agentError;
+
+        // Get alert count
+        const { data: alertData, error: alertError } = await supabase
+          .from('agent_alerts')
+          .select('count', { count: 'exact' })
+          .eq('agent', agentName)
+          .eq('status', 'unresolved');
+
+        if (alertError) throw alertError;
+
+        // Determine status based on health score and alerts
+        const health_score = agentData?.memory_score || 50;
+        const alertCount = alertData?.length || 0;
         
-        // Transform data for charting
-        const transformedData = data.map(item => ({
-          timestamp: new Date(item.created_at).toLocaleDateString(),
-          value: item.metrics?.health_score || 0
-        }));
-        
-        setMetrics(transformedData);
+        let status: 'healthy' | 'warning' | 'critical';
+        if (health_score > 75) {
+          status = 'healthy';
+        } else if (health_score > 40) {
+          status = 'warning';
+        } else {
+          status = 'critical';
+        }
+
+        setHealthData({
+          health_score,
+          alertCount,
+          last_check: new Date().toISOString(),
+          status
+        });
       } catch (err) {
-        console.error("Error fetching agent health metrics:", err);
-        setError(err instanceof Error ? err : new Error('Failed to fetch agent health metrics'));
+        console.error('Error fetching agent health data:', err);
+        setError(err instanceof Error ? err : new Error('Failed to fetch agent health data'));
       } finally {
         setLoading(false);
       }
-    }
-    
-    fetchHealthMetrics();
+    };
+
+    fetchHealthData();
   }, [agentName]);
 
   if (loading) {
     return (
       <div className="flex justify-center p-8">
-        <LoadingSpinner size="lg" label="Loading agent health metrics..." />
+        <LoadingSpinner size="md" label="Loading agent health data..." />
       </div>
     );
   }
-  
+
   if (error) {
     return (
-      <ErrorAlert 
-        title="Failed to load agent health metrics" 
-        description={error.message}
-        onRetry={() => window.location.reload()}
-      />
+      <Alert variant="destructive">
+        <AlertDescription>
+          {error.message}
+        </AlertDescription>
+      </Alert>
     );
   }
 
-  if (metrics.length === 0) {
+  if (!agentName) {
     return (
       <Card>
         <CardHeader>
           <CardTitle>Agent Health</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground text-center py-8">
-            No health metrics available for this agent yet.
-          </p>
+          <p className="text-muted-foreground">No agent selected</p>
         </CardContent>
       </Card>
     );
   }
 
-  const latestValue = metrics[metrics.length - 1]?.value || 0;
-  
+  if (!healthData) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Agent Health</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">No health data available for this agent</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const getHealthColor = () => {
+    switch (healthData.status) {
+      case 'healthy':
+        return 'bg-green-500';
+      case 'warning':
+        return 'bg-amber-500';
+      case 'critical':
+        return 'bg-red-500';
+      default:
+        return 'bg-gray-500';
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Agent Health Monitor</CardTitle>
+        <CardTitle>Agent Health Score</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="mb-4">
-          <span className="text-2xl font-bold">{latestValue}</span>
-          <span className="text-muted-foreground ml-2">Health Score</span>
-        </div>
-        
-        <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={metrics}>
-              <XAxis dataKey="timestamp" />
-              <YAxis domain={[0, 100]} />
-              <Tooltip />
-              <Line 
-                type="monotone" 
-                dataKey="value" 
-                stroke="#8884d8" 
-                strokeWidth={2}
-                dot={false}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4 mt-4">
-          <div className="border rounded p-3">
-            <p className="text-sm font-medium">Memory Score</p>
-            <p className="text-xl">{metrics[metrics.length - 1]?.value || 0}%</p>
+        <div className="space-y-4">
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-medium">Health Score</span>
+              <span className="text-sm font-medium">{healthData.health_score}%</span>
+            </div>
+            <Progress value={healthData.health_score} className={getHealthColor()} />
           </div>
-          <div className="border rounded p-3">
-            <p className="text-sm font-medium">Execution Rate</p>
-            <p className="text-xl">100%</p>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="border rounded-md p-3">
+              <h3 className="text-sm font-medium text-muted-foreground">Status</h3>
+              <p className="mt-1 font-semibold capitalize">{healthData.status}</p>
+            </div>
+            <div className="border rounded-md p-3">
+              <h3 className="text-sm font-medium text-muted-foreground">Active Alerts</h3>
+              <p className="mt-1 font-semibold">{healthData.alertCount}</p>
+            </div>
           </div>
+          
+          <p className="text-xs text-muted-foreground">
+            Last checked: {new Date(healthData.last_check).toLocaleString()}
+          </p>
         </div>
       </CardContent>
     </Card>

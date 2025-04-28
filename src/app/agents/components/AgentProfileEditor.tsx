@@ -1,230 +1,134 @@
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useTenant } from "@/hooks/useTenant";
+
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-import { useUpdateAgentProfile } from "../hooks/useUpdateAgentProfile";
-import { type AgentProfile } from "../hooks/useAgentProfile";
-import AgentPromptEditor from "./AgentPromptEditor";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { useUpdateAgentProfile } from '../hooks/useUpdateAgentProfile';
+import { useTenant } from '@/hooks/useTenant';
+import { toast } from 'sonner';
+import { AgentProfile } from '@/types/agent';
 
-const agentFormSchema = z.object({
-  agent_name: z.string().min(2).max(50),
-  role: z.string().min(2),
-  tone: z.string(),
-  language: z.string(),
-  channels: z.array(z.string()),
-  enabled_tools: z.array(z.string()),
-  avatar_url: z.string().url().optional(),
-  model_provider: z.enum(['openai', 'gemini', 'anthropic']).optional(),
-});
+interface AgentProfileEditorProps {
+  agent: AgentProfile;
+  onSave?: () => void;
+}
 
-type AgentFormValues = z.infer<typeof agentFormSchema>;
-
-const tones = ["Friendly", "Professional", "Assertive", "Playful"];
-const languages = ["English", "Spanish", "French", "German"];
-const channels = ["Email", "WhatsApp", "TikTok", "Meta"];
-const tools = ["Strategy", "Campaign", "Assistant", "Reports"];
-const modelProviders = ["openai", "gemini", "anthropic"];
-
-export default function AgentProfileEditor({ initialData }: { initialData?: AgentProfile }) {
+export default function AgentProfileEditor({ agent, onSave }: AgentProfileEditorProps) {
   const { tenant } = useTenant();
-  const { toast } = useToast();
-  const { mutate: updateAgent, isPending } = useUpdateAgentProfile();
-
-  const form = useForm<AgentFormValues>({
-    resolver: zodResolver(agentFormSchema),
-    defaultValues: initialData || {
-      agent_name: "",
-      role: "",
-      tone: "Professional",
-      language: "English",
-      channels: [],
-      enabled_tools: ["Strategy", "Assistant"],
-      avatar_url: "",
-      model_provider: "openai",
-    },
+  const [profile, setProfile] = useState({
+    agent_name: agent.agent_name,
+    role: agent.role,
+    tone: agent.tone,
+    language: agent.language,
+    avatar_url: agent.avatar_url || '',
   });
+  const [isUpdating, setIsUpdating] = useState(false);
+  const { updateProfile } = useUpdateAgentProfile();
 
-  const [mainPrompt, setMainPrompt] = useState("");
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setProfile(prev => ({ ...prev, [name]: value }));
+  };
 
-  async function onSubmit(data: AgentFormValues) {
-    if (!tenant) return;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    try {
-      await updateAgent({
-        ...data,
-        tenant_id: tenant.id,
-      });
-      
-      toast({
-        title: "Agent profile updated",
-        description: "Your changes have been saved successfully.",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update agent profile.",
-        variant: "destructive",
-      });
+    if (!tenant) {
+      toast.error('No active workspace selected');
+      return;
     }
-  }
+
+    setIsUpdating(true);
+    try {
+      await updateProfile({
+        id: agent.id,
+        profileData: {
+          ...profile
+        }
+      });
+      toast.success('Agent profile updated');
+      if (onSave) onSave();
+    } catch (error) {
+      console.error('Error updating agent profile:', error);
+      toast.error('Failed to update agent profile');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="agent_name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Agent Name</FormLabel>
-              <FormControl>
-                <Input placeholder="e.g. Clara, Nova" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+    <Card>
+      <form onSubmit={handleSubmit}>
+        <CardContent className="space-y-4 pt-6">
+          <div>
+            <label htmlFor="agent_name" className="block text-sm font-medium mb-1">Name</label>
+            <Input
+              id="agent_name"
+              name="agent_name"
+              value={profile.agent_name}
+              onChange={handleChange}
+              required
+              disabled={isUpdating}
+            />
+          </div>
+          
+          <div>
+            <label htmlFor="role" className="block text-sm font-medium mb-1">Role</label>
+            <Input
+              id="role"
+              name="role"
+              value={profile.role}
+              onChange={handleChange}
+              required
+              disabled={isUpdating}
+            />
+          </div>
 
-        <FormField
-          control={form.control}
-          name="role"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Role</FormLabel>
-              <FormControl>
-                <Input placeholder="e.g. Sales Coach, Marketing Assistant" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <div>
+            <label htmlFor="tone" className="block text-sm font-medium mb-1">Tone</label>
+            <Textarea
+              id="tone"
+              name="tone"
+              value={profile.tone}
+              onChange={handleChange}
+              required
+              disabled={isUpdating}
+              rows={3}
+            />
+          </div>
 
-        <FormField
-          control={form.control}
-          name="tone"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Tone</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a tone" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {tones.map((tone) => (
-                    <SelectItem key={tone} value={tone}>
-                      {tone}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <div>
+            <label htmlFor="language" className="block text-sm font-medium mb-1">Language</label>
+            <Input
+              id="language"
+              name="language"
+              value={profile.language}
+              onChange={handleChange}
+              required
+              disabled={isUpdating}
+            />
+          </div>
 
-        <FormField
-          control={form.control}
-          name="language"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Primary Language</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a language" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {languages.map((lang) => (
-                    <SelectItem key={lang} value={lang}>
-                      {lang}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="avatar_url"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Avatar URL</FormLabel>
-              <FormControl>
-                <Input 
-                  placeholder="Optional avatar image URL" 
-                  {...field} 
-                  value={field.value || ''} 
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="model_provider"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Model Provider</FormLabel>
-              <Select 
-                onValueChange={field.onChange} 
-                defaultValue={field.value}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select model provider" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {modelProviders.map((provider) => (
-                    <SelectItem key={provider} value={provider}>
-                      {provider.charAt(0).toUpperCase() + provider.slice(1)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <Button type="submit" disabled={isPending}>
-          {isPending ? "Saving..." : "Save Changes"}
-        </Button>
+          <div>
+            <label htmlFor="avatar_url" className="block text-sm font-medium mb-1">Avatar URL (optional)</label>
+            <Input
+              id="avatar_url"
+              name="avatar_url"
+              value={profile.avatar_url}
+              onChange={handleChange}
+              disabled={isUpdating}
+              placeholder="https://example.com/avatar.png"
+            />
+          </div>
+        </CardContent>
+        
+        <CardFooter>
+          <Button type="submit" disabled={isUpdating}>
+            {isUpdating ? 'Saving...' : 'Save Profile'}
+          </Button>
+        </CardFooter>
       </form>
-      <div className="mt-10">
-        <AgentPromptEditor
-          agentName={initialData?.agent_name || ""}
-          initialPrompt={mainPrompt}
-          onUpdate={setMainPrompt}
-        />
-      </div>
-    </Form>
+    </Card>
   );
 }

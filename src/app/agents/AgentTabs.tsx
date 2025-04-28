@@ -12,7 +12,7 @@ interface AgentTabsProps {
 
 export default function AgentTabs({ agent }: AgentTabsProps) {
   // Only pass agent to the components that expect AgentProfile.
-  // For AgentHealthMonitor, pass array of names (empty if not defined)
+  // For AgentHealthMonitor, pass agentName (empty if agent not defined)
   const agentName = agent?.agent_name || "";
 
   return (
