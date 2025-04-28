@@ -1,1 +1,41 @@
+
 project_id = "lxsuqqlfuftnvuvtctsx"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://localhost"
+
+[inbucket]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+
+[analytics]
+enabled = false
+port = 54327
+vector_port = 54328
+
+[functions]
+enabled = true
+
+[functions.check-rls-policies]
+verify_jwt = true
