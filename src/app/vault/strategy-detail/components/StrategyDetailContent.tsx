@@ -48,8 +48,14 @@ export function StrategyDetailContent() {
         updated_at: data.updated_at || data.created_at,
         version: data.version || '1',
         metrics_baseline: data.metrics_baseline || {},
+        metrics_target: data.metrics_target || {},
         diagnosis: data.diagnosis || {},
-        onboarding_data: data.onboarding_data || {}
+        tenant_id: data.tenant_id,
+        user_id: data.user_id,
+        generated_by: data.generated_by || 'CEO Agent',
+        assigned_agent: data.assigned_agent || '',
+        auto_approved: data.auto_approved || false,
+        health_score: data.health_score || 0
       };
       
       return strategyData;

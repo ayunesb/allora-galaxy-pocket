@@ -1,19 +1,11 @@
-
 import React from "react";
 import { ScriptDialog } from "@/components/ScriptDialog";
 import type { Strategy } from "@/types/strategy";
 
 interface StrategyPreviewProps {
-  id: string;
-  title: string;
-  description: string | null;
-  created_at?: string | null;
-  updated_at?: string | null;
-  tenant_id: string | null;
-  industry?: string | null;
-  goal?: string | null;
-  confidence?: string | null;
-  status?: string | null;
+  strategy: Strategy;
+  onApprove?: () => void;
+  onReject?: () => void;
 }
 
 // Helper type to add optional fields for the AI conversation
@@ -35,7 +27,7 @@ const getAICreationConversation = (strategy: EnhancedStrategy) => (
   </div>
 );
 
-export default function StrategyPreview(props: StrategyPreviewProps) {
+export function StrategyPreview({ strategy, onApprove, onReject }: StrategyPreviewProps) {
   const {
     title,
     description,
@@ -44,7 +36,7 @@ export default function StrategyPreview(props: StrategyPreviewProps) {
     goal,
     confidence,
     status
-  } = props;
+  } = strategy;
 
   // Prepare the full script details for the dialog.
   const fullStrategyInfo = [
@@ -67,11 +59,11 @@ export default function StrategyPreview(props: StrategyPreviewProps) {
 
   // For AI creation explanation, pass all available props in a Strategy object
   const enhancedStrategy: EnhancedStrategy = {
-    id: props.id,
+    id: strategy.id,
     title,
     description: description || '',
     created_at: created_at || '',
-    tenant_id: props.tenant_id || undefined,
+    tenant_id: strategy.tenant_id || undefined,
     status: strategyStatus,
     industry,
     goal,

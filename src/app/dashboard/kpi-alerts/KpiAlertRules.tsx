@@ -1,254 +1,267 @@
-import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { PlusCircle, AlertTriangle, Trash2, Edit } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { MoreVertical, Edit, Copy, Trash, AlertCircle } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useTenant } from "@/hooks/useTenant";
-import KpiAlertRuleForm from "./KpiAlertRuleForm";
-import { KpiAlertRule, KpiAlert } from "@/types/kpi";
+import { supabase } from "@/integrations/supabase/client";
+import { KpiAlert, KpiAlertRule } from "@/types/kpi";
+import { KpiAlertRuleForm } from "./KpiAlertRuleForm";
+import { useToast } from "@/hooks/use-toast";
+import { formatDistanceToNow } from "date-fns";
 
-export default function KpiAlertRules() {
+export function KpiAlertRules() {
+  const navigate = useNavigate();
   const { tenant } = useTenant();
+  const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isOpen, setIsOpen] = useState(false);
+  const [open, setOpen] = useState(false);
   const [selectedRule, setSelectedRule] = useState<KpiAlertRule | null>(null);
-  const [activeTab, setActiveTab] = useState("rules");
 
-  // Fetch alert rules
-  const { data: alertRules = [], isLoading: rulesLoading } = useQuery({
+  const { data: rules, isLoading: isLoadingRules } = useQuery({
     queryKey: ["kpi-alert-rules", tenant?.id],
     queryFn: async () => {
       if (!tenant?.id) return [];
 
       const { data, error } = await supabase
-        .from('kpi_alert_rules' as any)
-        .select('*')
+        .from("kpi_alert_rules")
+        .select("*")
         .eq("tenant_id", tenant.id)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      return data as unknown as KpiAlertRule[];
+      if (error) {
+        console.error("Error fetching KPI alert rules:", error);
+        throw error;
+      }
+
+      return data as KpiAlertRule[];
     },
     enabled: !!tenant?.id,
   });
 
-  // Fetch active alerts
-  const { data: activeAlerts = [], isLoading: alertsLoading } = useQuery({
-    queryKey: ["kpi-active-alerts", tenant?.id],
+  const { data: alerts, isLoading: isLoadingAlerts } = useQuery({
+    queryKey: ["kpi-alerts", tenant?.id],
     queryFn: async () => {
       if (!tenant?.id) return [];
 
       const { data, error } = await supabase
         .from("kpi_alerts")
-        .select('*')
+        .select("*")
         .eq("tenant_id", tenant.id)
-        .in("status", ["pending", "triggered"])
-        .order("created_at", { ascending: false });
+        .order("triggered_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching KPI alerts:", error);
+        throw error;
+      }
+
       return data as KpiAlert[];
     },
     enabled: !!tenant?.id,
   });
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this alert rule?")) return;
-
-    try {
+  const deleteRuleMutation = useMutation({
+    mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from('kpi_alert_rules' as any)
+        .from("kpi_alert_rules")
         .delete()
         .eq("id", id);
 
-      if (error) throw error;
-
-      toast.success("Alert rule deleted");
-      queryClient.invalidateQueries({ queryKey: ["kpi-alert-rules"] });
-    } catch (err: any) {
-      toast.error("Failed to delete alert rule", {
-        description: err.message,
+      if (error) {
+        console.error("Error deleting KPI alert rule:", error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "KPI alert rule deleted successfully.",
       });
-    }
-  };
+      queryClient.invalidateQueries({ queryKey: ["kpi-alert-rules"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description:
+          error.message || "Failed to delete KPI alert rule. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleEdit = (rule: KpiAlertRule) => {
     setSelectedRule(rule);
-    setIsOpen(true);
+    setOpen(true);
   };
 
-  const onFormSuccess = () => {
-    setIsOpen(false);
-    setSelectedRule(null);
-    queryClient.invalidateQueries({ queryKey: ["kpi-alert-rules"] });
+  const handleCopy = (rule: KpiAlertRule) => {
+    navigate("/kpi-alerts/create", { state: { rule } });
   };
 
-  const handleAddNew = () => {
-    setSelectedRule(null);
-    setIsOpen(true);
+  const handleDelete = (id: string) => {
+    deleteRuleMutation.mutate(id);
   };
+
+  const isActive = (rule: KpiAlertRule) => rule.status === 'active';
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-3xl font-bold">KPI Alert Rules</h2>
-        <Button onClick={handleAddNew}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add Rule
-        </Button>
-      </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="rules">Alert Rules ({alertRules.length})</TabsTrigger>
-          <TabsTrigger value="active">
-            Active Alerts ({activeAlerts.length})
-            {activeAlerts.length > 0 && (
-              <AlertTriangle className="ml-2 h-4 w-4 text-amber-500" />
-            )}
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="rules">
-          {rulesLoading ? (
-            <div className="text-center py-8">Loading alert rules...</div>
-          ) : alertRules.length === 0 ? (
-            <Card>
-              <CardContent className="p-8 text-center">
-                <p className="text-muted-foreground mb-4">No alert rules configured yet.</p>
-                <Button onClick={handleAddNew} variant="outline">Create your first rule</Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4">
-              {alertRules.map((rule) => (
-                <Card key={rule.id} className="overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between items-start">
-                      <CardTitle className="text-lg font-medium">
-                        {rule.kpi_name}
-                      </CardTitle>
-                      <Badge variant={rule.active ? "default" : "outline"}>
-                        {rule.active ? "Active" : "Disabled"}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-2">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm font-medium">Condition:</p>
-                        <p className="text-sm">
-                          {rule.condition === '>' ? 'Greater than' : 
-                           rule.condition === '<' ? 'Less than' :
-                           rule.condition === 'falls_by_%' ? 'Falls by %' :
-                           rule.condition === 'rises_by_%' ? 'Rises by %' : 
-                           rule.condition} {rule.threshold}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Severity:</p>
-                        <p className="text-sm capitalize">{rule.severity}</p>
-                      </div>
-                    </div>
-                    <div className="flex space-x-2 mt-4">
-                      <Button variant="outline" size="sm" onClick={() => handleEdit(rule)}>
-                        <Edit className="h-4 w-4 mr-1" />
-                        Edit
+    <Card>
+      <CardHeader>
+        <CardTitle>KPI Alert Rules</CardTitle>
+        <CardDescription>
+          Manage rules that trigger alerts based on KPI metrics
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="mb-4">
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button>Add Alert Rule</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[625px]">
+              <DialogHeader>
+                <DialogTitle>
+                  {selectedRule ? "Edit Alert Rule" : "Create Alert Rule"}
+                </DialogTitle>
+                <DialogDescription>
+                  {selectedRule
+                    ? "Modify the settings for the selected alert rule."
+                    : "Define a new rule to monitor KPIs and trigger alerts."}
+                </DialogDescription>
+              </DialogHeader>
+              <KpiAlertRuleForm
+                open={open}
+                setOpen={setOpen}
+                rule={selectedRule}
+                setSelectedRule={setSelectedRule}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>KPI</TableHead>
+              <TableHead>Condition</TableHead>
+              <TableHead>Threshold</TableHead>
+              <TableHead>Severity</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rules?.map((rule) => (
+              <TableRow key={rule.id}>
+                <TableCell className="font-medium">{rule.name}</TableCell>
+                <TableCell>{rule.kpi_name}</TableCell>
+                <TableCell>{`${rule.condition} ${rule.compare_period}`}</TableCell>
+                <TableCell>{rule.threshold}</TableCell>
+                <TableCell>
+                  <Badge variant={rule.severity}>
+                    {rule.severity.charAt(0).toUpperCase() + rule.severity.slice(1)}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge variant={isActive(rule) ? "outline" : "secondary"}>
+                    {isActive(rule) ? "Active" : "Inactive"}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreVertical className="h-4 w-4" />
                       </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuItem onClick={() => handleEdit(rule)}>
+                        <Edit className="mr-2 h-4 w-4" /> Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleCopy(rule)}>
+                        <Copy className="mr-2 h-4 w-4" /> Copy
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
                         onClick={() => handleDelete(rule.id)}
-                        className="text-red-500 hover:bg-red-50"
+                        className="text-red-500"
                       >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        Delete
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
+                        <Trash className="mr-2 h-4 w-4" /> Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
 
-        <TabsContent value="active">
-          {alertsLoading ? (
-            <div className="text-center py-8">Loading active alerts...</div>
-          ) : activeAlerts.length === 0 ? (
-            <Card>
-              <CardContent className="p-8 text-center">
-                <p className="text-muted-foreground">No active alerts at this time.</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4">
-              {activeAlerts.map((alert) => (
-                <Card key={alert.id} className={`border-l-4 ${getSeverityBorderColor(alert.severity)}`}>
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="text-lg font-medium">{alert.kpi_name}</h3>
-                      <Badge variant={alert.status === "triggered" ? "destructive" : "outline"}>
-                        {alert.status}
-                      </Badge>
-                    </div>
-                    <p className="text-sm mb-2">
-                      {alert.description || `Alert for ${alert.kpi_name}`}
-                    </p>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <p className="font-medium">Current value:</p>
-                        <p>{alert.current_value}</p>
-                      </div>
-                      <div>
-                        <p className="font-medium">Threshold:</p>
-                        <p>{alert.threshold}</p>
-                      </div>
-                    </div>
-                    {alert.message && (
-                      <div className="mt-2 p-2 bg-gray-50 rounded text-sm">
-                        {alert.message}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+        {alerts.filter(alert => alert.status === "pending").length > 0 && (
+          <div className="mt-6">
+            <h3 className="text-lg font-medium mb-2">Recent Alerts</h3>
+            <div className="space-y-3">
+              {alerts
+                .filter(alert => alert.status === "pending")
+                .map((alert) => (
+                  <Card key={alert.id} className="border-red-200 bg-red-50">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">
+                        <AlertCircle className="mr-2 h-4 w-4 text-red-500" />
+                        {alert.kpi_name}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">
+                        {alert.description}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Triggered{" "}
+                        {formatDistanceToNow(new Date(alert.triggered_at), {
+                          addSuffix: true,
+                        })}
+                      </p>
+                    </CardContent>
+                  </Card>
+                ))}
             </div>
-          )}
-        </TabsContent>
-      </Tabs>
-
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogTitle>
-            {selectedRule ? "Edit Alert Rule" : "Create Alert Rule"}
-          </DialogTitle>
-          <KpiAlertRuleForm
-            initialData={selectedRule || undefined}
-            isEditing={!!selectedRule}
-            onSuccess={onFormSuccess}
-          />
-        </DialogContent>
-      </Dialog>
-    </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
-}
-
-function getSeverityBorderColor(severity?: string) {
-  switch (severity) {
-    case "low":
-      return "border-blue-500";
-    case "medium":
-      return "border-yellow-500";
-    case "high":
-      return "border-orange-500";
-    case "critical":
-      return "border-red-500";
-    default:
-      return "border-gray-500";
-  }
 }

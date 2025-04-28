@@ -30,7 +30,7 @@ export interface KpiAlert {
   threshold?: number;
   percent_change?: number;
   outcome?: string;
-  status: 'pending' | 'acknowledged' | 'resolved';
+  status: 'pending' | 'acknowledged' | 'resolved' | 'triggered';
   triggered_at: string;
   created_at: string;
   tenant_id: string;
@@ -39,7 +39,6 @@ export interface KpiAlert {
   message?: string;
 }
 
-// Add this interface to support KpiAlertRule
 export interface KpiAlertRule {
   id: string;
   name: string;
@@ -53,6 +52,8 @@ export interface KpiAlertRule {
   updated_at: string;
   tenant_id: string;
   last_triggered?: string;
+  active?: boolean;
+  compare_period?: string;
 }
 
 export interface KpiInsight {

@@ -1,3 +1,4 @@
+
 import { Json } from "./supabase";
 
 export type StrategyStatus = 
@@ -8,7 +9,8 @@ export type StrategyStatus =
   | "in_progress"
   | "completed"
   | "archived"
-  | "auto_approved";
+  | "auto_approved"
+  | "pending";
 
 export interface Strategy {
   id: string;
@@ -38,6 +40,9 @@ export interface Strategy {
   goals?: any[];
   channels?: string[];
   kpis?: any[];
+  impact_score?: number;
+  is_public?: boolean;
+  onboarding_data?: Record<string, any>;
 }
 
 export interface StrategyDraft {

@@ -1,147 +1,93 @@
-
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { WelcomeMessage } from "./components/WelcomeMessage";
-import { StrategyPreview } from "./components/StrategyPreview";
-import { CampaignSuggestions } from "./components/CampaignSuggestions";
-import { KpiSnapshot } from "./components/KpiSnapshot";
-import { CompetitorAnalysis } from "./components/CompetitorAnalysis";
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
-import type { Strategy } from "@/types/strategy";
-import type { Campaign } from "@/types/campaign";
-import { useAuth } from "@/hooks/useAuth";
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ArrowRight } from "lucide-react";
 import { useTenant } from "@/hooks/useTenant";
+import { Strategy } from "@/types/strategy";
 
-export default function StartupDashboard() {
-  const { user } = useAuth();
+export function StartupDashboard() {
   const { tenant } = useTenant();
-  const navigate = useNavigate();
-  const [welcome, setWelcome] = useState("Welcome back to Allora OS.");
-  
-  const { data: strategy } = useQuery({
-    queryKey: ['latest-strategy', tenant?.id],
-    queryFn: async (): Promise<Strategy | null> => {
-      if (!tenant?.id) return null;
-      
-      const { data, error } = await supabase
-        .from('vault_strategies')
-        .select('*')
-        .eq('tenant_id', tenant.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
 
-      if (error) {
-        if (error.code === 'PGRST116') return null; // No rows returned
-        throw error;
-      }
-      
-      // Cast and ensure all required fields exist
-      return {
-        ...data,
-        status: data.status as Strategy['status'],
-        id: data.id,
-        created_at: data.created_at,
-        title: data.title || '',
-        description: data.description || '',
-        // Add default values for potentially missing fields
-        tags: [],
-        goals: data.goal ? [data.goal] : [],
-        channels: [],
-        kpis: [],
-        target_audience: '',
-        reason_for_recommendation: ''
-      };
-    },
-    enabled: !!tenant?.id
-  });
-
-  const { data: campaigns } = useQuery({
-    queryKey: ['campaign-suggestions', tenant?.id],
-    queryFn: async (): Promise<Campaign[]> => {
+  const { data: strategiesData, isLoading: isLoadingStrategies } = useQuery({
+    queryKey: ['startup-strategies', tenant?.id],
+    queryFn: async () => {
       if (!tenant?.id) return [];
       
       const { data, error } = await supabase
-        .from('campaigns')
+        .from('strategies')
         .select('*')
         .eq('tenant_id', tenant.id)
-        .eq('status', 'draft')
-        .limit(3);
-
+        .order('created_at', { ascending: false })
+        .limit(5);
+      
       if (error) throw error;
       
-      // Cast and ensure all required fields exist
-      return (data || []).map(campaign => ({
-        ...campaign,
-        id: campaign.id,
-        name: campaign.name,
-        created_at: campaign.created_at,
-        updated_at: campaign.updated_at,
-        status: campaign.status as Campaign['status'],
-        execution_metrics: {},
-        scripts: {},
-        metrics: {}
-      }));
-    },
+      // Transform to match Strategy interface
+      return (data || []).map(item => ({
+        ...item,
+        metrics_target: item.metrics_target || {},
+        metrics_baseline: item.metrics_baseline || {},
+        tags: item.tags || [],
+        goals: item.goals || [],
+        channels: item.channels || [],
+        kpis: item.kpis || [],
+        generated_by: item.generated_by || 'CEO Agent',
+        assigned_agent: item.assigned_agent || '',
+        auto_approved: item.auto_approved || false,
+        health_score: item.health_score || 0,
+    } as Strategy));
+  },
     enabled: !!tenant?.id
   });
 
-  // Fetch welcome message
-  useEffect(() => {
-    if (!tenant?.id) return;
-    
-    async function fetchWelcomeMessage() {
-      const { data: logs, error } = await supabase
-        .from('system_logs')
-        .select('message')
-        .eq('tenant_id', tenant.id)
-        .eq('event_type', 'welcome_message')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (error) {
-        if (error.code !== 'PGRST116') console.error('Error fetching welcome message:', error);
-        return;
-      }
-
-      if (logs?.message) setWelcome(logs.message);
-    }
-
-    fetchWelcomeMessage();
-  }, [tenant?.id]);
-
-  useEffect(() => {
-    if (!user) {
-      navigate("/auth/signup");
-    }
-  }, [user, navigate]);
-
-  if (!user) return null;
-
-  const campaignData = campaigns?.map(c => ({
-    channel: c.name.split(' ')[0], // Simple extraction of channel from name
-    message: c.name
-  })) || [
-    { channel: "WhatsApp", message: "Start lead nurturing flow" },
-    { channel: "TikTok", message: "Launch awareness video series" },
-    { channel: "Email", message: "Schedule re-engagement drip" }
-  ];
+  const strategies = strategiesData || [];
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
-        <div className="space-y-6">
-          <WelcomeMessage message={welcome} />
-          <StrategyPreview strategy={strategy} />
-        </div>
-        <div className="space-y-6">
-          <CampaignSuggestions campaigns={campaignData} />
-          <KpiSnapshot />
-          <CompetitorAnalysis />
-        </div>
-      </div>
+    <div className="space-y-4">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+          <CardTitle className="text-base font-semibold">AI Strategy Recommendations</CardTitle>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/strategy">
+              View All <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {isLoadingStrategies ? (
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-[80%]" />
+              <Skeleton className="h-4 w-[60%]" />
+              <Skeleton className="h-4 w-[40%]" />
+            </div>
+          ) : strategies.length > 0 ? (
+            <div className="space-y-3">
+              {strategies.map((strategy) => (
+                <div key={strategy.id} className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium leading-none">{strategy.title}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {strategy.description}
+                    </p>
+                  </div>
+                  <Link to={`/strategy/${strategy.id}`}>
+                    <Button variant="secondary" size="sm">
+                      View
+                    </Button>
+                  </Link>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-4 text-muted-foreground">
+              No AI strategies available.
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

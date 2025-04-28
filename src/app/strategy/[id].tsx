@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -51,7 +50,10 @@ const StrategyDetail: React.FC = () => {
         target_audience: data.target_audience || 'No target audience defined.',
         goals: data.goals || [],
         channels: data.channels || [],
-        kpis: data.kpis || []
+        kpis: data.kpis || [],
+        metrics_target: data.metrics_target || {},
+        metrics_baseline: data.metrics_baseline || {},
+        tags: data.tags || []
       };
       
       return enhancedData;

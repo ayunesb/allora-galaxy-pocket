@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +12,7 @@ export function ApprovalStatsTable({ strategies }: ApprovalStatsTableProps) {
     totalApproved: strategies.filter(s => s.status === 'approved').length,
     aiApproved: strategies.filter(s => s.status === 'approved' && s.auto_approved).length,
     humanApproved: strategies.filter(s => s.status === 'approved' && !s.auto_approved).length,
-    pendingApproval: strategies.filter(s => s.status === 'pending').length,
+    pendingApproval: strategies.filter(s => s.status.includes('pending')).length,
     rejectedStrategies: strategies.filter(s => s.status === 'rejected').length
   };
   

@@ -83,13 +83,28 @@ export default function CampaignCreatePage() {
           
         if (error) throw error;
         
-        setStrategies((data || []) as Strategy[]);
+        setStrategies((data || []).map(item => ({
+          ...item,
+          metrics_target: item.metrics_target || {}, // Add missing required field
+          tags: item.tags || [],
+          goals: item.goals || [],
+          channels: item.channels || [],
+          kpis: item.kpis || [],
+        } as Strategy));
         
         if (initialStrategyId) {
           const selectedStrategy = data?.find(s => s.id === initialStrategyId) || null;
-          setSelectedStrategy(selectedStrategy as Strategy);
           
           if (selectedStrategy) {
+            setSelectedStrategy({
+              ...selectedStrategy,
+              metrics_target: selectedStrategy.metrics_target || {}, // Add missing required field
+              tags: selectedStrategy.tags || [],
+              goals: selectedStrategy.goals || [],
+              channels: selectedStrategy.channels || [],
+              kpis: selectedStrategy.kpis || [],
+            } as Strategy);
+            
             setName(`${selectedStrategy.title} Campaign`);
             setDescription(`Campaign based on: ${selectedStrategy.title}`);
           }

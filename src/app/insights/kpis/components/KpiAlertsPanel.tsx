@@ -1,83 +1,101 @@
-
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { AlertCircle, Bell } from "lucide-react";
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import type { KpiAlert } from "@/types/kpi";
-import { format } from "date-fns";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useTenant } from "@/hooks/useTenant";
+import { KpiAlert } from "@/types/kpi";
 
 interface KpiAlertsPanelProps {
-  alerts: KpiAlert[];
+  kpiName: string;
 }
 
-export default function KpiAlertsPanel({ alerts }: KpiAlertsPanelProps) {
-  if (!alerts?.length) {
+export function KpiAlertsPanel({ kpiName }: KpiAlertsPanelProps) {
+  const { tenant } = useTenant();
+
+  const { data: alerts, isLoading, error } = useQuery({
+    queryKey: ['kpi-alerts', kpiName],
+    queryFn: async () => {
+      if (!tenant?.id) return [];
+
+      const { data, error } = await supabase
+        .from('kpi_alerts')
+        .select('*')
+        .eq('tenant_id', tenant.id)
+        .eq('kpi_name', kpiName)
+        .order('triggered_at', { ascending: false });
+
+      if (error) {
+        console.error("Error fetching KPI alerts:", error);
+        return [];
+      }
+
+      return data as KpiAlert[];
+    },
+    enabled: !!tenant?.id && !!kpiName,
+    staleTime: 5 * 60 * 1000 // 5 minutes
+  });
+
+  const getBadgeVariant = (severity: KpiAlert['severity']) => {
+    switch (severity) {
+      case 'low': return "secondary";
+      case 'medium': return "outline";
+      case 'high': return "destructive";
+      default: return "default";
+    }
+  };
+
+  if (isLoading) {
     return (
-      <div className="text-center p-8 bg-slate-50 rounded-lg">
-        <Bell className="mx-auto h-8 w-8 text-muted-foreground mb-4 opacity-70" />
-        <h3 className="text-lg font-medium mb-2">No active alerts</h3>
-        <p className="text-muted-foreground max-w-md mx-auto">
-          Set up KPI threshold alerts to be notified when metrics exceed or fall below specified values.
-        </p>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Alerts</CardTitle>
+        </CardHeader>
+        <CardContent>
+          Loading alerts...
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Alerts</CardTitle>
+        </CardHeader>
+        <CardContent>
+          Error loading alerts.
+        </CardContent>
+      </Card>
     );
   }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center">
-          <AlertCircle className="h-5 w-5 mr-2 text-amber-500" />
-          KPI Alerts ({alerts.length})
-        </CardTitle>
+        <CardTitle>Recent Alerts</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {alerts.map((alert) => (
-            <div 
-              key={alert.id}
-              className="p-4 border rounded-lg flex justify-between items-start"
-            >
-              <div>
-                <div className="font-medium mb-1">
-                  {alert.kpi_name} {renderConditionSymbol(alert.condition)} {alert.threshold}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  {alert.triggered_at ? (
-                    <span>Triggered {format(new Date(alert.triggered_at), 'MMM d, yyyy')}</span>
-                  ) : (
-                    <span>Added {format(new Date(alert.created_at || Date.now()), 'MMM d, yyyy')}</span>
-                  )}
+          {alerts
+            .filter((alert) => alert.status === "pending") // Changed from "triggered"
+            .slice(0, 3)
+            .map((alert) => (
+              <div key={alert.id} className="bg-muted/50 p-4 rounded-lg border-l-4 border-yellow-400">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="font-medium text-sm">{alert.kpi_name}</h4>
+                    <p className="text-sm text-muted-foreground mt-1">{alert.description}</p>
+                  </div>
+                  <Badge variant={getBadgeVariant(alert.severity)}>
+                    {alert.severity}
+                  </Badge>
                 </div>
               </div>
-              <Badge 
-                variant={
-                  alert.status === 'triggered' ? 'destructive' : 
-                  alert.status === 'resolved' ? 'outline' : 
-                  'secondary'
-                }
-              >
-                {alert.status || alert.outcome}
-              </Badge>
-            </div>
-          ))}
+            ))}
         </div>
       </CardContent>
     </Card>
   );
-}
-
-// Helper function to render the appropriate condition symbol
-function renderConditionSymbol(condition?: '<' | '>' | 'falls_by_%' | 'rises_by_%' | string): string {
-  switch (condition) {
-    case '>':
-      return '>';
-    case '<':
-      return '<';
-    case 'falls_by_%':
-      return '↓';
-    case 'rises_by_%':
-      return '↑';
-    default:
-      return '-';
-  }
 }
