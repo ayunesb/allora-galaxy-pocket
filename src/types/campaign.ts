@@ -1,5 +1,5 @@
 
-export type CampaignStatus = 'draft' | 'active' | 'paused' | 'completed' | 'archived' | 'pending';
+export type CampaignStatus = 'draft' | 'active' | 'paused' | 'completed' | 'archived' | 'pending' | 'approved';
 
 export interface Campaign {
   id: string;

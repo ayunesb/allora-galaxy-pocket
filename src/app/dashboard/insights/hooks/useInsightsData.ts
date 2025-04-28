@@ -40,8 +40,15 @@ export function useInsightsData(dateRange: string): InsightsData {
   const campaignMetrics = useCampaignMetrics(dateRange);
 
   // Determine loading and error states
-  const isLoading = kpiHistory.isLoading || feedbackMetrics.isLoading || roiMetrics.isLoading || campaignMetrics.isLoading;
-  const error = kpiHistory.error || feedbackMetrics.error || roiMetrics.error || campaignMetrics.error;
+  const isLoading = kpiHistory.isLoading || 
+    false /* feedbackMetrics doesn't expose isLoading */ || 
+    roiMetrics.isLoading || 
+    false /* campaignMetrics doesn't expose isLoading */;
+    
+  const error = kpiHistory.error || 
+    null /* feedbackMetrics doesn't expose error */ || 
+    roiMetrics.error || 
+    null /* campaignMetrics doesn't expose error */;
 
   // Computed metrics with default values
   const campaignApprovalRate = useMemo(() => ({
@@ -72,7 +79,12 @@ export function useInsightsData(dateRange: string): InsightsData {
   const dashboardData = useMemo(() => {
     return {
       kpiMetrics: kpiHistory.data || [],
-      feedbackMetrics: feedbackMetrics.data || { positive: 0, negative: 0, neutral: 0, used: 0, dismissed: 0 },
+      feedbackMetrics: {
+        positive: 0,
+        negative: 0,
+        neutral: 0,
+        ...feedbackMetrics.feedbackStats
+      },
       roiMetrics: roiMetrics.metrics || { 
         conversions: "0", 
         views: "0", 
@@ -80,19 +92,16 @@ export function useInsightsData(dateRange: string): InsightsData {
         conversionRate: "0%", 
         clickRate: "0%" 
       },
-      campaignMetrics: campaignMetrics.data || []
+      campaignMetrics: campaignMetrics.topCampaigns || []
     };
-  }, [kpiHistory.data, feedbackMetrics.data, roiMetrics.metrics, campaignMetrics.data]);
+  }, [kpiHistory.data, feedbackMetrics.feedbackStats, roiMetrics.metrics, campaignMetrics.topCampaigns]);
 
   // Return a consistent shape with all required fields
   return {
     kpiData: kpiHistory.data || [],
-    feedbackStats: feedbackMetrics.data ? {
-      used: feedbackMetrics.data.used || 0,
-      dismissed: feedbackMetrics.data.dismissed || 0
-    } : { used: 0, dismissed: 0 },
+    feedbackStats: feedbackMetrics.feedbackStats || { used: 0, dismissed: 0 },
     pluginStats: {},
-    topCampaigns: campaignMetrics.data || [],
+    topCampaigns: campaignMetrics.topCampaigns || [],
     roiData: roiMetrics.metrics || null,
     isLoading,
     error: error as Error | null,

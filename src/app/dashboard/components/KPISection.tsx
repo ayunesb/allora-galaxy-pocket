@@ -1,219 +1,49 @@
 
-import React, { useState, useEffect } from "react";
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, TrendingUp, TrendingDown } from "lucide-react";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { useTenant } from "@/hooks/useTenant";
-import KpiMetricDialog from "./KpiMetricDialog";
-import { KpiAlert, KpiMetric } from "@/types/kpi";
+import { Plus } from "lucide-react";
+import { useKpiMetrics } from "@/hooks/useKpiMetrics"; 
+import KpiCard from "@/app/insights/kpis/components/KpiCard";
+import { KpiMetricDialog } from "@/app/dashboard/components/KpiMetricDialog"; 
 
-export default function KPISection() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [metrics, setMetrics] = useState<KpiMetric[]>([]);
-  const [alerts, setAlerts] = useState<KpiAlert[]>([]);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
-  const { tenant } = useTenant();
-
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!tenant?.id) return;
-      
-      setIsLoading(true);
-      try {
-        // Fetch metrics
-        const { data: metricsData, error: metricsError } = await supabase
-          .from('kpi_metrics')
-          .select('*')
-          .eq('tenant_id', tenant.id)
-          .order('updated_at', { ascending: false });
-
-        if (metricsError) throw metricsError;
-        
-        // Check if the kpi_alerts table exists
-        try {
-          // Attempt to fetch from kpi_alerts if it exists
-          const { data: alertsData, error: alertsError } = await supabase
-            .from('kpi_alerts')
-            .select('*')
-            .eq('tenant_id', tenant.id)
-            .eq('status', 'pending')
-            .order('created_at', { ascending: false });
-            
-          if (!alertsError && alertsData && alertsData.length > 0) {
-            setAlerts(alertsData as KpiAlert[]);
-          }
-        } catch (alertError) {
-          console.log("KPI alerts table might not exist yet:", alertError);
-          // Silently handle this error - not all installations will have kpi_alerts
-        }
-        
-        setMetrics(metricsData as KpiMetric[] || []);
-      } catch (error) {
-        console.error("Error fetching KPI data:", error);
-        toast.error("Failed to load KPI data");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [tenant?.id]);
-
-  const acknowledgeAlert = async (alertId: string) => {
-    if (!tenant?.id) return;
-    
-    try {
-      // Try to update the alert status
-      const { error } = await supabase
-        .from('kpi_alerts')
-        .update({ status: 'acknowledged' })
-        .eq('id', alertId)
-        .eq('tenant_id', tenant.id);
-      
-      if (!error) {
-        setAlerts(prev => prev.filter(a => a.id !== alertId));
-        toast.success("Alert acknowledged");
-      } else {
-        console.error("Error acknowledging alert:", error);
-        toast.error("Failed to acknowledge alert");
-      }
-    } catch (error) {
-      console.error("Error acknowledging alert:", error);
-      toast.error("Failed to acknowledge alert");
-    }
-  };
-
-  const handleAddMetric = (metricName: string) => {
-    setSelectedMetric(metricName);
-    setIsDialogOpen(true);
-  };
-
-  const formatValue = (value: number) => {
-    if (value >= 1000000) {
-      return (value / 1000000).toFixed(1) + 'M';
-    } else if (value >= 1000) {
-      return (value / 1000).toFixed(1) + 'K';
-    }
-    return value.toString();
-  };
-
-  const getPercentChange = (metric: KpiMetric) => {
-    const metricHistory = metrics.filter(m => m.metric === metric.metric);
-    if (metricHistory.length > 1) {
-      const current = metric.value;
-      const previous = metricHistory[1].value;
-      if (previous === 0) return null;
-      return ((current - previous) / previous) * 100;
-    }
-    return null;
-  };
-
-  const renderMetricCards = () => {
-    // Group by metric name and get the latest for each metric
-    const uniqueMetrics: Record<string, KpiMetric> = {};
-    metrics.forEach(metric => {
-      if (!uniqueMetrics[metric.metric || ''] || 
-          new Date(metric.updated_at) > new Date(uniqueMetrics[metric.metric || ''].updated_at)) {
-        uniqueMetrics[metric.metric || ''] = metric;
-      }
-    });
-    
-    return Object.values(uniqueMetrics).map((metric) => {
-      const percentChange = getPercentChange(metric);
-      const isPositive = percentChange && percentChange > 0;
-      const isNegative = percentChange && percentChange < 0;
-      
-      return (
-        <Card key={metric.id} className="overflow-hidden">
-          <CardHeader className="py-3">
-            <CardTitle className="text-sm font-medium">{metric.metric || metric.kpi_name}</CardTitle>
-          </CardHeader>
-          <CardContent className="pb-3">
-            <div className="flex justify-between items-baseline">
-              <h3 className="text-2xl font-bold">{formatValue(metric.value)}</h3>
-              {percentChange !== null && (
-                <div className={`flex items-center text-xs ${isPositive ? 'text-green-600' : isNegative ? 'text-red-600' : ''}`}>
-                  {isPositive ? <TrendingUp className="h-3 w-3 mr-1" /> : 
-                   isNegative ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
-                  {Math.abs(percentChange).toFixed(1)}%
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      );
-    });
-  };
-
+export function KPISection() {
+  const { data: metrics, isLoading, error, refetch } = useKpiMetrics();
+  
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold">KPI Metrics</h2>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={() => setIsDialogOpen(true)}
-        >
-          Add Metric
-        </Button>
-      </div>
-      
-      {alerts && alerts.length > 0 && (
-        <div className="mb-4 space-y-2">
-          {alerts.map((alert) => (
-            <div 
-              key={alert.id}
-              className="flex items-center justify-between p-2 bg-amber-50 border border-amber-200 rounded-md"
-            >
-              <div className="flex items-center">
-                <AlertCircle className="h-4 w-4 text-amber-500 mr-2" />
-                <span className="text-sm">{alert.message || alert.description}</span>
-              </div>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => acknowledgeAlert(alert.id)}
-              >
-                Dismiss
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>KPI Metrics</CardTitle>
+        <KpiMetricDialog onSuccess={() => refetch()} />
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="text-center py-4">Loading KPI metrics...</div>
+        ) : error ? (
+          <div className="text-center py-4 text-red-500">Error loading KPI metrics</div>
+        ) : metrics && metrics.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {metrics.map((metric, idx) => (
+              <KpiCard 
+                key={metric.id || idx}
+                kpi_name={metric.kpi_name || metric.metric}
+                value={metric.value}
+                trend={metric.trend}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground mb-4">No KPI metrics found</p>
+            <KpiMetricDialog>
+              <Button variant="outline" className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Add your first KPI metric
               </Button>
-            </div>
-          ))}
-        </div>
-      )}
-      
-      {isLoading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {[...Array(3)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardHeader className="py-3">
-                <div className="h-4 bg-gray-200 rounded-full w-2/3" />
-              </CardHeader>
-              <CardContent className="pb-3">
-                <div className="h-6 bg-gray-200 rounded-full w-1/2" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : metrics.length === 0 ? (
-        <div className="bg-muted/50 border rounded-lg p-6 text-center">
-          <p className="text-muted-foreground mb-2">No KPI metrics available yet</p>
-          <Button onClick={() => setIsDialogOpen(true)}>Add Your First Metric</Button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {renderMetricCards()}
-        </div>
-      )}
-      
-      <KpiMetricDialog 
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        selectedMetric={selectedMetric}
-        onSelectMetric={setSelectedMetric}
-      />
-    </div>
+            </KpiMetricDialog>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

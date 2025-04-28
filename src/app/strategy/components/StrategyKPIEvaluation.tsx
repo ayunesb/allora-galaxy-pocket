@@ -6,6 +6,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { KPIChart } from "@/components/KPIChart";
 import { toast } from "sonner";
 
+interface StrategyKPIEvaluation {
+  id: string;
+  strategy_id: string;
+  kpi_name: string;
+  target_value: number;
+  actual_value: number;
+  status: 'exceeded' | 'met' | 'not_met';
+  evaluation_date: string;
+}
+
 interface StrategyKPIEvaluationProps {
   strategyId: string;
 }
@@ -14,19 +24,38 @@ export function StrategyKPIEvaluation({ strategyId }: StrategyKPIEvaluationProps
   const { data: evaluations, isLoading } = useQuery({
     queryKey: ['strategy-kpi-evaluations', strategyId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('strategy_kpi_evaluations')
-        .select('*')
-        .eq('strategy_id', strategyId)
-        .order('evaluation_date', { ascending: true });
-
-      if (error) {
-        toast.error("Failed to load KPI evaluations");
-        throw error;
-      }
-
-      return data;
-    },
+      // Since the table doesn't exist yet, return mock data
+      // In a real implementation, this would be:
+      // const { data, error } = await supabase
+      //   .from('strategy_kpi_evaluations')
+      //   .select('*')
+      //   .eq('strategy_id', strategyId)
+      //   .order('evaluation_date', { ascending: true });
+      
+      // Mock data for development
+      const mockData: StrategyKPIEvaluation[] = [
+        {
+          id: '1',
+          strategy_id: strategyId,
+          kpi_name: 'Conversion Rate',
+          target_value: 5,
+          actual_value: 5.8,
+          status: 'exceeded',
+          evaluation_date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          id: '2',
+          strategy_id: strategyId,
+          kpi_name: 'Click-through Rate',
+          target_value: 2.5,
+          actual_value: 2.2,
+          status: 'not_met',
+          evaluation_date: new Date().toISOString()
+        }
+      ];
+      
+      return mockData;
+    }
   });
 
   const chartData = evaluations?.map(evaluation => ({

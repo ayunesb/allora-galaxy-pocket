@@ -30,8 +30,8 @@ export function StrategyDetailContent() {
         throw error;
       }
       
-      // Ensure all required fields are present
-      return {
+      // Cast and ensure all required fields exist
+      const strategyData: Strategy = {
         ...data,
         id: data.id,
         status: data.status as Strategy['status'],
@@ -46,8 +46,13 @@ export function StrategyDetailContent() {
         target_audience: data.target_audience || '',
         reason_for_recommendation: data.reason_for_recommendation || '',
         updated_at: data.updated_at || data.created_at,
-        version: data.version || '1'
+        version: data.version || '1',
+        metrics_baseline: data.metrics_baseline || {},
+        diagnosis: data.diagnosis || {},
+        onboarding_data: data.onboarding_data || {}
       };
+      
+      return strategyData;
     },
     enabled: !!id && !!tenant?.id
   });

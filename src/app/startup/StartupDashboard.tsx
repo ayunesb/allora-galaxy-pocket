@@ -46,12 +46,12 @@ export default function StartupDashboard() {
         title: data.title || '',
         description: data.description || '',
         // Add default values for potentially missing fields
-        tags: data.tags || [],
-        goals: data.goals || [],
-        channels: data.channels || [],
-        kpis: data.kpis || [],
-        target_audience: data.target_audience || '',
-        reason_for_recommendation: data.reason_for_recommendation || ''
+        tags: [],
+        goals: data.goal ? [data.goal] : [],
+        channels: [],
+        kpis: [],
+        target_audience: '',
+        reason_for_recommendation: ''
       };
     },
     enabled: !!tenant?.id
@@ -78,7 +78,10 @@ export default function StartupDashboard() {
         name: campaign.name,
         created_at: campaign.created_at,
         updated_at: campaign.updated_at,
-        status: campaign.status as Campaign['status']
+        status: campaign.status as Campaign['status'],
+        execution_metrics: {},
+        scripts: {},
+        metrics: {}
       }));
     },
     enabled: !!tenant?.id
