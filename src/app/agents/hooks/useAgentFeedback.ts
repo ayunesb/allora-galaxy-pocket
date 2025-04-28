@@ -18,24 +18,29 @@ export function useAgentFeedback() {
   });
 
   const getTunedPrompt = async (tenantId: string) => {
-    const { data: recentFeedback } = await supabase
-      .from("agent_feedback")
-      .select("feedback, rating")
-      .eq("to_agent", "CEO Agent")
-      .order("created_at", { ascending: false })
-      .limit(3);
+    try {
+      const { data: recentFeedback } = await supabase
+        .from("agent_feedback")
+        .select("feedback, rating")
+        .eq("to_agent", "CEO Agent")
+        .order("created_at", { ascending: false })
+        .limit(3);
 
-    const summary = (recentFeedback || [])
-      .map((f) => `• [${f.rating}/5] ${f.feedback}`)
-      .join("\n");
+      const summary = (recentFeedback || [])
+        .map((f) => `• [${f.rating}/5] ${f.feedback}`)
+        .join("\n");
 
-    return `
+      return `
 You are the CEO Agent. Here is recent feedback on your past strategies:
 
 ${summary || "No feedback yet."}
 
 Now generate a new strategy for this tenant based on their goals.
 `;
+    } catch (error) {
+      console.error("Error fetching agent feedback:", error);
+      return `You are the CEO Agent. Generate a new strategy for this tenant based on their goals.`;
+    }
   };
 
   return {

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRolePermissions } from "@/hooks/useRolePermissions";
@@ -189,7 +188,7 @@ export default function AgentSpacePage() {
             </CardHeader>
             <CardContent>
               {isAdmin ? (
-                <AgentProfileEditor initialData={agent} />
+                <AgentProfileEditor agent={agent} />
               ) : (
                 <div className="text-muted-foreground text-center py-10">
                   (Admin only)

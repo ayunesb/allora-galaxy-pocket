@@ -1,3 +1,4 @@
+
 export interface AgentMemory {
   id: string;
   agent_name: string;
@@ -23,7 +24,7 @@ export interface AgentProfile {
   language: string;
   enabled_tools?: string[];
   memory_scope: string[];
-  channels?: string[];
+  channels: string[];
   memory_score?: number;
   created_at: string;
   updated_at: string;

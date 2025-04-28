@@ -39,7 +39,7 @@ export default function AcademyPage() {
       
       if (error) throw error;
       
-      // Format data with optional fields
+      // Ensure all memories have summary and tags
       return (data || []).map(item => ({
         ...item,
         summary: item.summary || item.context.substring(0, 100) + (item.context.length > 100 ? "..." : ""),

@@ -3,12 +3,23 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Decision } from '@/types/agent';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import ErrorAlert from "@/components/ui/ErrorAlert";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+
+interface Decision {
+  id: string;
+  strategy_id: string;
+  strategy_title?: string;
+  title?: string;
+  decision: string;
+  confidence_score: number;
+  auto_approved: boolean;
+  decision_made_at: string;
+  created_at: string;
+}
 
 export default function AIDecisionsPage() {
   const [aiDecisions, setAiDecisions] = useState<Decision[]>([]);
