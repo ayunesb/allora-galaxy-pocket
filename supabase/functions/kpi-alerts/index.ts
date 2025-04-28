@@ -74,17 +74,22 @@ serve(async (req) => {
       let comparisonDate = new Date();
       switch (rule.compare_period) {
         case '1d':
+        case 'day':
           comparisonDate.setDate(comparisonDate.getDate() - 1);
           break;
         case '7d':
+        case 'week':
           comparisonDate.setDate(comparisonDate.getDate() - 7);
           break;
         case '30d':
+        case 'month':
           comparisonDate.setDate(comparisonDate.getDate() - 30);
           break;
         case '90d':
           comparisonDate.setDate(comparisonDate.getDate() - 90);
           break;
+        default:
+          comparisonDate.setDate(comparisonDate.getDate() - 7); // Default to weekly comparison
       }
       
       const { data: historicalMetrics, error: historyError } = await supabase
@@ -113,9 +118,11 @@ serve(async (req) => {
       // Check if the threshold is exceeded based on the condition
       switch (rule.condition) {
         case '>':
+        case 'above':
           thresholdExceeded = currentValue > rule.threshold;
           break;
         case '<':
+        case 'below':
           thresholdExceeded = currentValue < rule.threshold;
           break;
         case 'falls_by_%':
@@ -140,7 +147,7 @@ serve(async (req) => {
           percent_change: percentChange,
           campaign_id: rule.campaign_id,
           status: 'triggered',
-          message: generateAlertMessage(rule, currentValue, previousValue, percentChange)
+          message: generateAlertMessage(rule, currentValue, previousValue, percentChange),
         };
         
         const { data: alert, error: alertError } = await supabase
@@ -179,10 +186,21 @@ serve(async (req) => {
 });
 
 function generateAlertMessage(rule: any, currentValue: number, previousValue: number, percentChange: number): string {
+  // Use rule.message if available, otherwise generate default message
+  if (rule.message) {
+    return rule.message
+      .replace('{{value}}', currentValue)
+      .replace('{{previousValue}}', previousValue)
+      .replace('{{threshold}}', rule.threshold)
+      .replace('{{percentChange}}', Math.abs(percentChange).toFixed(2) + '%');
+  }
+  
   switch (rule.condition) {
     case '>':
+    case 'above':
       return `${rule.kpi_name} is ${currentValue}, which exceeds the threshold of ${rule.threshold}`;
     case '<':
+    case 'below':
       return `${rule.kpi_name} is ${currentValue}, which is below the threshold of ${rule.threshold}`;
     case 'falls_by_%':
       return `${rule.kpi_name} has fallen by ${Math.abs(percentChange).toFixed(2)}% from ${previousValue} to ${currentValue}`;

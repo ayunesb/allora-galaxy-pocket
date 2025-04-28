@@ -1,29 +1,11 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useTenant } from '@/hooks/useTenant';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { useKpiAlerts } from '@/hooks/useKpiAlerts';
 
 export function KpiAlerts() {
-  const { tenant } = useTenant();
-  
-  const { data: alerts } = useQuery({
-    queryKey: ['kpi-alerts', tenant?.id],
-    queryFn: async () => {
-      if (!tenant?.id) return [];
-      
-      const { data } = await supabase
-        .from('kpi_insights')
-        .select('*')
-        .eq('tenant_id', tenant.id)
-        .order('created_at', { ascending: false });
-        
-      return data || [];
-    },
-    enabled: !!tenant?.id
-  });
+  const { alerts } = useKpiAlerts({ activeOnly: true });
 
   if (!alerts?.length) return null;
 
@@ -36,7 +18,10 @@ export function KpiAlerts() {
         {alerts.map((alert) => (
           <Alert key={alert.id}>
             <AlertTitle>{alert.kpi_name}</AlertTitle>
-            <AlertDescription>{alert.insight}</AlertDescription>
+            <AlertDescription>{alert.description}</AlertDescription>
+            {alert.message && (
+              <p className="text-sm mt-2">{alert.message}</p>
+            )}
           </Alert>
         ))}
       </CardContent>

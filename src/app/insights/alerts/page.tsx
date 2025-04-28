@@ -4,14 +4,17 @@
 import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useKpiAlerts } from './hooks/useKpiAlerts';
+import { useKpiAlerts } from '@/hooks/useKpiAlerts';
 import AlertCard from './components/AlertCard';
 
 export default function AlertsPage() {
   const [severity, setSeverity] = useState<string | undefined>(undefined);
   const [days, setDays] = useState(7);
   
-  const { data: alerts = [], isLoading, error } = useKpiAlerts(severity, days);
+  const { alerts: alertsData, isLoading, error } = useKpiAlerts({
+    severity,
+    days
+  });
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -51,7 +54,7 @@ export default function AlertsPage() {
             <p className="text-red-500">Error loading alerts: {error.message}</p>
           </CardContent>
         </Card>
-      ) : alerts.length === 0 ? (
+      ) : alertsData.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center">
             <p className="text-xl mb-2">No alerts found</p>
@@ -62,14 +65,14 @@ export default function AlertsPage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {alerts.map((alert) => (
+          {alertsData.map((alert) => (
             <AlertCard 
               key={alert.id}
               title={alert.kpi_name}
-              description={alert.insight || ''}
-              impact={alert.impact_level || 'medium'}
+              description={alert.description || ''}
+              impact={alert.severity || 'medium'}
               date={alert.created_at || new Date().toISOString()}
-              action={alert.suggested_action}
+              action={alert.message}
             />
           ))}
         </div>

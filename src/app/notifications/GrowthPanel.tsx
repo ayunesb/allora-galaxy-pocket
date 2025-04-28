@@ -6,6 +6,7 @@ import { toast } from '@/components/ui/sonner';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, ChartLine, Activity, RefreshCw } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 
 interface CampaignInsight {
   id: string;
@@ -17,7 +18,13 @@ interface CampaignInsight {
 
 export function GrowthPanel() {
   const { tenant } = useTenant();
-  const { alerts = [], campaignInsights = [], refreshAlerts, triggerKpiCheck, isLoading } = useKpiAlerts();
+  const { 
+    alerts = [], 
+    campaignInsights = [], 
+    refreshAlerts, 
+    triggerKpiCheck, 
+    isLoading 
+  } = useKpiAlerts({ activeOnly: true, days: 7 });
 
   useEffect(() => {
     const refreshData = async () => {
@@ -68,9 +75,11 @@ export function GrowthPanel() {
                     <div>
                       <p className="font-medium">{alert.kpi_name}</p>
                       <p className="text-sm text-muted-foreground mt-1">{alert.description}</p>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        {new Date(alert.created_at).toLocaleDateString()}
-                      </p>
+                      {alert.created_at && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {formatDistanceToNow(new Date(alert.created_at), { addSuffix: true })}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>

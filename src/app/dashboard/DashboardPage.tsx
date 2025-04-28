@@ -14,7 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 const DashboardPage: React.FC = () => {
   const { strategies, campaigns } = useStrategyAndCampaigns();
   const { isValidating, isValid } = useTenantValidation();
-  const { alerts } = useKpiAlerts();
+  const { alerts } = useKpiAlerts({ activeOnly: true, days: 7 });
   
   // Fetch KPI metrics directly since useKpiTracking hook doesn't exist
   const { data: kpiMetrics = [] } = useQuery({
@@ -61,7 +61,7 @@ const DashboardPage: React.FC = () => {
       <KpiSection kpiMetrics={kpiMetrics} />
       <StrategySection strategies={strategiesList} />
       <CampaignSection campaigns={typedCampaigns} />
-      <KpiAlertsPanel alerts={alerts || []} />
+      <KpiAlertsPanel alerts={alerts} />
     </div>
   );
 };
