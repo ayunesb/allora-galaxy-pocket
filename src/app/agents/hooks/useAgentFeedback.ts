@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { AgentFeedback } from '@/types/agent';
@@ -34,5 +35,5 @@ export function useAgentFeedback(agentName?: string) {
     fetchFeedback();
   }, [agentName]);
 
-  return { feedback, loading, error };
+  return { feedback, loading, error, isLoading: loading };
 }

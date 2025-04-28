@@ -29,9 +29,9 @@ export function useAgentStats() {
         // Transform to AgentStats format
         const agentStats: AgentStats[] = (data || []).map(log => ({
           agentName: log.agent_name,
-          totalTasks: log.metrics?.total_tasks || 0,
+          totalTasks: log.metrics && typeof log.metrics === 'object' ? (log.metrics.total_tasks || 0) : 0,
           successRate: log.success_rate || 0,
-          averageExecutionTime: log.metrics?.avg_execution_time || 0,
+          averageExecutionTime: log.metrics && typeof log.metrics === 'object' ? (log.metrics.avg_execution_time || 0) : 0,
           lastExecuted: log.created_at
         }));
         

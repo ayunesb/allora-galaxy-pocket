@@ -72,3 +72,18 @@ export interface AgentTask {
   result?: any;
   error?: string;
 }
+
+// Add missing interfaces
+export interface AgentMemoryLog extends AgentMemory {
+  summary: string;
+  tags: string[];
+}
+
+export interface AgentCollabMessage {
+  id: string;
+  agent: string;
+  message: string;
+  session_id: string;
+  created_at: string;
+  tenant_id: string;
+}

@@ -7,6 +7,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2 } from 'lucide-react';
 import AdminOnly from '@/guards/AdminOnly';
+import { useState } from 'react';
 
 interface TenantAnalytics {
   tenant_id: string;
@@ -26,35 +27,36 @@ interface TenantAnalytics {
   auto_approve_campaigns?: boolean;
 }
 
+const fetchTenantAnalytics = async (): Promise<TenantAnalytics[]> => {
+  const { data, error } = await supabase
+    .from('tenant_analytics')
+    .select('*');
+    
+  if (error) throw error;
+  
+  return (data || []).map(item => ({
+    id: item.id,
+    tenant_id: item.tenant_id,
+    tenant_name: item.tenant_id, // Using tenant_id as a fallback
+    active_users: item.active_users || 0,
+    total_users: 0, // Default value
+    total_strategies: item.total_strategies || 0,
+    total_campaigns: 0, // Default value
+    total_credits_used: 0, // Default value
+    mrr: item.mrr || 0,
+    max_users: 10, // Default value
+    storage_limit: 5, // Default value in GB
+    analytics_enabled: true, // Default value
+    auto_approve_campaigns: true, // Default value
+    updated_at: item.updated_at,
+    created_at: item.created_at
+  }));
+};
+
 export default function TenantsManagementPage() {
-  const { data: tenants, isLoading } = useQuery({
+  const { data: tenantAnalytics = [], isLoading } = useQuery<TenantAnalytics[], Error>({
     queryKey: ['tenant-analytics'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tenant_analytics')
-        .select('*');
-      
-      if (error) throw error;
-      
-      // Transform the data to match our TenantAnalytics interface
-      return (data || []).map(item => ({
-        tenant_id: item.tenant_id,
-        tenant_name: item.tenant_name || 'Unnamed Tenant',
-        id: item.id,
-        created_at: item.created_at || '',
-        updated_at: item.updated_at,
-        active_users: item.active_users || 0,
-        total_users: item.total_users || 0,
-        total_strategies: item.total_strategies || 0,
-        total_campaigns: item.total_campaigns || 0,
-        mrr: item.mrr || 0,
-        total_credits_used: item.total_credits_used || 0,
-        max_users: item.max_users || 5,
-        storage_limit: item.storage_limit || 1,
-        analytics_enabled: item.analytics_enabled || false,
-        auto_approve_campaigns: item.auto_approve_campaigns || false
-      })) as TenantAnalytics[];
-    }
+    queryFn: fetchTenantAnalytics
   });
 
   const columns: ColumnDef<TenantAnalytics>[] = [
@@ -105,7 +107,7 @@ export default function TenantsManagementPage() {
           <CardContent>
             <DataTable 
               columns={columns} 
-              data={tenants || []} 
+              data={tenantAnalytics || []} 
               searchKey="tenant_name"
             />
           </CardContent>

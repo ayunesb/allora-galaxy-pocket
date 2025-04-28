@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Tenant } from '@/types/tenant';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/sonner';
 
 interface TenantContextType {
   tenant: Tenant | null;
@@ -75,7 +75,8 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setTenant(null);
       setError(error.message || 'Failed to load workspace data');
       
-      toast.error("Workspace loading error", {
+      toast({
+        title: "Workspace loading error",
         description: "There was a problem loading your workspace. Please try again."
       });
     } finally {

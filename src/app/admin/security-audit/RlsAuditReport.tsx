@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
@@ -17,7 +16,7 @@ import { DebugErrorBoundary } from "@/components/DebugErrorBoundary";
 export default function RlsAuditReport() {
   const { user } = useAuth();
   const { tenant } = useTenant();
-  const { tables, isLoading, fetchRlsTables } = useRlsData();
+  const { tables, loading: isLoading, error, fetchRlsTables } = useRlsData();
   const { testResults, isRunningTests, lastRun, runAccessTests } = useAccessTests();
   const { issues, isLoading: isAuditLoading, runSecurityAudit } = useSecurityAudit();
 
@@ -26,24 +25,24 @@ export default function RlsAuditReport() {
       ['Table', 'RLS Enabled', 'Policy Name', 'Command', 'References auth.uid()', 'Access Test Result']
     ];
     
-    tables.forEach(table => {
-      if (!table.rlsEnabled) {
-        rows.push([table.tablename, 'No', '-', '-', '-', 'N/A']);
+    tables.map(table => {
+      if (!table.hasRls) {
+        rows.push([table.tableName, 'No', '-', '-', '-', 'N/A']);
         return;
       }
       
-      if (table.policies.length === 0) {
-        rows.push([table.tablename, 'Yes', 'NO POLICIES', '-', '-', 'CRITICAL: RLS enabled but no policies']);
+      if (!table.policies || table.policies.length === 0) {
+        rows.push([table.tableName, 'Yes', 'NO POLICIES', '-', '-', 'CRITICAL: RLS enabled but no policies']);
         return;
       }
       
-      const testResult = testResults.find(r => r.tableName === table.tablename);
+      const testResult = testResults.find(r => r.tableName === table.tableName);
       table.policies.forEach(policy => {
         const definition = policy.definition.toLowerCase();
         const hasAuthUid = definition.includes('auth.uid()');
         const hasTenantReference = definition.includes('tenant_id') || definition.includes('user_id');
         rows.push([
-          table.tablename,
+          table.tableName,
           'Yes',
           policy.policyname,
           policy.command,
