@@ -21,16 +21,28 @@ export default function KpiAlertRules() {
     queryFn: async () => {
       if (!tenant?.id) return [];
       
+      // Using kpi_alerts table as a workaround since kpi_alert_rules doesn't exist yet
       const { data, error } = await supabase
-        .from('kpi_alert_rules')
+        .from('kpi_alerts')
         .select('*')
         .eq('tenant_id', tenant.id)
         .order('created_at', { ascending: false });
         
       if (error) throw error;
       
-      // Cast the data to KpiAlertRule type
-      return data as unknown as KpiAlertRule[];
+      // Transform kpi_alerts into a format compatible with KpiAlertRule
+      return (data || []).map(alert => ({
+        id: alert.id,
+        kpi_name: alert.kpi_name,
+        condition: alert.condition as '<' | '>' | 'falls_by_%' | 'rises_by_%',
+        threshold: alert.threshold || 0,
+        compare_period: 'day', // Default value
+        severity: alert.severity,
+        campaign_id: alert.campaign_id,
+        tenant_id: alert.tenant_id,
+        created_at: alert.created_at,
+        active: alert.status !== 'resolved'
+      })) as KpiAlertRule[];
     },
     enabled: !!tenant?.id
   });
@@ -39,11 +51,20 @@ export default function KpiAlertRules() {
     try {
       if (!tenant?.id) return;
       
+      // We'll create a kpi_alert instead since kpi_alert_rules doesn't exist yet
       const { error } = await supabase
-        .from('kpi_alert_rules')
+        .from('kpi_alerts')
         .insert({
-          ...formData,
-          tenant_id: tenant.id
+          kpi_name: formData.kpi_name,
+          condition: formData.condition,
+          threshold: formData.threshold,
+          severity: formData.severity,
+          description: `Alert rule for ${formData.kpi_name}`,
+          message: `${formData.kpi_name} alert triggered`,
+          status: formData.active ? 'pending' : 'resolved',
+          current_value: 0, // Default value
+          tenant_id: tenant.id,
+          campaign_id: formData.campaign_id || null
         });
         
       if (error) throw error;
@@ -60,11 +81,16 @@ export default function KpiAlertRules() {
     try {
       if (!editingRule?.id) return;
       
+      // Update kpi_alert instead
       const { error } = await supabase
-        .from('kpi_alert_rules')
+        .from('kpi_alerts')
         .update({
-          ...formData,
-          updated_at: new Date().toISOString()
+          kpi_name: formData.kpi_name,
+          condition: formData.condition,
+          threshold: formData.threshold,
+          severity: formData.severity,
+          status: formData.active ? 'pending' : 'resolved',
+          campaign_id: formData.campaign_id || null
         })
         .eq('id', editingRule.id);
         
@@ -80,11 +106,11 @@ export default function KpiAlertRules() {
 
   const toggleRuleActive = async (rule: KpiAlertRule) => {
     try {
+      // Toggle active status on kpi_alert
       const { error } = await supabase
-        .from('kpi_alert_rules')
+        .from('kpi_alerts')
         .update({ 
-          active: !rule.active,
-          updated_at: new Date().toISOString()
+          status: rule.active ? 'resolved' : 'pending'
         })
         .eq('id', rule.id);
         

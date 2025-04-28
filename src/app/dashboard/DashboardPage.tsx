@@ -15,9 +15,9 @@ export default function DashboardPage() {
       ...strategy,
       status: strategy.status as Strategy['status'],
       tags: Array.isArray(strategy.tags) ? strategy.tags : [],
-      metrics_baseline: strategy.metrics_baseline || {} as Record<string, any>,
-      diagnosis: strategy.diagnosis || {} as Record<string, any>,
-      onboarding_data: strategy.onboarding_data || {} as Record<string, any>
+      metrics_baseline: strategy.metrics_baseline ? strategy.metrics_baseline as Record<string, any> : {},
+      diagnosis: strategy.diagnosis ? strategy.diagnosis as Record<string, any> : {},
+      onboarding_data: strategy.onboarding_data ? strategy.onboarding_data as Record<string, any> : {}
     }));
   }, [strategies]);
 

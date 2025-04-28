@@ -67,25 +67,25 @@ export default function DashboardInsights() {
           title="Conversion Rate"
           value={`${conversionRate.current}%`}
           trend={conversionRate.trend}
-          change={`${conversionRate.change}%`}
+          change={conversionRate.change}
         />
         <KpiMetricCard 
           title="Campaign Approval Rate"
           value={`${campaignApprovalRate.current}%`}
           trend={campaignApprovalRate.trend}
-          change={`${campaignApprovalRate.change}%`}
+          change={campaignApprovalRate.change}
         />
         <KpiMetricCard 
           title="AI Regeneration Volume"
-          value={aiRegenerationVolume.current.toString()}
+          value={aiRegenerationVolume.current}
           trend={aiRegenerationVolume.trend}
-          change={`${aiRegenerationVolume.change}%`}
+          change={aiRegenerationVolume.change}
         />
         <KpiMetricCard 
           title="Feedback Positivity Ratio"
           value={`${feedbackPositivityRatio.current}%`}
           trend={feedbackPositivityRatio.trend}
-          change={`${feedbackPositivityRatio.change}%`}
+          change={feedbackPositivityRatio.change}
         />
       </div>
 

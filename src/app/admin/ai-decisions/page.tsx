@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,9 +35,9 @@ export default function AIDecisionsPage() {
         ...item,
         status: item.status as StrategyStatus,
         tags: item.tags || [],
-        metrics_baseline: item.metrics_baseline || {},
-        diagnosis: item.diagnosis || {},
-        onboarding_data: item.onboarding_data || {}
+        metrics_baseline: item.metrics_baseline || {} as Record<string, any>,
+        diagnosis: item.diagnosis || {} as Record<string, any>,
+        onboarding_data: item.onboarding_data || {} as Record<string, any>
       })) as Strategy[];
     }
   });
@@ -51,7 +50,7 @@ export default function AIDecisionsPage() {
         
       if (error) throw error;
       
-      // Since we're getting a single object from an RPC function, ensure it's shaped correctly
+      // Return the single object directly, not as an array
       return data as ApprovalStats;
     }
   });
