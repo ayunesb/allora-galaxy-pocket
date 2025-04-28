@@ -7,13 +7,16 @@ import { useInitializeSelectedTenant } from "./hooks/useInitializeSelectedTenant
 import { createDefaultWorkspace } from "./utils/workspaceUtils";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { LoadingState } from "./components/LoadingState";
-import { ErrorState } from "./components/ErrorState";
+import { LoadingState } from "@/components/ui/loading-state";
+import { ErrorState } from "@/components/ui/error-state";
 import { NoWorkspaces } from "./components/NoWorkspaces";
 import { WorkspaceSelector } from "./components/WorkspaceSelector";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Tenant } from "@/types/tenant";
 import { useTenantSwitcher } from "./hooks/useTenantSwitcher";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { PlusCircle } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function WorkspaceSwitcher({ highlight = false }) {
   const { tenant } = useTenant();
@@ -115,15 +118,22 @@ export default function WorkspaceSwitcher({ highlight = false }) {
 
   if (authLoading) {
     return (
-      <div className="space-y-2">
-        <Skeleton className="h-4 w-32 mb-2" />
-        <Skeleton className="h-9 w-full" />
-      </div>
+      <Card>
+        <CardContent className="pt-4">
+          <LoadingState message="Loading authentication..." />
+        </CardContent>
+      </Card>
     );
   }
 
   if (loading) {
-    return <LoadingState />;
+    return (
+      <Card>
+        <CardContent className="pt-4">
+          <LoadingState message="Loading workspaces..." />
+        </CardContent>
+      </Card>
+    );
   }
 
   if (error) {
@@ -131,13 +141,17 @@ export default function WorkspaceSwitcher({ highlight = false }) {
     const isRecursionError = error.includes('infinite recursion');
     
     return (
-      <ErrorState 
-        error={isRecursionError ? 
-          "A database policy issue was detected. Please try refreshing the page as the fix has been applied." : 
-          error}
-        onRetry={retryFetch}
-        onRefresh={handleFullRefresh}
-      />
+      <Card className="border-destructive/50">
+        <CardContent className="pt-4">
+          <ErrorState 
+            title="Workspace Loading Error"
+            error={isRecursionError ? 
+              "A database policy issue was detected. Please try refreshing the page as the fix has been applied." : 
+              error}
+            onRetry={retryFetch}
+          />
+        </CardContent>
+      </Card>
     );
   }
 
@@ -154,16 +168,33 @@ export default function WorkspaceSwitcher({ highlight = false }) {
   }
 
   return (
-    <WorkspaceSelector
-      selected={selected || ""}
-      onTenantChange={onTenantChange}
-      availableTenants={availableTenants}
-      highlight={highlight}
-      isOnboarding={isOnboarding}
-      tenant={tenant}
-      isCreating={isCreating || isChanging}
-      onCreateWorkspace={handleCreateWorkspace}
-      userExists={!!user}
-    />
+    <div className="space-y-6">
+      <WorkspaceSelector
+        selected={selected || ""}
+        onTenantChange={onTenantChange}
+        availableTenants={availableTenants}
+        highlight={highlight}
+        isOnboarding={isOnboarding}
+        tenant={tenant}
+        isCreating={isCreating || isChanging}
+        onCreateWorkspace={handleCreateWorkspace}
+        userExists={!!user}
+      />
+
+      {tenant && !isOnboarding && (
+        <div className="flex flex-col space-y-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            asChild
+            className="justify-start"
+          >
+            <Link to="/workspace/settings">
+              Workspace Settings
+            </Link>
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }

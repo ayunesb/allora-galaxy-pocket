@@ -16,79 +16,81 @@ export default function WorkspacePage() {
     <div className="container mx-auto py-8 space-y-8">
       <h1 className="text-3xl font-bold">Workspace Management</h1>
       
-      <WorkspaceErrorBoundary>
-        <div className="grid gap-8 md:grid-cols-2">
-          <Card className="p-6">
-            <CardHeader className="p-0 pb-4">
-              <CardTitle>Select Workspace</CardTitle>
-              <CardDescription>
-                Switch between available workspaces or create a new one
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
+      <div className="grid gap-8 md:grid-cols-2">
+        <Card className="p-6">
+          <CardHeader className="p-0 pb-4">
+            <CardTitle>Select Workspace</CardTitle>
+            <CardDescription>
+              Switch between available workspaces or create a new one
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <WorkspaceErrorBoundary>
               <WorkspaceSwitcher />
-            </CardContent>
-          </Card>
+            </WorkspaceErrorBoundary>
+          </CardContent>
+        </Card>
 
-          <Card className="p-6">
-            <CardHeader className="p-0 pb-4">
-              <CardTitle>Create New Workspace</CardTitle>
-              <CardDescription>
-                Create a new workspace for your team or project
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
+        <Card className="p-6">
+          <CardHeader className="p-0 pb-4">
+            <CardTitle>Create New Workspace</CardTitle>
+            <CardDescription>
+              Create a new workspace for your team or project
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <WorkspaceErrorBoundary>
               <CreateWorkspaceForm />
-            </CardContent>
-          </Card>
-        </div>
-        
-        {tenant && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Current Workspace: {tenant.name}</CardTitle>
-              <CardDescription>
-                Manage your current workspace settings and users
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-3">
-                <Link to="/workspace/users" className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
-                  <Users className="h-5 w-5 text-primary" />
-                  <div>
-                    <h3 className="font-medium">Workspace Users</h3>
-                    <p className="text-sm text-muted-foreground">Manage team access</p>
-                  </div>
-                </Link>
-                
-                <Link to="/workspace/environment" className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
-                  <Building className="h-5 w-5 text-primary" />
-                  <div>
-                    <h3 className="font-medium">Environment</h3>
-                    <p className="text-sm text-muted-foreground">Configure workspace environment</p>
-                  </div>
-                </Link>
-                
-                <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
-                  <Settings className="h-5 w-5 text-primary" />
-                  <div>
-                    <h3 className="font-medium">Workspace Settings</h3>
-                    <p className="text-sm text-muted-foreground">Configure workspace preferences</p>
-                  </div>
+            </WorkspaceErrorBoundary>
+          </CardContent>
+        </Card>
+      </div>
+      
+      {tenant && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Current Workspace: {tenant.name}</CardTitle>
+            <CardDescription>
+              Manage your current workspace settings and users
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-3">
+              <Link to="/workspace/users" className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
+                <Users className="h-5 w-5 text-primary" />
+                <div>
+                  <h3 className="font-medium">Workspace Users</h3>
+                  <p className="text-sm text-muted-foreground">Manage team access</p>
                 </div>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button variant="outline" asChild className="w-full sm:w-auto">
-                <Link to="/workspace/environment" className="flex items-center justify-center">
-                  Manage Workspace Environment
-                  <ChevronRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            </CardFooter>
-          </Card>
-        )}
-      </WorkspaceErrorBoundary>
+              </Link>
+              
+              <Link to="/workspace/environment" className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
+                <Building className="h-5 w-5 text-primary" />
+                <div>
+                  <h3 className="font-medium">Environment</h3>
+                  <p className="text-sm text-muted-foreground">Configure workspace environment</p>
+                </div>
+              </Link>
+              
+              <Link to="/workspace/settings" className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
+                <Settings className="h-5 w-5 text-primary" />
+                <div>
+                  <h3 className="font-medium">Workspace Settings</h3>
+                  <p className="text-sm text-muted-foreground">Configure workspace preferences</p>
+                </div>
+              </Link>
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button variant="outline" asChild className="w-full sm:w-auto">
+              <Link to="/workspace/settings" className="flex items-center justify-center">
+                Manage Workspace Settings
+                <ChevronRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </CardFooter>
+        </Card>
+      )}
     </div>
   );
 }
