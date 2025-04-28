@@ -231,6 +231,64 @@ export type Database = {
           },
         ]
       }
+      agent_performance_logs: {
+        Row: {
+          agent_name: string
+          created_at: string | null
+          feedback_score: number | null
+          id: string
+          metrics: Json | null
+          notes: string | null
+          strategy_id: string | null
+          success_rate: number | null
+          tenant_id: string
+        }
+        Insert: {
+          agent_name: string
+          created_at?: string | null
+          feedback_score?: number | null
+          id?: string
+          metrics?: Json | null
+          notes?: string | null
+          strategy_id?: string | null
+          success_rate?: number | null
+          tenant_id: string
+        }
+        Update: {
+          agent_name?: string
+          created_at?: string | null
+          feedback_score?: number | null
+          id?: string
+          metrics?: Json | null
+          notes?: string | null
+          strategy_id?: string | null
+          success_rate?: number | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_performance_logs_strategy_id_fkey"
+            columns: ["strategy_id"]
+            isOneToOne: false
+            referencedRelation: "strategies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_performance_logs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_performance_logs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_profiles_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_profiles: {
         Row: {
           agent_name: string
