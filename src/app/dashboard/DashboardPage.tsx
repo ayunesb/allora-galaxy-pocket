@@ -1,19 +1,38 @@
+
 import React from 'react';
 import { KpiSection } from './components/KpiSection';
 import { StrategySection } from './components/StrategySection';
 import { CampaignSection } from './components/CampaignSection';
 import { useStrategyAndCampaigns } from './hooks/useStrategyAndCampaigns';
-import { useKpiMetrics } from '@/hooks/useKpiTracking';
+import { useQuery } from '@tanstack/react-query';
 import { useTenantValidation } from '@/hooks/useTenantValidation';
 import { Navigate } from 'react-router-dom';
 import { KpiAlertsPanel } from '@/app/insights/kpis/components/KpiAlertsPanel';
 import { useKpiAlerts } from '@/hooks/useKpiAlerts';
+import { supabase } from '@/integrations/supabase/client';
 
 const DashboardPage: React.FC = () => {
   const { strategies, campaigns } = useStrategyAndCampaigns();
-  const { kpiMetrics } = useKpiMetrics();
   const { isValidating, isValid } = useTenantValidation();
   const { alerts } = useKpiAlerts();
+  
+  // Fetch KPI metrics directly since useKpiTracking hook doesn't exist
+  const { data: kpiMetrics = [] } = useQuery({
+    queryKey: ['kpi-metrics'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('kpi_metrics')
+        .select('*')
+        .order('created_at', { ascending: false });
+        
+      if (error) {
+        console.error('Error fetching KPI metrics:', error);
+        throw error;
+      }
+      
+      return data || [];
+    }
+  });
 
   if (isValidating) {
     return <div>Validating workspace...</div>;
@@ -26,19 +45,23 @@ const DashboardPage: React.FC = () => {
   // Transform API data to conform to Strategy interface
   const strategiesList = strategies?.map(item => ({
     ...item,
-    metrics_target: item.metrics_target || {}, // Add missing required field
+    metrics_target: item.metrics_target || {}, 
+    metrics_baseline: item.metrics_baseline || {},
     tags: item.tags || [],
     goals: item.goals || [],
     channels: item.channels || [],
     kpis: item.kpis || [],
-  } as any));
+  }));
+
+  // Ensure campaigns has proper type
+  const typedCampaigns = campaigns || [];
 
   return (
     <div className="container mx-auto p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <KpiSection kpiMetrics={kpiMetrics} />
       <StrategySection strategies={strategiesList} />
-      <CampaignSection campaigns={campaigns} />
-      <KpiAlertsPanel alerts={alerts} />
+      <CampaignSection campaigns={typedCampaigns} />
+      <KpiAlertsPanel alerts={alerts || []} />
     </div>
   );
 };

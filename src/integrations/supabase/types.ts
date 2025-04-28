@@ -1072,6 +1072,57 @@ export type Database = {
           },
         ]
       }
+      kpi_alert_rules: {
+        Row: {
+          active: boolean | null
+          compare_period: string
+          condition: string
+          created_at: string | null
+          id: string
+          kpi_name: string
+          last_triggered: string | null
+          message: string
+          name: string
+          severity: string
+          status: string
+          tenant_id: string
+          threshold: number
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          compare_period?: string
+          condition: string
+          created_at?: string | null
+          id?: string
+          kpi_name: string
+          last_triggered?: string | null
+          message: string
+          name: string
+          severity: string
+          status?: string
+          tenant_id: string
+          threshold: number
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          compare_period?: string
+          condition?: string
+          created_at?: string | null
+          id?: string
+          kpi_name?: string
+          last_triggered?: string | null
+          message?: string
+          name?: string
+          severity?: string
+          status?: string
+          tenant_id?: string
+          threshold?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       kpi_alerts: {
         Row: {
           campaign_id: string | null

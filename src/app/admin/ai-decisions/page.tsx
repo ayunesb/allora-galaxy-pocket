@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DecisionFilters } from "./components/DecisionFilters";
@@ -14,7 +15,7 @@ const AIDecisionsPage: React.FC = () => {
   });
 
   useEffect(() => {
-    fetchData();
+    fetchData().then(data => setDecisions(data));
   }, []);
 
   const fetchData = async () => {
@@ -36,6 +37,10 @@ const AIDecisionsPage: React.FC = () => {
       tags: item.tags || [],
       generated_by: item.generated_by || 'CEO Agent',
       assigned_agent: item.assigned_agent || '',
+      goals: [], // Add missing required fields
+      channels: [],
+      kpis: [],
+      impact_score: item.impact_score || 0,
     } as Strategy));
   };
 
@@ -51,7 +56,7 @@ const AIDecisionsPage: React.FC = () => {
           <DecisionFilters filters={filters} onFilterChange={handleFilterChange} />
         </div>
         <div className="md:col-span-2">
-          <ApprovalStatsTable />
+          <ApprovalStatsTable strategies={decisions} />
           <DecisionList decisions={decisions} filters={filters} />
         </div>
       </div>

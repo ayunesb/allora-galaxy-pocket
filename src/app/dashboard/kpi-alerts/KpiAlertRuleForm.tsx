@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,7 +32,7 @@ const formSchema = z.object({
     message: "KPI Name must be at least 2 characters.",
   }),
   condition: z.enum(["above", "below"]),
-  threshold: z.number().min(1),
+  threshold: z.coerce.number().min(1),
   severity: z.enum(["low", "medium", "high"]),
   message: z.string().min(10, {
     message: "Message must be at least 10 characters.",
@@ -40,42 +41,40 @@ const formSchema = z.object({
   compare_period: z.enum(["day", "week", "month"]),
 });
 
-const defaultValues: Partial<KpiAlertRule> = {
-  kpi_name: "",
-  condition: "above",
-  threshold: 10,
-  severity: "medium",
-  message: "",
-  status: "active",
-  active: true,
-  compare_period: "day"
-};
+type FormValues = z.infer<typeof formSchema>;
 
 interface KpiAlertRuleFormProps {
   onSubmit: (values: KpiAlertRule) => void;
+  rule?: KpiAlertRule | null;
 }
 
-export function KpiAlertRuleForm({ onSubmit }: KpiAlertRuleFormProps) {
+export function KpiAlertRuleForm({ onSubmit, rule = null }: KpiAlertRuleFormProps) {
   const { toast } = useToast();
+  
+  const defaultValues: FormValues = {
+    kpi_name: rule?.kpi_name || "",
+    condition: (rule?.condition || "above") as "above" | "below",
+    threshold: rule?.threshold || 10,
+    severity: (rule?.severity || "medium") as "low" | "medium" | "high",
+    message: rule?.message || "",
+    status: (rule?.status || "active") as "active" | "inactive",
+    compare_period: (rule?.compare_period || "day") as "day" | "week" | "month"
+  };
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: defaultValues,
+    defaultValues,
     mode: "onChange"
   });
 
-  function handleKpiAlertRuleSubmit(values: z.infer<typeof formSchema>) {
+  function handleKpiAlertRuleSubmit(values: FormValues) {
     toast({
-      title: "You submitted the following values:",
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(values, null, 2)}</code>
-        </pre>
-      ),
+      title: "Alert rule submitted",
+      description: "The KPI alert rule has been saved."
     });
     
     onSubmit({
-      id: "new",
+      id: rule?.id || "new",
       name: values.kpi_name,
       kpi_name: values.kpi_name,
       condition: values.condition,
@@ -83,10 +82,11 @@ export function KpiAlertRuleForm({ onSubmit }: KpiAlertRuleFormProps) {
       severity: values.severity,
       message: values.message,
       status: values.status,
-      created_at: new Date().toISOString(),
+      created_at: rule?.created_at || new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      tenant_id: "demo",
+      tenant_id: rule?.tenant_id || "demo",
       compare_period: values.compare_period,
+      active: values.status === "active"
     });
   }
 
@@ -202,7 +202,7 @@ export function KpiAlertRuleForm({ onSubmit }: KpiAlertRuleFormProps) {
               <FormLabel>Compare Period</FormLabel>
               <Select
                 onValueChange={field.onChange}
-                defaultValue={field.value as string} // Cast to string
+                defaultValue={field.value}
               >
                 <FormControl>
                   <SelectTrigger>
@@ -224,14 +224,14 @@ export function KpiAlertRuleForm({ onSubmit }: KpiAlertRuleFormProps) {
         />
         <FormField
           control={form.control}
-          name="status" // Change from "active" to "status"
+          name="status"
           render={({ field }) => (
             <FormItem className="flex flex-row items-start space-x-3 space-y-0">
               <FormControl>
                 <Checkbox
-                  checked={field.value === "active"} // Change to check against "active" string
+                  checked={field.value === "active"}
                   onCheckedChange={(checked) => {
-                    field.onChange(checked ? "active" : "inactive"); // Set as string values
+                    field.onChange(checked ? "active" : "inactive");
                   }}
                 />
               </FormControl>
