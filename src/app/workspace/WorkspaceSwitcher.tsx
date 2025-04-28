@@ -149,6 +149,7 @@ export default function WorkspaceSwitcher({ highlight = false }) {
               "A database policy issue was detected. Please try refreshing the page as the fix has been applied." : 
               error}
             onRetry={retryFetch}
+            onRefresh={handleFullRefresh}
           />
         </CardContent>
       </Card>

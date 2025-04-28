@@ -9,6 +9,7 @@ interface ErrorStateProps {
   description?: string;
   error?: Error | string | null;
   onRetry?: () => void;
+  onRefresh?: () => void;
 }
 
 export function ErrorState({
@@ -16,6 +17,7 @@ export function ErrorState({
   description,
   error,
   onRetry,
+  onRefresh,
 }: ErrorStateProps) {
   const errorMessage = typeof error === 'string' 
     ? error 
@@ -27,16 +29,28 @@ export function ErrorState({
       <AlertTitle>{title}</AlertTitle>
       <AlertDescription className="mt-2">
         <p className="mb-4">{errorMessage}</p>
-        {onRetry && (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={onRetry} 
-            className="flex items-center gap-1"
-          >
-            <RefreshCw className="h-3 w-3" /> Try again
-          </Button>
-        )}
+        <div className="flex space-x-2">
+          {onRetry && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onRetry} 
+              className="flex items-center gap-1"
+            >
+              <RefreshCw className="h-3 w-3" /> Try again
+            </Button>
+          )}
+          {onRefresh && (
+            <Button 
+              variant="default" 
+              size="sm" 
+              onClick={onRefresh} 
+              className="flex items-center gap-1"
+            >
+              <RefreshCw className="h-3 w-3" /> Refresh page
+            </Button>
+          )}
+        </div>
       </AlertDescription>
     </Alert>
   );
