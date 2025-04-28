@@ -32,7 +32,8 @@ export const generateStrategy = async (input: StrategyInput, tenantId: string) =
           body: {
             prompt: `Create a business strategy for a ${input.industry} company with the goal of: ${input.goal}`,
             tenant_id: tenantId,
-            company_name: input.companyName
+            company_name: input.companyName,
+            include_reasoning: true // Request reason for recommendation
           }
         });
         

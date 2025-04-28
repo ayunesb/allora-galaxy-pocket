@@ -29,6 +29,9 @@ export interface Strategy {
   execution_status?: string; // Current execution status
   execution_metrics?: Record<string, any>; // Metrics related to execution
   onboarding_data?: Record<string, any>; // Data from onboarding used for strategy
+  
+  // Explainable AI properties
+  reason_for_recommendation?: string; // Why the AI recommended this strategy
 }
 
 export interface StrategyVersionDiff {

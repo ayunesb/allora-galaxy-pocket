@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -24,6 +23,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StrategyErrorBoundary } from './components/StrategyErrorBoundary';
 import { Skeleton } from '@/components/ui/skeleton';
+import { StrategyReasonCard } from '@/components/strategy-reason/StrategyReasonCard';
 
 const StrategyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -86,7 +86,6 @@ const StrategyDetail: React.FC = () => {
     );
   }
 
-  // Status badge color helper
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'approved': return 'bg-emerald-100 text-emerald-800';
@@ -127,6 +126,10 @@ const StrategyDetail: React.FC = () => {
           <TabsContent value="overview" className="mt-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">
+                {strategy?.reason_for_recommendation && (
+                  <StrategyReasonCard strategy={strategy} />
+                )}
+
                 <Card>
                   <CardHeader>
                     <CardTitle>Description</CardTitle>

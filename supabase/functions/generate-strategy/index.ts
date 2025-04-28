@@ -19,7 +19,11 @@ serve(async (req) => {
       throw new Error("Missing OpenAI API key");
     }
     
-    const { prompt } = await req.json();
+    const { prompt, include_reasoning = false } = await req.json();
+
+    const systemPrompt = include_reasoning 
+      ? 'You are an expert CEO advisor that creates business strategies. For each strategy, include a brief explanation of why you are recommending it.'
+      : 'You are an expert CEO advisor that creates business strategies.';
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -30,7 +34,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [
-          { role: 'system', content: 'You are an expert CEO advisor that creates business strategies.' },
+          { role: 'system', content: systemPrompt },
           { role: 'user', content: prompt }
         ],
         temperature: 0.7,
@@ -43,9 +47,25 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    const strategy = data.choices[0].message.content;
+    let strategy = data.choices[0].message.content;
+    let reason_for_recommendation = null;
 
-    return new Response(JSON.stringify({ strategy }), {
+    // If reasoning is requested, try to extract it from the response
+    if (include_reasoning) {
+      // Look for a section that might contain reasoning
+      const reasoningMatch = strategy.match(/(?:Reason for recommendation:|Why this strategy:|Reasoning:|Rationale:)([\s\S]+?)(?=\n\n|$)/i);
+      
+      if (reasoningMatch && reasoningMatch[1]) {
+        reason_for_recommendation = reasoningMatch[1].trim();
+        // Remove the reasoning section from the strategy
+        strategy = strategy.replace(reasoningMatch[0], '').trim();
+      }
+    }
+
+    return new Response(JSON.stringify({ 
+      strategy,
+      reason_for_recommendation
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
