@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Tenant } from '@/types/tenant';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { toast } from '@/components/ui/sonner';
+import { toast } from 'sonner';
 
 interface TenantContextType {
   tenant: Tenant | null;

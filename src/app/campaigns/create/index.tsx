@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
@@ -37,7 +36,6 @@ import LoadingOverlay from "@/components/ui/LoadingOverlay";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ToastService } from "@/services/ToastService";
 
-// Define available channels for campaigns
 const availableChannels = [
   { id: "email", label: "Email" },
   { id: "social", label: "Social Media" },
@@ -85,7 +83,6 @@ export default function CampaignCreatePage() {
           
         if (error) throw error;
         
-        // Transform database results to match Strategy interface
         const strategiesData: Strategy[] = (data || []).map(item => ({
           id: item.id,
           title: item.title || "",
@@ -93,17 +90,26 @@ export default function CampaignCreatePage() {
           status: (item.status as Strategy["status"]) || "draft",
           tenant_id: item.tenant_id,
           user_id: item.user_id || "",
+          tags: item.tags || [],
+          created_at: item.created_at,
+          updated_at: item.updated_at || item.created_at,
+          generated_by: item.generated_by || 'CEO Agent',
+          assigned_agent: item.assigned_agent || '',
+          auto_approved: item.auto_approved || false,
+          approved_at: item.approved_at || null,
+          failure_reason: item.failure_reason || null,
+          impact_score: item.impact_score || 0,
+          health_score: item.health_score || 0,
+          is_public: item.is_public || false,
+          diagnosis: item.diagnosis || {},
           metrics_target: item.metrics_target || {},
           metrics_baseline: item.metrics_baseline || {},
-          tags: item.tags || [],
-          goals: item.goals || [],
-          channels: item.channels || [],
-          kpis: item.kpis || [],
-          updated_at: item.updated_at || item.created_at,
-          created_at: item.created_at,
           version: item.version || 1,
           reason_for_recommendation: item.reason_for_recommendation || '',
           target_audience: item.target_audience || '',
+          goals: item.goals || [],
+          channels: item.channels || [],
+          kpis: item.kpis || [],
           industry: item.industry || '',
           confidence: item.confidence || null,
         }));
@@ -114,30 +120,37 @@ export default function CampaignCreatePage() {
           const selectedStrategy = data?.find(s => s.id === initialStrategyId) || null;
           
           if (selectedStrategy) {
-            // Transform selected strategy to match Strategy interface
-            const transformedStrategy: Strategy = {
+            setSelectedStrategy({
               id: selectedStrategy.id,
               title: selectedStrategy.title || "",
               description: selectedStrategy.description || "",
               status: (selectedStrategy.status as Strategy["status"]) || "draft",
               tenant_id: selectedStrategy.tenant_id,
               user_id: selectedStrategy.user_id || "",
+              tags: selectedStrategy.tags || [],
+              created_at: selectedStrategy.created_at,
+              updated_at: selectedStrategy.updated_at || selectedStrategy.created_at,
+              generated_by: selectedStrategy.generated_by || 'CEO Agent',
+              assigned_agent: selectedStrategy.assigned_agent || '',
+              auto_approved: selectedStrategy.auto_approved || false,
+              approved_at: selectedStrategy.approved_at || null,
+              failure_reason: selectedStrategy.failure_reason || null,
+              impact_score: selectedStrategy.impact_score || 0,
+              health_score: selectedStrategy.health_score || 0,
+              is_public: selectedStrategy.is_public || false,
+              diagnosis: selectedStrategy.diagnosis || {},
               metrics_target: selectedStrategy.metrics_target || {},
               metrics_baseline: selectedStrategy.metrics_baseline || {},
-              tags: selectedStrategy.tags || [],
-              goals: selectedStrategy.goals || [],
-              channels: selectedStrategy.channels || [],
-              kpis: selectedStrategy.kpis || [],
-              updated_at: selectedStrategy.updated_at || selectedStrategy.created_at,
-              created_at: selectedStrategy.created_at,
               version: selectedStrategy.version || 1,
               reason_for_recommendation: selectedStrategy.reason_for_recommendation || '',
               target_audience: selectedStrategy.target_audience || '',
+              goals: selectedStrategy.goals || [],
+              channels: selectedStrategy.channels || [],
+              kpis: selectedStrategy.kpis || [],
               industry: selectedStrategy.industry || '',
               confidence: selectedStrategy.confidence || null,
-            };
+            } as Strategy);
             
-            setSelectedStrategy(transformedStrategy);
             setName(`${selectedStrategy.title} Campaign`);
             setDescription(`Campaign based on: ${selectedStrategy.title}`);
           }

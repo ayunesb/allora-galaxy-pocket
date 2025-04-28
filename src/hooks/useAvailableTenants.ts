@@ -2,7 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tenant } from "@/types/tenant";
-import { useAuth } from "./useAuth";
+import { useAuth } from "@/hooks/useAuth";
 
 export function useAvailableTenants() {
   const { user } = useAuth();
@@ -14,7 +14,7 @@ export function useAvailableTenants() {
 
       // Get tenant IDs the user has access to using our security definer function
       const { data: tenantIds, error: idsError } = await supabase
-        .rpc('get_user_tenant_ids');
+        .rpc('get_user_tenant_ids_safe');
 
       if (idsError) throw idsError;
 
