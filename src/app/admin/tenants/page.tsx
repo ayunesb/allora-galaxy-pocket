@@ -21,10 +21,15 @@ interface TenantAnalytics {
   storage_limit: number;
   analytics_enabled: boolean;
   auto_approve_campaigns: boolean;
+  // Add these fields to match what comes from DB
+  id: string;
+  active_users?: number;
+  mrr?: number;
+  updated_at?: string;
 }
 
 export default function TenantsManagementPage() {
-  const { data: tenants, isLoading } = useQuery<TenantAnalytics[]>({
+  const { data: tenants, isLoading } = useQuery({
     queryKey: ['tenant-analytics'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -32,7 +37,25 @@ export default function TenantsManagementPage() {
         .select('*');
       
       if (error) throw error;
-      return data || [];
+      
+      // Transform the data to match our TenantAnalytics interface
+      return (data || []).map(item => ({
+        tenant_id: item.tenant_id,
+        tenant_name: item.tenant_name || 'Unnamed Tenant',
+        id: item.id,
+        created_at: item.created_at || '',
+        updated_at: item.updated_at,
+        active_users: item.active_users || 0,
+        total_users: item.total_users || 0,
+        total_strategies: item.total_strategies || 0,
+        total_campaigns: item.total_campaigns || 0,
+        mrr: item.mrr || 0,
+        total_credits_used: item.total_credits_used || 0,
+        max_users: item.max_users || 5,
+        storage_limit: item.storage_limit || 1,
+        analytics_enabled: item.analytics_enabled || false,
+        auto_approve_campaigns: item.auto_approve_campaigns || false
+      })) as TenantAnalytics[];
     }
   });
 

@@ -11,6 +11,11 @@ export interface Decision {
   tenant_id: string;
   strategy_title?: string;
   agent_name?: string;
+  // Adding missing properties
+  agent?: string;
+  version?: number;
+  prompt?: string;
+  changed_by?: string;
 }
 
 export interface ApprovalStats {

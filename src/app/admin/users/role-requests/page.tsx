@@ -40,12 +40,23 @@ export default function RoleChangeRequestsPage() {
     // Fetch emails and trust scores for each request
     const requestsWithDetails = await Promise.all(
       data.map(async (request) => {
-        // Get user email
-        const { data: userData } = await supabase
-          .from('profiles')
-          .select('email')
-          .eq('id', request.user_id)
-          .single();
+        let userEmail = '';
+        
+        // Get user email - handle safely if the email column doesn't exist
+        try {
+          const { data: userData, error: userError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', request.user_id)
+            .single();
+          
+          if (!userError && userData) {
+            // Use company_name as fallback if email doesn't exist
+            userEmail = userData.email || userData.company_name || `User ${request.user_id.substring(0, 8)}`;
+          }
+        } catch (err) {
+          console.warn("Could not get user email:", err);
+        }
         
         // Get user trust score
         const { data: trustData } = await supabase
@@ -56,7 +67,7 @@ export default function RoleChangeRequestsPage() {
         
         return { 
           ...request, 
-          user_email: userData?.email,
+          user_email: userEmail,
           trust_score: trustData?.trust_score || 0
         };
       })

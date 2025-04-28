@@ -34,8 +34,10 @@ export default function AIDecisionAudit() {
   useEffect(() => {
     const fetchDecisions = async () => {
       try {
-        // Use a function call instead of directly accessing a non-existent table
-        const { data, error } = await supabase.rpc('get_ai_strategy_decisions');
+        // Use direct query instead of an RPC function that doesn't exist
+        const { data, error } = await supabase
+          .from('strategies')
+          .select('id, strategy_id:id, decision:status, approved:auto_approved, auto_approved, confidence_score:impact_score, decision_made_at:created_at, created_at, tenant_id, strategy_title:title, agent_name:generated_by');
         
         if (error) throw error;
         setDecisions(data as unknown as Decision[] || []);
@@ -131,10 +133,11 @@ export default function AIDecisionAudit() {
   const exportDecisionLog = async (strategyId: string | null) => {
     if (!strategyId) return;
     try {
-      // Use RPC function instead of direct table access
-      const { data, error } = await supabase.rpc('get_strategy_decisions', {
-        strategy_id_param: strategyId
-      });
+      // Use direct query instead of RPC function
+      const { data, error } = await supabase
+        .from('strategies')
+        .select('*')
+        .eq('id', strategyId);
       
       if (error) throw error;
 

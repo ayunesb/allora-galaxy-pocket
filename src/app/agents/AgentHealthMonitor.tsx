@@ -62,9 +62,9 @@ export default function AgentHealthMonitor({
       const results = await Promise.all(
         agentNames.map(async (agent) => {
           const { data, error } = await supabase
-            .from("agent_tasks")
-            .select("status, executed_at")
-            .eq("agent", agent);
+            .from("agent_memory") // Use agent_memory instead of agent_tasks
+            .select("type, timestamp")
+            .eq("agent_name", agent); // Use agent_name instead of agent
 
           // Defensive empty array fallback
           return { agent, data: data || [] };
@@ -87,8 +87,8 @@ export default function AgentHealthMonitor({
         };
 
         const filtered = data.filter((t) => {
-          if (!t.executed_at) return false;
-          const executed = new Date(t.executed_at);
+          if (!t.timestamp) return false;
+          const executed = new Date(t.timestamp);
           executed.setHours(0, 0, 0, 0);
           if (filter === "7d") return executed >= daysAgo(7);
           if (filter === "30d") return executed >= daysAgo(30);
@@ -97,7 +97,7 @@ export default function AgentHealthMonitor({
 
         // Grouped daily XP and cumulative XP
         const grouped = filtered.reduce((acc, task) => {
-          const day = new Date(task.executed_at).toLocaleDateString();
+          const day = new Date(task.timestamp).toLocaleDateString();
           acc[day] = (acc[day] || 0) + 1;
           return acc;
         }, {} as Record<string, number>);
