@@ -70,7 +70,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     const validateTenantAccess = async () => {
       try {
         const { data, error } = await supabase.rpc(
-          "check_tenant_user_access",
+          "check_tenant_user_access_safe",
           { tenant_uuid: tenant.id, user_uuid: user.id }
         );
 

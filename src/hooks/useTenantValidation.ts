@@ -31,7 +31,7 @@ export function useTenantValidation() {
         
         // Use security definer function to avoid recursion
         const { data, error } = await supabase.rpc(
-          "check_tenant_user_access",
+          "check_tenant_user_access_safe",
           { tenant_uuid: tenant.id, user_uuid: user.id }
         );
         

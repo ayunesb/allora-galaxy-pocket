@@ -3479,6 +3479,10 @@ export type Database = {
         Args: { tenant_uuid: string; user_uuid: string }
         Returns: boolean
       }
+      check_tenant_user_access_safe: {
+        Args: { tenant_uuid: string; user_uuid: string }
+        Returns: boolean
+      }
       check_tenant_user_role: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -3555,6 +3559,10 @@ export type Database = {
         Returns: string
       }
       get_user_tenant_ids: {
+        Args: Record<PropertyKey, never>
+        Returns: string[]
+      }
+      get_user_tenant_ids_safe: {
         Args: Record<PropertyKey, never>
         Returns: string[]
       }

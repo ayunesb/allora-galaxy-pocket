@@ -24,7 +24,7 @@ export function useAvailableTenants() {
       try {
         // Get tenant IDs the user has access to using our security definer function
         const { data: tenantIds, error: idsError } = await supabase
-          .rpc('get_user_tenant_ids');
+          .rpc('get_user_tenant_ids_safe');
 
         if (idsError) throw idsError;
 

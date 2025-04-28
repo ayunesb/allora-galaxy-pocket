@@ -35,7 +35,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setError(null);
       
       // Get all tenants for user safely using our new security definer function
-      const { data: tenantIds, error: tenantIdsError } = await supabase.rpc('get_user_tenant_ids');
+      const { data: tenantIds, error: tenantIdsError } = await supabase.rpc('get_user_tenant_ids_safe');
 
       if (tenantIdsError) {
         console.error('Error getting tenant IDs:', tenantIdsError);
