@@ -1,4 +1,3 @@
-
 export interface AgentMemory {
   id: string;
   agent_name: string;
@@ -11,7 +10,7 @@ export interface AgentMemory {
   ai_rating?: number;
   remix_count?: number;
   xp_delta?: number;
-  // Add missing properties used in academy and memory pages
+  // Added required fields used in academy and memory pages
   summary?: string;
   tags?: string[];
 }
@@ -43,10 +42,11 @@ export interface AgentFeedback {
   created_at: string;
   tenant_id: string;
   task_id?: string;
-  // Add missing properties
+  // Added missing properties
   from_agent?: string;
   to_agent?: string;
   strategy_id?: string;
+  campaign_id?: string; // Added to link feedback to campaigns
 }
 
 export interface PromptPerformanceData {
@@ -73,7 +73,6 @@ export interface AgentTask {
   error?: string;
 }
 
-// Add missing interfaces
 export interface AgentMemoryLog extends AgentMemory {
   summary: string;
   tags: string[];
@@ -86,4 +85,16 @@ export interface AgentCollabMessage {
   session_id: string;
   created_at: string;
   tenant_id: string;
+}
+
+// New interface for campaign approval status
+export interface ApprovalStatus {
+  id: string;
+  item_id: string;
+  item_type: 'campaign' | 'strategy' | 'pricing' | 'hire';
+  status: 'approved' | 'rejected' | 'pending';
+  approved_by?: string;
+  approved_at?: string;
+  tenant_id: string;
+  feedback?: string;
 }

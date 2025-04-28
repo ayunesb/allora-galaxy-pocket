@@ -4,22 +4,18 @@ import SwipeCard from "./SwipeCard";
 import { Button } from "@/components/ui/button";
 import { Check, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { Strategy } from "@/types/strategy";
-import { toast } from "@/components/ui/sonner";
+import { Campaign } from "@/types/campaign";
+import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
+import { useCampaignApproval } from "@/hooks/useCampaignApproval";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import ErrorAlert from "@/components/ui/ErrorAlert";
 
 type ApprovalItem = Strategy | Campaign | PricingDecision | HireDecision;
-
-interface Campaign {
-  id: string;
-  name: string;
-  description: string;
-  type: 'campaign';
-  budget?: number;
-  status: string;
-}
 
 interface PricingDecision {
   id: string;
@@ -42,14 +38,18 @@ interface HireDecision {
 }
 
 const PocketSwipe = () => {
-  const [activeTab, setActiveTab] = useState("strategies");
+  const [activeTab, setActiveTab] = useState("campaigns");
   const [index, setIndex] = useState(0);
   const { tenant } = useTenant();
+  const { toast: uiToast } = useToast();
+  const queryClient = useQueryClient();
+  const { approveCampaign, declineCampaign, isProcessing } = useCampaignApproval();
 
-  const { data: strategies = [], isLoading: isStrategiesLoading } = useQuery({
+  const { data: strategies = [], isLoading: isStrategiesLoading, error: strategiesError } = useQuery({
     queryKey: ['pending-strategies', tenant?.id],
     queryFn: async () => {
       if (!tenant?.id) return [];
+      
       const { data, error } = await supabase
         .from('strategies')
         .select('*')
@@ -63,10 +63,11 @@ const PocketSwipe = () => {
     enabled: !!tenant?.id && activeTab === 'strategies'
   });
 
-  const { data: campaigns = [], isLoading: isCampaignsLoading } = useQuery({
+  const { data: campaigns = [], isLoading: isCampaignsLoading, error: campaignsError } = useQuery({
     queryKey: ['pending-campaigns', tenant?.id],
     queryFn: async () => {
       if (!tenant?.id) return [];
+      
       const { data, error } = await supabase
         .from('campaigns')
         .select('*')
@@ -97,54 +98,90 @@ const PocketSwipe = () => {
   };
 
   const items = getCurrentItems();
-  const isLoading = isStrategiesLoading || isCampaignsLoading;
+  const isLoading = isStrategiesLoading || isCampaignsLoading || isProcessing;
+  const error = strategiesError || campaignsError;
 
   const approve = async () => {
     if (!tenant?.id || index >= items.length) return;
     
     const item = items[index];
     try {
-      let table = '';
-      let statusField = 'status';
+      let success = false;
       
       switch(item.type) {
         case 'strategy':
-          table = 'strategies';
+          // Update strategy status
+          const { error: strategyError } = await supabase
+            .from('strategies')
+            .update({ 
+              status: 'approved',
+              approved_at: new Date().toISOString()
+            })
+            .eq('id', item.id)
+            .eq('tenant_id', tenant.id);
+            
+          if (strategyError) throw strategyError;
+          
+          // Log the strategy approval
+          await supabase.from("agent_memory").insert({
+            tenant_id: tenant.id,
+            agent_name: "CEO",
+            context: `User approved strategy: ${item.title || 'Untitled'}`,
+            type: "feedback",
+            is_user_submitted: true,
+            summary: "Strategy approval",
+            tags: ["strategy", "approval"]
+          });
+          
+          success = true;
           break;
+          
         case 'campaign':
-          table = 'campaigns';
+          // Use the campaign approval hook for campaigns
+          success = await approveCampaign(item.id);
           break;
+          
         case 'pricing':
-          table = 'pricing_decisions';
+          // Handle pricing decision approval
+          const { error: pricingError } = await supabase
+            .from('pricing_decisions')
+            .update({ status: 'approved' })
+            .eq('id', item.id)
+            .eq('tenant_id', tenant.id);
+            
+          if (pricingError) throw pricingError;
+          success = true;
           break;
+          
         case 'hire':
-          table = 'hire_decisions';
+          // Handle hire decision approval
+          const { error: hireError } = await supabase
+            .from('hire_decisions')
+            .update({ status: 'approved' })
+            .eq('id', item.id)
+            .eq('tenant_id', tenant.id);
+            
+          if (hireError) throw hireError;
+          success = true;
           break;
       }
       
-      if (!table) return;
-      
-      const { error } = await supabase
-        .from(table)
-        .update({ [statusField]: 'approved' })
-        .eq('id', item.id);
+      if (success) {
+        // Invalidate relevant queries to refresh data
+        queryClient.invalidateQueries({ queryKey: [`pending-${item.type}s`] });
+        queryClient.invalidateQueries({ queryKey: [item.type === 'strategy' ? 'strategies' : 'campaigns'] });
         
-      if (error) throw error;
-      
-      // Log the approval
-      await supabase.from("agent_memory").insert({
-        tenant_id: tenant.id,
-        agent_name: "CEO",
-        context: `User approved ${item.type}: ${item.title || item.name}`,
-        type: "feedback",
-        is_user_submitted: true
-      });
-      
-      toast.success(`${item.type} approved!`);
-      setIndex(i => i + 1);
+        toast.success(`${item.type} approved!`);
+        // Move to the next item
+        setIndex(i => i + 1);
+      }
     } catch (error) {
-      console.error("Error approving item:", error);
-      toast.error("Failed to approve");
+      console.error(`Error approving ${items[index].type}:`, error);
+      uiToast({
+        title: "Approval failed",
+        description: error instanceof Error ? error.message : "Could not approve item",
+        variant: "destructive"
+      });
     }
   };
 
@@ -153,53 +190,87 @@ const PocketSwipe = () => {
     
     const item = items[index];
     try {
-      let table = '';
-      let statusField = 'status';
+      let success = false;
       
       switch(item.type) {
         case 'strategy':
-          table = 'strategies';
+          // Update strategy status
+          const { error: strategyError } = await supabase
+            .from('strategies')
+            .update({ 
+              status: 'rejected',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', item.id)
+            .eq('tenant_id', tenant.id);
+            
+          if (strategyError) throw strategyError;
+          
+          // Log the strategy rejection
+          await supabase.from("agent_memory").insert({
+            tenant_id: tenant.id,
+            agent_name: "CEO",
+            context: `User declined strategy: ${item.title || 'Untitled'}`,
+            type: "feedback",
+            is_user_submitted: true,
+            summary: "Strategy rejection",
+            tags: ["strategy", "rejection"]
+          });
+          
+          success = true;
           break;
+          
         case 'campaign':
-          table = 'campaigns';
+          // Use the campaign decline hook for campaigns
+          success = await declineCampaign(item.id);
           break;
+          
         case 'pricing':
-          table = 'pricing_decisions';
-          break;
         case 'hire':
-          table = 'hire_decisions';
+          // Handle other decision types
+          const table = item.type === 'pricing' ? 'pricing_decisions' : 'hire_decisions';
+          const { error: decisionError } = await supabase
+            .from(table)
+            .update({ status: 'rejected' })
+            .eq('id', item.id)
+            .eq('tenant_id', tenant.id);
+            
+          if (decisionError) throw decisionError;
+          success = true;
           break;
       }
       
-      if (!table) return;
-      
-      const { error } = await supabase
-        .from(table)
-        .update({ [statusField]: 'rejected' })
-        .eq('id', item.id);
+      if (success) {
+        // Invalidate relevant queries to refresh data
+        queryClient.invalidateQueries({ queryKey: [`pending-${item.type}s`] });
         
-      if (error) throw error;
-      
-      // Log the rejection
-      await supabase.from("agent_memory").insert({
-        tenant_id: tenant.id,
-        agent_name: "CEO",
-        context: `User declined ${item.type}: ${item.title || item.name}`,
-        type: "feedback",
-        is_user_submitted: true
-      });
-      
-      toast.success(`${item.type} declined`);
-      setIndex(i => i + 1);
+        toast.success(`${item.type} declined`);
+        // Move to the next item
+        setIndex(i => i + 1);
+      }
     } catch (error) {
-      console.error("Error declining item:", error);
-      toast.error("Failed to decline");
+      console.error(`Error declining ${items[index].type}:`, error);
+      uiToast({
+        title: "Decline failed",
+        description: error instanceof Error ? error.message : "Could not decline item",
+        variant: "destructive"
+      });
     }
   };
 
   const renderContent = () => {
     if (isLoading) {
-      return <div className="text-center py-10">Loading decisions...</div>;
+      return <div className="text-center py-10">
+        <LoadingSpinner />
+        <p className="mt-2">Processing decisions...</p>
+      </div>;
+    }
+    
+    if (error) {
+      return <ErrorAlert 
+        title="Error loading decisions" 
+        description={error instanceof Error ? error.message : "Could not load decisions"} 
+      />;
     }
 
     if (!items || items.length === 0) {
@@ -240,6 +311,7 @@ const PocketSwipe = () => {
             onClick={decline} 
             variant="destructive"
             className="w-full"
+            disabled={isProcessing}
           >
             <X className="mr-2" />
             Decline
@@ -247,6 +319,7 @@ const PocketSwipe = () => {
           <Button 
             onClick={approve} 
             className="w-full bg-green-600 hover:bg-green-700"
+            disabled={isProcessing}
           >
             <Check className="mr-2" />
             Approve
@@ -273,7 +346,7 @@ const PocketSwipe = () => {
         </TabsContent>
       </Tabs>
       
-      {items.length > 0 && index < items.length && (
+      {items.length > 0 && index < items.length && !isProcessing && (
         <div className="flex justify-between items-center pt-2">
           <div className="text-sm text-muted-foreground">
             {index + 1} of {items.length}

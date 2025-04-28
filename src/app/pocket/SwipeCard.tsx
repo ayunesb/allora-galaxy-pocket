@@ -12,8 +12,10 @@ import {
   LineChart, 
   ClipboardCheck, 
   DollarSign, 
-  UserPlus 
+  UserPlus,
+  Calendar
 } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 
 interface SwipeCardProps {
   title: string;
@@ -56,15 +58,15 @@ const SwipeCard = ({ title, summary, type = 'strategy', metadata }: SwipeCardPro
   const getTypeColor = () => {
     switch (type) {
       case 'strategy':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
       case 'campaign':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
       case 'pricing':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300';
       case 'hire':
-        return 'bg-amber-100 text-amber-800';
+        return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
     }
   };
 
@@ -73,12 +75,22 @@ const SwipeCard = ({ title, summary, type = 'strategy', metadata }: SwipeCardPro
 
     switch (type) {
       case 'campaign':
-        return metadata.budget ? (
-          <div className="text-sm font-medium flex items-center gap-1">
-            <DollarSign className="h-4 w-4" />
-            Budget: ${metadata.budget.toLocaleString()}
+        return (
+          <div className="flex flex-col gap-2">
+            {metadata.budget ? (
+              <div className="text-sm font-medium flex items-center gap-1">
+                <DollarSign className="h-4 w-4" />
+                Budget: ${metadata.budget.toLocaleString()}
+              </div>
+            ) : null}
+            {metadata.created_at && (
+              <div className="text-xs text-muted-foreground flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                Created {formatDistanceToNow(new Date(metadata.created_at), { addSuffix: true })}
+              </div>
+            )}
           </div>
-        ) : null;
+        );
       case 'pricing':
         return metadata.suggestedPrice ? (
           <div className="flex gap-4 text-sm">
@@ -92,6 +104,22 @@ const SwipeCard = ({ title, summary, type = 'strategy', metadata }: SwipeCardPro
             Salary: {metadata.salary_range}
           </div>
         ) : null;
+      case 'strategy':
+        return (
+          <div className="flex flex-col gap-1">
+            {metadata.industry && (
+              <div className="text-xs text-muted-foreground">
+                Industry: {metadata.industry}
+              </div>
+            )}
+            {metadata.created_at && (
+              <div className="text-xs text-muted-foreground flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                Created {formatDistanceToNow(new Date(metadata.created_at), { addSuffix: true })}
+              </div>
+            )}
+          </div>
+        );
       default:
         return null;
     }
@@ -101,7 +129,7 @@ const SwipeCard = ({ title, summary, type = 'strategy', metadata }: SwipeCardPro
     <Card className="w-full mb-4">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
-          <CardTitle className="text-xl">{title}</CardTitle>
+          <CardTitle className="text-xl">{title || 'Untitled'}</CardTitle>
           <Badge className={getTypeColor()}>
             <span className="flex items-center gap-1">
               {getIcon()}
@@ -111,7 +139,7 @@ const SwipeCard = ({ title, summary, type = 'strategy', metadata }: SwipeCardPro
         </div>
       </CardHeader>
       <CardContent>
-        <p className="text-muted-foreground">{summary}</p>
+        <p className="text-muted-foreground">{summary || 'No description provided'}</p>
       </CardContent>
       {renderMetadata() && (
         <CardFooter className="pt-0 border-t">
