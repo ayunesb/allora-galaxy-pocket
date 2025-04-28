@@ -22,6 +22,7 @@ interface KpiMetricFromDB {
   value: number;
   recorded_at: string;
   tenant_id?: string;
+  created_at: string;
 }
 
 export default function KpiDashboard() {
@@ -69,14 +70,17 @@ export default function KpiDashboard() {
     changePercent: Math.floor(Math.random() * 10),
     updated_at: metric.recorded_at || new Date().toISOString(),
     tenant_id: tenant?.id || '',
-    label: metric.metric || 'Unnamed Metric'
+    label: metric.metric || 'Unnamed Metric',
+    created_at: metric.created_at || new Date().toISOString()
   }));
 
   const isLoading = isLoadingMetrics || isLoadingAlerts;
   const error = metricsError || alertsError;
 
   const handleRetry = () => {
-    triggerKpiCheck(tenant?.id);
+    if (triggerKpiCheck) {
+      triggerKpiCheck(tenant?.id);
+    }
   };
 
   if (isLoading) {

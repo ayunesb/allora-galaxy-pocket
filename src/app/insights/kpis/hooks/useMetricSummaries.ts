@@ -11,15 +11,15 @@ export function useMetricSummaries(metrics: KpiMetric[]) {
 
     // Group metrics by name to get the latest value for each
     const metricsMap = metrics.reduce((acc, metric) => {
-      if (!acc[metric.kpi_name]) {
-        acc[metric.kpi_name] = metric;
+      if (!acc[metric.kpi_name || '']) {
+        acc[metric.kpi_name || ''] = metric;
       } else {
         // If we already have this metric, check if this one is newer
-        const existingDate = new Date(acc[metric.kpi_name].updated_at || "");
+        const existingDate = new Date(acc[metric.kpi_name || ''].updated_at || "");
         const currentDate = new Date(metric.updated_at || "");
         
         if (currentDate > existingDate) {
-          acc[metric.kpi_name] = metric;
+          acc[metric.kpi_name || ''] = metric;
         }
       }
       
@@ -30,7 +30,7 @@ export function useMetricSummaries(metrics: KpiMetric[]) {
     return Object.values(metricsMap).map(metric => {
       // Format as metrics card props
       return {
-        title: metric.kpi_name,
+        title: metric.kpi_name || metric.label || 'Unnamed Metric',
         value: String(metric.value || '0'),
         trend: metric.trend || undefined,
         change: metric.changePercent ? `${metric.changePercent}%` : undefined,

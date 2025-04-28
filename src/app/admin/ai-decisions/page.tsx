@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,9 +51,10 @@ export default function AIDecisionsPage() {
         
       if (error) throw error;
       
-      // Return the single object directly, not as an array
-      return data as ApprovalStats;
-    }
+      // Fix the return type - extract the first item from the array
+      return data as unknown as ApprovalStats;
+    },
+    enabled: true
   });
 
   const handleFilterChange = (newFilters: Partial<FilterState>) => {

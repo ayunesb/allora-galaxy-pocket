@@ -12,6 +12,12 @@ export interface KpiMetric {
   updated_at?: string;
   tenant_id?: string;
   recorded_at?: string;
+  label?: string;
+  description?: string;
+  status?: string;
+  target?: number;
+  trend_direction?: 'up' | 'down' | 'neutral';
+  last_value?: number;
 }
 
 export interface KpiAlert {
@@ -22,7 +28,7 @@ export interface KpiAlert {
   message?: string;
   severity: 'low' | 'medium' | 'high' | 'critical';
   threshold: number;
-  condition?: string;
+  condition?: '<' | '>' | 'falls_by_%' | 'rises_by_%';
   target?: number;
   current_value: number;
   previous_value?: number;

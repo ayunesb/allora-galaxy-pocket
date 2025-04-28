@@ -67,7 +67,7 @@ export default function KpiAlertsPanel({ alerts }: KpiAlertsPanelProps) {
 }
 
 // Helper function to render the appropriate condition symbol
-function renderConditionSymbol(condition?: '<' | '>' | 'falls_by_%' | 'rises_by_%'): string {
+function renderConditionSymbol(condition?: '<' | '>' | 'falls_by_%' | 'rises_by_%' | string): string {
   switch (condition) {
     case '>':
       return '>';

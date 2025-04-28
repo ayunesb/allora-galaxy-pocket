@@ -18,14 +18,14 @@ export default function KpiDashboardPage() {
   const [category, setCategory] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { data: metrics, isLoading, error } = useKpiMetrics(dateRange, category, searchQuery);
+  const { data: metrics, isLoading, error } = useKpiMetrics(dateRange, category);
   const { tenant } = useTenant();
 
   const handleExportCSV = () => {
     if (metrics) {
       exportToCSV(
         metrics.map(metric => ({
-          Name: metric.kpi_name,
+          Name: metric.kpi_name || metric.metric || 'Unnamed Metric',
           Value: metric.value,
           Target: metric.target || 'N/A',
           Status: metric.status || 'N/A',
@@ -108,12 +108,18 @@ export default function KpiDashboardPage() {
       </div>
 
       {isLoading && <div>Loading KPIs...</div>}
-      {error && <div>Error loading KPIs: {error.message}</div>}
+      {error && <div>Error loading KPIs: {(error as Error).message}</div>}
 
       {metrics && metrics.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {metrics.map((metric) => (
-            <KpiCard key={metric.id} {...metric} />
+            <KpiCard 
+              key={metric.id} 
+              kpi_name={metric.kpi_name || metric.metric}
+              value={metric.value}
+              trend={metric.trend}
+              target={metric.target}
+            />
           ))}
         </div>
       ) : (

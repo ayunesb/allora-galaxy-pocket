@@ -3,7 +3,26 @@ import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import type { KpiMetric } from "@/types/kpi";
 
-export default function KpiCard({ label, value, trend, changePercent, onUpdate }: KpiMetric & { onUpdate?: () => void }) {
+interface KpiCardProps {
+  label?: string;
+  kpi_name?: string;
+  value: number;
+  trend?: 'up' | 'down' | 'neutral';
+  changePercent?: number;
+  onUpdate?: () => void;
+}
+
+export default function KpiCard({ 
+  label, 
+  kpi_name,
+  value, 
+  trend, 
+  changePercent, 
+  onUpdate 
+}: KpiCardProps) {
+  // Use label or kpi_name, whichever is available
+  const displayName = label || kpi_name || 'Metric';
+  
   // Ensure we parse the value to number for display
   const numericValue = typeof value === 'string' ? parseFloat(value) : value;
   
@@ -11,7 +30,7 @@ export default function KpiCard({ label, value, trend, changePercent, onUpdate }
     <Card>
       <CardContent className="pt-6">
         <div className="flex justify-between items-start">
-          <p className="text-sm text-muted-foreground">{label}</p>
+          <p className="text-sm text-muted-foreground">{displayName}</p>
           <div className="flex items-center gap-2">
             {trend && (
               <span className={trend === "up" ? "text-green-500" : "text-red-500"}>

@@ -15,15 +15,7 @@ export function useKpiMetrics(dateRange = "30", category?: string) {
       if (!tenant?.id) throw new Error('No tenant selected');
 
       try {
-        // Use the new materialized view for better performance
-        const { data: summaryData, error: summaryError } = await supabase
-          .from('kpi_metrics_summary')
-          .select('*')
-          .eq('tenant_id', tenant.id);
-        
-        if (summaryError) throw summaryError;
-        
-        // Get detailed metrics if needed
+        // Use kpi_metrics table directly instead of the view
         let query = supabase
           .from('kpi_metrics')
           .select('*')
@@ -42,11 +34,12 @@ export function useKpiMetrics(dateRange = "30", category?: string) {
           id: metric.id,
           kpi_name: metric.metric || 'Unnamed Metric',
           value: Number(metric.value) || 0,
-          trend: (metric.value > 0 ? "up" : "down") as "up" | "down",
-          changePercent: calculateChangePercent(metric.value, summaryData),
+          trend: determineMetricTrend(metric.value),
+          changePercent: 0, // Default since we don't have historical data
           updated_at: metric.updated_at || metric.created_at || new Date().toISOString(),
           tenant_id: tenant.id,
-          label: metric.metric || 'Unnamed Metric'
+          label: metric.metric || 'Unnamed Metric',
+          created_at: metric.created_at
         })) as KpiMetric[] || [];
       } catch (err) {
         console.error("Error fetching KPI metrics:", err);
@@ -94,10 +87,9 @@ export function useKpiMetrics(dateRange = "30", category?: string) {
   };
 }
 
-// Helper function to calculate change percent
-function calculateChangePercent(currentValue: number, summaryData: any[]) {
-  if (!summaryData?.length) return 0;
-  const avgValue = summaryData[0]?.avg_value || 0;
-  if (avgValue === 0) return 0;
-  return Math.round(((currentValue - avgValue) / avgValue) * 100);
+// Helper function to determine trend based on value
+function determineMetricTrend(value: number): 'up' | 'down' | 'neutral' {
+  if (value > 0) return 'up';
+  if (value < 0) return 'down';
+  return 'neutral';
 }

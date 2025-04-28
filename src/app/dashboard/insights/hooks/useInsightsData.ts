@@ -6,6 +6,7 @@ import { useKpiHistory } from "./useKpiHistory";
 import { useFeedbackMetrics } from "./useFeedbackMetrics";
 import { useRoiMetrics } from "./useRoiMetrics";
 import { useCampaignMetrics } from "./useCampaignMetrics";
+import { Campaign } from "@/types/campaign";
 
 // Define types for trend data
 type TrendType = 'up' | 'down' | 'neutral';
@@ -34,11 +35,13 @@ interface InsightsData {
 }
 
 export function useInsightsData(dateRange: string): InsightsData {
+  // Get data from various hooks
   const kpiHistory = useKpiHistory(dateRange);
   const feedbackMetrics = useFeedbackMetrics(dateRange);
   const roiMetrics = useRoiMetrics(dateRange);
   const campaignMetrics = useCampaignMetrics(dateRange);
 
+  // Determine loading and error states
   const isLoading = kpiHistory.isLoading || feedbackMetrics.isLoading || roiMetrics.isLoading || campaignMetrics.isLoading;
   const error = kpiHistory.error || feedbackMetrics.error || roiMetrics.error || campaignMetrics.error;
 
