@@ -10,6 +10,8 @@ import { Navigate } from 'react-router-dom';
 import { KpiAlertsPanel } from '@/app/insights/kpis/components/KpiAlertsPanel';
 import { useKpiAlerts } from '@/hooks/useKpiAlerts';
 import { supabase } from '@/integrations/supabase/client';
+import { Strategy } from '@/types/strategy';
+import { Campaign } from '@/types/campaign';
 
 const DashboardPage: React.FC = () => {
   const { strategies, campaigns } = useStrategyAndCampaigns();
@@ -51,10 +53,10 @@ const DashboardPage: React.FC = () => {
     goals: item.goals || [],
     channels: item.channels || [],
     kpis: item.kpis || [],
-  }));
+  })) as Strategy[];
 
   // Ensure campaigns has proper type
-  const typedCampaigns = campaigns || [];
+  const typedCampaigns = (campaigns || []) as Campaign[];
 
   return (
     <div className="container mx-auto p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

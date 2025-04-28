@@ -68,3 +68,5 @@ export function KpiAlertsPanel({ alerts = [], kpiName, limit = 3 }: KpiAlertsPan
     </Card>
   );
 }
+
+export default KpiAlertsPanel;

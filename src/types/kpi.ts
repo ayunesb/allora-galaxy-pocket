@@ -1,59 +1,37 @@
 
-export type KpiTrend = 'up' | 'down' | 'neutral';
-
 export interface KpiMetric {
   id?: string;
   tenant_id?: string;
   kpi_name?: string;
   metric?: string;
-  label?: string;
-  value: number;
-  trend?: KpiTrend;
-  changePercent?: number;
-  target?: number;
-  trend_direction?: KpiTrend;
-  last_value?: number;
+  value: string | number;
+  recorded_at?: string;
   created_at?: string;
   updated_at?: string;
-  description?: string;
-  status?: string;
+  trend?: 'up' | 'down' | 'neutral';
+  changePercent?: number;
+  target?: number | string;
 }
 
 export interface KpiAlert {
   id: string;
+  tenant_id: string;
   kpi_name: string;
   description: string;
+  message?: string;
   severity: 'low' | 'medium' | 'high';
+  status: 'pending' | 'resolved' | 'triggered';
   current_value: number;
   previous_value?: number;
-  target?: number;
   threshold?: number;
   percent_change?: number;
-  outcome?: string;
-  status: 'pending' | 'acknowledged' | 'resolved' | 'triggered';
-  triggered_at: string;
-  created_at: string;
-  tenant_id: string;
   campaign_id?: string;
-  condition?: string;
-  message?: string;
-}
-
-export interface KpiAlertRule {
-  id: string;
-  name: string;
-  kpi_name: string;
-  condition: string;
-  threshold: number;
-  severity: 'low' | 'medium' | 'high';
-  message: string;
-  status: 'active' | 'inactive';
+  triggered_at?: string;
   created_at: string;
-  updated_at: string;
-  tenant_id: string;
-  last_triggered?: string;
-  active?: boolean;
-  compare_period?: string;
+  condition?: string;
+  target?: number;
+  metric?: string;
+  outcome?: string;
 }
 
 export interface KpiInsight {
@@ -61,8 +39,9 @@ export interface KpiInsight {
   kpi_name: string;
   insight: string;
   impact_level?: string;
-  suggested_action?: string;
   campaign_id?: string;
-  tenant_id: string;
   created_at: string;
+  tenant_id: string;
+  outcome?: string;
+  suggested_action?: string;
 }

@@ -1,3 +1,4 @@
+
 import React from "react";
 import { ScriptDialog } from "@/components/ScriptDialog";
 import type { Strategy } from "@/types/strategy";
@@ -8,18 +9,10 @@ interface StrategyPreviewProps {
   onReject?: () => void;
 }
 
-// Helper type to add optional fields for the AI conversation
-interface EnhancedStrategy extends Strategy {
-  industry?: string | null;
-  goal?: string | null;
-  goals?: string[] | null;
-  confidence?: string | null;
-}
-
 /**
  * Returns a ReactNode that simulates a conversation about how the AI created the strategy.
  */
-const getAICreationConversation = (strategy: EnhancedStrategy) => (
+const getAICreationConversation = (strategy: Strategy) => (
   <div>
     <span className="font-bold text-blue-600">AI Bot:</span> "To generate this strategy, I analyzed your industry {strategy.industry ?? "(unspecified)"} and primary goal: '{strategy.goal ?? strategy.goals?.[0] ?? "N/A"}'. I pulled best practices and recent success trends, then tailored an actionable plan to your use case."<br />
     <span className="font-bold text-gray-600">You:</span> "Why is this approach recommended?"<br />
@@ -57,21 +50,7 @@ export function StrategyPreview({ strategy, onApprove, onReject }: StrategyPrevi
       ? status as Strategy['status'] 
       : 'draft';
 
-  // For AI creation explanation, pass all available props in a Strategy object
-  const enhancedStrategy: EnhancedStrategy = {
-    id: strategy.id,
-    title,
-    description: description || '',
-    created_at: created_at || '',
-    tenant_id: strategy.tenant_id || undefined,
-    status: strategyStatus,
-    industry,
-    goal,
-    goals: goal ? [goal] : undefined,
-    confidence
-  };
-
-  const testConversation = getAICreationConversation(enhancedStrategy);
+  const testConversation = getAICreationConversation(strategy);
 
   return (
     <div className="rounded-xl bg-card p-6 border shadow-md flex flex-col min-h-[180px]">

@@ -37,12 +37,16 @@ export interface Strategy {
   updated_at?: string;
   reason_for_recommendation?: string;
   target_audience?: string;
-  goals?: any[];
+  goals?: string[] | any[];
   channels?: string[];
-  kpis?: any[];
+  kpis?: string[] | any[];
   impact_score?: number;
   is_public?: boolean;
   onboarding_data?: Record<string, any>;
+  // Additional fields used in some components
+  industry?: string;
+  goal?: string;
+  confidence?: string;
 }
 
 export interface StrategyDraft {

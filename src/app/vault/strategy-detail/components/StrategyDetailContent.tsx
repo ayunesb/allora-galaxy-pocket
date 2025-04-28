@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useParams } from "react-router-dom";
@@ -46,7 +45,7 @@ export function StrategyDetailContent() {
         target_audience: data.target_audience || '',
         reason_for_recommendation: data.reason_for_recommendation || '',
         updated_at: data.updated_at || data.created_at,
-        version: data.version || '1',
+        version: data.version || 1,
         metrics_baseline: data.metrics_baseline || {},
         metrics_target: data.metrics_target || {},
         diagnosis: data.diagnosis || {},

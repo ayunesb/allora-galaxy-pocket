@@ -1,159 +1,91 @@
-
 import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useTenant } from '@/hooks/useTenant';
-import { KPITrackerWithData } from '@/components/KPITracker';
-import InsightsDateFilter from '@/app/dashboard/insights/components/InsightsDateFilter';
-import { useKpiAlerts } from '@/hooks/useKpiAlerts';
-import KpiLoadingState from "./components/KpiLoadingState";
-import KpiErrorState from "./components/KpiErrorState";
-import KpiMetricSummaryGrid from "./components/KpiMetricSummaryGrid";
-import KpiAlertsPanel from "./components/KpiAlertsPanel";
-import { useMetricSummaries } from './hooks/useMetricSummaries';
-import type { KpiMetric } from '@/types/kpi';
-
-// Define the type for database KPI metrics
-interface KpiMetricFromDB {
-  id: string;
-  metric: string;
-  value: number;
-  recorded_at: string;
-  tenant_id?: string;
-  created_at: string;
-}
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { useKpiMetrics } from "@/hooks/useKpiMetrics";
+import { useKpiAlerts } from "@/hooks/useKpiAlerts";
+import { AlertCircle, TrendingUp, RefreshCw } from "lucide-react";
+import { KpiMetricSummaryGrid } from "./components/KpiMetricSummaryGrid";
+import { KpiLoadingState } from "./components/KpiLoadingState";
+import { KpiErrorState } from "./components/KpiErrorState";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { KpiAlertsPanel } from "./components/KpiAlertsPanel";
 
 export default function KpiDashboard() {
-  const { tenant } = useTenant();
-  const [dateRange, setDateRange] = useState("30");
-  const [activeTab, setActiveTab] = useState('overview');
+  const { data: metrics, isLoading, error, refetch } = useKpiMetrics();
+  const { alerts, isLoading: isLoadingAlerts } = useKpiAlerts({ activeOnly: true });
+  const [timeframe, setTimeframe] = useState<number>(7);
 
-  const { 
-    data: metrics = [], 
-    isLoading: isLoadingMetrics, 
-    error: metricsError 
-  } = useQuery({
-    queryKey: ['kpi-metrics', tenant?.id, dateRange],
-    queryFn: async () => {
-      if (!tenant?.id) return [];
-      
-      const { data, error } = await supabase
-        .from('kpi_metrics')
-        .select('*')
-        .eq('tenant_id', tenant?.id)
-        .order('recorded_at', { ascending: false });
-        
-      if (error) {
-        console.error("Error fetching KPI metrics:", error);
-        throw error;
-      }
-      
-      return data as KpiMetricFromDB[] || [];
-    },
-    enabled: !!tenant?.id,
-  });
-
-  const { 
-    alerts = [], 
-    isLoading: isLoadingAlerts, 
-    error: alertsError, 
-    triggerKpiCheck 
-  } = useKpiAlerts();
-
-  const metricSummaries: KpiMetric[] = metrics.map(metric => ({
-    id: metric.id || '',
-    kpi_name: metric.metric || 'Unnamed Metric',
-    value: Number(metric.value) || 0,
-    trend: Math.random() > 0.5 ? 'up' : 'down',
-    changePercent: Math.floor(Math.random() * 10),
-    updated_at: metric.recorded_at || new Date().toISOString(),
-    tenant_id: tenant?.id || '',
-    label: metric.metric || 'Unnamed Metric',
-    created_at: metric.created_at || new Date().toISOString()
-  }));
-
-  const isLoading = isLoadingMetrics || isLoadingAlerts;
-  const error = metricsError || alertsError;
-
-  const handleRetry = () => {
-    if (triggerKpiCheck) {
-      triggerKpiCheck(tenant?.id);
-    }
+  const handleTimeframeChange = (days: number) => {
+    setTimeframe(days);
   };
 
-  if (isLoading) {
-    return <KpiLoadingState />;
-  }
-
-  if (error) {
-    return <KpiErrorState error={error} onRetry={handleRetry} />;
-  }
-
-  // Add fallback UI for empty metrics state
-  if (!metrics || metrics.length === 0) {
-    return (
-      <div className="container mx-auto py-8 px-4">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
-          <h1 className="text-2xl font-bold">KPI Metrics Dashboard</h1>
-          <InsightsDateFilter dateRange={dateRange} setDateRange={setDateRange} />
-        </div>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>📉 No KPI Metrics Available</CardTitle>
-          </CardHeader>
-          <CardContent className="p-8 text-center">
-            <p className="text-lg text-muted-foreground mb-4">
-              Your KPI metrics dashboard is ready, but there's no data yet.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Once your AI agents begin executing tasks and campaigns, 
-              KPI metrics will start appearing here.
-            </p>
-            <p className="text-sm mt-4">
-              You can manually add KPI metrics from the settings page.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
-        <h1 className="text-2xl font-bold">KPI Metrics Dashboard</h1>
-        <InsightsDateFilter dateRange={dateRange} setDateRange={setDateRange} />
-      </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="charts">Detailed Charts</TabsTrigger>
-          <TabsTrigger value="alerts">Alert Overlays</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview">
-          <KpiMetricSummaryGrid metricSummaries={metricSummaries} />
-        </TabsContent>
-
-        <TabsContent value="charts">
-          <Card>
-            <CardHeader>
-              <CardTitle>KPI Trends Over Time</CardTitle>
-            </CardHeader>
-            <CardContent className="h-[500px]">
-              <KPITrackerWithData />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="alerts">
-          <KpiAlertsPanel alerts={alerts} />
-        </TabsContent>
-      </Tabs>
+    <div className="container mx-auto py-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-2xl font-bold tracking-tight">
+            KPI Metrics Dashboard
+          </CardTitle>
+          <Button variant="outline" onClick={refetch} disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <AlertCircle className="mr-2 h-4 w-4 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Refresh Data
+              </>
+            )}
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="summary" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="summary">Summary</TabsTrigger>
+              <TabsTrigger value="alerts">Alerts</TabsTrigger>
+            </TabsList>
+            <TabsContent value="summary">
+              {isLoading ? (
+                <KpiLoadingState />
+              ) : error ? (
+                <KpiErrorState error={error} onRetry={refetch} />
+              ) : metrics && metrics.length > 0 ? (
+                <>
+                  <KpiMetricSummaryGrid metrics={metrics} />
+                  <div className="mt-6">
+                    <h3 className="text-xl font-semibold mb-4">
+                      Performance Over Time
+                    </h3>
+                    {/* Placeholder for chart component */}
+                    <p className="text-muted-foreground">
+                      Historical data and charts will be displayed here.
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">
+                    No KPI metrics found. Please add your KPI metrics to start
+                    tracking your performance.
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+            <TabsContent value="alerts">
+              {isLoadingAlerts ? (
+                <div className="flex items-center justify-center py-4">
+                  <AlertCircle className="mr-2 h-4 w-4 animate-spin" />
+                  Loading alerts...
+                </div>
+              ) : (
+                <KpiAlertsPanel alerts={alerts} />
+              )}
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -7,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight } from "lucide-react";
 import { useTenant } from "@/hooks/useTenant";
 import { Strategy } from "@/types/strategy";
+import { supabase } from '@/integrations/supabase/client';
 
 export function StartupDashboard() {
   const { tenant } = useTenant();
@@ -38,8 +40,8 @@ export function StartupDashboard() {
         assigned_agent: item.assigned_agent || '',
         auto_approved: item.auto_approved || false,
         health_score: item.health_score || 0,
-    } as Strategy));
-  },
+      } as Strategy));
+    },
     enabled: !!tenant?.id
   });
 
