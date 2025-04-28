@@ -5,9 +5,10 @@ import { cn } from "@/lib/utils";
 interface LoadingSpinnerProps {
   size?: "sm" | "md" | "lg";
   className?: string;
+  label?: string;
 }
 
-export default function LoadingSpinner({ size = "md", className }: LoadingSpinnerProps) {
+export default function LoadingSpinner({ size = "md", className, label }: LoadingSpinnerProps) {
   const sizeClass = {
     sm: "h-4 w-4",
     md: "h-6 w-6",
@@ -15,9 +16,12 @@ export default function LoadingSpinner({ size = "md", className }: LoadingSpinne
   };
   
   return (
-    <Loader2 
-      className={cn(`animate-spin ${sizeClass[size]}`, className)} 
-      aria-hidden="true" 
-    />
+    <div className="flex flex-col items-center justify-center">
+      <Loader2 
+        className={cn(`animate-spin ${sizeClass[size]}`, className)} 
+        aria-hidden="true" 
+      />
+      {label && <p className="mt-2 text-sm text-muted-foreground">{label}</p>}
+    </div>
   );
 }

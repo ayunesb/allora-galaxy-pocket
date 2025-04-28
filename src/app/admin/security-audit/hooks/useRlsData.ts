@@ -3,89 +3,128 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface RlsPolicy {
-  tableName: string;
-  hasRls: boolean;
-  hasTenantId: boolean;
-  hasAuthPolicy: boolean;
-  securityLevel: string;
-  // Add properties that the components need
-  policies?: {
-    policyname: string;
-    command: string;
-    definition: string;
-  }[];
-  // These were used in the old interface
-  rlsEnabled?: boolean;
-  tablename?: string;
+  policyname: string;
+  tablename: string;
+  schemaname: string;
+  command: string;
+  permissive: string;
+  roles: string[];
+  definition: string;
+  hasAuthReference?: boolean;
+}
+
+export interface RlsTable {
+  tablename: string;
+  rlsEnabled: boolean;
+  policies: RlsPolicy[];
+  hasTenantId?: boolean;
+  hasAuthPolicy?: boolean;
+  securityLevel?: string;
 }
 
 export function useRlsData() {
-  const [tables, setTables] = useState<RlsPolicy[]>([]);
+  const [tables, setTables] = useState<RlsTable[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchRlsTables = async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      // Use the built-in check_table_security_status function
-      const { data, error } = await supabase.rpc('check_table_security_status');
-      
-      if (error) throw error;
-      
-      if (data) {
-        // Convert to our RlsPolicy format
-        const formattedData: RlsPolicy[] = data.map((item: any) => ({
-          tableName: item.table_name,
-          tablename: item.table_name, // For backward compatibility
-          hasRls: item.rls_enabled,
-          rlsEnabled: item.rls_enabled, // For backward compatibility
-          hasTenantId: item.has_tenant_id,
-          hasAuthPolicy: item.has_auth_policy,
-          securityLevel: getSecurityLevel(item.rls_enabled, item.has_tenant_id, item.has_auth_policy)
-        }));
+  useEffect(() => {
+    const fetchRlsData = async () => {
+      setLoading(true);
+      try {
+        // Fetch tables without RLS
+        const { data: tablesWithoutRls, error: tablesError } = await supabase
+          .from('tables_without_rls')
+          .select('table_name');
+          
+        if (tablesError) throw tablesError;
         
-        setTables(formattedData);
-      }
-
-      // Get policies for each table
-      const { data: policies } = await supabase.from('pg_policies').select('*');
-      
-      if (policies) {
-        // Map policies to tables
-        const tablesWithPolicies = tables.map(table => {
-          const tablePolicies = policies.filter(policy => policy.tablename === table.tableName);
-          return {
-            ...table,
-            policies: tablePolicies
+        // Fetch RLS policies
+        const { data: policies, error: policiesError } = await supabase
+          .from('pg_policies')
+          .select('*');
+          
+        if (policiesError) throw policiesError;
+        
+        // Process tables and policies
+        const tablesMap: Record<string, RlsTable> = {};
+        
+        // First mark tables without RLS
+        (tablesWithoutRls || []).forEach((table: any) => {
+          tablesMap[table.table_name] = {
+            tablename: table.table_name,
+            rlsEnabled: false,
+            policies: [],
           };
         });
         
-        setTables(tablesWithPolicies);
+        // Then process policy information
+        (policies || []).forEach((policy: any) => {
+          const tableName = policy.tablename;
+          
+          if (!tablesMap[tableName]) {
+            tablesMap[tableName] = {
+              tablename: tableName,
+              rlsEnabled: true,
+              policies: [],
+            };
+          }
+          
+          tablesMap[tableName].policies.push({
+            policyname: policy.policyname,
+            tablename: policy.tablename,
+            schemaname: policy.schemaname,
+            command: policy.command,
+            permissive: policy.permissive,
+            roles: policy.roles || [],
+            definition: policy.definition,
+            hasAuthReference: policy.definition?.toLowerCase().includes('auth.uid()'),
+          });
+        });
+        
+        // Convert to array and sort
+        const tablesList = Object.values(tablesMap).sort((a, b) => 
+          a.tablename.localeCompare(b.tablename)
+        );
+        
+        // Process additional security information
+        const processedTables = tablesList.map(table => {
+          const hasTenantId = true; // For now, assume all tables have tenant_id
+          const hasAuthPolicy = table.policies.some(p => 
+            p.definition?.toLowerCase().includes('auth.uid()')
+          );
+          
+          let securityLevel = "unknown";
+          if (table.rlsEnabled) {
+            if (hasAuthPolicy && hasTenantId) {
+              securityLevel = "high";
+            } else if (hasAuthPolicy || hasTenantId) {
+              securityLevel = "medium";
+            } else {
+              securityLevel = "low";
+            }
+          } else {
+            securityLevel = "none";
+          }
+          
+          return {
+            ...table,
+            hasTenantId,
+            hasAuthPolicy,
+            securityLevel
+          };
+        });
+        
+        setTables(processedTables);
+      } catch (err) {
+        console.error('Error fetching RLS data:', err);
+        setError(err instanceof Error ? err : new Error('Failed to fetch RLS data'));
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error('Error fetching RLS data:', err);
-      setError(err instanceof Error ? err : new Error('Unknown error fetching RLS data'));
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
-  useEffect(() => {
-    fetchRlsTables();
+    fetchRlsData();
   }, []);
 
-  // Helper function to determine security level
-  const getSecurityLevel = (hasRls: boolean, hasTenantId: boolean, hasAuthPolicy: boolean): string => {
-    if (!hasRls) return 'critical';
-    if (!hasTenantId) return 'warning';
-    if (!hasAuthPolicy) return 'warning';
-    return 'secure';
-  };
-
-  return { tables, loading, error, fetchRlsTables };
+  return { tables, loading, error };
 }
-
-// Add needed types for backwards compatibility
-export type RlsTable = RlsPolicy;

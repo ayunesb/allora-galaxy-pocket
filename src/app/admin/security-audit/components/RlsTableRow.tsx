@@ -42,7 +42,7 @@ export function RlsTableRow({
             tableName={table.tablename}
             isFirstPolicy={index === 0}
             totalPolicies={table.policies.length}
-            testResult={testResult}
+            testResult={index === 0 ? testResult : undefined}
           />
         </DebugErrorBoundary>
       ))}

@@ -1,3 +1,4 @@
+
 export interface AgentMemory {
   id: string;
   agent_name: string;
@@ -10,7 +11,6 @@ export interface AgentMemory {
   ai_rating?: number;
   remix_count?: number;
   xp_delta?: number;
-  // Added required fields used in academy and memory pages
   summary?: string;
   tags?: string[];
 }
@@ -97,4 +97,20 @@ export interface ApprovalStatus {
   approved_at?: string;
   tenant_id: string;
   feedback?: string;
+}
+
+// New interface for decisions
+export interface Decision {
+  id: string;
+  strategy_id: string;
+  strategy_title?: string;
+  decision: string;
+  confidence_score: number;
+  auto_approved: boolean;
+  decision_made_at: string;
+  created_at: string;
+  strategies?: {
+    id: string;
+    title: string;
+  };
 }

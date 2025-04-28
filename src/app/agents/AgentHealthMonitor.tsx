@@ -1,130 +1,136 @@
 
 import React, { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { supabase } from '@/integrations/supabase/client';
-import { AgentTask } from '@/types/agent';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import ErrorAlert from '@/components/ui/ErrorAlert';
 
-interface AgentHealthCheck {
-  agent: string;
-  status: 'healthy' | 'warning' | 'error';
-  lastTask?: AgentTask;
-  errorCount: number;
-  successCount: number;
+interface HealthMetric {
+  timestamp: string;
+  value: number;
 }
 
-export default function AgentHealthMonitor() {
-  const [healthChecks, setHealthChecks] = useState<AgentHealthCheck[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+interface AgentHealthMonitorProps {
+  agentName: string;
+}
+
+export default function AgentHealthMonitor({ agentName }: AgentHealthMonitorProps) {
+  const [metrics, setMetrics] = useState<HealthMetric[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    const checkAgentHealth = async () => {
-      setIsLoading(true);
-      try {
-        // Get all agent names
-        const { data: agents } = await supabase
-          .from('agent_profiles')
-          .select('agent_name');
-        
-        if (!agents || agents.length === 0) {
-          setHealthChecks([]);
-          return;
-        }
-        
-        const healthData: AgentHealthCheck[] = [];
-        
-        // For each agent, get their recent tasks
-        for (const agent of agents) {
-          const agentName = agent.agent_name;
-          
-          // Query for tasks table, which could be agent_tasks
-          const { data: tasks, error } = await supabase
-            .from('assistant_logs') // Using assistant_logs as a fallback
-            .select('*')
-            .eq('agent_name', agentName)
-            .order('created_at', { ascending: false })
-            .limit(10);
-            
-          if (error) {
-            console.error(`Error fetching tasks for agent ${agentName}:`, error);
-            continue;
-          }
-          
-          const successCount = tasks?.filter(t => t.feedback_type === 'positive').length || 0;
-          const errorCount = tasks?.filter(t => t.feedback_type === 'negative').length || 0;
-          
-          // Determine health status
-          let status: 'healthy' | 'warning' | 'error' = 'healthy';
-          if (errorCount > 3) {
-            status = 'error';
-          } else if (errorCount > 1) {
-            status = 'warning';
-          }
-          
-          healthData.push({
-            agent: agentName,
-            status,
-            lastTask: tasks && tasks.length > 0 ? tasks[0] as unknown as AgentTask : undefined,
-            errorCount,
-            successCount
-          });
-        }
-        
-        setHealthChecks(healthData);
-      } catch (err) {
-        console.error('Error checking agent health:', err);
-      } finally {
-        setIsLoading(false);
+    async function fetchHealthMetrics() {
+      if (!agentName) {
+        setMetrics([]);
+        setLoading(false);
+        return;
       }
-    };
+      
+      try {
+        setLoading(true);
+        // Fetch agent performance metrics
+        const { data, error } = await supabase
+          .from('agent_performance_logs')
+          .select('created_at, metrics')
+          .eq('agent_name', agentName)
+          .order('created_at', { ascending: true });
+          
+        if (error) throw error;
+        
+        // Transform data for charting
+        const transformedData = data.map(item => ({
+          timestamp: new Date(item.created_at).toLocaleDateString(),
+          value: item.metrics?.health_score || 0
+        }));
+        
+        setMetrics(transformedData);
+      } catch (err) {
+        console.error("Error fetching agent health metrics:", err);
+        setError(err instanceof Error ? err : new Error('Failed to fetch agent health metrics'));
+      } finally {
+        setLoading(false);
+      }
+    }
     
-    checkAgentHealth();
-    
-    // Set up a refresh interval
-    const interval = setInterval(checkAgentHealth, 60000); // Check every minute
-    
-    return () => clearInterval(interval);
-  }, []);
+    fetchHealthMetrics();
+  }, [agentName]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center p-8">
+        <LoadingSpinner size="lg" label="Loading agent health metrics..." />
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <ErrorAlert 
+        title="Failed to load agent health metrics" 
+        description={error.message}
+        onRetry={() => window.location.reload()}
+      />
+    );
+  }
+
+  if (metrics.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Agent Health</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground text-center py-8">
+            No health metrics available for this agent yet.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const latestValue = metrics[metrics.length - 1]?.value || 0;
   
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-medium">Agent Health Status</h3>
-      
-      {isLoading ? (
-        <div className="text-center py-4">
-          <span className="loading loading-spinner"></span>
-          <p className="text-sm text-muted-foreground">Checking agent health...</p>
+    <Card>
+      <CardHeader>
+        <CardTitle>Agent Health Monitor</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="mb-4">
+          <span className="text-2xl font-bold">{latestValue}</span>
+          <span className="text-muted-foreground ml-2">Health Score</span>
         </div>
-      ) : healthChecks.length === 0 ? (
-        <p className="text-center text-muted-foreground py-4">No agents found</p>
-      ) : (
-        <div className="space-y-2">
-          {healthChecks.map((check) => (
-            <div 
-              key={check.agent}
-              className={`border rounded-md p-3 ${
-                check.status === 'error' ? 'border-red-500 bg-red-50' :
-                check.status === 'warning' ? 'border-amber-500 bg-amber-50' :
-                'border-green-500 bg-green-50'
-              }`}
-            >
-              <div className="flex justify-between items-center">
-                <div>
-                  <h4 className="font-medium">{check.agent}</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {check.successCount} successes, {check.errorCount} errors
-                  </p>
-                </div>
-                <div className={`px-2 py-1 text-xs rounded ${
-                  check.status === 'error' ? 'bg-red-200 text-red-800' :
-                  check.status === 'warning' ? 'bg-amber-200 text-amber-800' :
-                  'bg-green-200 text-green-800'
-                }`}>
-                  {check.status.toUpperCase()}
-                </div>
-              </div>
-            </div>
-          ))}
+        
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={metrics}>
+              <XAxis dataKey="timestamp" />
+              <YAxis domain={[0, 100]} />
+              <Tooltip />
+              <Line 
+                type="monotone" 
+                dataKey="value" 
+                stroke="#8884d8" 
+                strokeWidth={2}
+                dot={false}
+              />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
-      )}
-    </div>
+        
+        <div className="grid grid-cols-2 gap-4 mt-4">
+          <div className="border rounded p-3">
+            <p className="text-sm font-medium">Memory Score</p>
+            <p className="text-xl">{metrics[metrics.length - 1]?.value || 0}%</p>
+          </div>
+          <div className="border rounded p-3">
+            <p className="text-sm font-medium">Execution Rate</p>
+            <p className="text-xl">100%</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

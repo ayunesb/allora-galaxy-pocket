@@ -2,7 +2,6 @@
 import React from "react";
 import type { RlsTable } from "../hooks/useRlsData";
 import type { AccessTestResult } from "../hooks/useAccessTests";
-import { RlsTableRow } from "./rows/RlsTableRow";
 import { NoRlsPoliciesRow } from "./rows/NoRlsPoliciesRow";
 import { PolicyRow } from "./rows/PolicyRow";
 import { Skeleton } from "@/components/ui/skeleton";
