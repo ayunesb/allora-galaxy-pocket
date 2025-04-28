@@ -1,9 +1,10 @@
+
 import React, { ReactNode, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
-import { toast } from '@/components/ui/sonner';
+import { toast } from "sonner";
 import { useNavigate } from 'react-router-dom';
 import { useSystemLogs } from "@/hooks/useSystemLogs";
 
