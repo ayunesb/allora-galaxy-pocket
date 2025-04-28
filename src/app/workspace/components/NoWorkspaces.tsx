@@ -1,12 +1,14 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { PlusCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { AlertTriangle, RefreshCw } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface NoWorkspacesProps {
   isCreating: boolean;
   creationError: string | null;
-  onCreateWorkspace: () => Promise<void>;
+  onCreateWorkspace: () => void;
   onRefresh: () => void;
   userExists: boolean;
 }
@@ -19,56 +21,50 @@ export function NoWorkspaces({
   userExists
 }: NoWorkspacesProps) {
   return (
-    <div className="flex flex-col items-center justify-center p-6 bg-muted/50 rounded-md text-center">
-      <AlertCircle className="h-10 w-10 text-amber-500 mb-2" />
-      <h3 className="text-lg font-medium mb-2">No Workspaces Found</h3>
-      
-      {userExists ? (
-        <p className="text-sm text-muted-foreground mb-4">
-          You don't have any workspaces yet. Create your first workspace to get started.
-        </p>
-      ) : (
-        <p className="text-sm text-muted-foreground mb-4">
-          Please sign in to view or create workspaces.
-        </p>
-      )}
-      
-      {creationError && (
-        <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded text-sm text-red-600 dark:text-red-400 mb-4 w-full">
-          {creationError}
-        </div>
-      )}
-      
-      <div className="space-y-2 w-full">
-        {userExists && (
-          <Button 
-            onClick={onCreateWorkspace} 
-            disabled={isCreating} 
-            className="w-full"
-          >
-            {isCreating ? (
-              <>
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                Creating...
-              </>
-            ) : (
-              <>
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Create Default Workspace
-              </>
-            )}
-          </Button>
+    <Card>
+      <CardHeader>
+        <CardTitle>Welcome to Allora OS</CardTitle>
+        <CardDescription>
+          {userExists 
+            ? "You don't have access to any workspaces yet." 
+            : "Please sign in to access your workspaces."}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {creationError && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{creationError}</AlertDescription>
+          </Alert>
         )}
         
-        <Button 
-          onClick={onRefresh}
-          variant="outline"
-          className="w-full"
-        >
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh
-        </Button>
-      </div>
-    </div>
+        {userExists && (
+          <div className="flex space-x-2">
+            <Button 
+              onClick={onCreateWorkspace} 
+              disabled={isCreating}
+              className="flex-1"
+            >
+              {isCreating ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Create New Workspace'
+              )}
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={onRefresh}
+              disabled={isCreating}
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

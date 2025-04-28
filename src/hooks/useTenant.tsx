@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Tenant } from '@/types/tenant';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,7 +33,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setIsLoading(true);
       setError(null);
       
-      // Get all tenants for user safely to avoid recursion issues
+      // Get all tenants for user safely using our new security definer function
       const { data: tenantIds, error: tenantIdsError } = await supabase.rpc('get_user_tenant_ids');
 
       if (tenantIdsError) {
