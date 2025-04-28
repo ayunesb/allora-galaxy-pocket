@@ -4,7 +4,7 @@ import { TrendingUp, TrendingDown } from "lucide-react";
 import type { KpiMetric } from "@/types/kpi";
 import { KpiMetricDialog } from "@/app/dashboard/components/KpiMetricDialog";
 
-export default function KpiCard({ label, value, trend, changePercent, onUpdate }: KpiMetric & { onUpdate?: () => void }) {
+export default function KpiCard({ label, value, trend, changePercent, onUpdate, id = '', kpi_name = '', tenant_id = '', updated_at = '', created_at = new Date().toISOString() }: KpiMetric & { onUpdate?: () => void }) {
   return (
     <Card>
       <CardContent className="pt-6">
@@ -20,14 +20,14 @@ export default function KpiCard({ label, value, trend, changePercent, onUpdate }
             <KpiMetricDialog 
               onSuccess={onUpdate}
               metric={{
-                id: '', 
-                kpi_name: label || '',
+                id,
+                kpi_name: kpi_name || label || '',
                 value: value || 0,
-                updated_at: new Date().toISOString(),
-                tenant_id: '',
+                updated_at,
+                tenant_id,
                 trend,
                 changePercent,
-                created_at: new Date().toISOString() // Adding required created_at field
+                created_at
               }}
             />
           </div>

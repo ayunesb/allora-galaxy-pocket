@@ -27,7 +27,7 @@ export function KpiSnapshot() {
       return data.map(m => ({
         label: m.metric,
         value: m.value,
-        trend: (m.value > 0 ? "up" : "down") as "up" | "down", // Explicitly cast to the union type
+        trend: (m.value > 0 ? "up" : "down") as "up" | "down", 
         changePercent: 0
       }));
     },
@@ -58,7 +58,7 @@ export function KpiSnapshot() {
                 kpi_name={metric.label || ''}
                 tenant_id={tenant?.id || ''}
                 updated_at={new Date().toISOString()}
-                created_at={new Date().toISOString()} // Adding required created_at field
+                created_at={new Date().toISOString()} 
                 label={metric.label}
                 value={metric.value}
                 trend={metric.trend}

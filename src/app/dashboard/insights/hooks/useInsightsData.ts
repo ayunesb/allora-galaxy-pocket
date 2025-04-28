@@ -4,6 +4,7 @@ import { useKpiHistory } from "./useKpiHistory";
 import { useFeedbackMetrics } from "./useFeedbackMetrics";
 import { useRoiMetrics } from "./useRoiMetrics";
 import { useCampaignMetrics } from "./useCampaignMetrics";
+import { Campaign } from "@/types/campaign";
 
 // Define types for trend data
 type TrendType = 'up' | 'down' | 'neutral';

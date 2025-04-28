@@ -37,10 +37,21 @@ export default function StartupDashboard() {
         throw error;
       }
       
-      // Cast the status to StrategyStatus to ensure type compatibility
+      // Cast and ensure all required fields exist
       return {
         ...data,
-        status: data.status as Strategy['status']
+        status: data.status as Strategy['status'],
+        id: data.id,
+        created_at: data.created_at,
+        title: data.title || '',
+        description: data.description || '',
+        // Add default values for potentially missing fields
+        tags: data.tags || [],
+        goals: data.goals || [],
+        channels: data.channels || [],
+        kpis: data.kpis || [],
+        target_audience: data.target_audience || '',
+        reason_for_recommendation: data.reason_for_recommendation || ''
       };
     },
     enabled: !!tenant?.id
@@ -60,9 +71,13 @@ export default function StartupDashboard() {
 
       if (error) throw error;
       
-      // Cast the status to CampaignStatus to ensure type compatibility
+      // Cast and ensure all required fields exist
       return (data || []).map(campaign => ({
         ...campaign,
+        id: campaign.id,
+        name: campaign.name,
+        created_at: campaign.created_at,
+        updated_at: campaign.updated_at,
         status: campaign.status as Campaign['status']
       }));
     },

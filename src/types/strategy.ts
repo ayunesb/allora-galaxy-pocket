@@ -39,3 +39,13 @@ export interface StrategyFeedback {
   tenant_id?: string;
   created_at: string;
 }
+
+export interface StrategyVersion {
+  id: string;
+  strategy_id: string;
+  version: number;
+  data: Record<string, any>;
+  comment?: string;
+  created_at: string;
+  created_by?: string;
+}
