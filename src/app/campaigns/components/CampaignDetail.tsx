@@ -72,41 +72,47 @@ export default function CampaignDetail({ id }: CampaignDetailProps) {
     );
   }
   
+  const typedCampaign: Campaign = {
+    ...campaign,
+    status: campaign.status as Campaign['status'],
+    // Add any other fields that need casting here
+  };
+  
   const getStatusBadge = () => {
-    const variant = campaign.status === 'active' 
+    const variant = typedCampaign.status === 'active' 
       ? 'default' 
-      : campaign.status === 'draft' 
+      : typedCampaign.status === 'draft' 
         ? 'outline' 
         : 'secondary';
     
     return (
       <Badge variant={variant}>
-        {campaign.status}
+        {typedCampaign.status}
       </Badge>
     );
   };
   
   const getExecutionStatusBadge = () => {
     const variant = 
-      campaign.execution_status === 'in_progress' ? 'success' :
-      campaign.execution_status === 'paused' ? 'warning' :
-      campaign.execution_status === 'completed' ? 'secondary' : 
+      typedCampaign.execution_status === 'in_progress' ? 'success' :
+      typedCampaign.execution_status === 'paused' ? 'warning' :
+      typedCampaign.execution_status === 'completed' ? 'secondary' : 
       'outline';
     
     return (
       <Badge variant={variant}>
-        {campaign.execution_status === 'in_progress' ? 'Running' :
-         campaign.execution_status === 'pending' ? 'Not Started' :
-         campaign.execution_status || 'Unknown'}
+        {typedCampaign.execution_status === 'in_progress' ? 'Running' :
+         typedCampaign.execution_status === 'pending' ? 'Not Started' :
+         typedCampaign.execution_status || 'Unknown'}
       </Badge>
     );
   };
   
   const handleStartOrPause = async () => {
-    if (campaign.execution_status === 'in_progress') {
-      await pauseCampaignExecution(campaign.id);
+    if (typedCampaign.execution_status === 'in_progress') {
+      await pauseCampaignExecution(typedCampaign.id);
     } else {
-      await startCampaignExecution(campaign.id);
+      await startCampaignExecution(typedCampaign.id);
     }
     refetch();
   };
@@ -120,24 +126,24 @@ export default function CampaignDetail({ id }: CampaignDetailProps) {
             <Link to="/campaigns" className="hover:text-primary transition-colors">
               <ArrowLeft className="h-5 w-5" />
             </Link>
-            <h1 className="text-2xl font-bold">{campaign.name}</h1>
+            <h1 className="text-2xl font-bold">{typedCampaign.name}</h1>
             {getStatusBadge()}
             {getExecutionStatusBadge()}
           </div>
-          <p className="text-muted-foreground max-w-3xl">{campaign.description}</p>
+          <p className="text-muted-foreground max-w-3xl">{typedCampaign.description}</p>
           <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
             <div className="flex items-center">
               <Calendar className="h-4 w-4 mr-1" />
-              Created: {new Date(campaign.created_at).toLocaleDateString()}
+              Created: {new Date(typedCampaign.created_at).toLocaleDateString()}
             </div>
-            {campaign.execution_start_date && (
+            {typedCampaign.execution_start_date && (
               <div>
-                Started: {new Date(campaign.execution_start_date).toLocaleDateString()}
+                Started: {new Date(typedCampaign.execution_start_date).toLocaleDateString()}
               </div>
             )}
-            {campaign.strategy_id && (
+            {typedCampaign.strategy_id && (
               <div>
-                From Strategy: <Link to={`/strategy/${campaign.strategy_id}`} className="text-blue-600 hover:underline">View</Link>
+                From Strategy: <Link to={`/strategy/${typedCampaign.strategy_id}`} className="text-blue-600 hover:underline">View</Link>
               </div>
             )}
           </div>
@@ -145,10 +151,10 @@ export default function CampaignDetail({ id }: CampaignDetailProps) {
         
         <div className="flex gap-2">
           <Button
-            variant={campaign.execution_status === 'in_progress' ? "outline" : "default"}
+            variant={typedCampaign.execution_status === 'in_progress' ? "outline" : "default"}
             onClick={handleStartOrPause}
           >
-            {campaign.execution_status === 'in_progress' ? 'Pause' : 'Start'} Campaign
+            {typedCampaign.execution_status === 'in_progress' ? 'Pause' : 'Start'} Campaign
           </Button>
         </div>
       </div>
@@ -161,9 +167,9 @@ export default function CampaignDetail({ id }: CampaignDetailProps) {
               <CardTitle className="text-lg">Campaign Scripts</CardTitle>
             </CardHeader>
             <CardContent>
-              {campaign.scripts && Object.keys(campaign.scripts).length > 0 ? (
+              {typedCampaign.scripts && Object.keys(typedCampaign.scripts).length > 0 ? (
                 <div className="space-y-4">
-                  {Object.entries(campaign.scripts).map(([channel, content]) => (
+                  {Object.entries(typedCampaign.scripts).map(([channel, content]) => (
                     <CampaignScriptPanel 
                       key={channel} 
                       channel={channel} 
@@ -182,7 +188,7 @@ export default function CampaignDetail({ id }: CampaignDetailProps) {
         
         <div className="space-y-6">
           <CampaignExecutionTracker 
-            campaign={campaign} 
+            campaign={typedCampaign} 
             onUpdate={refetch}
           />
           

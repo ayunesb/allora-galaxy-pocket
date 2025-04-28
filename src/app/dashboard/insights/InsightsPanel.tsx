@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
@@ -34,7 +35,13 @@ export default function InsightsPanel() {
         return;
       }
 
-      setLogs(data || []);
+      // Ensure the data matches the FeedbackData type
+      const typedData = (data || []).map(item => ({
+        ...item,
+        action: item.action as "used" | "dismissed"
+      })) as FeedbackData[];
+      
+      setLogs(typedData);
       setIsLoading(false);
     }
 

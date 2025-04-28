@@ -1,4 +1,3 @@
-
 export interface AgentMemory {
   id: string;
   agent_name: string;
@@ -74,7 +73,6 @@ export interface AgentTask {
   error?: string;
 }
 
-// Making summary and tags optional in AgentMemoryLog to match AgentMemory
 export interface AgentMemoryLog {
   id: string;
   agent_name: string;
