@@ -1,120 +1,143 @@
 
-import React, { useState } from 'react';
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Plus, Loader2 } from "lucide-react";
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { KpiMetric } from '@/types/kpi';
-import { toast } from 'sonner';
-import { useTenant } from '@/hooks/useTenant';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PlusCircle } from "lucide-react";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { supabase } from "@/integrations/supabase/client";
+import { useTenant } from "@/hooks/useTenant";
+import { toast } from "sonner";
 
-export interface KpiMetricDialogProps {
-  metric?: KpiMetric;
+const formSchema = z.object({
+  kpi_name: z.string().min(2, "KPI name must be at least 2 characters"),
+  value: z.coerce.number().min(0, "Value must be a positive number"),
+  trend: z.enum(["up", "down", "neutral"]).default("neutral")
+});
+
+type FormData = z.infer<typeof formSchema>;
+
+interface KpiMetricDialogProps {
   onSuccess?: () => void;
+  children?: React.ReactNode;
 }
 
-export function KpiMetricDialog({ metric, onSuccess }: KpiMetricDialogProps) {
-  const { tenant } = useTenant();
-  const queryClient = useQueryClient();
+export function KpiMetricDialog({ onSuccess, children }: KpiMetricDialogProps) {
   const [open, setOpen] = useState(false);
-  const [kpiName, setKpiName] = useState(metric?.kpi_name || '');
-  const [kpiValue, setKpiValue] = useState<string>(metric?.value?.toString() || '');
+  const { tenant } = useTenant();
   
-  const { mutate: saveMetric, isPending } = useMutation({
-    mutationFn: async (formData: { kpi_name: string; value: number }) => {
-      if (!tenant?.id) throw new Error('No tenant selected');
-      
-      const payload = {
-        metric: formData.kpi_name,
-        value: formData.value,
-        tenant_id: tenant.id,
-        recorded_at: new Date().toISOString(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-
-      const { data, error } = await supabase
-        .from('kpi_metrics')
-        .upsert(payload)
-        .select();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      toast.success('KPI metric saved successfully');
-      queryClient.invalidateQueries({ queryKey: ['kpi-metrics'] });
-      setOpen(false);
-      setKpiName('');
-      setKpiValue('');
-      if (onSuccess) {
-        onSuccess();
-      }
-    },
-    onError: (error: any) => {
-      toast.error('Failed to save KPI metric', {
-        description: error.message
-      });
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      kpi_name: "",
+      value: 0,
+      trend: "neutral"
     }
   });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!kpiName || !kpiValue) {
-      toast.error('Please fill in all fields');
+  
+  const onSubmit = async (data: FormData) => {
+    if (!tenant?.id) {
+      toast.error("You must be in a tenant to add KPI metrics");
       return;
     }
-
-    const numValue = parseFloat(kpiValue);
-    if (isNaN(numValue)) {
-      toast.error('Value must be a valid number');
-      return;
+    
+    try {
+      const { error } = await supabase.from("kpi_metrics").insert({
+        tenant_id: tenant.id,
+        metric: data.kpi_name,
+        value: data.value,
+        trend: data.trend
+      });
+      
+      if (error) throw error;
+      
+      toast.success("KPI metric added successfully");
+      setOpen(false);
+      form.reset();
+      
+      if (onSuccess) onSuccess();
+    } catch (error) {
+      console.error("Error adding KPI metric:", error);
+      toast.error("Failed to add KPI metric"); 
     }
-
-    saveMetric({ kpi_name: kpiName, value: numValue });
   };
-
+  
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Plus className="h-4 w-4 mr-1" /> {metric ? 'Edit Metric' : 'Add Metric'}
-        </Button>
+        {children || (
+          <Button variant="outline" size="sm" className="ml-auto h-8 gap-1">
+            <PlusCircle className="h-3.5 w-3.5" />
+            <span>Add KPI</span>
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{metric ? 'Edit KPI Metric' : 'Add New KPI Metric'}</DialogTitle>
+          <DialogTitle>Add KPI Metric</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-          <div className="space-y-2">
-            <Label htmlFor="kpiName">Metric Name</Label>
-            <Input 
-              id="kpiName" 
-              placeholder="e.g., Revenue, Conversion Rate"
-              value={kpiName}
-              onChange={(e) => setKpiName(e.target.value)}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-2">
+            <FormField
+              control={form.control}
+              name="kpi_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>KPI Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. MRR, User Count, etc." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="kpiValue">Value</Label>
-            <Input 
-              id="kpiValue" 
-              type="number"
-              placeholder="e.g., 75, 4.5"
-              value={kpiValue}
-              onChange={(e) => setKpiValue(e.target.value)}
+            
+            <FormField
+              control={form.control}
+              name="value"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Value</FormLabel>
+                  <FormControl>
+                    <Input type="number" min={0} placeholder="0" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="flex justify-end pt-2">
-            <Button type="submit" disabled={isPending}>
-              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save
-            </Button>
-          </div>
-        </form>
+            
+            <FormField
+              control={form.control}
+              name="trend"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Trend</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select trend" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="up">Up</SelectItem>
+                      <SelectItem value="down">Down</SelectItem>
+                      <SelectItem value="neutral">Neutral</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <div className="flex justify-end">
+              <Button type="submit">Add KPI</Button>
+            </div>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

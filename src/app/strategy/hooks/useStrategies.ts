@@ -1,10 +1,10 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Strategy } from "@/types/strategy";
+import { Strategy, StrategyStatus } from "@/types/strategy";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
-import { ToastService } from "@/services/ToastService";
+import { toast } from "sonner";
 import { useSystemLogs } from "@/hooks/useSystemLogs";
 import type { OnboardingProfile } from "@/types/onboarding";
 
@@ -33,14 +33,42 @@ export function useStrategies() {
           
         if (error) throw error;
         
-        setStrategies(data || []);
+        // Transform database data to match Strategy type
+        const typedStrategies: Strategy[] = (data || []).map(item => ({
+          id: item.id,
+          title: item.title || '',
+          description: item.description || '',
+          status: item.status as StrategyStatus,
+          created_at: item.created_at,
+          tenant_id: item.tenant_id,
+          user_id: item.user_id,
+          tags: item.tags || [],
+          generated_by: item.generated_by,
+          assigned_agent: item.assigned_agent,
+          auto_approved: item.auto_approved,
+          impact_score: item.impact_score,
+          health_score: item.health_score,
+          approved_at: item.approved_at,
+          updated_at: item.updated_at || item.created_at,
+          metrics_baseline: item.metrics_baseline || {},
+          onboarding_data: item.onboarding_data || {},
+          diagnosis: item.diagnosis || {},
+          failure_reason: item.failure_reason,
+          retry_prompt: item.retry_prompt,
+          is_public: item.is_public,
+          version: item.version || '1',
+          reason_for_recommendation: item.reason_for_recommendation || '',
+          target_audience: item.target_audience || '',
+          goals: item.goals || [],
+          channels: item.channels || [],
+          kpis: item.kpis || []
+        }));
+        
+        setStrategies(typedStrategies);
       } catch (err: any) {
         console.error("Failed to fetch strategies:", err);
         setError("Failed to load strategies. Please refresh the page.");
-        ToastService.error({
-          title: "Error loading strategies",
-          description: err.message || "Please try again"
-        });
+        toast.error("Error loading strategies: " + (err.message || "Please try again"));
       } finally {
         setLoading(false);
       }

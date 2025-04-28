@@ -1,86 +1,62 @@
 
-import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import React from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import KPISection from "@/app/dashboard/components/KPISection";
-import { PluginUsageChart } from "./PluginUsageChart";
+import { KPISection } from "@/app/dashboard/components/KPISection";
 import { MetricsCard } from "./MetricsCard";
+import { PluginUsageChart } from "./PluginUsageChart";
 
-export function AdvancedAnalyticsDashboard() {
-  const [dateRange, setDateRange] = useState("30");
-  
+export default function AdvancedAnalyticsDashboard() {
   return (
     <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-6">Advanced Analytics</h1>
+      <h1 className="text-2xl font-bold mb-6">Advanced Analytics Dashboard</h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <MetricsCard 
-          title="Active Users" 
-          value="23"
-          change="+12%"
-          trend="up"
-        />
-        <MetricsCard 
-          title="Completed Strategies" 
-          value="157"
-          change="+8%"
-          trend="up"
-        />
-        <MetricsCard 
-          title="Campaign Success Rate" 
-          value="76%"
-          change="-3%"
-          trend="down"
-        />
-      </div>
-      
-      <Tabs defaultValue="kpis" className="mb-8">
-        <TabsList>
-          <TabsTrigger value="kpis">KPI Metrics</TabsTrigger>
-          <TabsTrigger value="plugins">Plugin Usage</TabsTrigger>
-          <TabsTrigger value="agents">Agent Performance</TabsTrigger>
+      <Tabs defaultValue="metrics">
+        <TabsList className="mb-6">
+          <TabsTrigger value="metrics">Performance Metrics</TabsTrigger>
+          <TabsTrigger value="plugins">Plugin Analytics</TabsTrigger>
+          <TabsTrigger value="kpis">KPI Overview</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="kpis">
+        <TabsContent value="metrics">
+          <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 mb-6">
+            <MetricsCard title="AI Decisions" value="512" trend="up" percentage="12%" />
+            <MetricsCard title="Human Approvals" value="35" trend="down" percentage="8%" />
+            <MetricsCard title="AI to Human Ratio" value="14.6:1" trend="up" percentage="15%" />
+            <MetricsCard title="Avg. Response Time" value="1.2s" trend="up" percentage="30%" />
+          </div>
+          
           <Card>
             <CardHeader>
-              <CardTitle>KPI Metrics</CardTitle>
-              <CardDescription>Key Performance Indicators across all campaigns</CardDescription>
+              <CardTitle>Weekly Trend</CardTitle>
             </CardHeader>
-            <CardContent className="pt-6">
-              <KPISection />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="plugins">
-          <Card>
-            <CardHeader>
-              <CardTitle>Plugin Usage</CardTitle>
-              <CardDescription>Plugin usage across your workspace</CardDescription>
-            </CardHeader>
-            <CardContent className="h-96">
+            <CardContent className="h-80">
               <PluginUsageChart />
             </CardContent>
           </Card>
         </TabsContent>
         
-        <TabsContent value="agents">
-          <Card>
+        <TabsContent value="plugins">
+          <Card className="mb-6">
             <CardHeader>
-              <CardTitle>Agent Performance</CardTitle>
-              <CardDescription>Agent performance metrics and success rates</CardDescription>
+              <CardTitle>Plugin Usage Distribution</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="p-8 text-center text-muted-foreground">
-                Agent performance metrics will display here
-              </div>
+            <CardContent className="h-80">
+              <PluginUsageChart />
             </CardContent>
           </Card>
+          
+          <div className="grid gap-6 grid-cols-1 md:grid-cols-3">
+            <MetricsCard title="Most Used Plugin" value="Content Generator" trend="neutral" />
+            <MetricsCard title="Fastest Growing" value="SEO Analyzer" trend="up" percentage="43%" />
+            <MetricsCard title="Plugin Revenue" value="$2,450" trend="up" percentage="23%" />
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="kpis">
+          <KPISection />
         </TabsContent>
       </Tabs>
     </div>
   );
 }
-
-export default AdvancedAnalyticsDashboard;

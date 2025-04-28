@@ -1,9 +1,10 @@
+
 import React from 'react';
-import { CampaignData } from "@/types/campaign";
+import { Campaign } from "@/types/campaign";
 import { Button } from "@/components/ui/button";
 
 interface CampaignPageProps {
-  campaign?: CampaignData;
+  campaign?: Campaign;
 }
 
 export default function CampaignPage() {

@@ -10,11 +10,15 @@ import { KpiMetricDialog } from "@/app/dashboard/components/KpiMetricDialog";
 export function KPISection() {
   const { data: metrics, isLoading, error, refetch } = useKpiMetrics();
   
+  const handleKpiSuccess = () => {
+    refetch();
+  };
+  
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>KPI Metrics</CardTitle>
-        <KpiMetricDialog onSuccess={() => refetch()} />
+        <KpiMetricDialog onSuccess={handleKpiSuccess} />
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -35,7 +39,7 @@ export function KPISection() {
         ) : (
           <div className="text-center py-8">
             <p className="text-muted-foreground mb-4">No KPI metrics found</p>
-            <KpiMetricDialog>
+            <KpiMetricDialog onSuccess={handleKpiSuccess}>
               <Button variant="outline" className="flex items-center gap-2">
                 <Plus className="h-4 w-4" />
                 Add your first KPI metric
