@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
@@ -35,6 +36,16 @@ import { useSystemLogs } from "@/hooks/useSystemLogs";
 import LoadingOverlay from "@/components/ui/LoadingOverlay";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ToastService } from "@/services/ToastService";
+
+// Define available channels for campaigns
+const availableChannels = [
+  { id: "email", label: "Email" },
+  { id: "social", label: "Social Media" },
+  { id: "landing_page", label: "Landing Page" },
+  { id: "ads", label: "Paid Ads" },
+  { id: "content", label: "Content Marketing" },
+  { id: "sms", label: "SMS" }
+];
 
 export default function CampaignCreatePage() {
   const navigate = useNavigate();
@@ -87,7 +98,7 @@ export default function CampaignCreatePage() {
           reason_for_recommendation: item.reason_for_recommendation || '',
           target_audience: item.target_audience || '',
           industry: item.industry || '',
-          confidence: item.confidence || null,
+          confidence: item.confidence || null
         } as Strategy));
         
         if (initialStrategyId) {
@@ -107,7 +118,7 @@ export default function CampaignCreatePage() {
               reason_for_recommendation: selectedStrategy.reason_for_recommendation || '',
               target_audience: selectedStrategy.target_audience || '',
               industry: selectedStrategy.industry || '',
-              confidence: selectedStrategy.confidence || null,
+              confidence: selectedStrategy.confidence || null
             } as Strategy);
             
             setName(`${selectedStrategy.title} Campaign`);
