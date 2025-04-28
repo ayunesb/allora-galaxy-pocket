@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,7 +32,7 @@ export default function KpiAlertRules() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as KpiAlertRule[];
+      return data as unknown as KpiAlertRule[];
     },
     enabled: !!tenant?.id,
   });
@@ -239,7 +238,6 @@ export default function KpiAlertRules() {
   );
 }
 
-// Helper function to get severity border color
 function getSeverityBorderColor(severity?: string) {
   switch (severity) {
     case "low":

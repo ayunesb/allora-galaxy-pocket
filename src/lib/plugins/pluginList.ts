@@ -1,29 +1,42 @@
 
-import { Plugin } from '@/types/plugin';
+// Add a file for plugin list
 
-export const pluginList: Plugin[] = [
+export interface PluginDefinition {
+  key: string;
+  name: string;
+  description: string;
+  icon: string;
+}
+
+export const pluginList: PluginDefinition[] = [
   {
-    id: "1",
-    key: "stripe",
-    name: "Stripe",
-    description: "Billing and usage metering",
-    version: "1.0.0",
-    icon: "💳"
+    key: 'analytics',
+    name: 'Analytics',
+    description: 'Track user behavior and conversion metrics',
+    icon: '📊',
   },
   {
-    id: "2",
-    key: "twilio",
-    name: "Twilio",
-    description: "SMS follow-ups + reminders",
-    version: "1.0.0",
-    icon: "📱"
+    key: 'email',
+    name: 'Email Marketing',
+    description: 'Send automated emails and campaigns',
+    icon: '📧',
   },
   {
-    id: "3",
-    key: "hubspot",
-    name: "HubSpot",
-    description: "CRM + lead syncing",
-    version: "1.0.0",
-    icon: "📇"
+    key: 'social',
+    name: 'Social Media',
+    description: 'Create and schedule social media posts',
+    icon: '🌐',
+  },
+  {
+    key: 'seo',
+    name: 'SEO Tools',
+    description: 'Optimize your content for search engines',
+    icon: '🔍',
+  },
+  {
+    key: 'crm',
+    name: 'CRM Integration',
+    description: 'Connect with your customer relationship management',
+    icon: '👥',
   }
 ];

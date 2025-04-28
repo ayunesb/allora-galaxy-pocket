@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { StepTemplate } from '../components/StepTemplate';
+import StepTemplate from './StepTemplate';
 import { useTenant } from '@/hooks/useTenant';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -24,8 +24,12 @@ const industryOptions = [
   'Other'
 ];
 
-export default function Step2Industry({ onNext }: { onNext: () => void }) {
-  const [selectedIndustry, setSelectedIndustry] = useState<string>('');
+export default function Step2Industry({ next, back, profile }: { 
+  next: (data: any) => void; 
+  back: () => void; 
+  profile: any 
+}) {
+  const [selectedIndustry, setSelectedIndustry] = useState<string>(profile.industry || '');
   const [otherIndustry, setOtherIndustry] = useState<string>('');
   const [processing, setProcessing] = useState(false);
   const { tenant, refreshTenant } = useTenant();
@@ -50,7 +54,7 @@ export default function Step2Industry({ onNext }: { onNext: () => void }) {
       if (error) throw error;
       
       await refreshTenant();
-      onNext();
+      next({ industry: finalIndustry });
     } catch (err: any) {
       toast.error('Failed to save industry', {
         description: err.message
@@ -65,7 +69,7 @@ export default function Step2Industry({ onNext }: { onNext: () => void }) {
       title="Select Your Industry" 
       description="This helps us customize your experience."
       showBack={true}
-      onBack={() => window.history.back()}
+      onBack={back}
       onNext={handleNext}
       nextDisabled={!selectedIndustry || (selectedIndustry === 'Other' && !otherIndustry)}
     >
@@ -94,15 +98,6 @@ export default function Step2Industry({ onNext }: { onNext: () => void }) {
           />
         </div>
       )}
-
-      <div className="mt-8 text-center">
-        <Button 
-          onClick={handleNext} 
-          disabled={!selectedIndustry || (selectedIndustry === 'Other' && !otherIndustry) || processing}
-        >
-          {processing ? 'Saving...' : 'Continue'}
-        </Button>
-      </div>
     </StepTemplate>
   );
 }

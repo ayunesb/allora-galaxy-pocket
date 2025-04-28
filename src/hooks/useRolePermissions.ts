@@ -1,35 +1,26 @@
 
-import { useUserRole } from "./useUserRole";
+import { useMemo } from 'react';
+import { useTenant } from './useTenant';
+import { useAuth } from './useAuth';
 
 export function useRolePermissions() {
-  const { role } = useUserRole();
+  const { user } = useAuth();
+  const { tenant, userRole } = useTenant();
   
-  const isAdmin = role === 'admin';
-  const isDeveloper = role === 'developer';
-  const isClient = role === 'client';
-  const isViewer = role === 'viewer';
+  const permissions = useMemo(() => {
+    const isAdmin = userRole === 'admin';
+    const isEditor = userRole === 'editor' || isAdmin;
+    const isContributor = userRole === 'contributor' || isEditor;
+    
+    return {
+      canManageUsers: isAdmin,
+      canManagePlugins: isAdmin || isEditor,
+      canCreateStrategy: isContributor,
+      canApproveStrategy: isEditor,
+      canViewAnalytics: true,
+      canEditSettings: isAdmin
+    };
+  }, [userRole]);
   
-  const canEditStrategies = isAdmin || isDeveloper;
-  const canApproveStrategies = isAdmin || isDeveloper;
-  const canManageUsers = isAdmin;
-  const canAccessAdminArea = isAdmin;
-  const canAccessDeveloperTools = isAdmin || isDeveloper;
-  const canConfigureSystem = isAdmin;
-  const canViewAuditLogs = isAdmin;
-  const canManagePlugins = isAdmin || isDeveloper;
-  
-  return {
-    isAdmin,
-    isDeveloper,
-    isClient,
-    isViewer,
-    canEditStrategies,
-    canApproveStrategies,
-    canManageUsers,
-    canAccessAdminArea,
-    canAccessDeveloperTools,
-    canConfigureSystem,
-    canViewAuditLogs,
-    canManagePlugins
-  };
+  return permissions;
 }

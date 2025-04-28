@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from "react";
@@ -10,11 +11,13 @@ import PluginConfigEditor from "@/app/admin/plugins/PluginConfigEditor";
 import { useRolePermissions } from "@/hooks/useRolePermissions";
 import { usePluginPermissions } from "@/hooks/usePluginPermissions";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenant } from "@/hooks/useTenant";
 
 export default function PluginSettings() {
   const { activePlugins, refreshPlugins } = usePlugins();
   const { canManagePlugins } = useRolePermissions();
   const { checkPermission } = usePluginPermissions();
+  const { tenant } = useTenant();
   const [selectedPlugin, setSelectedPlugin] = useState<string | null>(null);
   const [pluginPermissions, setPluginPermissions] = useState<Record<string, boolean>>({});
 
@@ -32,11 +35,17 @@ export default function PluginSettings() {
 
   // Save plugin config changes
   const handleSaveConfig = async (pluginKey: string, config: Record<string, string>) => {
+    if (!tenant?.id) {
+      toast.error("No tenant selected");
+      return;
+    }
+    
     try {
       const { error } = await supabase
         .from('tenant_plugin_configs')
         .upsert({
           plugin_key: pluginKey,
+          tenant_id: tenant.id,
           config,
           updated_at: new Date().toISOString()
         });
@@ -95,11 +104,17 @@ export default function PluginSettings() {
                       checked={activePlugins.includes(plugin.key)}
                       disabled={!pluginPermissions[plugin.key]}
                       onCheckedChange={async () => {
+                        if (!tenant?.id) {
+                          toast.error("No tenant selected");
+                          return;
+                        }
+                        
                         try {
                           const { error } = await supabase
                             .from('tenant_plugins')
                             .upsert({
                               plugin_key: plugin.key,
+                              tenant_id: tenant.id,
                               enabled: !activePlugins.includes(plugin.key)
                             });
 

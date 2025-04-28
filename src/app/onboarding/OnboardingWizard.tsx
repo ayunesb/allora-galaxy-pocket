@@ -149,11 +149,11 @@ export default function OnboardingWizard() {
         isSubmitting={isSubmitting}
         onWorkspaceChange={() => navigate("/workspace")}
       >
-        <CurrentStep {...{
-          next: handleNext,
-          back: () => setStep((prev) => Math.max(prev - 1, 0)),
-          profile
-        }} />
+        <CurrentStep 
+          next={handleNext}
+          back={() => setStep((prev) => Math.max(prev - 1, 0))}
+          profile={profile}
+        />
       </OnboardingForm>
     </div>
   );
