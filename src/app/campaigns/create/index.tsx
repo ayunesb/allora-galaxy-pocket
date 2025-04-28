@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
@@ -83,13 +84,14 @@ export default function CampaignCreatePage() {
           
         if (error) throw error;
         
+        // Fix syntax error here - removed semicolon after Strategy cast
         setStrategies((data || []).map(item => ({
           ...item,
-          metrics_target: item.metrics_target || {}, // Add missing required field
+          metrics_target: item.metrics_target || {}, 
           tags: item.tags || [],
           goals: item.goals || [],
           channels: item.channels || [],
-          kpis: item.kpis || [],
+          kpis: item.kpis || []
         } as Strategy));
         
         if (initialStrategyId) {
@@ -98,11 +100,11 @@ export default function CampaignCreatePage() {
           if (selectedStrategy) {
             setSelectedStrategy({
               ...selectedStrategy,
-              metrics_target: selectedStrategy.metrics_target || {}, // Add missing required field
+              metrics_target: selectedStrategy.metrics_target || {},
               tags: selectedStrategy.tags || [],
               goals: selectedStrategy.goals || [],
               channels: selectedStrategy.channels || [],
-              kpis: selectedStrategy.kpis || [],
+              kpis: selectedStrategy.kpis || []
             } as Strategy);
             
             setName(`${selectedStrategy.title} Campaign`);
@@ -405,4 +407,107 @@ export default function CampaignCreatePage() {
       </form>
     </div>
   );
+
+  function handleStrategySelect(id: string) {
+    setStrategyId(id);
+    const selected = strategies.find(s => s.id === id) || null;
+    setSelectedStrategy(selected);
+    
+    if (selected) {
+      setName(`${selected.title} Campaign`);
+      setDescription(`Campaign based on: ${selected.title}`);
+    }
+  }
+
+  function toggleChannel(channelId: string) {
+    setChannels(current => 
+      current.includes(channelId)
+        ? current.filter(c => c !== channelId)
+        : [...current, channelId]
+    );
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    
+    if (!tenant?.id) {
+      ToastService.error({ 
+        title: "Missing workspace", 
+        description: "Please select a workspace first" 
+      });
+      return;
+    }
+    
+    if (!name.trim()) {
+      ToastService.error({
+        title: "Campaign name required", 
+        description: "Please provide a name for your campaign"
+      });
+      return;
+    }
+    
+    if (channels.length === 0) {
+      ToastService.error({
+        title: "Please select channels", 
+        description: "Select at least one channel for your campaign"
+      });
+      return;
+    }
+    
+    setSubmitting(true);
+    setError(null);
+    
+    try {
+      const { data: campaign, error: campaignError } = await supabase
+        .from('campaigns')
+        .insert({
+          tenant_id: tenant.id,
+          name,
+          description,
+          strategy_id: strategyId,
+          status: 'draft',
+          execution_status: 'pending',
+          scripts: { channels: channels.reduce((obj, ch) => ({ ...obj, [ch]: { content: "" } }), {}) }
+        })
+        .select()
+        .single();
+      
+      if (campaignError) throw campaignError;
+      
+      await logActivity({
+        event_type: "CAMPAIGN_CREATED",
+        message: `Campaign "${name}" created successfully`,
+        meta: {
+          campaign_id: campaign.id,
+          strategy_id: strategyId,
+          channels
+        }
+      });
+      
+      ToastService.success({
+        title: "Campaign created",
+        description: "Your campaign has been created successfully"
+      });
+      
+      setTimeout(() => {
+        navigate(`/campaigns/${campaign.id}`, { 
+          replace: true,
+          state: { 
+            newlyCreated: true,
+            returnPath
+          }
+        });
+      }, 500);
+      
+    } catch (err: any) {
+      console.error("Error creating campaign:", err);
+      setError(err.message || "Failed to create campaign");
+      ToastService.error({
+        title: "Campaign creation failed",
+        description: err.message || "Please try again"
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  }
 }
