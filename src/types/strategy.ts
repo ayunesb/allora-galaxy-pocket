@@ -61,7 +61,7 @@ export interface StrategyVersion {
   id: string;
   strategy_id: string;
   version_number: number;  // Renamed from version to version_number
-  changes: Record<string, any>;
+  changes?: Record<string, any>;
   created_at: string;
   created_by: string;
   tenant_id: string;
