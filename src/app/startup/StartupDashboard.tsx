@@ -27,7 +27,7 @@ export function StartupDashboard() {
       
       if (error) throw error;
       
-      // Transform to match Strategy interface
+      // Transform to match Strategy interface with all required fields
       return (data || []).map(item => ({
         ...item,
         metrics_target: item.metrics_target || {},
@@ -40,6 +40,11 @@ export function StartupDashboard() {
         assigned_agent: item.assigned_agent || '',
         auto_approved: item.auto_approved || false,
         health_score: item.health_score || 0,
+        updated_at: item.updated_at || item.created_at, 
+        version: item.version || 1,
+        reason_for_recommendation: item.reason_for_recommendation || '',
+        target_audience: item.target_audience || '',
+        industry: item.industry || '',
       } as Strategy));
     },
     enabled: !!tenant?.id

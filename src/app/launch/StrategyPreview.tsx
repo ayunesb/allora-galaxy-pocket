@@ -14,7 +14,7 @@ interface StrategyPreviewProps {
  */
 const getAICreationConversation = (strategy: Strategy) => (
   <div>
-    <span className="font-bold text-blue-600">AI Bot:</span> "To generate this strategy, I analyzed your industry {strategy.industry ?? "(unspecified)"} and primary goal: '{strategy.goal ?? strategy.goals?.[0] ?? "N/A"}'. I pulled best practices and recent success trends, then tailored an actionable plan to your use case."<br />
+    <span className="font-bold text-blue-600">AI Bot:</span> "To generate this strategy, I analyzed your industry {strategy.industry ?? "(unspecified)"} and primary goal: '{strategy.goals?.[0] ?? strategy.goal ?? "N/A"}'. I pulled best practices and recent success trends, then tailored an actionable plan to your use case."<br />
     <span className="font-bold text-gray-600">You:</span> "Why is this approach recommended?"<br />
     <span className="font-bold text-blue-600">AI Bot:</span> "It leverages fast follow-ups and automation, which have proven to increase conversion, especially for {strategy.industry ?? "your industry"}. Speed and personalization are key factors in high-performing campaigns."
   </div>
@@ -26,6 +26,7 @@ export function StrategyPreview({ strategy, onApprove, onReject }: StrategyPrevi
     description,
     created_at,
     industry,
+    goals,
     goal,
     confidence,
     status
@@ -36,8 +37,8 @@ export function StrategyPreview({ strategy, onApprove, onReject }: StrategyPrevi
     `Title: ${title}`,
     description ? `Description: ${description}` : null,
     industry ? `Industry: ${industry}` : null,
-    goal ? `Goal: ${goal}` : null,
-    confidence ? `AI Confidence: ${confidence}` : null,
+    goal ? `Goal: ${goal}` : (goals && goals.length > 0) ? `Goal: ${goals[0]}` : null,
+    confidence !== undefined ? `AI Confidence: ${confidence}` : null,
     status ? `Status: ${status}` : null,
     created_at ? `Created at: ${new Date(created_at).toLocaleString()}` : null
   ]

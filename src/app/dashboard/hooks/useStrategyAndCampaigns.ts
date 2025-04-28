@@ -20,7 +20,21 @@ export function useStrategyAndCampaigns() {
         .limit(5);
         
       if (error) throw error;
-      return data || [];
+      
+      // Transform to match Strategy interface with all required fields
+      return (data || []).map(item => ({
+        ...item,
+        metrics_target: item.metrics_target || {},
+        metrics_baseline: item.metrics_baseline || {},
+        tags: item.tags || [],
+        goals: item.goals || [],
+        channels: item.channels || [],
+        kpis: item.kpis || [],
+        updated_at: item.updated_at || item.created_at,
+        version: item.version || 1,
+        reason_for_recommendation: item.reason_for_recommendation || '',
+        target_audience: item.target_audience || '',
+      })) as Strategy[];
     },
     enabled: !!tenant?.id,
   });

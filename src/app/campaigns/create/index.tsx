@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
@@ -86,11 +85,15 @@ export default function CampaignCreatePage() {
         
         setStrategies((data || []).map(item => ({
           ...item,
-          metrics_target: item.metrics_target || {}, 
+          metrics_target: item.metrics_target || {},
           tags: item.tags || [],
           goals: item.goals || [],
           channels: item.channels || [],
-          kpis: item.kpis || []
+          kpis: item.kpis || [],
+          updated_at: item.updated_at || item.created_at,
+          version: item.version || 1,
+          reason_for_recommendation: item.reason_for_recommendation || '',
+          target_audience: item.target_audience || '',
         } as Strategy)));
         
         if (initialStrategyId) {
@@ -103,7 +106,11 @@ export default function CampaignCreatePage() {
               tags: selectedStrategy.tags || [],
               goals: selectedStrategy.goals || [],
               channels: selectedStrategy.channels || [],
-              kpis: selectedStrategy.kpis || []
+              kpis: selectedStrategy.kpis || [],
+              updated_at: selectedStrategy.updated_at || selectedStrategy.created_at,
+              version: selectedStrategy.version || 1,
+              reason_for_recommendation: selectedStrategy.reason_for_recommendation || '',
+              target_audience: selectedStrategy.target_audience || '',
             } as Strategy);
             
             setName(`${selectedStrategy.title} Campaign`);

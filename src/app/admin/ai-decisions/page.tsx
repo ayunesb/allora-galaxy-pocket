@@ -29,18 +29,25 @@ const AIDecisionsPage: React.FC = () => {
       return [];
     }
     
-    // Transform to match Strategy interface
+    // Transform to match Strategy interface with all required fields
     return (data || []).map(item => ({
       ...item,
-      metrics_target: item.metrics_target || {}, // Add missing required field
+      metrics_target: item.metrics_target || {},
       metrics_baseline: item.metrics_baseline || {},
       tags: item.tags || [],
       generated_by: item.generated_by || 'CEO Agent',
       assigned_agent: item.assigned_agent || '',
-      goals: [], // Add missing required fields
-      channels: [],
-      kpis: [],
+      goals: item.goals || [],
+      channels: item.channels || [],
+      kpis: item.kpis || [],
       impact_score: item.impact_score || 0,
+      health_score: item.health_score || 0,
+      updated_at: item.updated_at || item.created_at,
+      version: item.version || 1,
+      reason_for_recommendation: item.reason_for_recommendation || '',
+      target_audience: item.target_audience || '',
+      industry: item.industry || '',
+      confidence: item.confidence || null,
     } as Strategy));
   };
 

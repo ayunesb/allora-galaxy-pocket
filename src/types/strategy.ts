@@ -19,7 +19,7 @@ export interface Strategy {
   user_id: string;
   tags: string[];
   created_at: string;
-  updated_at: string; // Added missing field
+  updated_at: string;
   generated_by: string;
   assigned_agent: string;
   auto_approved: boolean;
@@ -30,14 +30,20 @@ export interface Strategy {
   is_public: boolean;
   diagnosis: Record<string, any>;
   metrics_baseline: Record<string, any>;
-  metrics_target: Record<string, any>; // Added missing field
-  version: string | number; // Added missing field
-  reason_for_recommendation: string; // Added missing field
-  target_audience: string; // Added missing field
-  goals: any[]; // Added missing field
-  channels: string[]; // Added missing field
-  kpis: any[]; // Added missing field
+  metrics_target: Record<string, any>;
+  version: string | number;
+  reason_for_recommendation: string;
+  target_audience: string;
+  goals: any[];
+  channels: string[];
+  kpis: any[];
+  
+  // Optional fields that might be used in some components but not required everywhere
+  industry?: string;
+  goal?: string;
+  confidence?: number;
   retry_prompt?: string;
+  onboarding_data?: Record<string, any>;
 }
 
 export interface StrategyFormData {
