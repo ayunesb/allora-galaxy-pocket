@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AgentFeedbackTable } from "./components/AgentFeedbackTable";
@@ -40,7 +39,28 @@ export default function AIDecisionAudit() {
           .select('id, strategy_id:id, decision:status, approved:auto_approved, auto_approved, confidence_score:impact_score, decision_made_at:created_at, created_at, tenant_id, strategy_title:title, agent_name:generated_by');
         
         if (error) throw error;
-        setDecisions(data as unknown as Decision[] || []);
+        
+        // Transform and explicitly type cast to ensure compatibility
+        const transformedDecisions = (data || []).map(item => ({
+          id: item.id,
+          strategy_id: item.strategy_id,
+          decision: item.decision,
+          approved: item.approved,
+          auto_approved: item.auto_approved,
+          confidence_score: item.confidence_score || 0,
+          decision_made_at: item.decision_made_at,
+          created_at: item.created_at,
+          tenant_id: item.tenant_id,
+          strategy_title: item.strategy_title,
+          agent_name: item.agent_name,
+          // These are optional in our updated type
+          agent: item.agent_name,
+          version: 1, // Default version
+          prompt: '', // Default empty prompt
+          changed_by: '' // Default empty changed_by
+        }));
+        
+        setDecisions(transformedDecisions);
       } catch (err) {
         console.error("Error fetching AI strategy decisions:", err);
         toast.error("Failed to load AI strategy decisions");

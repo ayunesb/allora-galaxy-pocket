@@ -11,7 +11,7 @@ export interface Decision {
   tenant_id: string;
   strategy_title?: string;
   agent_name?: string;
-  // Adding missing properties
+  // Make these properties optional since they're not always present
   agent?: string;
   version?: number;
   prompt?: string;

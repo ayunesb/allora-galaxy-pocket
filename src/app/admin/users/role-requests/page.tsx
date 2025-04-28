@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -42,7 +41,7 @@ export default function RoleChangeRequestsPage() {
       data.map(async (request) => {
         let userEmail = '';
         
-        // Get user email - handle safely if the email column doesn't exist
+        // Get user profile - handle safely if the email column doesn't exist
         try {
           const { data: userData, error: userError } = await supabase
             .from('profiles')
@@ -51,8 +50,8 @@ export default function RoleChangeRequestsPage() {
             .single();
           
           if (!userError && userData) {
-            // Use company_name as fallback if email doesn't exist
-            userEmail = userData.email || userData.company_name || `User ${request.user_id.substring(0, 8)}`;
+            // Use company_name as fallback
+            userEmail = userData.company_name || `User ${request.user_id.substring(0, 8)}`;
           }
         } catch (err) {
           console.warn("Could not get user email:", err);

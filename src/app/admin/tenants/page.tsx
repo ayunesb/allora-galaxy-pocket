@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,21 +10,20 @@ import AdminOnly from '@/guards/AdminOnly';
 
 interface TenantAnalytics {
   tenant_id: string;
-  tenant_name: string;
-  created_at: string;
-  total_users: number;
-  total_strategies: number;
-  total_campaigns: number;
-  total_credits_used: number;
-  max_users: number;
-  storage_limit: number;
-  analytics_enabled: boolean;
-  auto_approve_campaigns: boolean;
-  // Add these fields to match what comes from DB
+  tenant_name?: string;
   id: string;
-  active_users?: number;
-  mrr?: number;
+  created_at: string;
   updated_at?: string;
+  active_users?: number;
+  total_users?: number;
+  total_strategies?: number;
+  total_campaigns?: number;
+  mrr?: number;
+  total_credits_used?: number;
+  max_users?: number;
+  storage_limit?: number;
+  analytics_enabled?: boolean;
+  auto_approve_campaigns?: boolean;
 }
 
 export default function TenantsManagementPage() {

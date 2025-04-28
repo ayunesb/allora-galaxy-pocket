@@ -1,55 +1,38 @@
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { AgentFeedback } from '@/types/agent';
 
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+export function useAgentFeedback(agentName?: string) {
+  const [feedback, setFeedback] = useState<AgentFeedback[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-export interface AgentFeedback {
-  id: string;
-  from_agent: string;
-  to_agent: string;
-  strategy_id: string;
-  feedback: string;
-  rating: number;
-  created_at: string;
-}
+  useEffect(() => {
+    const fetchFeedback = async () => {
+      setLoading(true);
+      try {
+        let query = supabase.from('agent_feedback').select('*');
+        
+        if (agentName) {
+          query = query.eq('agent', agentName);
+        }
+        
+        const { data, error: apiError } = await query.order('created_at', { ascending: false });
+        
+        if (apiError) throw apiError;
+        
+        // Cast the data to AgentFeedback type with type assertion
+        setFeedback(data as unknown as AgentFeedback[]);
+      } catch (err) {
+        console.error('Error fetching agent feedback:', err);
+        setError(err instanceof Error ? err : new Error('Failed to fetch agent feedback'));
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchFeedback();
+  }, [agentName]);
 
-export function useAgentFeedback() {
-  const { data: feedback = [], isLoading } = useQuery({
-    queryKey: ["agent-feedback"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("agent_feedback")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      return data as AgentFeedback[];
-    },
-  });
-
-  const getTunedPrompt = async (tenantId: string) => {
-    const { data: recentFeedback } = await supabase
-      .from("agent_feedback")
-      .select("feedback, rating")
-      .eq("to_agent", "CEO Agent")
-      .order("created_at", { ascending: false })
-      .limit(3);
-
-    const summary = (recentFeedback || [])
-      .map((f) => `• [${f.rating}/5] ${f.feedback}`)
-      .join("\n");
-
-    return `
-You are the CEO Agent. Here is recent feedback on your past strategies:
-
-${summary || "No feedback yet."}
-
-Now generate a new strategy for this tenant based on their goals.
-`;
-  };
-
-  return {
-    feedback,
-    isLoading,
-    getTunedPrompt,
-  };
+  return { feedback, loading, error };
 }
