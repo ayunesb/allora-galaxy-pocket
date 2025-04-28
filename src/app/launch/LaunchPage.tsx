@@ -6,7 +6,7 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { LaunchReadinessVerifier } from "@/components/LaunchReadinessVerifier";
 import { useTenant } from "@/hooks/useTenant";
 import { useAuth } from "@/hooks/useAuth";
-import { LiveSystemVerification } from "@/components/LiveSystemVerification";
+import LiveSystemVerification from "@/components/LiveSystemVerification"; // Changed from named to default import
 import { CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 import LoadingOverlay from "@/components/ui/LoadingOverlay";
 
