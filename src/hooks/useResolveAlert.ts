@@ -10,8 +10,7 @@ export function useResolveAlert() {
     try {
       setIsResolving(true);
 
-      // Since we can't directly use our database function from the client,
-      // we'll call a specialized RPC function
+      // Use the database function we created in the migration that handles both alert types
       const { data, error } = await supabase.rpc(
         'resolve_kpi_alert',
         {
