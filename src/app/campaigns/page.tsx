@@ -1,174 +1,88 @@
-"use client";
 
-import React, { useState, useEffect } from 'react';
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Campaign } from "@/types/campaign";
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Link } from 'react-router-dom';
-import { MoreHorizontal } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useTenant } from "@/hooks/useTenant";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { ResponsiveTable } from "@/components/ui/responsive-table";
+import { PlusCircle, Sparkles } from "lucide-react";
+import { useCampaigns } from './hooks/useCampaigns';
+import { CampaignsList } from './components/CampaignsList';
+import { LoadingState } from '@/components/ui/loading-state';
 
-export default function CampaignsPage() {
-  const { tenant } = useTenant();
-  const [search, setSearch] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
-  const isMobile = useIsMobile();
-
-  const { data: campaigns, isLoading, error } = useQuery({
-    queryKey: ['campaigns', tenant?.id, search, selectedStatus],
-    queryFn: async () => {
-      if (!tenant?.id) return [];
-
-      let query = supabase
-        .from('campaigns')
-        .select('*')
-        .eq('tenant_id', tenant.id)
-        .order('created_at', { ascending: false });
-
-      if (search) {
-        query = query.ilike('name', `%${search}%`);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error("Error fetching campaigns:", error);
-        throw error;
-      }
-
-      return data as Campaign[];
-    },
-  });
-
-  const statusFilter = (campaign: Campaign) => {
-    if (!selectedStatus) return true;
-    return campaign.status === selectedStatus;
-  };
-
-  const filteredCampaigns = campaigns?.filter(statusFilter) || [];
-
-  const columns = [
-    {
-      header: "Name",
-      accessorKey: "name",
-      cell: (value: string, row: Campaign) => (
-        <Link to={`/campaigns/${row.id}`} className="hover:underline">
-          {value}
-        </Link>
-      )
-    },
-    {
-      header: "Status",
-      accessorKey: "status"
-    },
-    {
-      header: "Created At",
-      accessorKey: "created_at"
-    },
-    {
-      header: "Actions",
-      accessorKey: "actions",
-      cell: (value: any, row: Campaign) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem>
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )
-    }
-  ];
+const CampaignsPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { campaigns, isLoading, error } = useCampaigns();
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-4 flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Campaigns</h1>
-        <Button asChild>
-          <Link to="/campaigns/create">Create Campaign</Link>
-        </Button>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 mb-4">
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <Label htmlFor="search">Search</Label>
-          <Input
-            type="search"
-            id="search"
-            placeholder="Search campaigns..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+          <h1 className="text-3xl font-bold tracking-tight">Campaigns</h1>
+          <p className="text-muted-foreground mt-1">
+            Create and manage your marketing campaigns
+          </p>
         </div>
-
-        <div>
-          <Label>Status</Label>
-          <select
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            value={selectedStatus || ''}
-            onChange={(e) => setSelectedStatus(e.target.value === '' ? null : e.target.value)}
+        
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button
+            onClick={() => navigate('/campaigns/wizard')}
+            variant="outline"
+            className="flex items-center gap-2"
           >
-            <option value="">All Statuses</option>
-            <option value="active">Active</option>
-            <option value="draft">Draft</option>
-            <option value="paused">Paused</option>
-            <option value="completed">Completed</option>
-          </select>
-        </div>
-
-        <div>
-          <Label>Date Range</Label>
-          <DateRangePicker />
-        </div>
-
-        <div>
-          <Label>Sort By</Label>
-          <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-            <option>Created Date</option>
-            <option>Name</option>
-          </select>
+            <Sparkles className="h-4 w-4" />
+            AI Wizard
+          </Button>
+          <Button
+            onClick={() => navigate('/campaigns/create')}
+            className="flex items-center gap-2"
+          >
+            <PlusCircle className="h-4 w-4" />
+            Create Campaign
+          </Button>
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Campaign List</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveTable
-            columns={columns}
-            data={filteredCampaigns}
-            isLoading={isLoading}
-            emptyMessage="No campaigns found."
-          />
-        </CardContent>
-      </Card>
+      {isLoading ? (
+        <LoadingState message="Loading campaigns..." />
+      ) : error ? (
+        <div className="p-12 text-center">
+          <p className="text-destructive">Error loading campaigns</p>
+          <p className="text-muted-foreground">{error.message}</p>
+          <Button
+            variant="outline"
+            onClick={() => window.location.reload()}
+            className="mt-4"
+          >
+            Try Again
+          </Button>
+        </div>
+      ) : campaigns.length === 0 ? (
+        <div className="text-center p-12 border rounded-lg">
+          <h3 className="font-medium text-lg">No campaigns yet</h3>
+          <p className="text-muted-foreground mb-4">
+            Create your first marketing campaign to get started
+          </p>
+          <div className="flex flex-col sm:flex-row justify-center gap-2">
+            <Button
+              onClick={() => navigate('/campaigns/wizard')}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Sparkles className="h-4 w-4" />
+              AI Wizard
+            </Button>
+            <Button
+              onClick={() => navigate('/campaigns/create')}
+              className="flex items-center gap-2"
+            >
+              <PlusCircle className="h-4 w-4" />
+              Standard Editor
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <CampaignsList campaigns={campaigns} />
+      )}
     </div>
   );
-}
+};
+
+export default CampaignsPage;

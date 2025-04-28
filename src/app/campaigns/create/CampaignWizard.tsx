@@ -4,6 +4,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { useToast } from "@/hooks/use-toast";
+import { toast } from 'sonner';
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -27,8 +28,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Loader2, ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight, Check, ArrowLeft } from "lucide-react";
 import { CMO_Agent } from '@/lib/agents/CMO_Agent';
+import { LoadingState } from '@/components/ui/loading-state';
+import { useSystemLogs } from "@/hooks/useSystemLogs";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 // Form schema for campaign creation
 const campaignFormSchema = z.object({
@@ -40,13 +44,15 @@ const campaignFormSchema = z.object({
 
 type CampaignFormValues = z.infer<typeof campaignFormSchema>;
 
-export function CampaignWizard() {
+export default function CampaignWizard() {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const navigate = useNavigate();
   const { tenant } = useTenant();
+  const { logActivity } = useSystemLogs();
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState(1);
+  const [generationError, setGenerationError] = useState<string | null>(null);
   const [generatedContent, setGeneratedContent] = useState<{ 
     channel: string; 
     message: string; 
@@ -54,6 +60,7 @@ export function CampaignWizard() {
   } | null>(null);
   
   const prefillData = searchParams.get('prefill');
+  const returnPath = searchParams.get('returnPath') || "/campaigns";
 
   // Initialize form with default values or prefill data
   const form = useForm<CampaignFormValues>({
@@ -97,16 +104,54 @@ export function CampaignWizard() {
   // Generate campaign content using AI
   const generateCampaignContent = async (values: CampaignFormValues) => {
     setIsLoading(true);
+    setGenerationError(null);
+    
     try {
+      // Log activity before generation starts
+      await logActivity({
+        event_type: 'CAMPAIGN_GENERATION_STARTED',
+        message: `Starting AI campaign generation for: ${values.name}`,
+        meta: {
+          product: values.product,
+          audience: values.audience
+        }
+      });
+      
       const result = await CMO_Agent.run({
         product: values.product,
         audience: values.audience
       });
       
+      if (!result.message) {
+        throw new Error("AI failed to generate campaign content");
+      }
+      
       setGeneratedContent(result);
       setStep(2);
-    } catch (error) {
+      
+      // Log successful generation
+      await logActivity({
+        event_type: 'CAMPAIGN_GENERATION_COMPLETED',
+        message: `AI successfully generated campaign: ${values.name}`,
+        meta: {
+          channel: result.channel
+        }
+      });
+    } catch (error: any) {
       console.error("Error generating campaign:", error);
+      setGenerationError(error.message || "Could not generate campaign content");
+      
+      // Log error
+      await logActivity({
+        event_type: 'CAMPAIGN_GENERATION_FAILED',
+        message: `AI campaign generation failed: ${error.message}`,
+        meta: {
+          product: values.product,
+          audience: values.audience,
+          error: error.message
+        }
+      });
+      
       toast({
         title: "Generation failed",
         description: "Could not generate campaign content. Please try again.",
@@ -135,7 +180,8 @@ export function CampaignWizard() {
         name: values.name,
         description: values.description,
         tenant_id: tenant.id,
-        status: "active",
+        status: 'draft',
+        execution_status: 'pending',
         scripts: {
           product: values.product,
           audience: values.audience,
@@ -169,6 +215,17 @@ export function CampaignWizard() {
         sessionStorage.removeItem('campaign_insight_id');
       }
       
+      // Log activity
+      await logActivity({
+        event_type: "CAMPAIGN_CREATED_WITH_AI",
+        message: `AI-generated campaign "${values.name}" created successfully`,
+        meta: {
+          campaign_id: campaign.id,
+          product: values.product,
+          audience: values.audience
+        }
+      });
+      
       return campaign;
     } catch (error) {
       console.error("Error saving campaign:", error);
@@ -188,9 +245,15 @@ export function CampaignWizard() {
         if (campaign) {
           toast({
             title: "Campaign created",
-            description: "Your campaign has been created successfully",
+            description: "Your AI-powered campaign has been created successfully",
           });
-          navigate(`/campaigns/${campaign.id}`);
+          navigate(`/campaigns/${campaign.id}`, {
+            state: { 
+              newlyCreated: true,
+              aiGenerated: true,
+              returnPath
+            }
+          });
         }
       } catch (error: any) {
         toast({
@@ -204,19 +267,40 @@ export function CampaignWizard() {
 
   return (
     <div className="container max-w-3xl mx-auto py-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">
-          {step === 1 ? "Create Campaign" : "Review Campaign"}
-        </h1>
-        <div className="flex items-center gap-2">
-          <div className={`h-2 w-8 rounded-full ${step >= 1 ? "bg-primary" : "bg-gray-200"}`}></div>
-          <div className={`h-2 w-8 rounded-full ${step >= 2 ? "bg-primary" : "bg-gray-200"}`}></div>
+      <div className="flex items-center">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => navigate(returnPath)}
+          className="flex items-center gap-1 mr-4"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back
+        </Button>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            {step === 1 ? "AI Campaign Wizard" : "Review AI Campaign"}
+          </h1>
+          <p className="text-muted-foreground">
+            Create an AI-powered campaign in minutes
+          </p>
         </div>
       </div>
 
+      <div className="flex items-center justify-center gap-2 mb-6">
+        <div className={`h-2 w-8 rounded-full ${step >= 1 ? "bg-primary" : "bg-gray-200"}`}></div>
+        <div className={`h-2 w-8 rounded-full ${step >= 2 ? "bg-primary" : "bg-gray-200"}`}></div>
+      </div>
+
+      {generationError && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertTitle>AI Generation Failed</AlertTitle>
+          <AlertDescription>{generationError}</AlertDescription>
+        </Alert>
+      )}
+
       <Card>
         <CardHeader>
-          <CardTitle>{step === 1 ? "Campaign Details" : "Generated Campaign"}</CardTitle>
+          <CardTitle>{step === 1 ? "Campaign Details" : "AI-Generated Campaign"}</CardTitle>
           <CardDescription>
             {step === 1 
               ? "Enter details about your campaign to get AI-powered suggestions." 
@@ -342,6 +426,14 @@ export function CampaignWizard() {
                 
                 {step === 1 && (
                   <div className="ml-auto">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => navigate('/campaigns/create')}
+                      className="mr-2"
+                    >
+                      Standard Editor
+                    </Button>
                     <Button 
                       type="submit"
                       disabled={isLoading || !form.formState.isValid}
@@ -385,6 +477,17 @@ export function CampaignWizard() {
           </Form>
         </CardContent>
       </Card>
+
+      {isLoading && step === 1 && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-background p-6 rounded-lg max-w-md w-full">
+            <LoadingState size="lg" message="Our AI is crafting your campaign..." />
+            <p className="text-center text-sm mt-4 text-muted-foreground">
+              This may take a moment as we analyze your product and audience to create the perfect campaign
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

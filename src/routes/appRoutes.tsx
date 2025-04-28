@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import StartupPage from "@/app/startup/page";
@@ -12,6 +13,7 @@ import AgentsPage from "@/app/agents/page";
 import CreativeSuitePage from "@/app/creative/SuitePanel";
 import CampaignDetailPage from "@/app/campaigns/[id]";
 import CampaignCreatePage from "@/app/campaigns/create";
+import CampaignWizard from "@/app/campaigns/create/CampaignWizard";
 import CampaignCenterPage from "@/app/campaigns/center/page";
 import CampaignsPage from "@/app/campaigns/page";
 import AgentBlueprintGallery from "@/app/galaxy/agents/page";
@@ -34,6 +36,7 @@ export const appRoutes: RouteObject[] = [
   // Campaign routes
   { path: "/campaigns", element: <CampaignsPage /> },
   { path: "/campaigns/create", element: <CampaignCreatePage /> },
+  { path: "/campaigns/wizard", element: <CampaignWizard /> },
   { path: "/campaigns/center", element: <CampaignCenterPage /> },
   { path: "/campaigns/:id", element: <CampaignDetailPage /> },
   

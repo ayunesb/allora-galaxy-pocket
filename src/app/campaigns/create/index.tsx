@@ -31,7 +31,7 @@ import { useTenant } from "@/hooks/useTenant";
 import { supabase } from "@/integrations/supabase/client"; 
 import { useAuth } from "@/hooks/useAuth";
 import { Strategy } from "@/types/strategy";
-import { AlertCircle, Check, ArrowLeft } from "lucide-react";
+import { AlertCircle, Check, ArrowLeft, Sparkles } from "lucide-react";
 import { useSystemLogs } from "@/hooks/useSystemLogs";
 import LoadingOverlay from "@/components/ui/LoadingOverlay";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -84,7 +84,6 @@ export default function CampaignCreatePage() {
           
         if (error) throw error;
         
-        // Fix syntax error here - removed semicolon after Strategy cast
         setStrategies((data || []).map(item => ({
           ...item,
           metrics_target: item.metrics_target || {}, 
@@ -92,7 +91,7 @@ export default function CampaignCreatePage() {
           goals: item.goals || [],
           channels: item.channels || [],
           kpis: item.kpis || []
-        } as Strategy));
+        } as Strategy)));
         
         if (initialStrategyId) {
           const selectedStrategy = data?.find(s => s.id === initialStrategyId) || null;
@@ -248,6 +247,17 @@ export default function CampaignCreatePage() {
           <h1 className="text-3xl font-bold tracking-tight">Create Campaign</h1>
           <p className="text-muted-foreground">Set up a new marketing campaign</p>
         </div>
+      </div>
+
+      <div className="flex justify-end">
+        <Button 
+          variant="outline"
+          onClick={() => navigate('/campaigns/wizard')}
+          className="flex items-center gap-2"
+        >
+          <Sparkles className="h-4 w-4" />
+          Use AI Wizard
+        </Button>
       </div>
       
       <LoadingOverlay show={submitting} label="Creating campaign..." />
@@ -407,107 +417,4 @@ export default function CampaignCreatePage() {
       </form>
     </div>
   );
-
-  function handleStrategySelect(id: string) {
-    setStrategyId(id);
-    const selected = strategies.find(s => s.id === id) || null;
-    setSelectedStrategy(selected);
-    
-    if (selected) {
-      setName(`${selected.title} Campaign`);
-      setDescription(`Campaign based on: ${selected.title}`);
-    }
-  }
-
-  function toggleChannel(channelId: string) {
-    setChannels(current => 
-      current.includes(channelId)
-        ? current.filter(c => c !== channelId)
-        : [...current, channelId]
-    );
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    
-    if (!tenant?.id) {
-      ToastService.error({ 
-        title: "Missing workspace", 
-        description: "Please select a workspace first" 
-      });
-      return;
-    }
-    
-    if (!name.trim()) {
-      ToastService.error({
-        title: "Campaign name required", 
-        description: "Please provide a name for your campaign"
-      });
-      return;
-    }
-    
-    if (channels.length === 0) {
-      ToastService.error({
-        title: "Please select channels", 
-        description: "Select at least one channel for your campaign"
-      });
-      return;
-    }
-    
-    setSubmitting(true);
-    setError(null);
-    
-    try {
-      const { data: campaign, error: campaignError } = await supabase
-        .from('campaigns')
-        .insert({
-          tenant_id: tenant.id,
-          name,
-          description,
-          strategy_id: strategyId,
-          status: 'draft',
-          execution_status: 'pending',
-          scripts: { channels: channels.reduce((obj, ch) => ({ ...obj, [ch]: { content: "" } }), {}) }
-        })
-        .select()
-        .single();
-      
-      if (campaignError) throw campaignError;
-      
-      await logActivity({
-        event_type: "CAMPAIGN_CREATED",
-        message: `Campaign "${name}" created successfully`,
-        meta: {
-          campaign_id: campaign.id,
-          strategy_id: strategyId,
-          channels
-        }
-      });
-      
-      ToastService.success({
-        title: "Campaign created",
-        description: "Your campaign has been created successfully"
-      });
-      
-      setTimeout(() => {
-        navigate(`/campaigns/${campaign.id}`, { 
-          replace: true,
-          state: { 
-            newlyCreated: true,
-            returnPath
-          }
-        });
-      }, 500);
-      
-    } catch (err: any) {
-      console.error("Error creating campaign:", err);
-      setError(err.message || "Failed to create campaign");
-      ToastService.error({
-        title: "Campaign creation failed",
-        description: err.message || "Please try again"
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  }
 }
