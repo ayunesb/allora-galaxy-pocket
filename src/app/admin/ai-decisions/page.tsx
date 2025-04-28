@@ -4,25 +4,14 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { DecisionFilters } from "./components/DecisionFilters";
+import { DecisionFilters, FilterState } from "./components/DecisionFilters";
 import { DecisionList } from "./components/DecisionList";
 import { AuditAnalytics } from "./components/AuditAnalytics";
 import { ApprovalMetricsCard } from "./components/ApprovalMetricsCard";
 import { ApprovalStatsTable } from "./components/ApprovalStatsTable";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import ErrorAlert from "@/components/ui/ErrorAlert";
-
-interface FilterState {
-  dateRange: string;
-  agentFilter: string;
-  approvalType: string;
-}
-
-interface ApprovalStats {
-  total_approved: number;
-  ai_approved: number;
-  human_approved: number;
-}
+import { ApprovalStats } from "@/types/decision";
 
 export default function AIDecisionsPage() {
   const [filters, setFilters] = useState<FilterState>({
@@ -44,14 +33,15 @@ export default function AIDecisionsPage() {
     }
   });
   
-  const { data: approvalStats, isLoading: statsLoading, error: statsError } = useQuery({
+  const { data: approvalStatsData, isLoading: statsLoading, error: statsError } = useQuery({
     queryKey: ['approval-stats'],
     queryFn: async () => {
       const { data, error } = await supabase
         .rpc('count_strategy_approvals');
         
       if (error) throw error;
-      return data as ApprovalStats || { total_approved: 0, ai_approved: 0, human_approved: 0 };
+      // Cast the result to match ApprovalStats interface
+      return data as ApprovalStats;
     }
   });
 
@@ -75,11 +65,12 @@ export default function AIDecisionsPage() {
     );
   }
 
-  const aiApprovalRate = approvalStats && approvalStats.total_approved > 0 
+  const approvalStats = approvalStatsData || { total_approved: 0, ai_approved: 0, human_approved: 0 };
+  const aiApprovalRate = approvalStats.total_approved > 0 
     ? Math.round((approvalStats.ai_approved / approvalStats.total_approved) * 100) 
     : 0;
     
-  const humanApprovalRate = approvalStats && approvalStats.total_approved > 0 
+  const humanApprovalRate = approvalStats.total_approved > 0 
     ? Math.round((approvalStats.human_approved / approvalStats.total_approved) * 100) 
     : 0;
 
@@ -95,17 +86,17 @@ export default function AIDecisionsPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
         <ApprovalMetricsCard 
           title="Total Approved Strategies" 
-          value={approvalStats?.total_approved || 0} 
+          value={approvalStats.total_approved || 0} 
           description="Strategies approved by AI or humans" 
         />
         <ApprovalMetricsCard 
           title="AI Approved" 
-          value={approvalStats?.ai_approved || 0} 
+          value={approvalStats.ai_approved || 0} 
           description={`${aiApprovalRate}% of total approvals`} 
         />
         <ApprovalMetricsCard 
           title="Human Approved" 
-          value={approvalStats?.human_approved || 0} 
+          value={approvalStats.human_approved || 0} 
           description={`${humanApprovalRate}% of total approvals`} 
         />
       </div>
@@ -133,8 +124,8 @@ export default function AIDecisionsPage() {
         
         <TabsContent value="analytics" className="mt-4">
           <AuditAnalytics 
-            aiApproved={approvalStats?.ai_approved || 0}
-            humanApproved={approvalStats?.human_approved || 0}
+            aiApproved={approvalStats.ai_approved || 0}
+            humanApproved={approvalStats.human_approved || 0}
           />
         </TabsContent>
         

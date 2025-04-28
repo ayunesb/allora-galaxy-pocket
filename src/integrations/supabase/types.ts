@@ -1072,6 +1072,69 @@ export type Database = {
           },
         ]
       }
+      kpi_alerts: {
+        Row: {
+          campaign_id: string | null
+          condition: string | null
+          created_at: string | null
+          current_value: number
+          description: string
+          id: string
+          kpi_name: string
+          message: string | null
+          metric: string | null
+          outcome: string | null
+          percent_change: number | null
+          previous_value: number | null
+          severity: string
+          status: string
+          target: number | null
+          tenant_id: string
+          threshold: number | null
+          triggered_at: string | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          condition?: string | null
+          created_at?: string | null
+          current_value: number
+          description: string
+          id?: string
+          kpi_name: string
+          message?: string | null
+          metric?: string | null
+          outcome?: string | null
+          percent_change?: number | null
+          previous_value?: number | null
+          severity: string
+          status?: string
+          target?: number | null
+          tenant_id: string
+          threshold?: number | null
+          triggered_at?: string | null
+        }
+        Update: {
+          campaign_id?: string | null
+          condition?: string | null
+          created_at?: string | null
+          current_value?: number
+          description?: string
+          id?: string
+          kpi_name?: string
+          message?: string | null
+          metric?: string | null
+          outcome?: string | null
+          percent_change?: number | null
+          previous_value?: number | null
+          severity?: string
+          status?: string
+          target?: number | null
+          tenant_id?: string
+          threshold?: number | null
+          triggered_at?: string | null
+        }
+        Relationships: []
+      }
       kpi_insights: {
         Row: {
           campaign_id: string | null

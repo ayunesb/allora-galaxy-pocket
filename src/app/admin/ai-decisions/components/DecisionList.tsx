@@ -1,116 +1,101 @@
 
-import React from 'react';
-import PromptDiff from "../PromptDiff";
-import AgentChain from "@/components/AgentChain";
+import React from "react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { formatDistanceToNow } from "date-fns";
+import { FilterState } from "./DecisionFilters";
 
-type Decision = {
-  id: string;
-  tenant_id: string | null;
-  strategy_id: string | null;
-  agent: string | null;
-  version: number;
-  prompt: string;
-  previous_prompt?: string;
-  changed_by: string | null;
-  ai_reason?: string | null;
-  source_event?: string | null;
-  created_at: string;
-};
+export interface DecisionListProps {
+  decisions: any[];
+  filters: FilterState;
+}
 
-type VoteSummary = {
-  version: number;
-  total_votes: number;
-  upvotes: number;
-  downvotes: number;
-};
+export function DecisionList({ decisions, filters }: DecisionListProps) {
+  // Apply filters
+  const filteredDecisions = decisions.filter((decision) => {
+    // Filter by agent if specified
+    if (filters.agentFilter !== "all" && decision.generated_by !== filters.agentFilter) {
+      return false;
+    }
+    
+    // Filter by approval type
+    if (filters.approvalType === "ai" && (!decision.auto_approved || decision.status !== "approved")) {
+      return false;
+    } else if (filters.approvalType === "human" && (decision.auto_approved || decision.status !== "approved")) {
+      return false;
+    } else if (filters.approvalType === "pending" && decision.status !== "pending") {
+      return false;
+    }
+    
+    // Filter by date range if not "all"
+    if (filters.dateRange !== "all") {
+      const daysAgo = parseInt(filters.dateRange);
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - daysAgo);
+      
+      return new Date(decision.created_at) >= cutoffDate;
+    }
+    
+    return true;
+  });
 
-type DecisionListProps = {
-  decisions: Decision[];
-  voteSummaries: Record<number, VoteSummary>;
-  exportDecisionLog: (strategyId: string | null) => void;
-  getAgentChainForStrategy: (strategyId: string | null) => string[];
-};
-
-export function DecisionList({
-  decisions,
-  voteSummaries,
-  exportDecisionLog,
-  getAgentChainForStrategy
-}: DecisionListProps) {
-  const shownStrategies = Array.from(new Set(decisions.map(d => d.strategy_id)));
+  if (filteredDecisions.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        No decisions match your filter criteria.
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-8">
-      {shownStrategies.map((strategyId) => (
-        <section key={strategyId} className="mb-10">
-          <div className="flex items-center gap-4 mb-3">
-            <h2 className="text-xl font-semibold">
-              Strategy ID: <span className="font-mono">{strategyId}</span>
-            </h2>
-            <button
-              onClick={() => exportDecisionLog(strategyId)}
-              className="text-sm px-3 py-1 bg-secondary text-white rounded"
-            >
-              📤 Export Audit Log
-            </button>
-          </div>
-          <AgentChain agents={getAgentChainForStrategy(strategyId)} />
-          <div className="space-y-4 mt-3">
-            {decisions
-              .filter((d) => d.strategy_id === strategyId)
-              .sort((a, b) => b.version - a.version)
-              .map((d, i, arr) => {
-                const prevPrompt =
-                  (arr[i + 1]?.prompt && arr[i + 1].version === d.version - 1) 
-                    ? arr[i + 1].prompt 
-                    : d.previous_prompt || "";
-
-                const voteSummary = voteSummaries[d.version];
-
-                let consensus = "";
-                if (voteSummary) {
-                  if (voteSummary.upvotes > voteSummary.downvotes) 
-                    consensus = "📊 Agent consensus: Favorable";
-                  else if (voteSummary.downvotes > voteSummary.upvotes) 
-                    consensus = "⚠️ Contested";
+    <div>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Strategy</TableHead>
+            <TableHead>Agent</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Created</TableHead>
+            <TableHead>Approved By</TableHead>
+            <TableHead>Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filteredDecisions.map((decision) => (
+            <TableRow key={decision.id}>
+              <TableCell className="font-medium">{decision.title || "Untitled Strategy"}</TableCell>
+              <TableCell>{decision.generated_by || "Unknown"}</TableCell>
+              <TableCell>
+                <Badge
+                  variant={
+                    decision.status === "approved" ? "success" : 
+                    decision.status === "pending" ? "outline" : 
+                    "destructive"
+                  }
+                >
+                  {decision.status}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                {decision.created_at ? 
+                  formatDistanceToNow(new Date(decision.created_at), { addSuffix: true }) : 
+                  "Unknown"
                 }
-
-                return (
-                  <div key={d.id} className="border rounded-xl p-4 shadow-sm bg-background">
-                    <div className="flex justify-between">
-                      <h3 className="text-lg font-semibold">
-                        v{d.version} — {d.agent || ""}
-                      </h3>
-                      <p className="text-xs text-muted-foreground">
-                        {d.created_at && new Date(d.created_at).toLocaleString()}
-                      </p>
-                    </div>
-                    <p className="text-sm text-muted mb-2">
-                      Event: {d.source_event || "—"}
-                    </p>
-                    <PromptDiff oldPrompt={prevPrompt} newPrompt={d.prompt} />
-                    {voteSummary && (
-                      <p className="text-xs mt-1 text-muted-foreground">
-                        🗳 {voteSummary.upvotes} 👍 / {voteSummary.downvotes} 👎 — Total: {voteSummary.total_votes}
-                      </p>
-                    )}
-                    {consensus && (
-                      <span className={consensus.includes("Favorable") ? "text-green-700" : "text-orange-600"}>
-                        {consensus}
-                      </span>
-                    )}
-                    <pre className="text-xs bg-muted p-2 rounded whitespace-pre-wrap mt-2">{d.prompt}</pre>
-                    {d.ai_reason && (
-                      <p className="text-sm mt-2 italic">
-                        🧠 {d.ai_reason}
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-          </div>
-        </section>
-      ))}
+              </TableCell>
+              <TableCell>
+                {decision.status === "approved" ? 
+                  (decision.auto_approved ? "AI" : "Human") : 
+                  "-"
+                }
+              </TableCell>
+              <TableCell>
+                <Button variant="outline" size="sm">View Details</Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }

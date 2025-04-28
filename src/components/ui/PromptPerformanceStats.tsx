@@ -1,6 +1,4 @@
 
-// Create the PromptPerformanceStats component or update it
-
 import React from "react";
 import { ThumbsUp, ThumbsDown } from "lucide-react";
 
@@ -9,7 +7,7 @@ export interface PromptPerformanceStatsProps {
   downvotes: number;
 }
 
-export function PromptPerformanceStats({ upvotes, downvotes }: PromptPerformanceStatsProps) {
+export default function PromptPerformanceStats({ upvotes, downvotes }: PromptPerformanceStatsProps) {
   return (
     <div className="flex items-center space-x-4">
       <div className="flex items-center">
@@ -23,3 +21,6 @@ export function PromptPerformanceStats({ upvotes, downvotes }: PromptPerformance
     </div>
   );
 }
+
+// Also export named export
+export { PromptPerformanceStats };

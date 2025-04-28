@@ -1,5 +1,5 @@
 
-// Create or update the agent.ts file with missing AgentProfile and AgentFeedback types
+// Update the agent.ts file with missing AgentMemory and other interfaces
 
 export interface AgentProfile {
   id: string;
@@ -53,4 +53,43 @@ export interface AgentPromptVote {
   vote: number;
   tenant_id: string;
   created_at: string;
+}
+
+export interface AgentMemory {
+  id: string;
+  tenant_id: string;
+  agent_name: string;
+  context: string;
+  summary?: string;
+  type: string;
+  timestamp: string;
+  xp_delta?: number;
+  ai_rating?: number;
+  ai_feedback?: string;
+  is_user_submitted?: boolean;
+  tags?: string[];
+  remix_count?: number;
+}
+
+export interface AgentMemoryLog extends AgentMemory {
+  feedback?: string;
+}
+
+export interface AgentCollabMessage {
+  id: string;
+  session_id: string;
+  agent: string;
+  message: string;
+  tenant_id: string;
+  created_at: string;
+}
+
+export interface PromptPerformanceData {
+  agent_name: string;
+  version: number;
+  success_rate: number;
+  upvotes: number;
+  downvotes: number;
+  total_executions: number;
+  last_executed: string;
 }

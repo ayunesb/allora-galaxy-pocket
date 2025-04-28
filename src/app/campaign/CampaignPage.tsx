@@ -1,14 +1,14 @@
+
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { Campaign } from "@/types/campaign";
+import { Campaign, CampaignStatus } from "@/types/campaign";
 import CampaignCard from "./CampaignCard";
 import CampaignRecap from "./CampaignRecap";
 import { Loader2 } from "lucide-react";
 import { useTenant } from "@/hooks/useTenant";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CampaignStatus } from "@/types/campaign";
 
 export default function CampaignPage() {
   const [selected, setSelected] = useState<number | null>(null);
@@ -85,7 +85,7 @@ export default function CampaignPage() {
       {selected !== null && campaigns[selected] && (
         <CampaignRecap
           name={campaigns[selected].name}
-          description={campaigns[selected].description}
+          description={campaigns[selected].description || ""}
         />
       )}
 

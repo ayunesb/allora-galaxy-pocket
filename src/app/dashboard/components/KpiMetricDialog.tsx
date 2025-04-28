@@ -1,168 +1,159 @@
 
 import React, { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
-import type { KpiMetric } from "@/types/kpi";
+import { toast } from "sonner";
 
 interface KpiMetricDialogProps {
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  selectedMetric?: string | null;
-  onSelectMetric?: (metric: string | null) => void;
-  metric?: KpiMetric;
-  onSuccess?: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  selectedMetric: string | null;
+  onSelectMetric: (metric: string | null) => void;
 }
 
-export function KpiMetricDialog({ 
-  open, 
-  onOpenChange,
-  selectedMetric,
-  onSelectMetric,
-  metric,
-  onSuccess
-}: KpiMetricDialogProps) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [metricName, setMetricName] = useState(selectedMetric || metric?.kpi_name || "");
-  const [metricValue, setMetricValue] = useState(metric?.value?.toString() || "");
+export default function KpiMetricDialog({ open, onOpenChange, selectedMetric, onSelectMetric }: KpiMetricDialogProps) {
+  const [metricName, setMetricName] = useState<string>(selectedMetric || "");
+  const [metricValue, setMetricValue] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { tenant } = useTenant();
-  
-  const handleOpenChange = (newOpen: boolean) => {
-    if (onOpenChange) {
-      onOpenChange(newOpen);
-    } else {
-      setIsDialogOpen(newOpen);
+
+  const predefinedMetrics = [
+    "Website Visitors",
+    "Conversion Rate",
+    "Revenue",
+    "Customer Satisfaction",
+    "Churn Rate",
+    "Active Users",
+    "Lead Generation"
+  ];
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!tenant?.id) {
+      toast.error("No active workspace selected");
+      return;
     }
     
-    if (!newOpen) {
-      reset();
+    if (!metricName.trim()) {
+      toast.error("Please enter a metric name");
+      return;
     }
-  };
-  
-  const handleSubmit = async () => {
-    if (!metricName || !metricValue || !tenant?.id) {
-      toast.error("Please fill all required fields");
+    
+    const numValue = parseFloat(metricValue);
+    if (isNaN(numValue)) {
+      toast.error("Please enter a valid numeric value");
       return;
     }
     
     setIsSubmitting(true);
+    
     try {
-      const numericValue = parseFloat(metricValue);
-      if (isNaN(numericValue)) {
-        throw new Error("Value must be a number");
-      }
-      
       const { error } = await supabase
-        .from("kpi_metrics")
+        .from('kpi_metrics')
         .insert({
+          tenant_id: tenant.id,
           metric: metricName,
-          value: numericValue,
-          tenant_id: tenant.id
+          kpi_name: metricName,
+          value: numValue,
+          recorded_at: new Date().toISOString()
         });
-        
+      
       if (error) throw error;
       
-      toast.success("Metric added successfully");
-      reset();
-      handleOpenChange(false);
+      toast.success("KPI metric added successfully");
+      setMetricName("");
+      setMetricValue("");
+      onOpenChange(false);
       
-      if (onSuccess) {
-        onSuccess();
-      }
     } catch (error) {
-      console.error("Error adding metric:", error);
-      toast.error("Failed to add metric");
+      console.error("Error adding KPI metric:", error);
+      toast.error("Failed to add KPI metric");
     } finally {
       setIsSubmitting(false);
     }
   };
-  
-  const reset = () => {
-    setMetricName(selectedMetric || metric?.kpi_name || "");
-    setMetricValue(metric?.value?.toString() || "");
-    if (onSelectMetric) onSelectMetric(null);
+
+  const handleSelectPredefined = (value: string) => {
+    setMetricName(value);
+    onSelectMetric(value);
   };
-  
-  // For the "+ Add Metric" button when no specific props are provided
-  const handleButtonClick = () => {
-    handleOpenChange(true);
-  };
-  
-  const isControlled = open !== undefined;
-  const isOpen = isControlled ? open : isDialogOpen;
-  
+
   return (
-    <>
-      {!metric && !isControlled && (
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={handleButtonClick}
-          className="ml-auto"
-        >
-          + Add Metric
-        </Button>
-      )}
-    
-      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add KPI Metric</DialogTitle>
-          </DialogHeader>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add KPI Metric</DialogTitle>
+        </DialogHeader>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="metricType">Metric Type</Label>
+            <Select 
+              value={metricName} 
+              onValueChange={handleSelectPredefined}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select or type a metric" />
+              </SelectTrigger>
+              <SelectContent>
+                {predefinedMetrics.map(metric => (
+                  <SelectItem key={metric} value={metric}>{metric}</SelectItem>
+                ))}
+                <SelectItem value="custom">Custom Metric</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           
-          <div className="space-y-4 py-4">
+          {metricName === 'custom' && (
             <div className="space-y-2">
-              <label className="text-sm font-medium">Metric Name</label>
-              <Select value={metricName} onValueChange={setMetricName}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a metric" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Revenue">Revenue</SelectItem>
-                  <SelectItem value="Conversion Rate">Conversion Rate</SelectItem>
-                  <SelectItem value="Customer Acquisition Cost">CAC</SelectItem>
-                  <SelectItem value="Churn Rate">Churn Rate</SelectItem>
-                  <SelectItem value="MRR">MRR</SelectItem>
-                  <SelectItem value="ARR">ARR</SelectItem>
-                  <SelectItem value="Active Users">Active Users</SelectItem>
-                  <SelectItem value="Leads Generated">Leads Generated</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Value</label>
+              <Label htmlFor="customMetric">Custom Metric Name</Label>
               <Input
-                type="number"
-                placeholder="Enter metric value"
-                value={metricValue}
-                onChange={(e) => setMetricValue(e.target.value)}
+                id="customMetric"
+                value={metricName === 'custom' ? '' : metricName}
+                onChange={(e) => setMetricName(e.target.value)}
+                placeholder="Enter custom metric name"
               />
             </div>
+          )}
+          
+          <div className="space-y-2">
+            <Label htmlFor="metricValue">Current Value</Label>
+            <Input
+              id="metricValue"
+              type="number"
+              value={metricValue}
+              onChange={(e) => setMetricValue(e.target.value)}
+              placeholder="Enter current value"
+              required
+            />
           </div>
           
           <DialogFooter>
-            <Button variant="outline" onClick={() => handleOpenChange(false)}>Cancel</Button>
-            <Button onClick={handleSubmit} disabled={isSubmitting}>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={isSubmitting || !metricName || !metricValue}
+            >
               {isSubmitting ? "Adding..." : "Add Metric"}
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-// Also export as default for backward compatibility
-export default KpiMetricDialog;
+// Add named export
+export { KpiMetricDialog };

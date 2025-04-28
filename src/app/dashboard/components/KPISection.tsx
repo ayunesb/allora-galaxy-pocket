@@ -7,11 +7,11 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import KpiMetricDialog from "./KpiMetricDialog";
-import { KpiAlert } from "@/types/kpi";
+import { KpiAlert, KpiMetric } from "@/types/kpi";
 
 export default function KPISection() {
   const [isLoading, setIsLoading] = useState(true);
-  const [metrics, setMetrics] = useState<any[]>([]);
+  const [metrics, setMetrics] = useState<KpiMetric[]>([]);
   const [alerts, setAlerts] = useState<KpiAlert[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
@@ -35,14 +35,14 @@ export default function KPISection() {
         // Check if the kpi_alerts table exists
         try {
           // Attempt to fetch from kpi_alerts if it exists
-          const { data: alertsData } = await supabase
+          const { data: alertsData, error: alertsError } = await supabase
             .from('kpi_alerts')
             .select('*')
             .eq('tenant_id', tenant.id)
             .eq('status', 'pending')
             .order('created_at', { ascending: false });
             
-          if (alertsData && alertsData.length > 0) {
+          if (!alertsError && alertsData && alertsData.length > 0) {
             setAlerts(alertsData as KpiAlert[]);
           }
         } catch (alertError) {
@@ -50,7 +50,7 @@ export default function KPISection() {
           // Silently handle this error - not all installations will have kpi_alerts
         }
         
-        setMetrics(metricsData || []);
+        setMetrics(metricsData as KpiMetric[] || []);
       } catch (error) {
         console.error("Error fetching KPI data:", error);
         toast.error("Failed to load KPI data");
@@ -100,7 +100,7 @@ export default function KPISection() {
     return value.toString();
   };
 
-  const getPercentChange = (metric: any) => {
+  const getPercentChange = (metric: KpiMetric) => {
     const metricHistory = metrics.filter(m => m.metric === metric.metric);
     if (metricHistory.length > 1) {
       const current = metric.value;
@@ -113,15 +113,15 @@ export default function KPISection() {
 
   const renderMetricCards = () => {
     // Group by metric name and get the latest for each metric
-    const uniqueMetrics: Record<string, any> = {};
+    const uniqueMetrics: Record<string, KpiMetric> = {};
     metrics.forEach(metric => {
-      if (!uniqueMetrics[metric.metric] || 
-          new Date(metric.updated_at) > new Date(uniqueMetrics[metric.metric].updated_at)) {
-        uniqueMetrics[metric.metric] = metric;
+      if (!uniqueMetrics[metric.metric || ''] || 
+          new Date(metric.updated_at) > new Date(uniqueMetrics[metric.metric || ''].updated_at)) {
+        uniqueMetrics[metric.metric || ''] = metric;
       }
     });
     
-    return Object.values(uniqueMetrics).map((metric: any) => {
+    return Object.values(uniqueMetrics).map((metric) => {
       const percentChange = getPercentChange(metric);
       const isPositive = percentChange && percentChange > 0;
       const isNegative = percentChange && percentChange < 0;
@@ -129,7 +129,7 @@ export default function KPISection() {
       return (
         <Card key={metric.id} className="overflow-hidden">
           <CardHeader className="py-3">
-            <CardTitle className="text-sm font-medium">{metric.metric}</CardTitle>
+            <CardTitle className="text-sm font-medium">{metric.metric || metric.kpi_name}</CardTitle>
           </CardHeader>
           <CardContent className="pb-3">
             <div className="flex justify-between items-baseline">
