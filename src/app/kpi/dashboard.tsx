@@ -32,7 +32,13 @@ export default function KpiDashboard() {
           .order('recorded_at', { ascending: false });
 
         if (error) throw error;
-        return data as KpiData[];
+        
+        // Transform the data to match the KpiData interface
+        return (data || []).map(item => ({
+          metric: item.metric,
+          value: Number(item.value),
+          recordedAt: new Date(item.recorded_at)
+        })) as KpiData[];
       } catch (error) {
         toast.error('Failed to load KPI metrics');
         return [];

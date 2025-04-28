@@ -27,13 +27,13 @@ export default function KpiAlertRules() {
       if (!tenant?.id) return [];
 
       const { data, error } = await supabase
-        .from("kpi_alert_rules")
-        .select()
+        .from('kpi_alert_rules')
+        .select('*')
         .eq("tenant_id", tenant.id)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false }) as { data: KpiAlertRule[], error: any };
 
       if (error) throw error;
-      return data as KpiAlertRule[];
+      return data;
     },
     enabled: !!tenant?.id,
   });
@@ -46,13 +46,13 @@ export default function KpiAlertRules() {
 
       const { data, error } = await supabase
         .from("kpi_alerts")
-        .select()
+        .select('*')
         .eq("tenant_id", tenant.id)
         .in("status", ["pending", "triggered"])
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false }) as { data: KpiAlert[], error: any };
 
       if (error) throw error;
-      return data as KpiAlert[];
+      return data;
     },
     enabled: !!tenant?.id,
   });
@@ -62,9 +62,9 @@ export default function KpiAlertRules() {
 
     try {
       const { error } = await supabase
-        .from("kpi_alert_rules")
+        .from('kpi_alert_rules')
         .delete()
-        .eq("id", id);
+        .eq("id", id) as { error: any };
 
       if (error) throw error;
 

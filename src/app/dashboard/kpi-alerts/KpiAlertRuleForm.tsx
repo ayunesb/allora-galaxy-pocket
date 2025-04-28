@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -52,7 +51,7 @@ export default function KpiAlertRuleForm({ onSuccess, initialData, isEditing = f
         // Update existing rule
         response = await supabase
           .from('kpi_alert_rules')
-          .update(alertData)
+          .update(alertData as any)
           .eq('id', initialData.id)
           .select();
       } else {
@@ -62,7 +61,7 @@ export default function KpiAlertRuleForm({ onSuccess, initialData, isEditing = f
           .insert({
             ...alertData,
             created_at: new Date().toISOString(),
-          })
+          } as any)
           .select();
       }
       
@@ -127,7 +126,7 @@ export default function KpiAlertRuleForm({ onSuccess, initialData, isEditing = f
                     <FormLabel>Condition</FormLabel>
                     <Select 
                       value={field.value as string} 
-                      onValueChange={(value) => field.onChange(value as '<' | '>' | 'falls_by_%' | 'rises_by_%')}
+                      onValueChange={(value) => field.onChange(value)}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -199,7 +198,7 @@ export default function KpiAlertRuleForm({ onSuccess, initialData, isEditing = f
                     <FormLabel>Severity</FormLabel>
                     <Select 
                       value={field.value as string} 
-                      onValueChange={(value) => field.onChange(value as 'low' | 'medium' | 'high' | 'critical')}
+                      onValueChange={(value) => field.onChange(value)}
                     >
                       <FormControl>
                         <SelectTrigger>

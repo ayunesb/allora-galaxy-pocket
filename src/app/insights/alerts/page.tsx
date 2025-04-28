@@ -2,8 +2,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useKpiAlerts } from './hooks/useKpiAlerts';
 import AlertCard from './components/AlertCard';
 
@@ -66,7 +66,7 @@ export default function AlertsPage() {
             <AlertCard 
               key={alert.id}
               title={alert.kpi_name}
-              description={alert.insight || alert.description || ''}
+              description={alert.insight || ''}
               impact={alert.impact_level || 'medium'}
               date={alert.created_at || new Date().toISOString()}
               action={alert.suggested_action}

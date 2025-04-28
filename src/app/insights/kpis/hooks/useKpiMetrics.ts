@@ -20,7 +20,7 @@ export function useKpiMetrics(dateRange = "30", category?: string, searchQuery?:
         .select('*')
         .eq('tenant_id', tenant.id)
         .gte('updated_at', startDate.toISOString())
-        .order('updated_at', { ascending: false });
+        .order('updated_at', { ascending: false }) as any;
 
       if (category && category !== 'all') {
         query = query.eq('category', category);
@@ -35,27 +35,27 @@ export function useKpiMetrics(dateRange = "30", category?: string, searchQuery?:
       if (error) throw error;
       
       // Map database fields to match component expectations
-      return (data as any[]).map(kpi => {
-        // Get historical data for comparison if available
-        const historyQuery = supabase
-          .from('kpi_metrics_history')
-          .select('*')
-          .eq('metric', kpi.metric)
-          .eq('tenant_id', tenant.id)
-          .order('recorded_at', { ascending: false })
-          .limit(1);
-          
-        // Process each KPI metric
+      return (data as any[]).map((kpi: any) => {
         return {
-          ...kpi,
-          kpi_name: kpi.metric,
-          label: kpi.metric, // Add label for UI components
-          trend: 'neutral', // Default trend
-          changePercent: 0, // Default change percentage
-          last_value: null // Will be populated from history
+          id: kpi.id || '',
+          kpi_name: kpi.metric || 'Unnamed Metric',
+          value: Number(kpi.value) || 0,
+          trend: determineMetricTrend(Number(kpi.value)),
+          changePercent: 0, // Default since we don't have historical data
+          updated_at: kpi.updated_at || kpi.created_at || new Date().toISOString(),
+          tenant_id: tenant.id,
+          label: kpi.metric || 'Unnamed Metric',
+          created_at: kpi.created_at
         } as KpiMetric;
       });
     },
     enabled: !!tenant?.id
   });
+}
+
+// Helper function to determine trend based on value
+function determineMetricTrend(value: number): 'up' | 'down' | 'neutral' {
+  if (value > 0) return 'up';
+  if (value < 0) return 'down';
+  return 'neutral';
 }
