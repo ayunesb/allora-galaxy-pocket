@@ -86,6 +86,17 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
         if (!data) {
           console.error(`User ${user.id} attempted unauthorized access to tenant ${tenant.id}`);
           
+          // Log security event
+          await supabase.from('system_logs').insert({
+            event_type: 'SECURITY_UNAUTHORIZED_ACCESS',
+            message: `Unauthorized attempt to access tenant ${tenant.id}`,
+            user_id: user.id,
+            tenant_id: tenant.id,
+            meta: {
+              path: location.pathname
+            }
+          }).catch(err => console.error("Error logging security event:", err));
+          
           refreshTenant();
           localStorage.removeItem('tenant_id');
           

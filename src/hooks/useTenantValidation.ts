@@ -8,8 +8,7 @@ import { useNavigate } from 'react-router-dom';
 
 /**
  * Hook to validate tenant access for the current user
- * Checks if the user has access to the selected tenant
- * Redirects to workspace selection if not
+ * Uses security definer functions to avoid RLS recursion
  */
 export function useTenantValidation() {
   const [isValidating, setIsValidating] = useState(true);
@@ -35,8 +34,18 @@ export function useTenantValidation() {
           { tenant_uuid: tenant.id, user_uuid: user.id }
         );
         
-        if (error || !data) {
-          console.error("Tenant validation error:", error?.message || "No access to tenant");
+        if (error) {
+          console.error("Tenant validation error:", error.message);
+          
+          toast({
+            title: "Error validating tenant access",
+            description: error.message || "Couldn't verify tenant access",
+            variant: "destructive"
+          });
+          
+          setIsValid(false);
+        } else if (!data) {
+          console.error("No access to tenant:", tenant.id);
           
           toast({
             title: "Access denied",
@@ -53,6 +62,12 @@ export function useTenantValidation() {
       } catch (error: any) {
         console.error("Error validating tenant access:", error);
         setIsValid(false);
+        
+        toast({
+          title: "Validation error",
+          description: error.message || "An error occurred while validating access",
+          variant: "destructive"
+        });
       } finally {
         setIsValidating(false);
       }

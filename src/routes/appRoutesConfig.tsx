@@ -34,7 +34,6 @@ export const baseRoutes: RouteObject[] = [
       <RequireAuth>
         <Layout>
           <React.Suspense fallback={<div>Loading...</div>}>
-            {/* SecurityProvider and VerificationProvider must be inside the Router context */}
             <TransitionErrorHandler>
               <SecurityProvider>
                 <VerificationProvider>

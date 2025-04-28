@@ -13,7 +13,7 @@ interface SecurityProviderProps {
 
 /**
  * SecurityProvider ensures that security features are enabled app-wide
- * It doesn't render any UI but adds important security hooks to the app
+ * It uses security definer functions to prevent RLS recursion
  */
 export function SecurityProvider({ children }: SecurityProviderProps) {
   // Using a try-catch to handle the case when the component is rendered outside Router context
@@ -73,7 +73,7 @@ export function SecurityProvider({ children }: SecurityProviderProps) {
 
     const validateTenantAccess = async () => {
       try {
-        // Check if user has access to this tenant - using our new safe function
+        // Use the security definer function to avoid recursion
         const { data, error } = await supabase.rpc("check_tenant_user_access_safe", {
           tenant_uuid: tenant.id,
           user_uuid: user.id
@@ -81,6 +81,12 @@ export function SecurityProvider({ children }: SecurityProviderProps) {
 
         if (error) {
           console.error("Error validating tenant access:", error);
+          // Log security error but don't fail silently
+          await logSecurityEvent(
+            `Tenant access validation error: ${error.message}`,
+            'TENANT_ACCESS_VALIDATION_ERROR',
+            { error: error.message, path: location.pathname }
+          );
           return;
         }
 
@@ -125,6 +131,13 @@ export function SecurityProvider({ children }: SecurityProviderProps) {
         }
       } catch (error) {
         console.error("Error validating tenant access:", error);
+        
+        // Log the error but don't disrupt user experience
+        await logSecurityEvent(
+          `Tenant access validation exception: ${(error as Error).message || 'Unknown error'}`,
+          'TENANT_VALIDATION_EXCEPTION',
+          { path: location.pathname }
+        );
       }
     };
 
