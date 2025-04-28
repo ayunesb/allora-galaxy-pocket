@@ -16,12 +16,19 @@ export interface Strategy {
   impact_score?: number;
   health_score?: number;
   approved_at?: string;
+  updated_at?: string;
   metrics_baseline?: Record<string, any>;
   onboarding_data?: Record<string, any>;
   diagnosis?: Record<string, any>;
   failure_reason?: string;
   retry_prompt?: string;
   is_public?: boolean;
+  version?: number | string;
+  reason_for_recommendation?: string;
+  target_audience?: string;
+  goals?: string[];
+  channels?: string[];
+  kpis?: string[];
 }
 
 export interface StrategyFeedback {

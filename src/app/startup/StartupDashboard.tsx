@@ -37,7 +37,11 @@ export default function StartupDashboard() {
         throw error;
       }
       
-      return data;
+      // Cast the status to StrategyStatus to ensure type compatibility
+      return {
+        ...data,
+        status: data.status as Strategy['status']
+      };
     },
     enabled: !!tenant?.id
   });
@@ -56,7 +60,11 @@ export default function StartupDashboard() {
 
       if (error) throw error;
       
-      return data || [];
+      // Cast the status to CampaignStatus to ensure type compatibility
+      return (data || []).map(campaign => ({
+        ...campaign,
+        status: campaign.status as Campaign['status']
+      }));
     },
     enabled: !!tenant?.id
   });

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -24,11 +25,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StrategyErrorBoundary } from './components/StrategyErrorBoundary';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StrategyReasonCard } from '@/components/strategy-reason/StrategyReasonCard';
+import { Strategy, StrategyStatus } from '@/types/strategy';
 
 const StrategyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   
-  const { data: strategy, isLoading, error } = useQuery({
+  const { data: strategyData, isLoading, error } = useQuery({
     queryKey: ['strategy', id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -38,9 +40,26 @@ const StrategyDetail: React.FC = () => {
         .single();
       
       if (error) throw error;
-      return data;
+      
+      // Add default values for potentially missing fields
+      const enhancedData: Strategy = {
+        ...data,
+        status: (data.status as StrategyStatus) || 'draft',
+        updated_at: data.updated_at || data.created_at,
+        version: data.version || 1,
+        reason_for_recommendation: data.reason_for_recommendation || '',
+        target_audience: data.target_audience || 'No target audience defined.',
+        goals: data.goals || [],
+        channels: data.channels || [],
+        kpis: data.kpis || []
+      };
+      
+      return enhancedData;
     }
   });
+
+  // Use the enhanced strategyData with all required fields
+  const strategy = strategyData;
 
   if (isLoading) {
     return (
@@ -126,7 +145,7 @@ const StrategyDetail: React.FC = () => {
           <TabsContent value="overview" className="mt-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">
-                {strategy?.reason_for_recommendation && (
+                {strategy.reason_for_recommendation && (
                   <StrategyReasonCard strategy={strategy} />
                 )}
 

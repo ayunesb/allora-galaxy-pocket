@@ -1,390 +1,321 @@
 
-import { useState, useEffect } from "react";
-import SwipeCard from "./SwipeCard";
-import { Button } from "@/components/ui/button";
-import { Check, X, ChevronLeft, ChevronRight } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useTenant } from "@/hooks/useTenant";
-import { Strategy } from "@/types/strategy";
-import { Campaign } from "@/types/campaign";
-import { toast } from "sonner";
-import { useToast } from "@/hooks/use-toast";
-import { useCampaignApproval } from "@/hooks/useCampaignApproval";
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import ErrorAlert from "@/components/ui/ErrorAlert";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Check, X } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useTenant } from '@/hooks/useTenant';
+import { useSystemLogs } from '@/hooks/useSystemLogs';
+import TinderCard from 'react-tinder-card';
+import { toast } from 'sonner';
 
-// Define interfaces for the decision types
-interface PricingDecision {
+// Define a type for the content cards
+type ContentCard = {
   id: string;
-  title: string;
+  type: string;
+  title?: string;
+  name?: string; // For campaigns
   description: string;
-  type: 'pricing';
-  currentPrice?: number;
-  suggestedPrice?: number;
-  status: string;
-  tenant_id: string;
-}
-
-interface HireDecision {
-  id: string;
-  title: string;
-  description: string;
-  type: 'hire';
-  role: string;
-  salary_range?: string;
-  status: string;
-  tenant_id: string;
-}
-
-// Define a union type for all approval items
-type ApprovalItem = (Strategy & { type: 'strategy' }) | 
-                    (Campaign & { type: 'campaign' }) | 
-                    PricingDecision | 
-                    HireDecision;
+  created_at: string;
+};
 
 const PocketSwipe = () => {
-  const [activeTab, setActiveTab] = useState("campaigns");
-  const [index, setIndex] = useState(0);
+  const [cards, setCards] = useState<ContentCard[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [viewedCount, setViewedCount] = useState(0);
+  const [swiped, setSwiped] = useState<string[]>([]);
+  const [swipingDirection, setSwipingDirection] = useState<'left' | 'right' | null>(null);
+  
+  const { user } = useAuth();
   const { tenant } = useTenant();
-  const { toast: uiToast } = useToast();
-  const queryClient = useQueryClient();
-  const { approveCampaign, declineCampaign, isProcessing } = useCampaignApproval();
-
-  const { data: strategies = [], isLoading: isStrategiesLoading, error: strategiesError } = useQuery({
-    queryKey: ['pending-strategies', tenant?.id],
-    queryFn: async () => {
-      if (!tenant?.id) return [];
-      
-      const { data, error } = await supabase
-        .from('strategies')
-        .select('*')
-        .eq('tenant_id', tenant.id)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false });
-        
-      if (error) throw error;
-      return data.map(strategy => ({ ...strategy, type: 'strategy' } as Strategy & { type: 'strategy' }));
-    },
-    enabled: !!tenant?.id && activeTab === 'strategies'
-  });
-
-  const { data: campaigns = [], isLoading: isCampaignsLoading, error: campaignsError } = useQuery({
-    queryKey: ['pending-campaigns', tenant?.id],
-    queryFn: async () => {
-      if (!tenant?.id) return [];
-      
-      const { data, error } = await supabase
-        .from('campaigns')
-        .select('*')
-        .eq('tenant_id', tenant.id)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false });
-        
-      if (error) throw error;
-      return data.map(campaign => ({ ...campaign, type: 'campaign' } as Campaign & { type: 'campaign' }));
-    },
-    enabled: !!tenant?.id && activeTab === 'campaigns'
-  });
-
-  // Reset index when changing tabs
+  const { logActivity } = useSystemLogs();
+  const navigate = useNavigate();
+  
+  // Fetch different content types
   useEffect(() => {
-    setIndex(0);
-  }, [activeTab]);
-
-  const getCurrentItems = () => {
-    switch(activeTab) {
-      case 'strategies':
-        return strategies;
-      case 'campaigns':
-        return campaigns;
-      default:
-        return [];
-    }
-  };
-
-  const items = getCurrentItems();
-  const isLoading = isStrategiesLoading || isCampaignsLoading || isProcessing;
-  const error = strategiesError || campaignsError;
-
-  const approve = async () => {
-    if (!tenant?.id || index >= items.length) return;
+    if (!tenant?.id) return;
     
-    const item = items[index] as ApprovalItem;
+    async function fetchContent() {
+      setLoading(true);
+      try {
+        // Get strategies
+        const { data: strategies, error: stratError } = await supabase
+          .from('strategies')
+          .select('*')
+          .eq('tenant_id', tenant.id)
+          .eq('status', 'approved')
+          .order('created_at', { ascending: false })
+          .limit(5);
+          
+        if (stratError) throw stratError;
+        
+        // Get campaigns
+        const { data: campaigns, error: campError } = await supabase
+          .from('campaigns')
+          .select('*')
+          .eq('tenant_id', tenant.id)
+          .order('created_at', { ascending: false })
+          .limit(5);
+          
+        if (campError) throw campError;
+        
+        // Mock data for pricing decisions and hire decisions
+        // In a real app, these would come from their respective tables
+        const pricingDecisions = [
+          {
+            id: 'price-1',
+            type: 'pricing_decision',
+            title: 'Premium Plan Price Adjustment',
+            description: 'Increase premium plan price by 10% based on competitor analysis and feature additions.',
+            created_at: new Date().toISOString()
+          },
+          {
+            id: 'price-2',
+            type: 'pricing_decision',
+            title: 'Volume Discount Strategy',
+            description: 'Implement tiered volume discounts for enterprise clients to incentivize larger contracts.',
+            created_at: new Date().toISOString()
+          }
+        ];
+        
+        const hireDecisions = [
+          {
+            id: 'hire-1',
+            type: 'hire_decision',
+            title: 'Marketing Specialist',
+            description: 'Hire a growth marketing specialist to focus on acquisition channels and SEO optimization.',
+            created_at: new Date().toISOString()
+          }
+        ];
+        
+        // Format strategies
+        const formattedStrategies = strategies?.map(s => ({
+          id: s.id,
+          type: 'strategy',
+          title: s.title || 'Untitled Strategy',
+          description: s.description || 'No description provided.',
+          created_at: s.created_at
+        })) || [];
+        
+        // Format campaigns
+        const formattedCampaigns = campaigns?.map(c => ({
+          id: c.id,
+          type: 'campaign',
+          name: c.name,
+          description: c.description || 'No description provided.',
+          created_at: c.created_at
+        })) || [];
+        
+        // Combine all content types and shuffle
+        const allContent = [
+          ...formattedStrategies, 
+          ...formattedCampaigns,
+          ...pricingDecisions,
+          ...hireDecisions
+        ].sort(() => Math.random() - 0.5);
+        
+        setCards(allContent);
+        
+        // Log the activity
+        await logActivity({
+          event_type: 'POCKET_VIEW',
+          message: 'User viewed pocket swipe content',
+          meta: { content_count: allContent.length }
+        });
+      } catch (error) {
+        console.error('Error fetching pocket content:', error);
+        toast.error('Failed to load content');
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchContent();
+  }, [tenant?.id, logActivity]);
+  
+  const onSwipe = async (direction: 'left' | 'right', cardId: string, cardType: string) => {
+    setSwipingDirection(null);
+    setSwiped(prev => [...prev, cardId]);
+    setViewedCount(prev => prev + 1);
+    
+    const action = direction === 'right' ? 'approved' : 'dismissed';
+    
     try {
-      let success = false;
-      
-      switch(item.type) {
-        case 'strategy':
-          // Update strategy status
-          const { error: strategyError } = await supabase
-            .from('strategies')
-            .update({ 
-              status: 'approved',
-              approved_at: new Date().toISOString()
-            })
-            .eq('id', item.id)
-            .eq('tenant_id', tenant.id);
-            
-          if (strategyError) throw strategyError;
-          
-          // Log the strategy approval
-          await supabase.from("agent_memory").insert({
-            tenant_id: tenant.id,
-            agent_name: "CEO",
-            context: `User approved strategy: ${(item as Strategy & { type: 'strategy' }).title || 'Untitled'}`,
-            type: "feedback",
-            is_user_submitted: true,
-            summary: "Strategy approval",
-            tags: ["strategy", "approval"]
-          });
-          
-          success = true;
-          break;
-          
-        case 'campaign':
-          // Use the campaign approval hook for campaigns
-          success = await approveCampaign(item.id);
-          break;
-          
-        case 'pricing':
-          // Handle pricing decision approval using type assertion for tables not in the schema
-          const { error: pricingError } = await supabase
-            .from('pricing_decisions' as any)
-            .update({ status: 'approved' })
-            .eq('id', item.id)
-            .eq('tenant_id', tenant.id);
-            
-          if (pricingError) throw pricingError;
-          success = true;
-          break;
-          
-        case 'hire':
-          // Handle hire decision approval using type assertion for tables not in the schema
-          const { error: hireError } = await supabase
-            .from('hire_decisions' as any)
-            .update({ status: 'approved' })
-            .eq('id', item.id)
-            .eq('tenant_id', tenant.id);
-            
-          if (hireError) throw hireError;
-          success = true;
-          break;
-      }
-      
-      if (success) {
-        // Invalidate relevant queries to refresh data
-        queryClient.invalidateQueries({ queryKey: [`pending-${item.type}s`] });
-        queryClient.invalidateQueries({ queryKey: [item.type === 'strategy' ? 'strategies' : 'campaigns'] });
-        
-        toast.success(`${item.type} approved!`);
-        // Move to the next item
-        setIndex(i => i + 1);
-      }
-    } catch (error) {
-      console.error(`Error approving ${items[index].type}:`, error);
-      uiToast({
-        title: "Approval failed",
-        description: error instanceof Error ? error.message : "Could not approve item",
-        variant: "destructive"
+      // Log the swipe action
+      await logActivity({
+        event_type: 'POCKET_SWIPE',
+        message: `User ${action} a ${cardType}`,
+        meta: { content_id: cardId, content_type: cardType, action }
       });
+      
+      // Handle different card types
+      if (cardType === 'strategy' && direction === 'right') {
+        toast.success('Strategy approved!', {
+          description: 'Creating campaign based on this strategy...'
+        });
+        // Navigate to campaign creation with this strategy
+        // In a real app, you might want to add some delay before navigation
+        setTimeout(() => {
+          navigate(`/campaigns/create?strategy=${cardId}`);
+        }, 1000);
+      }
+      
+      if (cardType === 'campaign' && direction === 'right') {
+        toast.success('Campaign liked!', {
+          description: 'Viewed in campaigns dashboard'
+        });
+        // Navigate to the campaign detail
+        setTimeout(() => {
+          navigate(`/campaigns/${cardId}`);
+        }, 1000);
+      }
+      
+      // Handle pricing and hiring decisions
+      if ((cardType === 'pricing_decision' || cardType === 'hire_decision') && direction === 'right') {
+        toast.success('Decision approved!', {
+          description: 'Added to your action items'
+        });
+        // In a real app, you'd add this to an action items table
+      }
+      
+    } catch (error) {
+      console.error('Error logging swipe:', error);
     }
   };
-
-  const decline = async () => {
-    if (!tenant?.id || index >= items.length) return;
+  
+  const onSwiping = (direction: 'left' | 'right') => {
+    setSwipingDirection(direction);
+  };
+  
+  const getCardTitle = (card: ContentCard) => {
+    if (card.title) return card.title;
+    if (card.name) return card.name;
     
-    const item = items[index] as ApprovalItem;
-    try {
-      let success = false;
-      
-      switch(item.type) {
-        case 'strategy':
-          // Update strategy status
-          const { error: strategyError } = await supabase
-            .from('strategies')
-            .update({ 
-              status: 'rejected',
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', item.id)
-            .eq('tenant_id', tenant.id);
-            
-          if (strategyError) throw strategyError;
-          
-          // Log the strategy rejection
-          await supabase.from("agent_memory").insert({
-            tenant_id: tenant.id,
-            agent_name: "CEO",
-            context: `User declined strategy: ${(item as Strategy & { type: 'strategy' }).title || 'Untitled'}`,
-            type: "feedback",
-            is_user_submitted: true,
-            summary: "Strategy rejection",
-            tags: ["strategy", "rejection"]
-          });
-          
-          success = true;
-          break;
-          
-        case 'campaign':
-          // Use the campaign decline hook for campaigns
-          success = await declineCampaign(item.id);
-          break;
-          
-        case 'pricing':
-        case 'hire':
-          // Handle other decision types using type assertion for tables not in schema
-          const table = item.type === 'pricing' ? 'pricing_decisions' : 'hire_decisions';
-          const { error: decisionError } = await supabase
-            .from(table as any)
-            .update({ status: 'rejected' })
-            .eq('id', item.id)
-            .eq('tenant_id', tenant.id);
-            
-          if (decisionError) throw decisionError;
-          success = true;
-          break;
-      }
-      
-      if (success) {
-        // Invalidate relevant queries to refresh data
-        queryClient.invalidateQueries({ queryKey: [`pending-${item.type}s`] });
-        
-        toast.success(`${item.type} declined`);
-        // Move to the next item
-        setIndex(i => i + 1);
-      }
-    } catch (error) {
-      console.error(`Error declining ${items[index].type}:`, error);
-      uiToast({
-        title: "Decline failed",
-        description: error instanceof Error ? error.message : "Could not decline item",
-        variant: "destructive"
-      });
+    // Default titles based on type
+    switch(card.type) {
+      case 'strategy': return 'Marketing Strategy';
+      case 'campaign': return 'Marketing Campaign';
+      case 'pricing_decision': return 'Pricing Decision';
+      case 'hire_decision': return 'Hiring Recommendation';
+      default: return 'Recommendation';
     }
   };
-
-  const renderContent = () => {
-    if (isLoading) {
-      return <div className="text-center py-10">
-        <LoadingSpinner />
-        <p className="mt-2">Processing decisions...</p>
-      </div>;
+  
+  const getCardEmoji = (cardType: string) => {
+    switch(cardType) {
+      case 'strategy': return '📊';
+      case 'campaign': return '📣';
+      case 'pricing_decision': return '💰';
+      case 'hire_decision': return '👥';
+      default: return '💡';
     }
-    
-    if (error) {
-      return <ErrorAlert 
-        title="Error loading decisions" 
-        description={error instanceof Error ? error.message : "Could not load decisions"} 
-      />;
-    }
-
-    if (!items || items.length === 0) {
-      return (
-        <div className="text-center py-10">
-          <p className="text-lg font-medium mb-4">No pending decisions</p>
-          <p className="text-muted-foreground mb-6">There are no pending {activeTab} to review</p>
-          <div className="flex justify-center gap-2">
-            <Button variant="outline" onClick={() => setActiveTab(activeTab === 'strategies' ? 'campaigns' : 'strategies')}>
-              Check {activeTab === 'strategies' ? 'Campaigns' : 'Strategies'}
-            </Button>
-          </div>
-        </div>
-      );
-    }
-
-    if (index >= items.length) {
-      return (
-        <div className="text-center space-y-4">
-          <h2 className="text-2xl font-bold">You're done! 🎉</h2>
-          <p className="text-muted-foreground">You've reviewed all pending {activeTab}.</p>
-          <Button onClick={() => setIndex(0)} variant="outline">Start Over</Button>
-        </div>
-      );
-    }
-
-    const current = items[index] as ApprovalItem;
-    // Handle different item types for the title/name field access
-    const itemTitle = current.type === 'strategy' ? 
-      (current as Strategy & { type: 'strategy' }).title || 'Untitled Strategy' : 
-      current.type === 'campaign' ? 
-        (current as Campaign & { type: 'campaign' }).name || 'Untitled Campaign' :
-        current.title || 'Untitled Decision';
-        
+  };
+  
+  if (loading) {
     return (
-      <>
-        <SwipeCard 
-          title={itemTitle}
-          summary={current.description}
-          type={current.type}
-          metadata={current} 
-        />
-        <div className="grid grid-cols-2 gap-4">
-          <Button 
-            onClick={decline} 
-            variant="destructive"
-            className="w-full"
-            disabled={isProcessing}
-          >
-            <X className="mr-2" />
-            Decline
-          </Button>
-          <Button 
-            onClick={approve} 
-            className="w-full bg-green-600 hover:bg-green-700"
-            disabled={isProcessing}
-          >
-            <Check className="mr-2" />
-            Approve
-          </Button>
+      <div className="container mx-auto px-4 py-8 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading recommendations...</p>
         </div>
-      </>
+      </div>
     );
-  };
-
+  }
+  
+  if (cards.length === 0) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-md">
+        <Card className="relative overflow-hidden shadow-lg">
+          <CardContent className="p-8 text-center">
+            <div className="text-5xl mb-6">🎉</div>
+            <h2 className="text-2xl font-bold mb-4">You're All Caught Up!</h2>
+            <p className="mb-6 text-gray-600">
+              You've viewed all available recommendations. Check back later for more!
+            </p>
+            <Button onClick={() => navigate('/dashboard')}>
+              Back to Dashboard
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+  
   return (
-    <div className="space-y-6">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-2">
-          <TabsTrigger value="strategies">Strategies</TabsTrigger>
-          <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="strategies" className="space-y-4 pt-4">
-          {renderContent()}
-        </TabsContent>
-        
-        <TabsContent value="campaigns" className="space-y-4 pt-4">
-          {renderContent()}
-        </TabsContent>
-      </Tabs>
+    <div className="container mx-auto px-4 py-8 max-w-md">
+      <div className="relative h-[500px]">
+        {cards.map((card, index) => (
+          <TinderCard
+            key={card.id}
+            onSwipe={(dir) => onSwipe(dir as 'left' | 'right', card.id, card.type)}
+            onSwipeRequirementFulfilled={(dir) => onSwiping(dir as 'left' | 'right')}
+            preventSwipe={['up', 'down']}
+            className={`absolute w-full h-full ${index === cards.length - 1 ? 'z-10' : ''}`}
+          >
+            <Card className="relative overflow-hidden shadow-lg h-full">
+              <div 
+                className={`absolute inset-0 ${
+                  swipingDirection === 'right' ? 'bg-green-100/80' : 
+                  swipingDirection === 'left' ? 'bg-red-100/80' : 
+                  'bg-transparent'
+                } transition-colors duration-200 z-10 pointer-events-none`}
+              >
+                {swipingDirection === 'right' && (
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                    <Check className="h-24 w-24 text-green-500" />
+                  </div>
+                )}
+                {swipingDirection === 'left' && (
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                    <X className="h-24 w-24 text-red-500" />
+                  </div>
+                )}
+              </div>
+              
+              <CardContent className="p-6 h-full flex flex-col">
+                <div className="mb-4">
+                  <span className="inline-block bg-primary/10 rounded-full px-3 py-1 text-sm font-semibold text-primary mr-2">
+                    {getCardEmoji(card.type)} {card.type.charAt(0).toUpperCase() + card.type.slice(1)}
+                  </span>
+                </div>
+                
+                <h2 className="text-2xl font-bold mb-3">{getCardTitle(card)}</h2>
+                <p className="text-gray-600 flex-grow">{card.description}</p>
+                
+                <div className="mt-6 pt-4 border-t border-gray-200 text-sm text-gray-500">
+                  {new Date(card.created_at).toLocaleDateString()}
+                </div>
+                
+                <div className="mt-4 flex justify-between items-center">
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="rounded-full h-12 w-12 bg-red-50 hover:bg-red-100 border-red-200"
+                    onClick={() => onSwipe('left', card.id, card.type)}
+                  >
+                    <X className="h-6 w-6 text-red-500" />
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="rounded-full h-12 w-12 bg-green-50 hover:bg-green-100 border-green-200"
+                    onClick={() => onSwipe('right', card.id, card.type)}
+                  >
+                    <Check className="h-6 w-6 text-green-500" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TinderCard>
+        ))}
+      </div>
       
-      {items.length > 0 && index < items.length && !isProcessing && (
-        <div className="flex justify-between items-center pt-2">
-          <div className="text-sm text-muted-foreground">
-            {index + 1} of {items.length}
-          </div>
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              size="icon" 
-              onClick={() => setIndex(i => Math.max(0, i - 1))}
-              disabled={index === 0}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button 
-              variant="outline" 
-              size="icon"
-              onClick={() => setIndex(i => Math.min(items.length - 1, i + 1))}
-              disabled={index === items.length - 1}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
+      <div className="text-center mt-6 text-sm text-gray-500">
+        {viewedCount > 0 ? `You've viewed ${viewedCount} recommendations` : 'Swipe right to approve, left to dismiss'}
+      </div>
     </div>
   );
 };

@@ -18,16 +18,17 @@ export default function KpiCard({ label, value, trend, changePercent, onUpdate }
               </span>
             )}
             <KpiMetricDialog 
-              metric={{ 
-                id: '', // Provide empty values for required fields
+              onSuccess={onUpdate}
+              metric={{
+                id: '', 
                 kpi_name: label || '',
                 value: value || 0,
                 updated_at: new Date().toISOString(),
                 tenant_id: '',
                 trend,
-                changePercent
+                changePercent,
+                created_at: new Date().toISOString() // Adding required created_at field
               }}
-              onSuccess={onUpdate}
             />
           </div>
         </div>

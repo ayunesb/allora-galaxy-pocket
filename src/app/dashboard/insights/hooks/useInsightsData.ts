@@ -86,9 +86,9 @@ export function useInsightsData(dateRange: string): InsightsData {
   // Return a consistent shape with all required fields
   return {
     kpiData: kpiHistory.data || [],
-    feedbackStats: dashboardData.feedbackMetrics ? {
-      used: dashboardData.feedbackMetrics.used || 0,
-      dismissed: dashboardData.feedbackMetrics.dismissed || 0
+    feedbackStats: feedbackMetrics.data ? {
+      used: feedbackMetrics.data.used || 0,
+      dismissed: feedbackMetrics.data.dismissed || 0
     } : { used: 0, dismissed: 0 },
     pluginStats: {},
     topCampaigns: campaignMetrics.data || [],

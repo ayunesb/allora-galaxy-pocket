@@ -1,35 +1,22 @@
 
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Strategy } from "@/types/strategy";
-import { Lightbulb } from "lucide-react";
+import React from 'react';
+import { Card, CardContent } from "@/components/ui/card";
+import type { Strategy } from "@/types/strategy";
 
 interface StrategyReasonCardProps {
   strategy: Strategy;
-  className?: string;
 }
 
-export function StrategyReasonCard({ strategy, className }: StrategyReasonCardProps) {
-  // If no reason is provided, don't render the card
-  if (!strategy.reason_for_recommendation) {
-    return null;
-  }
+export function StrategyReasonCard({ strategy }: StrategyReasonCardProps) {
+  // Safely handle when reason_for_recommendation might not exist
+  const reasonText = strategy.reason_for_recommendation || "This strategy was recommended based on your business goals and market analysis.";
 
   return (
-    <Card className={className}>
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Lightbulb className="h-5 w-5 text-yellow-500" />
-          Why this strategy is recommended
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="text-sm text-muted-foreground">
-          {strategy.reason_for_recommendation}
-        </div>
+    <Card className="bg-muted/50">
+      <CardContent className="pt-6">
+        <h3 className="text-lg font-medium mb-2">Why This Strategy?</h3>
+        <p className="text-sm text-muted-foreground">{reasonText}</p>
       </CardContent>
     </Card>
   );
 }
-
-export default StrategyReasonCard;
