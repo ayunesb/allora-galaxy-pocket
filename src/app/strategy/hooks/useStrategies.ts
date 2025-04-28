@@ -38,10 +38,10 @@ export function useStrategies() {
           id: item.id,
           title: item.title || '',
           description: item.description || '',
-          status: item.status as StrategyStatus,
+          status: (item.status || 'draft') as StrategyStatus,
           created_at: item.created_at,
           tenant_id: item.tenant_id,
-          user_id: item.user_id,
+          user_id: item.user_id || '',
           tags: item.tags || [],
           generated_by: item.generated_by || 'CEO Agent',
           assigned_agent: item.assigned_agent || '',
@@ -61,7 +61,11 @@ export function useStrategies() {
           target_audience: item.target_audience || '',
           goals: item.goals || [],
           channels: item.channels || [],
-          kpis: item.kpis || []
+          kpis: item.kpis || [],
+          industry: item.industry || '',
+          goal: item.goal || '',
+          confidence: item.confidence || 0,
+          retry_prompt: item.retry_prompt
         }));
         
         setStrategies(typedStrategies);

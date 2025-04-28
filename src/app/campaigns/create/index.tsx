@@ -56,15 +56,6 @@ export default function CampaignCreatePage() {
   const [strategyId, setStrategyId] = useState<string | null>(initialStrategyId || null);
   const [selectedStrategy, setSelectedStrategy] = useState<Strategy | null>(null);
   const [channels, setChannels] = useState<string[]>([]);
-  
-  const availableChannels = [
-    { id: "email", label: "Email Marketing" },
-    { id: "social", label: "Social Media" },
-    { id: "content", label: "Content Marketing" },
-    { id: "ads", label: "Paid Advertising" },
-    { id: "seo", label: "SEO" },
-    { id: "whatsapp", label: "WhatsApp" }
-  ];
 
   useEffect(() => {
     if (!tenant?.id) return;
@@ -86,6 +77,7 @@ export default function CampaignCreatePage() {
         setStrategies((data || []).map(item => ({
           ...item,
           metrics_target: item.metrics_target || {},
+          metrics_baseline: item.metrics_baseline || {},
           tags: item.tags || [],
           goals: item.goals || [],
           channels: item.channels || [],
@@ -94,7 +86,9 @@ export default function CampaignCreatePage() {
           version: item.version || 1,
           reason_for_recommendation: item.reason_for_recommendation || '',
           target_audience: item.target_audience || '',
-        } as Strategy)));
+          industry: item.industry || '',
+          confidence: item.confidence || null,
+        } as Strategy));
         
         if (initialStrategyId) {
           const selectedStrategy = data?.find(s => s.id === initialStrategyId) || null;
@@ -103,6 +97,7 @@ export default function CampaignCreatePage() {
             setSelectedStrategy({
               ...selectedStrategy,
               metrics_target: selectedStrategy.metrics_target || {},
+              metrics_baseline: selectedStrategy.metrics_baseline || {},
               tags: selectedStrategy.tags || [],
               goals: selectedStrategy.goals || [],
               channels: selectedStrategy.channels || [],
@@ -111,6 +106,8 @@ export default function CampaignCreatePage() {
               version: selectedStrategy.version || 1,
               reason_for_recommendation: selectedStrategy.reason_for_recommendation || '',
               target_audience: selectedStrategy.target_audience || '',
+              industry: selectedStrategy.industry || '',
+              confidence: selectedStrategy.confidence || null,
             } as Strategy);
             
             setName(`${selectedStrategy.title} Campaign`);

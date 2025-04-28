@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -36,16 +35,15 @@ export function StartupDashboard() {
         goals: item.goals || [],
         channels: item.channels || [],
         kpis: item.kpis || [],
-        generated_by: item.generated_by || 'CEO Agent',
-        assigned_agent: item.assigned_agent || '',
-        auto_approved: item.auto_approved || false,
-        health_score: item.health_score || 0,
         updated_at: item.updated_at || item.created_at, 
         version: item.version || 1,
         reason_for_recommendation: item.reason_for_recommendation || '',
         target_audience: item.target_audience || '',
+        generated_by: item.generated_by || 'CEO Agent',
+        assigned_agent: item.assigned_agent || '',
         industry: item.industry || '',
-      } as Strategy));
+        confidence: item.confidence || null,
+      }) as Strategy);
     },
     enabled: !!tenant?.id
   });

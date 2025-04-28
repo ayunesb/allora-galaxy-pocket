@@ -25,9 +25,9 @@ export function StrategyPreview({ strategy, onApprove, onReject }: StrategyPrevi
     title,
     description,
     created_at,
-    industry,
-    goals,
-    goal,
+    industry = "",
+    goals = [],
+    goal = "",
     confidence,
     status
   } = strategy;

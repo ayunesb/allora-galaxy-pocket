@@ -44,28 +44,13 @@ const DashboardPage: React.FC = () => {
     return <Navigate to="/workspace" replace />;
   }
 
-  // Transform API data to conform to Strategy interface
-  const strategiesList = strategies?.map(item => ({
-    ...item,
-    metrics_target: item.metrics_target || {},
-    metrics_baseline: item.metrics_baseline || {},
-    tags: item.tags || [],
-    goals: item.goals || [],
-    channels: item.channels || [],
-    kpis: item.kpis || [],
-    updated_at: item.updated_at || item.created_at,
-    version: item.version || 1,
-    reason_for_recommendation: item.reason_for_recommendation || '',
-    target_audience: item.target_audience || '',
-  })) as Strategy[];
-
-  // Ensure campaigns has proper type
+  // The strategies are already properly typed from useStrategyAndCampaigns
   const typedCampaigns = (campaigns || []) as Campaign[];
 
   return (
     <div className="container mx-auto p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <KpiSection kpiMetrics={kpiMetrics} />
-      <StrategySection strategies={strategiesList} />
+      <StrategySection strategies={strategies} />
       <CampaignSection campaigns={typedCampaigns} />
       <KpiAlertsPanel alerts={alerts} />
     </div>

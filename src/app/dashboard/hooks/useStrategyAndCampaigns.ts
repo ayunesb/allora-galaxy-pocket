@@ -31,10 +31,13 @@ export function useStrategyAndCampaigns() {
         channels: item.channels || [],
         kpis: item.kpis || [],
         updated_at: item.updated_at || item.created_at,
-        version: item.version || 1,
+        version: item.version || '1',
         reason_for_recommendation: item.reason_for_recommendation || '',
         target_audience: item.target_audience || '',
-      })) as Strategy[];
+        generated_by: item.generated_by || 'CEO Agent',
+        assigned_agent: item.assigned_agent || '',
+        industry: item.industry || '',
+      }) as Strategy);
     },
     enabled: !!tenant?.id,
   });

@@ -35,11 +35,11 @@ const AIDecisionsPage: React.FC = () => {
       metrics_target: item.metrics_target || {},
       metrics_baseline: item.metrics_baseline || {},
       tags: item.tags || [],
-      generated_by: item.generated_by || 'CEO Agent',
-      assigned_agent: item.assigned_agent || '',
       goals: item.goals || [],
       channels: item.channels || [],
       kpis: item.kpis || [],
+      generated_by: item.generated_by || 'CEO Agent',
+      assigned_agent: item.assigned_agent || '',
       impact_score: item.impact_score || 0,
       health_score: item.health_score || 0,
       updated_at: item.updated_at || item.created_at,
@@ -48,7 +48,7 @@ const AIDecisionsPage: React.FC = () => {
       target_audience: item.target_audience || '',
       industry: item.industry || '',
       confidence: item.confidence || null,
-    } as Strategy));
+    }) as Strategy);
   };
 
   const handleFilterChange = (newFilters: any) => {
