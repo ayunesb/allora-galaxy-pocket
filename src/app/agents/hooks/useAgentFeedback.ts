@@ -26,8 +26,10 @@ export function useAgentFeedback() {
         .order("created_at", { ascending: false })
         .limit(3);
 
+      // Using explicit type annotation for the mapped items
       const summary = (recentFeedback || [])
-        .map((f: any) => `• [${f.rating || 0}/5] ${f.feedback || ''}`)
+        .map((f: { rating?: number; feedback?: string }) => 
+          `• [${f.rating || 0}/5] ${f.feedback || ''}`)
         .join("\n");
 
       return `

@@ -2,24 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
-
-export interface AgentProfile {
-  id: string;
-  tenant_id: string;
-  agent_name: string;
-  role: string;
-  tone: string;
-  language: string;
-  memory_scope: string[];
-  channels: string[];
-  enabled_tools: string[];
-  avatar_url?: string;
-  model_provider?: 'openai' | 'gemini' | 'anthropic';
-  created_by?: string;
-  memory_score?: number;
-  last_memory_update?: string;
-  prompt?: string; // Added the prompt property
-}
+import { AgentProfile } from "@/types/agent";
 
 export function useAgentProfile() {
   const { tenant } = useTenant();

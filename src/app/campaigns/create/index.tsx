@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
@@ -44,7 +43,6 @@ export default function CampaignCreatePage() {
   const { user } = useAuth();
   const { logActivity } = useSystemLogs();
   
-  // Extract passed data from location state
   const initialStrategyId = location.state?.strategyId;
   const returnPath = location.state?.returnPath || "/campaigns";
   
@@ -53,7 +51,6 @@ export default function CampaignCreatePage() {
   const [error, setError] = useState<string | null>(null);
   const [strategies, setStrategies] = useState<Strategy[]>([]);
   
-  // Form state
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [strategyId, setStrategyId] = useState<string | null>(initialStrategyId || null);
@@ -69,7 +66,6 @@ export default function CampaignCreatePage() {
     { id: "whatsapp", label: "WhatsApp" }
   ];
 
-  // Fetch strategies and pre-select if provided
   useEffect(() => {
     if (!tenant?.id) return;
     
@@ -87,14 +83,12 @@ export default function CampaignCreatePage() {
           
         if (error) throw error;
         
-        setStrategies(data || []);
+        setStrategies((data || []) as Strategy[]);
         
-        // If we have a strategyId from state, find and select that strategy
         if (initialStrategyId) {
           const selectedStrategy = data?.find(s => s.id === initialStrategyId) || null;
-          setSelectedStrategy(selectedStrategy);
+          setSelectedStrategy(selectedStrategy as Strategy);
           
-          // Pre-fill some values if we have a selected strategy
           if (selectedStrategy) {
             setName(`${selectedStrategy.title} Campaign`);
             setDescription(`Campaign based on: ${selectedStrategy.title}`);
@@ -120,7 +114,6 @@ export default function CampaignCreatePage() {
     const selected = strategies.find(s => s.id === id) || null;
     setSelectedStrategy(selected);
     
-    // Update form fields based on selected strategy
     if (selected) {
       setName(`${selected.title} Campaign`);
       setDescription(`Campaign based on: ${selected.title}`);
@@ -166,7 +159,6 @@ export default function CampaignCreatePage() {
     setError(null);
     
     try {
-      // Create the campaign
       const { data: campaign, error: campaignError } = await supabase
         .from('campaigns')
         .insert({
@@ -183,7 +175,6 @@ export default function CampaignCreatePage() {
       
       if (campaignError) throw campaignError;
       
-      // Log campaign creation
       await logActivity({
         event_type: "CAMPAIGN_CREATED",
         message: `Campaign "${name}" created successfully`,
@@ -199,7 +190,6 @@ export default function CampaignCreatePage() {
         description: "Your campaign has been created successfully"
       });
       
-      // Navigate to campaign detail page for further setup
       setTimeout(() => {
         navigate(`/campaigns/${campaign.id}`, { 
           replace: true,

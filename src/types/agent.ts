@@ -22,7 +22,7 @@ export interface AgentProfile {
   tone: string;
   avatar_url?: string;
   language: string;
-  enabled_tools?: string[];
+  enabled_tools: string[];
   memory_scope: string[];
   channels: string[];
   memory_score?: number;
@@ -32,6 +32,7 @@ export interface AgentProfile {
   created_by?: string;
   last_memory_update?: string;
   model_provider?: string;
+  prompt?: string;
 }
 
 export interface AgentFeedback {
@@ -73,6 +74,7 @@ export interface AgentTask {
   error?: string;
 }
 
+// Making tags and summary optional in AgentMemoryLog to match AgentMemory
 export interface AgentMemoryLog {
   id: string;
   agent_name: string;
@@ -85,8 +87,8 @@ export interface AgentMemoryLog {
   ai_rating?: number;
   remix_count?: number;
   xp_delta?: number;
-  summary: string;
-  tags: string[];
+  summary?: string; // Make it optional
+  tags?: string[]; // Make it optional
 }
 
 export interface AgentCollabMessage {

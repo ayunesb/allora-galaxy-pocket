@@ -7,7 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AgentMemoryFilter } from './components/AgentMemoryFilter';
 import { AgentMemoryList } from './components/AgentMemoryList';
 import { RemixLeaderboard } from '@/components/memory/RemixLeaderboard';
-import { AgentMemory, AgentMemoryLog } from '@/types/agent';
+import { AgentMemory } from '@/types/agent';
 
 export default function AcademyPage() {
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
@@ -71,7 +71,7 @@ export default function AcademyPage() {
       />
 
       <AgentMemoryList 
-        memories={memories as AgentMemory[] || []} 
+        memories={memories || []} 
         isLoading={isLoading}
       />
     </div>

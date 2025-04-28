@@ -1,9 +1,9 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AgentMemoryLog } from "@/types/agent";
+import { AgentMemory } from "@/types/agent";
 
 interface MemoryTableProps {
-  logs: AgentMemoryLog[];
+  logs: AgentMemory[];
 }
 
 export default function MemoryTable({ logs }: MemoryTableProps) {

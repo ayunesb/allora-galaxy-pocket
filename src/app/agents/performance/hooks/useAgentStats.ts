@@ -26,14 +26,23 @@ export function useAgentStats() {
         
         if (apiError) throw apiError;
         
-        // Transform to AgentStats format
-        const agentStats: AgentStats[] = (data || []).map(log => ({
-          agentName: log.agent_name,
-          totalTasks: log.metrics && typeof log.metrics === 'object' ? (log.metrics.total_tasks || 0) : 0,
-          successRate: log.success_rate || 0,
-          averageExecutionTime: log.metrics && typeof log.metrics === 'object' ? (log.metrics.avg_execution_time || 0) : 0,
-          lastExecuted: log.created_at
-        }));
+        // Transform to AgentStats format with proper type handling
+        const agentStats: AgentStats[] = (data || []).map(log => {
+          // Safely extract values from metrics object
+          const metrics = log.metrics as Record<string, any> | null;
+          const totalTasks = metrics && typeof metrics === 'object' ? 
+            (metrics.total_tasks || 0) : 0;
+          const avgExecutionTime = metrics && typeof metrics === 'object' ? 
+            (metrics.avg_execution_time || 0) : 0;
+            
+          return {
+            agentName: log.agent_name,
+            totalTasks,
+            successRate: log.success_rate || 0,
+            averageExecutionTime: avgExecutionTime,
+            lastExecuted: log.created_at
+          };
+        });
         
         setStats(agentStats);
       } catch (err) {

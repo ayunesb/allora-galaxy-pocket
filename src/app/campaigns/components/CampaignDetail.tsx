@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,7 +35,7 @@ export default function CampaignDetail({ id }: CampaignDetailProps) {
         .single();
         
       if (error) throw error;
-      return data;
+      return data as Campaign;
     },
     enabled: !!tenant?.id && !!id
   });

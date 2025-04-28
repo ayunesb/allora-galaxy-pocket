@@ -6,11 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Award, Rocket } from "lucide-react";
 import { formatDistanceToNow } from 'date-fns';
-import { AgentMemoryLog } from '@/types/agent';
+import { AgentMemory } from '@/types/agent';
 import { MemoryComments } from '@/components/memory/MemoryComments';
 
 interface AgentMemoryListProps {
-  memories: AgentMemoryLog[];
+  memories: AgentMemory[];
   isLoading: boolean;
 }
 
@@ -66,7 +66,7 @@ export function AgentMemoryList({ memories, isLoading }: AgentMemoryListProps) {
           </CardHeader>
           
           <CardContent className="flex-grow">
-            <p className="text-sm mb-4">{memory.summary}</p>
+            <p className="text-sm mb-4">{memory.summary || memory.context.substring(0, 100) + (memory.context.length > 100 ? "..." : "")}</p>
             <div className="flex flex-wrap gap-2">
               {memory.tags?.map((tag) => (
                 <Badge key={tag} variant="secondary">#{tag}</Badge>
