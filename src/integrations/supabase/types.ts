@@ -3624,6 +3624,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string[]
       }
+      get_user_tenant_role: {
+        Args: { p_tenant_id: string; p_user_id: string }
+        Returns: string
+      }
       grant_billing_credits: {
         Args: { p_user_id: string; p_amount: number }
         Returns: undefined
