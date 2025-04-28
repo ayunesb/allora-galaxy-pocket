@@ -12,7 +12,7 @@ interface StrategyVersionComparisonProps {
 
 export function StrategyVersionComparison({ v1, v2 }: StrategyVersionComparisonProps) {
   // Order versions chronologically
-  const [older, newer] = v1.version < v2.version ? [v1, v2] : [v2, v1];
+  const [older, newer] = (v1.version_number || v1.version || 0) < (v2.version_number || v2.version || 0) ? [v1, v2] : [v2, v1];
   
   // Extract core data for comparison
   const data1 = older.data || {};
@@ -35,14 +35,14 @@ export function StrategyVersionComparison({ v1, v2 }: StrategyVersionComparisonP
       <CardContent className="space-y-6">
         <div className="grid grid-cols-2 gap-4">
           <div className="border rounded-md p-4">
-            <div className="font-medium mb-2">Version {older.version}</div>
+            <div className="font-medium mb-2">Version {older.version_number || older.version || 'Unknown'}</div>
             <div className="text-sm text-muted-foreground">
               {format(new Date(older.created_at), 'PPP')}
             </div>
             <div className="text-sm mt-2">{older.comment || "No comment"}</div>
           </div>
           <div className="border rounded-md p-4">
-            <div className="font-medium mb-2">Version {newer.version}</div>
+            <div className="font-medium mb-2">Version {newer.version_number || newer.version || 'Unknown'}</div>
             <div className="text-sm text-muted-foreground">
               {format(new Date(newer.created_at), 'PPP')}
             </div>

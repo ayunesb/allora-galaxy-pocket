@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,8 +6,23 @@ import { Input } from "@/components/ui/input";
 import { KpiSection } from "@/app/dashboard/components/KpiSection";
 import { MetricsCard } from "./MetricsCard";
 import { PluginUsageChart } from "./PluginUsageChart";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function AdvancedAnalyticsDashboard() {
+  const { data: kpiMetrics = [] } = useQuery({
+    queryKey: ['admin-kpi-metrics'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('kpi_metrics')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-2xl font-bold mb-6">Advanced Analytics Dashboard</h1>
@@ -54,7 +70,7 @@ export default function AdvancedAnalyticsDashboard() {
         </TabsContent>
         
         <TabsContent value="kpis">
-          <KpiSection />
+          <KpiSection kpiMetrics={kpiMetrics} />
         </TabsContent>
       </Tabs>
     </div>

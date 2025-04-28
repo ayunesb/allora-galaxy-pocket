@@ -60,11 +60,14 @@ export interface StrategyDraft {
 export interface StrategyVersion {
   id: string;
   strategy_id: string;
-  version_number: number;
+  version_number: number;  // Renamed from version to version_number
   changes: Record<string, any>;
   created_at: string;
   created_by: string;
   tenant_id: string;
+  data?: Record<string, any>;  // Add data property
+  comment?: string;  // Add comment property
+  version?: number;  // Keep version for backward compatibility
 }
 
 export interface StrategyResponse {

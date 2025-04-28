@@ -117,7 +117,7 @@ export function StrategyVersions({
                 >
                   <div>
                     <div className="flex items-center">
-                      <span className="font-medium">Version {version.version}</span>
+                      <span className="font-medium">Version {version.version_number || version.version || 'Unknown'}</span>
                       {selectedVersions.some(v => v.id === version.id) && (
                         <CheckIcon className="h-4 w-4 ml-1 text-primary" />
                       )}
