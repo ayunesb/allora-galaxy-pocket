@@ -1,94 +1,67 @@
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
-import type { KpiMetric } from "@/types/kpi";
-import { toast } from "sonner";
+import { KpiMetric } from "@/types/kpi";
+import { subDays } from "date-fns";
 
-export function useKpiMetrics(dateRange = "30", category?: string) {
-  const { tenant } = useTenant();
-  const queryClient = useQueryClient();
-  
-  const query = useQuery({
-    queryKey: ['kpi-metrics', tenant?.id, dateRange, category],
-    queryFn: async () => {
-      if (!tenant?.id) throw new Error('No tenant selected');
-
-      try {
-        // Use kpi_metrics table directly instead of the view
-        let query = supabase
-          .from('kpi_metrics')
-          .select('*')
-          .eq('tenant_id', tenant.id)
-          .order('created_at', { ascending: false });
-        
-        if (category && category !== 'all') {
-          query = query.eq('category', category);
-        }
-        
-        const { data, error } = await query;
-        
-        if (error) throw error;
-        
-        return data?.map(metric => ({
-          id: metric.id,
-          kpi_name: metric.metric || 'Unnamed Metric',
-          value: Number(metric.value) || 0,
-          trend: determineMetricTrend(metric.value),
-          changePercent: 0, // Default since we don't have historical data
-          updated_at: metric.updated_at || metric.created_at || new Date().toISOString(),
-          tenant_id: tenant.id,
-          label: metric.metric || 'Unnamed Metric',
-          created_at: metric.created_at
-        })) as KpiMetric[] || [];
-      } catch (err) {
-        console.error("Error fetching KPI metrics:", err);
-        throw err;
-      }
-    },
-    enabled: !!tenant?.id,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    refetchInterval: 5 * 60 * 1000
-  });
-
-  // Function to manually trigger GA4 sync
-  const syncWithGA4 = async () => {
-    if (!tenant?.id) {
-      toast.error("No workspace selected");
-      return false;
-    }
-
-    try {
-      toast.loading("Syncing with GA4...");
-      
-      const { error } = await supabase.functions.invoke("fetch-ga4-metrics", {
-        body: { tenant_id: tenant.id }
-      });
-      
-      if (error) throw error;
-      
-      queryClient.invalidateQueries({ queryKey: ['kpi-metrics'] });
-      
-      toast.success("GA4 metrics synced successfully");
-      return true;
-    } catch (err: any) {
-      toast.error("Failed to sync GA4 metrics", {
-        description: err.message || "An unknown error occurred"
-      });
-      return false;
-    }
-  };
-
-  return {
-    ...query,
-    syncWithGA4
-  };
+interface UseKpiMetricsOptions {
+  dateRange?: number;
+  category?: string;
+  searchQuery?: string;
 }
 
-// Helper function to determine trend based on value
-function determineMetricTrend(value: number): 'up' | 'down' | 'neutral' {
+export function useKpiMetrics(options: UseKpiMetricsOptions = {}) {
+  const { tenant } = useTenant();
+  const { dateRange = 30, category, searchQuery } = options;
+  
+  const startDate = subDays(new Date(), dateRange);
+
+  return useQuery({
+    queryKey: ['kpi-metrics', tenant?.id, dateRange, category, searchQuery],
+    queryFn: async () => {
+      if (!tenant?.id) return [];
+
+      // Query the kpi_metrics table
+      let query = supabase
+        .from('kpi_metrics')
+        .select('*')
+        .eq('tenant_id', tenant.id)
+        .gte('updated_at', startDate.toISOString())
+        .order('updated_at', { ascending: false });
+
+      if (category && category !== 'all') {
+        query = query.eq('category', category);
+      }
+
+      if (searchQuery) {
+        query = query.ilike('metric', `%${searchQuery}%`);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      
+      // Transform the data to match the KpiMetric interface
+      return (data || []).map(metric => ({
+        id: metric.id,
+        tenant_id: metric.tenant_id,
+        kpi_name: metric.metric || '',
+        metric: metric.metric || '',
+        value: Number(metric.value),
+        trend: determineTrend(Number(metric.value)),
+        changePercent: 0, // Would ideally be calculated by comparing to historical data
+        created_at: metric.created_at,
+        updated_at: metric.updated_at,
+        recorded_at: metric.recorded_at
+      })) as KpiMetric[];
+    },
+    enabled: !!tenant?.id
+  });
+}
+
+// Helper function to determine the trend based on the value
+function determineTrend(value: number): 'up' | 'down' | 'neutral' {
   if (value > 0) return 'up';
   if (value < 0) return 'down';
   return 'neutral';

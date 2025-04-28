@@ -1,25 +1,27 @@
 
-import { AlertCircle } from "lucide-react";
+import React from 'react';
 import { Button } from "@/components/ui/button";
+import { AlertCircle, RefreshCw } from "lucide-react";
 
 interface KpiErrorStateProps {
-  error: Error | unknown;
-  onRetry?: () => void;
+  error: Error | null;
+  onRetry: () => void;
 }
 
-export default function KpiErrorState({ error, onRetry }: KpiErrorStateProps) {
-  const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-  
+export function KpiErrorState({ error, onRetry }: KpiErrorStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center h-64 w-full p-4 border rounded-lg bg-muted/10">
-      <AlertCircle className="h-8 w-8 text-destructive mb-4" />
-      <h3 className="font-semibold text-lg mb-2">Failed to load KPI metrics</h3>
-      <p className="text-muted-foreground text-center mb-4">{errorMessage}</p>
-      {onRetry && (
-        <Button onClick={onRetry} variant="outline">
-          Try Again
-        </Button>
-      )}
+    <div className="flex flex-col items-center justify-center py-8 text-center">
+      <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
+      <h3 className="text-lg font-medium mb-2">Error Loading KPI Data</h3>
+      <p className="text-muted-foreground mb-4 max-w-md">
+        {error?.message || "An unexpected error occurred while loading KPI metrics"}
+      </p>
+      <Button onClick={onRetry} variant="outline" className="flex items-center gap-2">
+        <RefreshCw className="h-4 w-4" />
+        Retry
+      </Button>
     </div>
   );
 }
+
+export default KpiErrorState;

@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useKpiMetrics } from "@/hooks/useKpiMetrics";
 import { useKpiAlerts } from "@/hooks/useKpiAlerts";
-import { AlertCircle, TrendingUp, RefreshCw } from "lucide-react";
+import { AlertCircle, RefreshCw } from "lucide-react";
 import { KpiMetricSummaryGrid } from "./components/KpiMetricSummaryGrid";
 import { KpiLoadingState } from "./components/KpiLoadingState";
 import { KpiErrorState } from "./components/KpiErrorState";
@@ -26,7 +27,7 @@ export default function KpiDashboard() {
           <CardTitle className="text-2xl font-bold tracking-tight">
             KPI Metrics Dashboard
           </CardTitle>
-          <Button variant="outline" onClick={refetch} disabled={isLoading}>
+          <Button variant="outline" onClick={() => refetch()} disabled={isLoading}>
             {isLoading ? (
               <>
                 <AlertCircle className="mr-2 h-4 w-4 animate-spin" />
@@ -50,7 +51,7 @@ export default function KpiDashboard() {
               {isLoading ? (
                 <KpiLoadingState />
               ) : error ? (
-                <KpiErrorState error={error} onRetry={refetch} />
+                <KpiErrorState error={error} onRetry={() => refetch()} />
               ) : metrics && metrics.length > 0 ? (
                 <>
                   <KpiMetricSummaryGrid metrics={metrics} />
