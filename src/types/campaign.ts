@@ -1,6 +1,6 @@
 
 export type CampaignStatus = 'draft' | 'active' | 'paused' | 'pending' | 'rejected' | 'approved';
-export type ExecutionStatus = 'pending' | 'scheduled' | 'running' | 'completed' | 'failed';
+export type ExecutionStatus = 'pending' | 'scheduled' | 'running' | 'in_progress' | 'completed' | 'failed' | 'paused';
 
 export interface Campaign {
   id: string;

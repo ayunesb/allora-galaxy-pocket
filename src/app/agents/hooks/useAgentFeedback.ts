@@ -27,7 +27,7 @@ export function useAgentFeedback() {
         .limit(3);
 
       const summary = (recentFeedback || [])
-        .map((f) => `• [${f.rating}/5] ${f.feedback}`)
+        .map((f: any) => `• [${f.rating || 0}/5] ${f.feedback || ''}`)
         .join("\n");
 
       return `

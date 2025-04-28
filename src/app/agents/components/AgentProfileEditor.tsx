@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { AgentProfile } from "@/types/agent";
 
 interface AgentProfileEditorProps {
@@ -14,6 +14,7 @@ interface AgentProfileEditorProps {
 
 export default function AgentProfileEditor({ agent }: AgentProfileEditorProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
   const { register, handleSubmit, formState: { errors } } = useForm({
     defaultValues: {
       agent_name: agent?.agent_name || "",

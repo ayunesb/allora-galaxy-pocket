@@ -17,7 +17,7 @@ export interface AgentMemory {
 
 export interface AgentProfile {
   id: string;
-  agent_name: string; // Make sure this is required for database operations
+  agent_name: string;
   role: string;
   tone: string;
   avatar_url?: string;
@@ -31,6 +31,7 @@ export interface AgentProfile {
   tenant_id: string;
   created_by?: string;
   last_memory_update?: string;
+  model_provider?: string;
 }
 
 export interface AgentFeedback {
@@ -72,7 +73,18 @@ export interface AgentTask {
   error?: string;
 }
 
-export interface AgentMemoryLog extends AgentMemory {
+export interface AgentMemoryLog {
+  id: string;
+  agent_name: string;
+  context: string;
+  tenant_id: string;
+  type: string;
+  timestamp: string;
+  is_user_submitted: boolean;
+  ai_feedback?: string;
+  ai_rating?: number;
+  remix_count?: number;
+  xp_delta?: number;
   summary: string;
   tags: string[];
 }
