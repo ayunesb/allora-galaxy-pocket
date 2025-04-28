@@ -32,7 +32,7 @@ function App() {
             <ThemeProvider defaultTheme="light" storageKey="allora-theme-preference">
               <Suspense fallback={
                 <div className="flex items-center justify-center h-screen">
-                  <LoadingSpinner size={40} label="Loading application..." />
+                  <LoadingSpinner size="lg" label="Loading application..." />
                 </div>
               }>
                 <Toaster richColors closeButton position="top-right" />
