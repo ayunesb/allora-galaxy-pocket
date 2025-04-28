@@ -25,10 +25,15 @@ export function KpiSnapshot() {
       if (error) throw error;
       
       return data.map(m => ({
+        id: m.id || `metric-${Math.random().toString(36).substring(7)}`,
+        kpi_name: m.metric,
         label: m.metric,
         value: m.value,
         trend: (m.value > 0 ? "up" : "down") as "up" | "down", 
-        changePercent: 0
+        changePercent: 0,
+        created_at: m.created_at || new Date().toISOString(),
+        updated_at: m.updated_at || new Date().toISOString(),
+        tenant_id: m.tenant_id
       }));
     },
     enabled: !!tenant?.id
@@ -54,11 +59,11 @@ export function KpiSnapshot() {
             {metrics.map((metric, index) => (
               <KpiCard
                 key={index}
-                id={`metric-${index}`}
-                kpi_name={metric.label || ''}
+                id={metric.id}
+                kpi_name={metric.kpi_name || ''}
                 tenant_id={tenant?.id || ''}
-                updated_at={new Date().toISOString()}
-                created_at={new Date().toISOString()} 
+                updated_at={metric.updated_at} 
+                created_at={metric.created_at}
                 label={metric.label}
                 value={metric.value}
                 trend={metric.trend}
