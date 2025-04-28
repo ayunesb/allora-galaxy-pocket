@@ -8,7 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTenantValidation } from '@/hooks/useTenantValidation';
 import { Navigate } from 'react-router-dom';
 import { KpiAlertsPanel } from '@/app/insights/kpis/components/KpiAlertsPanel';
-import { useKpiAlerts } from '@/hooks/useKpiAlerts';
+import { useUnifiedKpiAlerts } from '@/hooks/useUnifiedKpiAlerts';
 import { supabase } from '@/integrations/supabase/client';
 import { Strategy } from '@/types/strategy';
 import { Campaign } from '@/types/campaign';
@@ -16,7 +16,7 @@ import { Campaign } from '@/types/campaign';
 const DashboardPage: React.FC = () => {
   const { strategies, campaigns } = useStrategyAndCampaigns();
   const { isValidating, isValid } = useTenantValidation();
-  const { alerts } = useKpiAlerts({ activeOnly: true, days: 7 });
+  const { alerts } = useUnifiedKpiAlerts({ activeOnly: true, days: 7 });
   
   // Fetch KPI metrics directly since useKpiTracking hook doesn't exist
   const { data: kpiMetrics = [] } = useQuery({

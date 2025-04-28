@@ -2,10 +2,14 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { useKpiAlerts } from '@/hooks/useKpiAlerts';
+import { useUnifiedKpiAlerts } from '@/hooks/useUnifiedKpiAlerts';
+import { Button } from '@/components/ui/button';
+import { ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export function KpiAlerts() {
-  const { alerts } = useKpiAlerts({ activeOnly: true });
+  const { alerts } = useUnifiedKpiAlerts({ activeOnly: true });
+  const navigate = useNavigate();
 
   if (!alerts?.length) return null;
 
@@ -15,7 +19,7 @@ export function KpiAlerts() {
         <CardTitle>KPI Alerts</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {alerts.map((alert) => (
+        {alerts.slice(0, 5).map((alert) => (
           <Alert key={alert.id}>
             <AlertTitle>{alert.kpi_name}</AlertTitle>
             <AlertDescription>{alert.description}</AlertDescription>
@@ -24,6 +28,17 @@ export function KpiAlerts() {
             )}
           </Alert>
         ))}
+        
+        {alerts.length > 5 && (
+          <Button 
+            variant="ghost" 
+            className="w-full flex justify-center items-center text-sm"
+            onClick={() => navigate('/insights/alerts')}
+          >
+            View all {alerts.length} alerts
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

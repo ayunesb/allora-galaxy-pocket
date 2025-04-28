@@ -10,9 +10,17 @@ interface AlertCardProps {
   impact: string;
   date: string;
   action?: string;
+  sourceType?: 'kpi_alert' | 'kpi_insight';
 }
 
-export function AlertCard({ title, description, impact, date, action }: AlertCardProps) {
+export function AlertCard({ 
+  title, 
+  description, 
+  impact, 
+  date, 
+  action,
+  sourceType = 'kpi_alert'
+}: AlertCardProps) {
   // Function to get the appropriate badge variant based on impact level
   const getBadgeVariant = (impact: string) => {
     switch(impact.toLowerCase()) {
@@ -26,11 +34,24 @@ export function AlertCard({ title, description, impact, date, action }: AlertCar
   // Format the date to be more readable
   const formattedDate = format(new Date(date), 'MMM d, yyyy');
 
+  // Get source badge
+  const getSourceBadge = () => {
+    if (!sourceType) return null;
+    return (
+      <Badge variant="outline" className="ml-2 text-xs">
+        {sourceType === 'kpi_alert' ? 'Alert' : 'Insight'}
+      </Badge>
+    );
+  };
+
   return (
     <Card className="overflow-hidden">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-medium">{title}</CardTitle>
+          <CardTitle className="text-lg font-medium flex items-center">
+            {title}
+            {getSourceBadge()}
+          </CardTitle>
           <Badge variant={getBadgeVariant(impact)}>
             {impact.charAt(0).toUpperCase() + impact.slice(1)} Impact
           </Badge>

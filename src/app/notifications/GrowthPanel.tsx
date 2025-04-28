@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { useKpiAlerts } from '@/hooks/useKpiAlerts';
+import { useUnifiedKpiAlerts } from '@/hooks/useUnifiedKpiAlerts';
 import { useTenant } from '@/hooks/useTenant';
 import { toast } from '@/components/ui/sonner';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
@@ -8,23 +8,14 @@ import { Button } from '@/components/ui/button';
 import { AlertTriangle, ChartLine, Activity, RefreshCw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
-interface CampaignInsight {
-  id: string;
-  campaigns?: {
-    name: string;
-  };
-  insight_text?: string;
-}
-
 export function GrowthPanel() {
   const { tenant } = useTenant();
   const { 
-    alerts = [], 
-    campaignInsights = [], 
+    alerts = [],
     refreshAlerts, 
     triggerKpiCheck, 
     isLoading 
-  } = useKpiAlerts({ activeOnly: true, days: 7 });
+  } = useUnifiedKpiAlerts({ activeOnly: true, days: 7 });
 
   useEffect(() => {
     const refreshData = async () => {
@@ -115,26 +106,6 @@ export function GrowthPanel() {
           </Button>
         </CardFooter>
       </Card>
-      
-      {campaignInsights && campaignInsights.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Campaign Insights</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {(campaignInsights as unknown as CampaignInsight[]).slice(0, 3).map((insight) => (
-                <div key={insight.id} className="border-l-4 border-primary pl-4 py-2">
-                  <p className="font-medium">{insight.campaigns?.name || 'Unnamed Campaign'}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {insight.insight_text || 'No insights available.'}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }

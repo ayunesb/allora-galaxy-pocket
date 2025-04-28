@@ -67,3 +67,23 @@ export interface KpiAlertRule {
   last_triggered?: string;
   compare_period?: string;
 }
+
+// New unified alert interface that can represent data from both sources
+export interface UnifiedAlert {
+  id: string;
+  kpi_name: string;
+  description: string;
+  severity: 'low' | 'medium' | 'high';
+  status: 'pending' | 'resolved' | 'triggered';
+  created_at: string;
+  triggered_at?: string;
+  message?: string;
+  current_value?: number;
+  previous_value?: number;
+  percent_change?: number;
+  campaign_id?: string;
+  tenant_id: string;
+  source_type: 'kpi_alert' | 'kpi_insight';
+  threshold?: number;
+  condition?: string;
+}
