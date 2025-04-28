@@ -4,10 +4,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
+interface ApprovalStats {
+  total_approved: number;
+  ai_approved: number;
+  human_approved: number;
+}
+
 async function fetchApprovalStats() {
   const { data, error } = await supabase.rpc('count_strategy_approvals');
   if (error) throw error;
-  return data;
+  return data as ApprovalStats;
 }
 
 export function ApprovalMetricsCard() {

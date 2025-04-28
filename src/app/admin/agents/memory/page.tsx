@@ -21,7 +21,13 @@ export default function AgentMemoryConsole() {
         return;
       }
       
-      setLogs(data || []);
+      const formattedData = (data || []).map(item => ({
+        ...item,
+        summary: item.summary || item.context.substring(0, 100),
+        tags: item.tags || []
+      }));
+      
+      setLogs(formattedData);
     };
 
     fetchLogs();

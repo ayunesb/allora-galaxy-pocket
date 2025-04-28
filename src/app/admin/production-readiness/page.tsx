@@ -16,6 +16,11 @@ interface CheckResult {
   actionNeeded?: string;
 }
 
+interface SecretsCheckResult {
+  missing: string[];
+  configured: string[];
+}
+
 export default function ProductionReadinessPage() {
   const [checks, setChecks] = useState<CheckResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,7 +34,7 @@ export default function ProductionReadinessPage() {
     
     try {
       // 1. Check that secrets are configured
-      const { data: secrets, error: secretsError } = await supabase.functions.invoke('check-secrets', {
+      const { data: secretsData, error: secretsError } = await supabase.functions.invoke('check-secrets', {
         body: {}
       });
       
@@ -41,6 +46,7 @@ export default function ProductionReadinessPage() {
           details: secretsError.message
         });
       } else {
+        const secrets = secretsData as SecretsCheckResult;
         results.push({
           name: "Required Secrets",
           status: secrets.missing.length > 0 ? "warning" : "success",
@@ -65,14 +71,16 @@ export default function ProductionReadinessPage() {
         .limit(1)
         .single();
         
+      const dbMeta = dbStatus?.meta as Record<string, any> || {};
+      
       results.push({
         name: "Database Migrations",
-        status: dbStatus?.meta?.success ? "success" : "warning",
-        message: dbStatus?.meta?.success 
+        status: dbMeta?.success ? "success" : "warning",
+        message: dbMeta?.success 
           ? "Last migration successful" 
           : "No recent migrations or last migration failed",
-        details: dbStatus?.meta?.version 
-          ? `Current version: ${dbStatus.meta.version}` 
+        details: dbMeta?.version 
+          ? `Current version: ${dbMeta.version}` 
           : undefined
       });
       
@@ -81,16 +89,18 @@ export default function ProductionReadinessPage() {
         body: {}
       });
       
+      const rlsData = rlsCheck as { unprotectedTables: string[] };
+      
       results.push({
         name: "RLS Policies",
-        status: rlsCheck.unprotectedTables.length > 0 ? "warning" : "success",
-        message: rlsCheck.unprotectedTables.length > 0 
-          ? `${rlsCheck.unprotectedTables.length} tables without RLS` 
+        status: rlsData.unprotectedTables.length > 0 ? "warning" : "success",
+        message: rlsData.unprotectedTables.length > 0 
+          ? `${rlsData.unprotectedTables.length} tables without RLS` 
           : "All tables have RLS policies",
-        details: rlsCheck.unprotectedTables.length > 0 
-          ? `Tables without RLS: ${rlsCheck.unprotectedTables.join(", ")}` 
+        details: rlsData.unprotectedTables.length > 0 
+          ? `Tables without RLS: ${rlsData.unprotectedTables.join(", ")}` 
           : undefined,
-        actionNeeded: rlsCheck.unprotectedTables.length > 0 
+        actionNeeded: rlsData.unprotectedTables.length > 0 
           ? "Add RLS policies to unprotected tables" 
           : undefined
       });
@@ -108,7 +118,8 @@ export default function ProductionReadinessPage() {
           details: functionsError.message
         });
       } else {
-        const failedFunctions = edgeFunctions.filter((fn: any) => !fn.healthy);
+        const functionsList = edgeFunctions as any[];
+        const failedFunctions = functionsList.filter(fn => !fn.healthy);
         results.push({
           name: "Edge Functions",
           status: failedFunctions.length > 0 ? "warning" : "success",
@@ -116,7 +127,7 @@ export default function ProductionReadinessPage() {
             ? `${failedFunctions.length} edge functions with issues` 
             : "All edge functions are running properly",
           details: failedFunctions.length > 0 
-            ? `Problem functions: ${failedFunctions.map((f: any) => f.name).join(", ")}` 
+            ? `Problem functions: ${failedFunctions.map(f => f.name).join(", ")}` 
             : undefined
         });
       }
@@ -125,20 +136,19 @@ export default function ProductionReadinessPage() {
       const oneDayAgo = new Date();
       oneDayAgo.setDate(oneDayAgo.getDate() - 1);
       
-      const { data: recentErrors, error: errorsError } = await supabase
+      const { count: recentErrorCount, error: errorsError } = await supabase
         .from("system_logs")
-        .select("count")
+        .select("count", { count: 'exact', head: false })
         .eq("event_type", "error")
-        .gte("created_at", oneDayAgo.toISOString())
-        .single();
+        .gte("created_at", oneDayAgo.toISOString());
         
       results.push({
         name: "Recent Errors",
-        status: (recentErrors?.count || 0) > 10 ? "warning" : "success",
-        message: (recentErrors?.count || 0) > 0 
-          ? `${recentErrors?.count || 0} errors in the last 24 hours` 
+        status: (recentErrorCount || 0) > 10 ? "warning" : "success",
+        message: (recentErrorCount || 0) > 0 
+          ? `${recentErrorCount || 0} errors in the last 24 hours` 
           : "No errors in the last 24 hours",
-        actionNeeded: (recentErrors?.count || 0) > 10 
+        actionNeeded: (recentErrorCount || 0) > 10 
           ? "Review system logs for recurring issues" 
           : undefined
       });

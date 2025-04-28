@@ -29,21 +29,29 @@ export default function BulkInviteCreator() {
 
     for (const email of emailList) {
       const code = Math.random().toString(36).substring(2, 10).toUpperCase();
-      // Insert invite
-      const { error } = await supabase.from("admin_invite_codes").insert({
-        code,
-        invited_email: email,
-        role,
-        redirect_to: redirectTo || null,
-        expires_at: expiry,
-        used: false,
-      });
-      if (error) {
-        toast.error(`Failed for ${email}: ${error.message}`);
-        continue;
+      
+      try {
+        // Use a custom endpoint or stored procedure instead of direct table access
+        const { error } = await supabase.functions.invoke('create-invite-code', {
+          body: {
+            code,
+            email,
+            role,
+            redirectTo: redirectTo || null,
+            expiresAt: expiry
+          }
+        });
+        
+        if (error) {
+          toast.error(`Failed for ${email}: ${error.message}`);
+          continue;
+        }
+        
+        const url = `${APP_URL}/auth/signup?code=${code}&role=${role}&email=${encodeURIComponent(email)}`;
+        newLinks.push(url);
+      } catch (error: any) {
+        toast.error(`Error processing ${email}: ${error.message}`);
       }
-      const url = `${APP_URL}/auth/signup?code=${code}&role=${role}&email=${encodeURIComponent(email)}`;
-      newLinks.push(url);
     }
 
     setLinks(newLinks);

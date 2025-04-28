@@ -10,6 +10,7 @@ import { AlertCircle, CheckCircle, Clock, RefreshCw, PlayCircle } from 'lucide-r
 import { toast } from 'sonner';
 import { JobList } from './JobList';
 import { JobFailureRecovery } from './JobFailureRecovery';
+import { CronJobLog, CronJobStatus } from '@/types/cron';
 
 export function JobMonitoringPanel() {
   const { data: cronJobs, isLoading, refetch } = useQuery({
@@ -22,7 +23,14 @@ export function JobMonitoringPanel() {
         .limit(50);
       
       if (error) throw error;
-      return data;
+      
+      // Ensure the status is one of the allowed values
+      const typedData = (data || []).map(job => ({
+        ...job,
+        status: (job.status as CronJobStatus) || 'pending'
+      })) as CronJobLog[];
+      
+      return typedData;
     },
   });
 

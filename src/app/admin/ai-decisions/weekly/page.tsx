@@ -45,7 +45,16 @@ export default function WeeklySummaryFeed() {
       return;
     }
 
-    setSummaries(data || []);
+    // Cast the metadata to ensure it has the right properties
+    const formattedSummaries = (data || []).map(item => ({
+      ...item,
+      metadata: {
+        total_decisions: item.metadata?.total_decisions || 0,
+        ai_approval_rate: item.metadata?.ai_approval_rate || 0
+      }
+    }));
+
+    setSummaries(formattedSummaries);
     setIsLoading(false);
   };
 
@@ -66,7 +75,7 @@ export default function WeeklySummaryFeed() {
       });
 
       fetchSummaries();
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error generating summary",
         description: error.message,
