@@ -3554,6 +3554,15 @@ export type Database = {
         Args: { p_user_id: string; p_amount: number }
         Returns: undefined
       }
+      audit_rls_configuration: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          table_name: string
+          rls_enabled: boolean
+          has_tenant_id: boolean
+          has_auth_policy: boolean
+        }[]
+      }
       check_plugin_permission: {
         Args: {
           _tenant_id: string
@@ -3589,6 +3598,10 @@ export type Database = {
         }[]
       }
       check_tenant_access: {
+        Args: { requested_tenant_id: string }
+        Returns: boolean
+      }
+      check_tenant_access_safe: {
         Args: { requested_tenant_id: string }
         Returns: boolean
       }
@@ -3691,6 +3704,10 @@ export type Database = {
         Args: { p_tenant_id: string; p_user_id: string }
         Returns: string
       }
+      get_user_tenant_role_safe: {
+        Args: { tenant_uuid: string }
+        Returns: string
+      }
       grant_billing_credits: {
         Args: { p_user_id: string; p_amount: number }
         Returns: undefined
@@ -3744,6 +3761,14 @@ export type Database = {
       reset_billing_credits: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      test_rls_recursion: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          table_name: string
+          has_recursion: boolean
+          description: string
+        }[]
       }
       update_agent_memory_score: {
         Args: { p_agent_id: string }

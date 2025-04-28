@@ -15,6 +15,7 @@ import Layout from '@/components/Layout';
 import NotFound from '@/pages/NotFound';
 import { SecurityProvider } from '@/providers/SecurityProvider';
 import { VerificationProvider } from '@/providers/VerificationProvider';
+import { TransitionErrorHandler } from '@/components/TransitionErrorHandler';
 
 // Define the route structure
 export const baseRoutes: RouteObject[] = [
@@ -34,11 +35,13 @@ export const baseRoutes: RouteObject[] = [
         <Layout>
           <React.Suspense fallback={<div>Loading...</div>}>
             {/* SecurityProvider and VerificationProvider must be inside the Router context */}
-            <SecurityProvider>
-              <VerificationProvider>
-                <Outlet />
-              </VerificationProvider>
-            </SecurityProvider>
+            <TransitionErrorHandler>
+              <SecurityProvider>
+                <VerificationProvider>
+                  <Outlet />
+                </VerificationProvider>
+              </SecurityProvider>
+            </TransitionErrorHandler>
           </React.Suspense>
         </Layout>
       </RequireAuth>

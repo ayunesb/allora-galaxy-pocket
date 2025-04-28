@@ -73,9 +73,10 @@ export function SecurityProvider({ children }: SecurityProviderProps) {
 
     const validateTenantAccess = async () => {
       try {
-        // Check if user has access to this tenant
-        const { data, error } = await supabase.rpc("check_tenant_access", {
-          requested_tenant_id: tenant.id
+        // Check if user has access to this tenant - using our new safe function
+        const { data, error } = await supabase.rpc("check_tenant_user_access_safe", {
+          tenant_uuid: tenant.id,
+          user_uuid: user.id
         });
 
         if (error) {

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -7,9 +8,10 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useSessionRefresh } from "@/hooks/useSessionRefresh";
 import { useOnboardingCheck } from "@/hooks/useOnboardingCheck";
-import { ToastService } from "@/services/ToastService";
+import { toast } from "sonner";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { TransitionErrorHandler } from "@/components/TransitionErrorHandler";
 
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, session, isLoading: authLoading, refreshSession } = useAuth();
@@ -63,12 +65,14 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
       onboardingComplete, location.pathname, skipOnboardingCheck, navigationAttempted]);
 
   useEffect(() => {
+    // Skip validation for pages that don't require a tenant
     if (!user?.id || !tenant?.id || 
         location.pathname.startsWith('/auth/') || 
         location.pathname === '/workspace') return;
 
     const validateTenantAccess = async () => {
       try {
+        // Use the safe function to avoid recursion
         const { data, error } = await supabase.rpc(
           "check_tenant_user_access_safe",
           { tenant_uuid: tenant.id, user_uuid: user.id }
@@ -85,9 +89,8 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
           refreshTenant();
           localStorage.removeItem('tenant_id');
           
-          ToastService.error({
-            title: "Access denied",
-            description: "You don't have access to this workspace",
+          toast.error("Access denied", {
+            description: "You don't have access to this workspace"
           });
 
           setNavigationAttempted(true);
@@ -98,7 +101,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     };
 
     validateTenantAccess();
-  }, [user?.id, tenant?.id, location.pathname]);
+  }, [user?.id, tenant?.id, location.pathname, refreshTenant]);
 
   const handleRetry = async () => {
     try {
@@ -111,8 +114,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
       const e = error as Error;
       setAuthError(e.message || "Authentication failed after retry");
       
-      ToastService.error({
-        title: "Authentication failed",
+      toast.error("Authentication failed", {
         description: "Please try logging in again"
       });
     }
@@ -164,7 +166,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
 
   if (!user) {
     if (location.pathname.startsWith("/auth/")) {
-      return <>{children}</>;
+      return <TransitionErrorHandler><>{children}</></TransitionErrorHandler>;
     }
     
     console.log("RequireAuth: User not logged in, redirecting to login");
@@ -173,12 +175,11 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
 
   if (!tenant && !location.pathname.startsWith("/auth/")) {
     if (location.pathname === "/onboarding" || location.pathname === "/workspace") {
-      return <>{children}</>;
+      return <TransitionErrorHandler><>{children}</></TransitionErrorHandler>;
     }
     
     console.log("RequireAuth: No tenant selected, redirecting to workspace");
-    ToastService.warning({
-      title: "Workspace required",
+    toast.warning("Workspace required", {
       description: "Please select or create a workspace to continue"
     });
     return <Navigate to="/workspace" state={{ from: location.pathname }} replace />;
@@ -186,12 +187,11 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
 
   if (onboardingComplete === false && !skipOnboardingCheck) {
     console.log("RequireAuth: Onboarding incomplete, redirecting to onboarding");
-    ToastService.info({
-      title: "Complete your setup",
+    toast.info("Complete your setup", {
       description: "Please finish onboarding to continue"
     });
     return <Navigate to="/onboarding" state={{ from: location.pathname }} replace />;
   }
 
-  return <>{children}</>;
+  return <TransitionErrorHandler><>{children}</></TransitionErrorHandler>;
 }

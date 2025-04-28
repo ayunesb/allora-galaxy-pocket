@@ -32,6 +32,13 @@ export default function RoleGuard({
       try {
         setIsVerifying(true);
         
+        // Handle the case when there's no user or tenant
+        if (!user?.id || !tenant?.id) {
+          setIsVerifying(false);
+          setAccessGranted(false);
+          return;
+        }
+        
         const accessResults = await Promise.all(
           allowedRoles.map(role => checkAccess(role))
         );
@@ -41,7 +48,7 @@ export default function RoleGuard({
         if (!hasAccess && !redirectedRef.current) {
           redirectedRef.current = true;
           
-          if (user?.id && tenant?.id) {
+          try {
             await supabase.from('system_logs').insert({
               event_type: 'SECURITY_UNAUTHORIZED_ACCESS',
               message: `Unauthorized attempt to access restricted route requiring ${allowedRoles.join(', ')} role`,
@@ -52,6 +59,8 @@ export default function RoleGuard({
                 path: window.location.pathname
               }
             });
+          } catch (error) {
+            console.error("Error logging security event:", error);
           }
           
           toast(`You don't have permission to access this page`);

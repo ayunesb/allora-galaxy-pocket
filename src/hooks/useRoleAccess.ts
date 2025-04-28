@@ -14,7 +14,7 @@ export function useRoleAccess() {
     try {
       // Use the security definer function to check access
       const { data: hasAccess, error } = await supabase.rpc(
-        "check_tenant_user_access",
+        "check_tenant_user_access_safe",
         { tenant_uuid: tenant.id, user_uuid: user.id }
       );
       
