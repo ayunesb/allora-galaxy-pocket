@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, AlertTriangle, Trash2, Edit, Eye } from "lucide-react";
+import { PlusCircle, AlertTriangle, Trash2, Edit } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -28,7 +28,7 @@ export default function KpiAlertRules() {
 
       const { data, error } = await supabase
         .from("kpi_alert_rules")
-        .select("*")
+        .select()
         .eq("tenant_id", tenant.id)
         .order("created_at", { ascending: false });
 
@@ -46,7 +46,7 @@ export default function KpiAlertRules() {
 
       const { data, error } = await supabase
         .from("kpi_alerts")
-        .select("*")
+        .select()
         .eq("tenant_id", tenant.id)
         .in("status", ["pending", "triggered"])
         .order("created_at", { ascending: false });

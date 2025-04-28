@@ -1,91 +1,79 @@
 
+'use client';
+
 import { useState } from 'react';
-import { AlertCard } from "./components/AlertCard";
-import { useKpiAlerts } from "./hooks/useKpiAlerts";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useKpiAlerts } from './hooks/useKpiAlerts';
+import AlertCard from './components/AlertCard';
 
-export default function KPIAlertsPage() {
-  const [severity, setSeverity] = useState<string>("");
-  const { data: alerts, isLoading, error } = useKpiAlerts(severity);
-
-  const handleForward = async (id: string) => {
-    // Custom function for handling AI insight forwarding - needs proper implementation
-    try {
-      // This might need to be implemented differently, as RPC functions need to be defined in Supabase
-      const { error } = await supabase
-        .from('kpi_insights')
-        .update({ forwarded: true })
-        .eq('id', id);
-      
-      if (error) {
-        console.error('Error forwarding insight:', error);
-      }
-    } catch (err) {
-      console.error('Error calling forward function:', err);
-    }
-  };
-
-  const handleApprove = async (id: string) => {
-    const { error } = await supabase
-      .from('kpi_insights')
-      .update({ outcome: 'resolved' })
-      .eq('id', id);
-    
-    if (error) {
-      console.error('Error approving insight:', error);
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="text-center p-4 text-red-500">
-        Error loading alerts: {error.message}
-      </div>
-    );
-  }
+export default function AlertsPage() {
+  const [severity, setSeverity] = useState<string | undefined>(undefined);
+  const [days, setDays] = useState(7);
+  
+  const { data: alerts = [], isLoading, error } = useKpiAlerts(severity, days);
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">KPI Alerts</h1>
-        <Select value={severity} onValueChange={setSeverity}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by severity" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">All severities</SelectItem>
-            <SelectItem value="low">Low</SelectItem>
-            <SelectItem value="medium">Medium</SelectItem>
-            <SelectItem value="high">High</SelectItem>
-            <SelectItem value="critical">Critical</SelectItem>
-          </SelectContent>
-        </Select>
+    <div className="container mx-auto py-8 px-4">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">🚨 Alert Center</h1>
       </div>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {alerts?.map((alert) => (
-          <AlertCard
-            key={alert.id}
-            {...alert}
-            onForward={handleForward}
-            onApprove={handleApprove}
-          />
-        ))}
-        {alerts?.length === 0 && (
-          <div className="col-span-full text-center py-12 text-muted-foreground">
-            No alerts found for the selected criteria
-          </div>
-        )}
-      </div>
+      
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Alert Filters</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-4">
+          <Tabs defaultValue="all" className="w-full" onValueChange={(value) => setSeverity(value === "all" ? undefined : value)}>
+            <TabsList>
+              <TabsTrigger value="all">All Alerts</TabsTrigger>
+              <TabsTrigger value="high">High Impact</TabsTrigger>
+              <TabsTrigger value="medium">Medium Impact</TabsTrigger>
+              <TabsTrigger value="low">Low Impact</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          
+          <Tabs defaultValue="7" className="w-full" onValueChange={(value) => setDays(parseInt(value))}>
+            <TabsList>
+              <TabsTrigger value="1">Last 24h</TabsTrigger>
+              <TabsTrigger value="7">Last 7 days</TabsTrigger>
+              <TabsTrigger value="30">Last 30 days</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </CardContent>
+      </Card>
+      
+      {isLoading ? (
+        <div className="text-center py-8">Loading alerts...</div>
+      ) : error ? (
+        <Card>
+          <CardContent className="p-6 text-center">
+            <p className="text-red-500">Error loading alerts: {error.message}</p>
+          </CardContent>
+        </Card>
+      ) : alerts.length === 0 ? (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <p className="text-xl mb-2">No alerts found</p>
+            <p className="text-muted-foreground">
+              No alerts match your current filters. Try changing your filters or check back later.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {alerts.map((alert) => (
+            <AlertCard 
+              key={alert.id}
+              title={alert.kpi_name}
+              description={alert.insight || alert.description || ''}
+              impact={alert.impact_level || 'medium'}
+              date={alert.created_at || new Date().toISOString()}
+              action={alert.suggested_action}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

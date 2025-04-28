@@ -53,7 +53,8 @@ export default function KpiAlertRuleForm({ onSuccess, initialData, isEditing = f
         response = await supabase
           .from('kpi_alert_rules')
           .update(alertData)
-          .eq('id', initialData.id);
+          .eq('id', initialData.id)
+          .select();
       } else {
         // Create new rule
         response = await supabase
@@ -61,7 +62,8 @@ export default function KpiAlertRuleForm({ onSuccess, initialData, isEditing = f
           .insert({
             ...alertData,
             created_at: new Date().toISOString(),
-          });
+          })
+          .select();
       }
       
       if (response.error) {
