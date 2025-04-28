@@ -17,6 +17,7 @@ export interface KpiAlert {
   campaign_id?: string;
   metric?: string;
   condition?: string;
+  message?: string; // Added for compatibility with some components
 }
 
 export interface KpiAlertRule {
@@ -34,12 +35,18 @@ export interface KpiAlertRule {
 
 export interface KpiMetric {
   id: string;
-  metric: string;
+  metric?: string;
+  kpi_name: string;
   value: number;
-  recorded_at: string;
+  recorded_at?: string;
   updated_at: string;
-  created_at: string;
+  created_at?: string;
   tenant_id: string;
   target?: number;
   status?: string;
+  label?: string;
+  trend?: 'up' | 'down';
+  changePercent?: number;
+  trend_direction?: 'up' | 'down';
+  last_value?: number;
 }
