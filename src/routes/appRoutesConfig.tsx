@@ -31,15 +31,16 @@ export const baseRoutes: RouteObject[] = [
   {
     element: (
       <RequireAuth>
-        <SecurityProvider>
-          <VerificationProvider>
-            <Layout>
-              <React.Suspense fallback={<div>Loading...</div>}>
+        <Layout>
+          <React.Suspense fallback={<div>Loading...</div>}>
+            {/* SecurityProvider and VerificationProvider must be inside the Router context */}
+            <SecurityProvider>
+              <VerificationProvider>
                 <Outlet />
-              </React.Suspense>
-            </Layout>
-          </VerificationProvider>
-        </SecurityProvider>
+              </VerificationProvider>
+            </SecurityProvider>
+          </React.Suspense>
+        </Layout>
       </RequireAuth>
     ),
     errorElement: <ErrorPage />,

@@ -1,11 +1,10 @@
 
 import React, { ReactNode, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
 import { toast } from "sonner";
-import { useNavigate } from 'react-router-dom';
 import { useSystemLogs } from "@/hooks/useSystemLogs";
 
 interface SecurityProviderProps {
@@ -17,16 +16,29 @@ interface SecurityProviderProps {
  * It doesn't render any UI but adds important security hooks to the app
  */
 export function SecurityProvider({ children }: SecurityProviderProps) {
-  const location = useLocation();
+  // Using a try-catch to handle the case when the component is rendered outside Router context
+  let location;
+  let navigate;
+  
+  try {
+    location = useLocation();
+    navigate = useNavigate();
+  } catch (error) {
+    console.warn("SecurityProvider rendered outside Router context. Some security features will be disabled.");
+    // Return children immediately if not in Router context
+    return <>{children}</>;
+  }
+  
   const { user } = useAuth();
   const { tenant, setTenant } = useTenant();
-  const navigate = useNavigate();
   const { logActivity, logSecurityEvent } = useSystemLogs();
   
   // Log route access for audit purposes
   useEffect(() => {
     // Skip logging for public routes
-    if (location.pathname.startsWith('/auth/') || location.pathname === '/' || !user?.id || !tenant?.id) return;
+    if (!location || !user?.id || !tenant?.id || 
+        location.pathname.startsWith('/auth/') || 
+        location.pathname === '/') return;
     
     const logRouteAccess = async () => {
       try {
@@ -48,13 +60,14 @@ export function SecurityProvider({ children }: SecurityProviderProps) {
     const timeoutId = setTimeout(logRouteAccess, 1000);
     
     return () => clearTimeout(timeoutId);
-  }, [location.pathname, user?.id, tenant?.id]);
+  }, [location?.pathname, user?.id, tenant?.id]);
 
   // Tenant data protection
   useEffect(() => {
     // If no user or tenant is selected, no validation needed
     // Skip for auth pages and workspace selection
     if (!user?.id || !tenant?.id || 
+        !location ||
         location.pathname.startsWith('/auth/') || 
         location.pathname === '/workspace') return;
 
@@ -94,7 +107,9 @@ export function SecurityProvider({ children }: SecurityProviderProps) {
           });
 
           // Redirect to workspace switcher
-          navigate("/workspace", { replace: true });
+          if (navigate) {
+            navigate("/workspace", { replace: true });
+          }
         } else {
           // Successfully validated tenant access
           await logActivity({
@@ -113,7 +128,7 @@ export function SecurityProvider({ children }: SecurityProviderProps) {
     };
 
     validateTenantAccess();
-  }, [user?.id, tenant?.id, location.pathname, navigate, setTenant, logSecurityEvent, logActivity]);
+  }, [user?.id, tenant?.id, location?.pathname, navigate, setTenant, logSecurityEvent, logActivity]);
 
   return <>{children}</>;
 }

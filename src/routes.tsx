@@ -23,13 +23,14 @@ const routes: RouteObject[] = [
   {
     element: (
       <RequireAuth>
-        <SecurityProvider>
-          <VerificationProvider>
-            <Layout>
+        <Layout>
+          {/* SecurityProvider and VerificationProvider inside Router context */}
+          <SecurityProvider>
+            <VerificationProvider>
               <Outlet />
-            </Layout>
-          </VerificationProvider>
-        </SecurityProvider>
+            </VerificationProvider>
+          </SecurityProvider>
+        </Layout>
       </RequireAuth>
     ),
     children: [

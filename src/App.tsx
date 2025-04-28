@@ -10,7 +10,7 @@ import { Toaster } from "sonner";
 import { baseRoutes } from "./routes/appRoutesConfig";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import { SecurityProvider } from "@/providers/SecurityProvider";
+import { ToastProvider } from "@/components/ui/toast-provider";
 
 // Create router outside of component to avoid re-creation on renders
 const router = createBrowserRouter(baseRoutes);
@@ -21,15 +21,19 @@ function App() {
       queries: {
         retry: 1,
         staleTime: 5000,
-        // Global error handler for all queries
-        onError: (error: unknown) => {
-          console.error('Query error:', error);
+        // Global error handler using new format in latest version
+        meta: {
+          onError: (error: unknown) => {
+            console.error('Query error:', error);
+          }
         }
       },
       mutations: {
-        // Global error handler for all mutations
-        onError: (error: unknown) => {
-          console.error('Mutation error:', error);
+        // Global error handler using new format
+        meta: {
+          onError: (error: unknown) => {
+            console.error('Mutation error:', error);
+          }
         }
       }
     }
@@ -40,18 +44,18 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <TenantProvider>
-            <SecurityProvider>
-              <ThemeProvider defaultTheme="light" storageKey="allora-theme-preference">
+            <ThemeProvider defaultTheme="light" storageKey="allora-theme-preference">
+              <ToastProvider>
                 <Suspense fallback={
                   <div className="flex items-center justify-center h-screen">
                     <LoadingSpinner size="lg" label="Loading application..." />
                   </div>
                 }>
-                  <Toaster richColors closeButton position="top-right" />
+                  {/* The RouterProvider must be the outermost router component */}
                   <RouterProvider router={router} />
                 </Suspense>
-              </ThemeProvider>
-            </SecurityProvider>
+              </ToastProvider>
+            </ThemeProvider>
           </TenantProvider>
         </AuthProvider>
         <ReactQueryDevtools initialIsOpen={false} />

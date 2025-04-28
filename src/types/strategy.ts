@@ -1,51 +1,73 @@
+import { Json } from "./supabase";
 
-export type StrategyStatus = 'approved' | 'rejected' | 'pending' | 'draft';
+export type StrategyStatus = 
+  | "draft" 
+  | "pending_approval" 
+  | "approved" 
+  | "rejected" 
+  | "in_progress"
+  | "completed"
+  | "archived"
+  | "auto_approved";
 
 export interface Strategy {
   id: string;
-  title?: string;
-  description?: string;
+  title: string;
+  description: string;
   status: StrategyStatus;
   created_at: string;
-  tenant_id?: string;
-  user_id?: string;
-  tags?: string[];
-  generated_by?: string;
-  assigned_agent?: string;
-  auto_approved?: boolean;
-  impact_score?: number;
-  health_score?: number;
-  approved_at?: string;
-  updated_at?: string;
-  metrics_baseline?: Record<string, any>;
-  onboarding_data?: Record<string, any>;
-  diagnosis?: Record<string, any>;
+  tenant_id: string;
+  user_id: string | null;
+  tags: string[];
+  generated_by: string;
+  assigned_agent: string;
+  auto_approved: boolean;
+  approved_by?: string | null;
+  approved_at?: string | null;
+  health_score: number;
+  metrics_baseline: Record<string, any>;
+  metrics_target: Record<string, any>;
   failure_reason?: string;
-  retry_prompt?: string;
-  is_public?: boolean;
-  version?: number | string;
+  diagnosis: Json;
+  timeline?: any[];
+  feedback?: any[];
+  version?: number;
+  updated_at?: string;
   reason_for_recommendation?: string;
   target_audience?: string;
-  goals?: string[];
+  goals?: any[];
   channels?: string[];
-  kpis?: string[];
+  kpis?: any[];
 }
 
-export interface StrategyFeedback {
-  id: string;
-  strategy_title: string;
-  action: 'used' | 'dismissed';
-  user_id?: string;
-  tenant_id?: string;
-  created_at: string;
+export interface StrategyDraft {
+  title: string;
+  description: string;
+  tenant_id: string;
+  user_id: string;
+  tags: string[];
 }
 
 export interface StrategyVersion {
   id: string;
   strategy_id: string;
-  version: number;
-  data: Record<string, any>;
-  comment?: string;
+  version_number: number;
+  changes: Record<string, any>;
   created_at: string;
-  created_by?: string;
+  created_by: string;
+  tenant_id: string;
+}
+
+export interface StrategyResponse {
+  id: string;
+  strategy: Strategy;
+  message: string;
+  success: boolean;
+  error?: string;
+}
+
+export interface StrategyCampaignMapping {
+  strategy_id: string;
+  campaign_id: string;
+  created_at: string;
 }

@@ -15,6 +15,8 @@ export interface KpiMetric {
   last_value?: number;
   created_at?: string;
   updated_at?: string;
+  description?: string;
+  status?: string;
 }
 
 export interface KpiAlert {
@@ -33,6 +35,24 @@ export interface KpiAlert {
   created_at: string;
   tenant_id: string;
   campaign_id?: string;
+  condition?: string;
+  message?: string;
+}
+
+// Add this interface to support KpiAlertRule
+export interface KpiAlertRule {
+  id: string;
+  name: string;
+  kpi_name: string;
+  condition: string;
+  threshold: number;
+  severity: 'low' | 'medium' | 'high';
+  message: string;
+  status: 'active' | 'inactive';
+  created_at: string;
+  updated_at: string;
+  tenant_id: string;
+  last_triggered?: string;
 }
 
 export interface KpiInsight {
