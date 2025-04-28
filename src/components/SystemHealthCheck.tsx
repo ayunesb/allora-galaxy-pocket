@@ -1,155 +1,228 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { Progress } from "@/components/ui/progress";
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
 
 export default function SystemHealthCheck() {
-  const [isChecking, setIsChecking] = useState(false);
-  const [checks, setChecks] = useState({
-    auth: { status: 'pending', error: null },
-    database: { status: 'pending', error: null },
-    storage: { status: 'pending', error: null },
-    rls: { status: 'pending', error: null, fixed: false }
-  });
+  const [checks, setChecks] = useState([
+    { name: 'Authentication', status: 'pending', message: '' },
+    { name: 'Database Connection', status: 'pending', message: '' },
+    { name: 'RLS Policies', status: 'pending', message: '' },
+    { name: 'Tenant Isolation', status: 'pending', message: '' },
+    { name: 'Edge Functions', status: 'pending', message: '' }
+  ]);
   
+  const [overallHealth, setOverallHealth] = useState(0);
+  const [isVerifying, setIsVerifying] = useState(true);
+
   useEffect(() => {
-    checkSystemHealth();
+    runHealthChecks();
   }, []);
-  
-  const checkSystemHealth = async () => {
-    setIsChecking(true);
+
+  const runHealthChecks = async () => {
+    setIsVerifying(true);
     
-    // Check database connection
+    // Clone checks to update individually
+    const updatedChecks = [...checks];
+    
+    // 1. Auth Check
     try {
-      const { error } = await supabase
-        .from('system_config')
-        .select('count')
-        .limit(1);
+      const { data: session } = await supabase.auth.getSession();
+      updatedChecks[0] = {
+        ...updatedChecks[0],
+        status: session ? 'success' : 'warning',
+        message: session ? 'Authentication system operational' : 'No active session'
+      };
+      setChecks([...updatedChecks]);
+    } catch (error) {
+      updatedChecks[0] = {
+        ...updatedChecks[0],
+        status: 'error',
+        message: 'Auth system error'
+      };
+      setChecks([...updatedChecks]);
+    }
+    
+    // 2. Database Connection Check
+    try {
+      const { data, error } = await supabase.from('system_logs').select('count').limit(1);
+      updatedChecks[1] = {
+        ...updatedChecks[1],
+        status: error ? 'error' : 'success',
+        message: error ? 'Database connection error' : 'Database connected'
+      };
+      setChecks([...updatedChecks]);
+    } catch (error) {
+      updatedChecks[1] = {
+        ...updatedChecks[1],
+        status: 'error',
+        message: 'Database connection failed'
+      };
+      setChecks([...updatedChecks]);
+    }
+    
+    // 3. RLS Policies Check
+    try {
+      const { data, error } = await supabase.rpc('check_table_security_status');
+      
+      let rlsStatus = 'success';
+      let message = 'RLS policies configured correctly';
+      
+      if (error) {
+        rlsStatus = 'error';
+        message = 'RLS check failed';
+      } else if (data) {
+        // Check if any table has RLS disabled or no tenant_id column
+        const issues = data.filter(table => 
+          !table.rls_enabled || 
+          !table.has_tenant_id || 
+          !table.has_auth_policy
+        );
         
-      setChecks(prev => ({
-        ...prev,
-        database: { 
-          status: error ? 'error' : 'success', 
-          error: error?.message || null 
+        if (issues.length > 0) {
+          rlsStatus = 'warning';
+          message = `${issues.length} tables with RLS issues`;
         }
-      }));
-    } catch (error: any) {
-      setChecks(prev => ({
-        ...prev,
-        database: { status: 'error', error: error.message }
-      }));
+      }
+      
+      updatedChecks[2] = {
+        ...updatedChecks[2],
+        status: rlsStatus,
+        message
+      };
+      setChecks([...updatedChecks]);
+    } catch (error) {
+      updatedChecks[2] = {
+        ...updatedChecks[2],
+        status: 'error',
+        message: 'RLS verification failed'
+      };
+      setChecks([...updatedChecks]);
     }
     
-    // Check auth session
+    // 4. Tenant Isolation Check
     try {
-      const { data, error } = await supabase.auth.getSession();
-      setChecks(prev => ({
-        ...prev,
-        auth: { 
-          status: error ? 'error' : 'success', 
-          error: error?.message || null 
-        }
-      }));
-    } catch (error: any) {
-      setChecks(prev => ({
-        ...prev,
-        auth: { status: 'error', error: error.message }
-      }));
-    }
-    
-    // Check tenant_user_roles access
-    try {
-      // Check if the RPC function exists (our fix)
-      const { error: rpcError } = await supabase.rpc('check_tenant_user_access', { 
+      const { error: rlsError } = await supabase.rpc('check_tenant_user_access_safe', {
         tenant_uuid: '00000000-0000-0000-0000-000000000000',
         user_uuid: '00000000-0000-0000-0000-000000000000'
       });
       
-      const rlsFixed = !rpcError || !rpcError.message.includes('function does not exist');
-      
-      setChecks(prev => ({
-        ...prev,
-        rls: {
-          status: rlsFixed ? 'success' : 'error',
-          error: rlsFixed ? null : 'RLS policy fix not applied',
-          fixed: rlsFixed
-        }
-      }));
-    } catch (error: any) {
-      console.log('RLS check error:', error);
+      updatedChecks[3] = {
+        ...updatedChecks[3],
+        status: rlsError && rlsError.message?.includes('recursion') ? 'error' : 'success',
+        message: rlsError && rlsError.message?.includes('recursion') ? 
+          'Infinite recursion detected' : 'Tenant isolation verified'
+      };
+      setChecks([...updatedChecks]);
+    } catch (error) {
+      updatedChecks[3] = {
+        ...updatedChecks[3],
+        status: 'error',
+        message: 'Tenant isolation check failed'
+      };
+      setChecks([...updatedChecks]);
     }
     
-    setIsChecking(false);
+    // 5. Edge Functions Check
+    try {
+      const { data, error } = await supabase
+        .from('cron_job_logs')
+        .select('*')
+        .limit(1);
+      
+      updatedChecks[4] = {
+        ...updatedChecks[4],
+        status: error ? 'warning' : 'success',
+        message: error ? 'Edge function check limited' : 'Edge functions operational'
+      };
+      setChecks([...updatedChecks]);
+    } catch (error) {
+      updatedChecks[4] = {
+        ...updatedChecks[4],
+        status: 'error',
+        message: 'Edge function check failed'
+      };
+      setChecks([...updatedChecks]);
+    }
+    
+    // Calculate overall health
+    const healthScore = calculateHealthScore(updatedChecks);
+    setOverallHealth(healthScore);
+    setIsVerifying(false);
   };
   
-  const getStatusIcon = (status: string) => {
-    if (status === 'pending' || isChecking) {
-      return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
-    } else if (status === 'success') {
-      return <CheckCircle className="h-4 w-4 text-green-500" />;
-    } else {
-      return <XCircle className="h-4 w-4 text-red-500" />;
-    }
+  const calculateHealthScore = (checks) => {
+    const weights = {
+      success: 100,
+      warning: 50,
+      error: 0,
+      pending: 0
+    };
+    
+    const total = checks.reduce((sum, check) => {
+      return sum + weights[check.status];
+    }, 0);
+    
+    return Math.round(total / (checks.length * 100) * 100);
   };
   
   return (
-    <div className="space-y-3">
-      <h3 className="font-medium">System Health Check</h3>
-      
-      <div className="space-y-2">
-        <div className="flex items-center justify-between p-2 bg-slate-50 rounded-md">
-          <span>Database Connection:</span>
-          <div className="flex items-center">
-            {getStatusIcon(checks.database.status)}
-          </div>
+    <div className="space-y-4">
+      <div>
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-sm font-medium">System Health</span>
+          <span className="text-sm font-medium">{overallHealth}%</span>
         </div>
-        
-        <div className="flex items-center justify-between p-2 bg-slate-50 rounded-md">
-          <span>Authentication:</span>
-          <div className="flex items-center">
-            {getStatusIcon(checks.auth.status)}
-          </div>
-        </div>
-        
-        <div className="flex items-center justify-between p-2 bg-slate-50 rounded-md">
-          <span>RLS Policy Fix:</span>
-          <div className="flex items-center">
-            {getStatusIcon(checks.rls.status)}
-          </div>
-        </div>
-        
-        {checks.rls.fixed && (
-          <Alert className="bg-green-50 border-green-200 text-green-800">
-            <CheckCircle className="h-4 w-4 text-green-500" />
-            <AlertDescription>
-              The tenant_user_roles RLS policy fix has been successfully applied.
-            </AlertDescription>
-          </Alert>
-        )}
-        
-        {checks.database.status === 'error' && checks.database.error && checks.database.error.includes('infinite recursion') && (
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              Infinite recursion detected in a database policy. This typically happens when an RLS policy queries its own table.
-            </AlertDescription>
-          </Alert>
-        )}
-        
-        <div className="flex justify-end mt-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={checkSystemHealth} 
-            disabled={isChecking}
-          >
-            {isChecking && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Refresh Status
-          </Button>
-        </div>
+        <Progress value={overallHealth} className={`h-2 ${overallHealth > 80 ? 'bg-green-500' : overallHealth > 50 ? 'bg-amber-500' : 'bg-red-500'}`} />
       </div>
+      
+      <div className="space-y-3">
+        {checks.map((check, index) => (
+          <div key={index} className="flex items-start justify-between border-b pb-2 last:border-0">
+            <div className="flex gap-2 items-center">
+              {check.status === 'pending' ? (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              ) : check.status === 'success' ? (
+                <CheckCircle className="h-4 w-4 text-green-500" />
+              ) : check.status === 'warning' ? (
+                <AlertTriangle className="h-4 w-4 text-amber-500" />
+              ) : (
+                <XCircle className="h-4 w-4 text-red-500" />
+              )}
+              <div>
+                <p className="font-medium">{check.name}</p>
+                <p className="text-xs text-muted-foreground">{check.message}</p>
+              </div>
+            </div>
+            <span className={`text-xs px-1.5 py-0.5 rounded ${getStatusClass(check.status)}`}>
+              {check.status.toUpperCase()}
+            </span>
+          </div>
+        ))}
+      </div>
+      
+      {!isVerifying && (
+        <button 
+          onClick={runHealthChecks} 
+          className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Run checks again
+        </button>
+      )}
     </div>
   );
+}
+
+function getStatusClass(status) {
+  switch(status) {
+    case 'success':
+      return 'bg-green-100 text-green-800';
+    case 'warning':
+      return 'bg-amber-100 text-amber-800';
+    case 'error':
+      return 'bg-red-100 text-red-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
 }

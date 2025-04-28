@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, AlertTriangle, Database, Shield, RefreshCw, Server, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { ToastService } from "@/services/ToastService";
+import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 
 interface DataCheck {
@@ -154,8 +154,7 @@ export function LaunchReadinessVerifier() {
 
     } catch (error) {
       console.error("Verification error:", error);
-      ToastService.error({ 
-        title: "Verification Failed", 
+      toast("Verification Failed", { 
         description: "Could not complete system verification" 
       });
     } finally {
