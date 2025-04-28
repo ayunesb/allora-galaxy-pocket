@@ -31,7 +31,7 @@ export default function BulkInviteCreator() {
       const code = Math.random().toString(36).substring(2, 10).toUpperCase();
       
       try {
-        // Use a custom endpoint or stored procedure instead of direct table access
+        // Use edge function to create invite codes securely
         const { error } = await supabase.functions.invoke('create-invite-code', {
           body: {
             code,

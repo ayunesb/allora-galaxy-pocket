@@ -72,15 +72,17 @@ export default function ProductionReadinessPage() {
         .single();
         
       const dbMeta = dbStatus?.meta as Record<string, any> || {};
+      const migrationSuccess = typeof dbMeta === 'object' && 'success' in dbMeta ? dbMeta.success : false;
+      const dbVersion = typeof dbMeta === 'object' && 'version' in dbMeta ? dbMeta.version : null;
       
       results.push({
         name: "Database Migrations",
-        status: dbMeta?.success ? "success" : "warning",
-        message: dbMeta?.success 
+        status: migrationSuccess ? "success" : "warning",
+        message: migrationSuccess 
           ? "Last migration successful" 
           : "No recent migrations or last migration failed",
-        details: dbMeta?.version 
-          ? `Current version: ${dbMeta.version}` 
+        details: dbVersion 
+          ? `Current version: ${dbVersion}` 
           : undefined
       });
       

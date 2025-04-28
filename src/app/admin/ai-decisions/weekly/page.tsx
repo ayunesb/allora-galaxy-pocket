@@ -8,17 +8,7 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Markdown } from "@/components/ui/markdown";
 import { Loader2 } from "lucide-react";
-
-interface WeeklySummary {
-  id: string;
-  summary: string;
-  week_start: string;
-  generated_at: string;
-  metadata: {
-    total_decisions: number;
-    ai_approval_rate: number;
-  };
-}
+import { WeeklySummary } from "@/types/decisions";
 
 export default function WeeklySummaryFeed() {
   const [summaries, setSummaries] = useState<WeeklySummary[]>([]);
@@ -46,12 +36,14 @@ export default function WeeklySummaryFeed() {
     }
 
     // Cast the metadata to ensure it has the right properties
-    const formattedSummaries = (data || []).map(item => ({
+    const formattedSummaries: WeeklySummary[] = (data || []).map(item => ({
       ...item,
-      metadata: {
-        total_decisions: item.metadata?.total_decisions || 0,
-        ai_approval_rate: item.metadata?.ai_approval_rate || 0
-      }
+      metadata: typeof item.metadata === 'string' 
+        ? { total_decisions: 0, ai_approval_rate: 0 } 
+        : {
+            total_decisions: item.metadata?.total_decisions || 0,
+            ai_approval_rate: item.metadata?.ai_approval_rate || 0
+          }
     }));
 
     setSummaries(formattedSummaries);

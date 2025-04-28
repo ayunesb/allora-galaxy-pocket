@@ -3,14 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { ApprovalStats } from "@/types/decisions";
 
-interface ApprovalStats {
-  total_approved: number;
-  ai_approved: number;
-  human_approved: number;
-}
-
-async function fetchApprovalStats() {
+async function fetchApprovalStats(): Promise<ApprovalStats> {
   const { data, error } = await supabase.rpc('count_strategy_approvals');
   if (error) throw error;
   return data as ApprovalStats;
