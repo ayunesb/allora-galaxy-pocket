@@ -18,7 +18,8 @@ export function useRolePermissions() {
       canCreateStrategy: isContributor,
       canApproveStrategy: isEditor,
       canViewAnalytics: true,
-      canEditSettings: isAdmin
+      canEditSettings: isAdmin,
+      isAdmin  // Add isAdmin property
     };
   }, [userRole]);
   

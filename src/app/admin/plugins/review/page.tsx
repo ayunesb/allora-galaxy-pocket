@@ -22,7 +22,8 @@ type PluginSubmission = {
 };
 
 export default function PluginReviewPanel() {
-  const { isAdmin } = useRolePermissions();
+  const permissions = useRolePermissions();
+  const isAdmin = permissions.canManageUsers; // Use canManageUsers instead of isAdmin
   const [submissions, setSubmissions] = useState<PluginSubmission[]>([]);
   const [activeTab, setActiveTab] = useState<string>("pending");
   const [isLoading, setIsLoading] = useState<Record<string, boolean>>({});

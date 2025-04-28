@@ -14,3 +14,6 @@ export interface Plugin {
   changelog?: any;
   created_at?: string;
 }
+
+// Add this type alias to fix the PluginKey reference issue
+export type PluginKey = Plugin['key'];

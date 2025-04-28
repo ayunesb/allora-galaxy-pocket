@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Download, FileText, Loader2 } from "lucide-react";
@@ -11,7 +12,8 @@ import { useActivityExport } from "./hooks/useActivityExport";
 
 export default function TeamActivityDashboard() {
   const { tenant } = useTenant();
-  const { isAdmin } = useRolePermissions();
+  const permissions = useRolePermissions();
+  const isAdmin = permissions.canManageUsers; // Use canManageUsers instead of isAdmin
   const navigate = useNavigate();
   const [logs, setLogs] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);

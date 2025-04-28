@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePlugins } from "@/hooks/usePlugins";
 import { toast } from "sonner";
 import PluginConfigEditor from "@/app/admin/plugins/PluginConfigEditor";
-import { PluginKey } from "@/types/plugin";
+import { PluginKey, Plugin } from "@/types/plugin";
 import { usePluginLogger } from "@/lib/plugins/logPluginUsage";
 import { useEffect } from "react";
 

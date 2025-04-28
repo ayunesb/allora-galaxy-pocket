@@ -15,7 +15,8 @@ import { MemoryScoreIndicator } from "./components/MemoryScoreIndicator";
 import AgentTabs from "./AgentTabs";
 
 export default function AgentSpacePage() {
-  const { isAdmin } = useRolePermissions();
+  const permissions = useRolePermissions();
+  const isAdmin = permissions.canManageUsers;
   const { tenant } = useTenant();
   const { data: agent, isLoading } = useAgentProfile();
   const [memoryStats, setMemoryStats] = useState<{

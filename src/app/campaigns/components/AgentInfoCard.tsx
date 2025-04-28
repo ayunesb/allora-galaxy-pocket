@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 
 export function AgentInfoCard() {
   const { agentProfile, isLoading } = useAgentContext();
-  const { isAdmin } = useRolePermissions();
+  const permissions = useRolePermissions();
+  const isAdmin = permissions.canManageUsers; // Use canManageUsers instead of isAdmin
 
   if (isLoading) {
     return (

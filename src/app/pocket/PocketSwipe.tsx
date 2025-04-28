@@ -15,8 +15,7 @@ import { useCampaignApproval } from "@/hooks/useCampaignApproval";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import ErrorAlert from "@/components/ui/ErrorAlert";
 
-type ApprovalItem = Strategy | Campaign | PricingDecision | HireDecision;
-
+// Define interfaces for the decision types
 interface PricingDecision {
   id: string;
   title: string;
@@ -25,6 +24,7 @@ interface PricingDecision {
   currentPrice?: number;
   suggestedPrice?: number;
   status: string;
+  tenant_id: string;
 }
 
 interface HireDecision {
@@ -35,7 +35,14 @@ interface HireDecision {
   role: string;
   salary_range?: string;
   status: string;
+  tenant_id: string;
 }
+
+// Define a union type for all approval items
+type ApprovalItem = (Strategy & { type: 'strategy' }) | 
+                    (Campaign & { type: 'campaign' }) | 
+                    PricingDecision | 
+                    HireDecision;
 
 const PocketSwipe = () => {
   const [activeTab, setActiveTab] = useState("campaigns");
@@ -58,7 +65,7 @@ const PocketSwipe = () => {
         .order('created_at', { ascending: false });
         
       if (error) throw error;
-      return data.map(strategy => ({ ...strategy, type: 'strategy' }));
+      return data.map(strategy => ({ ...strategy, type: 'strategy' } as Strategy & { type: 'strategy' }));
     },
     enabled: !!tenant?.id && activeTab === 'strategies'
   });
@@ -76,7 +83,7 @@ const PocketSwipe = () => {
         .order('created_at', { ascending: false });
         
       if (error) throw error;
-      return data.map(campaign => ({ ...campaign, type: 'campaign' }));
+      return data.map(campaign => ({ ...campaign, type: 'campaign' } as Campaign & { type: 'campaign' }));
     },
     enabled: !!tenant?.id && activeTab === 'campaigns'
   });
@@ -104,7 +111,7 @@ const PocketSwipe = () => {
   const approve = async () => {
     if (!tenant?.id || index >= items.length) return;
     
-    const item = items[index];
+    const item = items[index] as ApprovalItem;
     try {
       let success = false;
       
@@ -126,7 +133,7 @@ const PocketSwipe = () => {
           await supabase.from("agent_memory").insert({
             tenant_id: tenant.id,
             agent_name: "CEO",
-            context: `User approved strategy: ${item.title || 'Untitled'}`,
+            context: `User approved strategy: ${(item as Strategy & { type: 'strategy' }).title || 'Untitled'}`,
             type: "feedback",
             is_user_submitted: true,
             summary: "Strategy approval",
@@ -142,9 +149,9 @@ const PocketSwipe = () => {
           break;
           
         case 'pricing':
-          // Handle pricing decision approval
+          // Handle pricing decision approval using type assertion for tables not in the schema
           const { error: pricingError } = await supabase
-            .from('pricing_decisions')
+            .from('pricing_decisions' as any)
             .update({ status: 'approved' })
             .eq('id', item.id)
             .eq('tenant_id', tenant.id);
@@ -154,9 +161,9 @@ const PocketSwipe = () => {
           break;
           
         case 'hire':
-          // Handle hire decision approval
+          // Handle hire decision approval using type assertion for tables not in the schema
           const { error: hireError } = await supabase
-            .from('hire_decisions')
+            .from('hire_decisions' as any)
             .update({ status: 'approved' })
             .eq('id', item.id)
             .eq('tenant_id', tenant.id);
@@ -188,7 +195,7 @@ const PocketSwipe = () => {
   const decline = async () => {
     if (!tenant?.id || index >= items.length) return;
     
-    const item = items[index];
+    const item = items[index] as ApprovalItem;
     try {
       let success = false;
       
@@ -210,7 +217,7 @@ const PocketSwipe = () => {
           await supabase.from("agent_memory").insert({
             tenant_id: tenant.id,
             agent_name: "CEO",
-            context: `User declined strategy: ${item.title || 'Untitled'}`,
+            context: `User declined strategy: ${(item as Strategy & { type: 'strategy' }).title || 'Untitled'}`,
             type: "feedback",
             is_user_submitted: true,
             summary: "Strategy rejection",
@@ -227,10 +234,10 @@ const PocketSwipe = () => {
           
         case 'pricing':
         case 'hire':
-          // Handle other decision types
+          // Handle other decision types using type assertion for tables not in schema
           const table = item.type === 'pricing' ? 'pricing_decisions' : 'hire_decisions';
           const { error: decisionError } = await supabase
-            .from(table)
+            .from(table as any)
             .update({ status: 'rejected' })
             .eq('id', item.id)
             .eq('tenant_id', tenant.id);
@@ -297,11 +304,18 @@ const PocketSwipe = () => {
       );
     }
 
-    const current = items[index];
+    const current = items[index] as ApprovalItem;
+    // Handle different item types for the title/name field access
+    const itemTitle = current.type === 'strategy' ? 
+      (current as Strategy & { type: 'strategy' }).title || 'Untitled Strategy' : 
+      current.type === 'campaign' ? 
+        (current as Campaign & { type: 'campaign' }).name || 'Untitled Campaign' :
+        current.title || 'Untitled Decision';
+        
     return (
       <>
         <SwipeCard 
-          title={current.title || current.name} 
+          title={itemTitle}
           summary={current.description}
           type={current.type}
           metadata={current} 
