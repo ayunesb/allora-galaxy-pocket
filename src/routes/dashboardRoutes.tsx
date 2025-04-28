@@ -2,7 +2,7 @@
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import DashboardPage from "@/app/dashboard/page";
-import StartupDashboard from "@/app/startup/StartupDashboard";
+import { StartupDashboard } from "@/app/startup/StartupDashboard";
 import KpiDashboard from "@/app/insights/kpis/page";
 import TeamActivityDashboard from "@/app/dashboard/team-activity/TeamActivityDashboard";
 import IncidentsDashboard from "@/app/dashboard/incidents/page";
