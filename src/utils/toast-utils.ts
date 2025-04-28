@@ -42,11 +42,96 @@ export const showToast = {
   promise: <T>(
     promise: Promise<T>,
     messages: {
-      loading?: string;
-      success?: string | ((data: T) => string);
-      error?: string | ((error: unknown) => string);
+      loading: string;
+      success: string | ((data: T) => string);
+      error: string | ((error: unknown) => string);
+      description?: string;
     }
   ) => {
-    return toast.promise(promise, messages);
+    return ToastService.promise(promise, {
+      loading: messages.loading,
+      success: messages.success,
+      error: messages.error,
+      description: messages.description
+    });
+  },
+  
+  api: {
+    error: (error: unknown, title: string = "API Error") => {
+      let message = "Unknown error occurred";
+      if (error instanceof Error) {
+        message = error.message;
+      } else if (typeof error === 'string') {
+        message = error;
+      } else if (error && typeof error === 'object' && 'message' in error) {
+        message = String(error.message);
+      }
+      
+      ToastService.error({
+        title,
+        description: message
+      });
+      
+      console.error(`API Error (${title}):`, error);
+    },
+    
+    networkError: (error: unknown) => {
+      ToastService.network(error, {
+        title: "Connection Error",
+        description: "Please check your internet connection and try again"
+      });
+    }
   }
 };
+
+/**
+ * Safe wrapper for async functions that shows toast messages on error
+ */
+export function withErrorHandling<T extends (...args: any[]) => Promise<any>>(
+  fn: T,
+  errorMessage: string = "An error occurred"
+): (...args: Parameters<T>) => Promise<ReturnType<T>> {
+  return async (...args: Parameters<T>): Promise<ReturnType<T>> => {
+    try {
+      return await fn(...args);
+    } catch (error) {
+      showToast.api.error(error, errorMessage);
+      throw error;
+    }
+  };
+}
+
+/**
+ * Creates a version of a function that will display a loading toast while running
+ * and show success/error toasts based on the result
+ */
+export function withLoadingToast<T extends (...args: any[]) => Promise<any>>(
+  fn: T, 
+  messages: {
+    loading: string;
+    success: string;
+    error: string;
+  }
+): (...args: Parameters<T>) => Promise<ReturnType<T>> {
+  return async (...args: Parameters<T>): Promise<ReturnType<T>> => {
+    const toastId = ToastService.loading({
+      title: messages.loading
+    });
+    
+    try {
+      const result = await fn(...args);
+      ToastService.success({
+        title: messages.success,
+        id: toastId
+      });
+      return result;
+    } catch (error) {
+      ToastService.error({
+        title: messages.error,
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+        id: toastId
+      });
+      throw error;
+    }
+  };
+}

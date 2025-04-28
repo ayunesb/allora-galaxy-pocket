@@ -41,7 +41,7 @@ export class ToastService {
   }
   
   static warning(options: ToastOptions): string | number {
-    return toast(options.title, {
+    return toast.warning(options.title, {
       description: options.description,
       duration: options.duration || 4000,
       id: options.id,
@@ -69,6 +69,7 @@ export class ToastService {
       error: string | ((error: unknown) => string);
       description?: string;
       id?: string | number;
+      position?: 'top-left' | 'top-right' | 'top-center' | 'bottom-left' | 'bottom-right' | 'bottom-center';
     }
   ): Promise<T> {
     return toast.promise(promise, {
@@ -76,7 +77,36 @@ export class ToastService {
       success: options.success,
       error: options.error,
       description: options.description,
-      id: options.id
+      id: options.id,
+      position: options.position
+    });
+  }
+  
+  static custom(options: ToastOptions & { icon?: React.ReactNode }): string | number {
+    return toast(options.title, {
+      description: options.description,
+      duration: options.duration || 4000,
+      id: options.id,
+      position: options.position,
+      icon: options.icon
+    });
+  }
+  
+  static network(error: unknown, options?: Partial<ToastOptions>): string | number {
+    let message = "Network error";
+    
+    if (error instanceof Error) {
+      message = error.message;
+    } else if (typeof error === 'string') {
+      message = error;
+    }
+    
+    return this.error({
+      title: options?.title || "Connection problem",
+      description: options?.description || message,
+      duration: options?.duration || 5000,
+      id: options?.id,
+      position: options?.position
     });
   }
 }
