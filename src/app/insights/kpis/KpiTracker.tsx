@@ -6,21 +6,12 @@ import { useKpiMetrics } from "./hooks/useKpiMetrics";
 import KpiLoadingState from "./components/KpiLoadingState";
 import KpiErrorState from "./components/KpiErrorState";
 
-interface KpiMetricCardProps {
-  kpi_name?: string;
-  value: number;
-  target?: number;
-  trend_direction?: 'up' | 'down' | 'neutral';
-  trend?: 'up' | 'down' | 'neutral';
-  last_value?: number;
-}
-
 export function KpiTracker() {
   const [dateRange, setDateRange] = useState("30");
-  const { data: metrics, isLoading, error } = useKpiMetrics(dateRange);
+  const { data: metrics, isLoading, error, refetch } = useKpiMetrics({ dateRange: Number(dateRange) });
 
   if (isLoading) return <KpiLoadingState />;
-  if (error) return <KpiErrorState error={error} />;
+  if (error) return <KpiErrorState error={error} onRetry={() => refetch()} />;
   
   return (
     <div className="space-y-6">
@@ -45,8 +36,8 @@ export function KpiTracker() {
             kpi_name={metric.kpi_name}
             value={metric.value}
             target={metric.target}
-            trend_direction={metric.trend_direction || metric.trend}
-            last_value={metric.last_value}
+            trend={metric.trend || metric.trend_direction}
+            changePercent={metric.changePercent}
           />
         ))}
       </div>

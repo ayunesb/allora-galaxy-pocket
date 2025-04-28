@@ -6,7 +6,7 @@ import { KpiMetric } from "@/types/kpi";
 import { subDays } from "date-fns";
 
 interface UseKpiMetricsOptions {
-  dateRange?: number;
+  dateRange?: number | string;
   category?: string;
   searchQuery?: string;
 }
@@ -15,10 +15,11 @@ export function useKpiMetrics(options: UseKpiMetricsOptions = {}) {
   const { tenant } = useTenant();
   const { dateRange = 30, category, searchQuery } = options;
   
-  const startDate = subDays(new Date(), dateRange);
+  const daysNumber = typeof dateRange === 'string' ? parseInt(dateRange) : dateRange;
+  const startDate = subDays(new Date(), daysNumber);
 
   return useQuery({
-    queryKey: ['kpi-metrics', tenant?.id, dateRange, category, searchQuery],
+    queryKey: ['kpi-metrics', tenant?.id, daysNumber, category, searchQuery],
     queryFn: async () => {
       if (!tenant?.id) return [];
 
@@ -48,12 +49,14 @@ export function useKpiMetrics(options: UseKpiMetricsOptions = {}) {
         tenant_id: metric.tenant_id,
         kpi_name: metric.metric || '',
         metric: metric.metric || '',
+        label: metric.metric || '', // Add label for compatibility
         value: Number(metric.value),
         trend: determineTrend(Number(metric.value)),
         changePercent: 0, // Would ideally be calculated by comparing to historical data
         created_at: metric.created_at,
         updated_at: metric.updated_at,
-        recorded_at: metric.recorded_at
+        recorded_at: metric.recorded_at,
+        description: '' // Add empty description for compatibility
       })) as KpiMetric[];
     },
     enabled: !!tenant?.id

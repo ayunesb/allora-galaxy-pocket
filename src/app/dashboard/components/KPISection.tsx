@@ -1,59 +1,66 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { useKpiMetrics } from "@/hooks/useKpiMetrics"; 
-import KpiCard from "@/app/insights/kpis/components/KpiCard";
-import { KpiMetricDialog } from "@/app/dashboard/components/KpiMetricDialog"; 
-import { DataLoader } from "@/components/ui/data-loader";
+import { KpiMetric } from '@/types/kpi';
+import { ArrowUpIcon, ArrowDownIcon, ArrowRightIcon } from "lucide-react";
 
-export function KPISection() {
-  const { data: metrics, isLoading, error, refetch } = useKpiMetrics();
-  
-  const handleKpiSuccess = () => {
-    refetch();
-  };
-  
+interface KpiSectionProps {
+  kpiMetrics: KpiMetric[];
+}
+
+export const KpiSection: React.FC<KpiSectionProps> = ({ kpiMetrics = [] }) => {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>KPI Metrics</CardTitle>
-        <KpiMetricDialog onSuccess={handleKpiSuccess} />
-      </CardHeader>
-      <CardContent>
-        <DataLoader
-          isLoading={isLoading}
-          isError={!!error}
-          error={error}
-          data={metrics}
-          onRetry={refetch}
-          emptyState={
-            <div className="text-center py-8">
-              <p className="text-muted-foreground mb-4">No KPI metrics found</p>
-              <KpiMetricDialog onSuccess={handleKpiSuccess}>
-                <Button variant="outline" className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  Add your first KPI metric
-                </Button>
-              </KpiMetricDialog>
-            </div>
-          }
-        >
-          {(metricsData) => (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {metricsData.map((metric, idx) => (
-                <KpiCard 
-                  key={metric.id || idx}
-                  kpi_name={metric.kpi_name || metric.metric}
-                  value={metric.value}
-                  trend={metric.trend}
-                />
+    <div className="col-span-3">
+      <Card className="h-full">
+        <CardHeader>
+          <CardTitle>KPI Metrics</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {kpiMetrics.length === 0 ? (
+            <p className="text-muted-foreground text-center py-4">No KPI metrics available</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {kpiMetrics.map((metric, index) => (
+                <Card key={metric.id || index} className="bg-muted/50">
+                  <CardContent className="p-4">
+                    <h3 className="font-medium">{metric.kpi_name || metric.metric}</h3>
+                    <div className="flex items-center justify-between mt-2">
+                      <p className="text-2xl font-bold">
+                        {typeof metric.value === 'number' ? metric.value.toLocaleString() : metric.value}
+                      </p>
+                      {metric.trend && (
+                        <div className={`flex items-center ${
+                          metric.trend === 'up' 
+                            ? 'text-green-600' 
+                            : metric.trend === 'down' 
+                            ? 'text-red-600' 
+                            : 'text-gray-600'
+                        }`}>
+                          {metric.trend === 'up' && <ArrowUpIcon className="h-4 w-4" />}
+                          {metric.trend === 'down' && <ArrowDownIcon className="h-4 w-4" />}
+                          {metric.trend === 'neutral' && <ArrowRightIcon className="h-4 w-4" />}
+                          {metric.changePercent && (
+                            <span className="ml-1 text-sm">
+                              {Math.abs(metric.changePercent).toFixed(1)}%
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    {metric.target && (
+                      <div className="text-xs text-muted-foreground mt-2">
+                        Target: {metric.target}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               ))}
             </div>
           )}
-        </DataLoader>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
-}
+};
+
+export default KpiSection;

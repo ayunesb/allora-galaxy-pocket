@@ -5,12 +5,21 @@ import { useTenant } from "@/hooks/useTenant";
 import { KpiMetric } from "@/types/kpi";
 import { subDays } from "date-fns";
 
-export function useKpiMetrics(dateRange = "30", category?: string, searchQuery?: string) {
+interface UseKpiMetricsOptions {
+  dateRange?: number | string;
+  category?: string;
+  searchQuery?: string;
+}
+
+export function useKpiMetrics(options: UseKpiMetricsOptions = {}) {
   const { tenant } = useTenant();
-  const startDate = subDays(new Date(), parseInt(dateRange));
+  const { dateRange = 30, category, searchQuery } = options;
+  
+  const daysNumber = typeof dateRange === 'string' ? parseInt(dateRange) : dateRange;
+  const startDate = subDays(new Date(), daysNumber);
 
   return useQuery({
-    queryKey: ['kpi-metrics', tenant?.id, dateRange, category, searchQuery],
+    queryKey: ['kpi-metrics', tenant?.id, daysNumber, category, searchQuery],
     queryFn: async () => {
       if (!tenant?.id) return [];
 

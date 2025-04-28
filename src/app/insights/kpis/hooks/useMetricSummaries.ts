@@ -30,7 +30,7 @@ export function useMetricSummaries(metrics: KpiMetric[]) {
     return Object.values(metricsMap).map(metric => {
       // Format as metrics card props
       return {
-        title: metric.kpi_name || metric.label || 'Unnamed Metric',
+        title: metric.kpi_name || metric.metric || 'Unnamed Metric',
         value: String(metric.value || '0'),
         trend: metric.trend || undefined,
         change: metric.changePercent ? `${metric.changePercent}%` : undefined,

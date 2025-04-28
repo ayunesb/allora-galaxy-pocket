@@ -12,9 +12,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { KpiAlertsPanel } from "./components/KpiAlertsPanel";
 
 export default function KpiDashboard() {
-  const { data: metrics, isLoading, error, refetch } = useKpiMetrics();
-  const { alerts, isLoading: isLoadingAlerts } = useKpiAlerts({ activeOnly: true });
   const [timeframe, setTimeframe] = useState<number>(7);
+  const { data: metrics, isLoading, error, refetch } = useKpiMetrics({ dateRange: timeframe });
+  const { alerts, isLoading: isLoadingAlerts } = useKpiAlerts({ activeOnly: true });
 
   const handleTimeframeChange = (days: number) => {
     setTimeframe(days);

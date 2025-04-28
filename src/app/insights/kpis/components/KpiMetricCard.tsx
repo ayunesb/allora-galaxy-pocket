@@ -4,7 +4,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ArrowUp, ArrowDown, Minus } from "lucide-react";
 import { KpiMetric } from '@/types/kpi';
 
-type KpiMetricCardProps = KpiMetric & {
+type KpiMetricCardProps = {
+  kpi_name?: string;
+  value: string | number;
+  trend?: 'up' | 'down' | 'neutral';
+  changePercent?: number;
+  target?: string | number;
   onUpdate?: () => void;
 };
 
@@ -13,6 +18,7 @@ export function KpiMetricCard({
   value,
   trend,
   changePercent,
+  target,
   onUpdate
 }: KpiMetricCardProps) {
   return (
@@ -43,6 +49,11 @@ export function KpiMetricCard({
           <p className="text-3xl font-bold">
             {typeof value === 'number' ? value.toLocaleString() : value}
           </p>
+          {target !== undefined && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Target: {typeof target === 'number' ? target.toLocaleString() : target}
+            </p>
+          )}
         </div>
       </CardContent>
     </Card>

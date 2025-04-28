@@ -11,6 +11,10 @@ export interface KpiMetric {
   trend?: 'up' | 'down' | 'neutral';
   changePercent?: number;
   target?: number | string;
+  label?: string; // Added for compatibility
+  description?: string; // Added for compatibility
+  trend_direction?: 'up' | 'down' | 'neutral'; // Added for compatibility with KpiTracker
+  last_value?: number; // Added for compatibility with KpiTracker
 }
 
 export interface KpiAlert {
@@ -44,4 +48,22 @@ export interface KpiInsight {
   tenant_id: string;
   outcome?: string;
   suggested_action?: string;
+}
+
+// Add KpiAlertRule interface for KpiAlertRuleForm and KpiAlertRules components
+export interface KpiAlertRule {
+  id: string;
+  tenant_id: string;
+  kpi_name: string;
+  name: string;
+  condition: string;
+  threshold: number;
+  message: string;
+  severity: 'low' | 'medium' | 'high';
+  status: 'active' | 'inactive';
+  active: boolean;
+  created_at: string;
+  updated_at?: string;
+  last_triggered?: string;
+  compare_period?: string;
 }
