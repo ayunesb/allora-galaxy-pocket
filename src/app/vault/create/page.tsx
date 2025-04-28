@@ -1,6 +1,4 @@
 
-"use client";
-
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -13,6 +11,17 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Save, Rocket } from "lucide-react";
+
+interface AgentMemory {
+  id: string;
+  agent_name: string;
+  context: string;
+  type: string;
+  summary?: string; // Add these optional fields for agent memory
+  tags?: string[];
+  is_user_submitted: boolean;
+  remix_count: number;
+}
 
 interface VaultStrategyForm {
   title: string;
@@ -55,13 +64,14 @@ export default function VaultStrategyCreator() {
     }
 
     if (memory) {
+      const memoryData = memory as AgentMemory;
       form.reset({
-        title: `Remixed from ${memory.agent_name} Memory`,
-        description: memory.summary,
-        tags: memory.tags || [],
+        title: `Remixed from ${memoryData.agent_name} Memory`,
+        description: memoryData.context || "",
+        tags: memoryData.tags || [],
         goal: ""
       });
-      setTags(memory.tags || []);
+      setTags(memoryData.tags || []);
     }
   };
 
@@ -98,7 +108,9 @@ export default function VaultStrategyCreator() {
       agent_name: 'UserContributor',
       tenant_id: localStorage.getItem("currentTenantId"),
       summary: formData.description.slice(0, 280),
+      context: formData.description,
       tags: tags,
+      type: 'contribution',
       is_user_submitted: true
     });
 

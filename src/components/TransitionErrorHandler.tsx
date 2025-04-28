@@ -1,104 +1,76 @@
 
-import React, { useState, useEffect } from 'react';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { useSystemLogs } from '@/hooks/useSystemLogs';
+import { Home, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface TransitionErrorHandlerProps {
-  from: string;
-  to: string;
-  onRetry: () => void;
-  error?: Error | null;
   children: React.ReactNode;
 }
 
-export function TransitionErrorHandler({
-  from,
-  to,
-  onRetry,
-  error,
-  children
-}: TransitionErrorHandlerProps) {
-  const [hasError, setHasError] = useState<boolean>(!!error);
-  const [errorDetails, setErrorDetails] = useState<string | null>(error?.message || null);
-  const { logActivity } = useSystemLogs();
-  
+export function TransitionErrorHandler({ children }: TransitionErrorHandlerProps) {
+  const [hasError, setHasError] = useState(false);
+  const [errorInfo, setErrorInfo] = useState<string | null>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Reset error state on route change
   useEffect(() => {
-    setHasError(!!error);
-    setErrorDetails(error?.message || null);
-    
-    if (error) {
-      // Log transition error
-      logActivity({
-        event_type: 'TRANSITION_ERROR',
-        message: `Error during transition from ${from} to ${to}: ${error.message}`,
-        meta: {
-          from,
-          to,
-          error: error.message,
-          stack: error.stack
-        },
-        severity: 'error'
+    setHasError(false);
+    setErrorInfo(null);
+  }, [location.pathname]);
+
+  // Global error handler for route transition errors
+  useEffect(() => {
+    const handleRouteError = (event: ErrorEvent) => {
+      console.error('Route transition error:', event.error);
+      setHasError(true);
+      setErrorInfo(event.error?.message || 'Unknown error during navigation');
+      toast.error('Navigation error', {
+        description: 'There was a problem loading the page'
       });
-    }
-  }, [error, from, to, logActivity]);
-  
-  const handleRetry = async () => {
-    try {
-      // Log retry attempt
-      await logActivity({
-        event_type: 'TRANSITION_RETRY',
-        message: `Retrying transition from ${from} to ${to}`,
-        meta: { from, to },
-        severity: 'info'
-      });
-      
-      onRetry();
-      setHasError(false);
-      setErrorDetails(null);
-    } catch (retryError: any) {
-      setErrorDetails(retryError.message || 'Retry failed');
-      
-      // Log retry failure
-      logActivity({
-        event_type: 'TRANSITION_RETRY_FAILED',
-        message: `Retry failed for transition from ${from} to ${to}: ${retryError.message}`,
-        meta: {
-          from,
-          to,
-          error: retryError.message
-        },
-        severity: 'error'
-      });
-    }
+      event.preventDefault();
+    };
+
+    window.addEventListener('error', handleRouteError);
+    return () => window.removeEventListener('error', handleRouteError);
+  }, []);
+
+  const handleRefresh = () => {
+    window.location.reload();
   };
 
-  if (!hasError) {
-    return <>{children}</>;
-  }
+  const handleGoHome = () => {
+    navigate('/');
+  };
 
-  return (
-    <div className="space-y-4">
-      <Alert variant="destructive" className="mb-4">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Error during transition</AlertTitle>
-        <AlertDescription className="space-y-4">
-          <p>
-            {errorDetails || `There was an error transitioning from ${from} to ${to}.`}
-          </p>
-          <div className="flex space-x-2 mt-2">
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={handleRetry}
-              className="flex items-center gap-1"
-            >
-              <RefreshCw className="h-3 w-3" /> Retry
+  if (hasError) {
+    return (
+      <div className="flex items-center justify-center h-screen p-4">
+        <div className="max-w-md w-full">
+          <Alert variant="destructive" className="mb-4">
+            <AlertTitle>Navigation Error</AlertTitle>
+            <AlertDescription>
+              {errorInfo || 'An error occurred while loading this page.'}
+            </AlertDescription>
+          </Alert>
+          
+          <div className="flex space-x-2">
+            <Button onClick={handleRefresh} className="flex items-center gap-1">
+              <RefreshCw className="h-4 w-4" /> 
+              Try Again
+            </Button>
+            <Button variant="outline" onClick={handleGoHome} className="flex items-center gap-1">
+              <Home className="h-4 w-4" /> 
+              Go to Dashboard
             </Button>
           </div>
-        </AlertDescription>
-      </Alert>
-    </div>
-  );
+        </div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
 }

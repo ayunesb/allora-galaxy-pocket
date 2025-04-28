@@ -1,73 +1,47 @@
 
-// Adding or updating KPI types to include KpiAlertRule
+export type KpiTrend = 'up' | 'down' | 'neutral';
 
 export interface KpiMetric {
-  id: string;
-  metric?: string;
-  kpi_name?: string;
-  value: number;
-  trend?: 'up' | 'down' | 'neutral';
-  changePercent?: number;
-  created_at: string;
-  updated_at?: string;
+  id?: string;
   tenant_id?: string;
-  recorded_at?: string;
+  kpi_name?: string;
+  metric?: string;
   label?: string;
-  description?: string;
-  status?: string;
+  value: number;
+  trend?: KpiTrend;
+  changePercent?: number;
   target?: number;
-  trend_direction?: 'up' | 'down' | 'neutral';
+  trend_direction?: KpiTrend;
   last_value?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface KpiAlert {
   id: string;
   kpi_name: string;
-  metric?: string;
   description: string;
-  message?: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  threshold: number;
-  condition?: '<' | '>' | 'falls_by_%' | 'rises_by_%';
-  target?: number;
+  severity: 'low' | 'medium' | 'high';
   current_value: number;
   previous_value?: number;
+  target?: number;
+  threshold?: number;
   percent_change?: number;
-  campaign_id?: string;
-  tenant_id: string;
+  outcome?: string;
+  status: 'pending' | 'acknowledged' | 'resolved';
   triggered_at: string;
   created_at: string;
-  status: 'pending' | 'triggered' | 'acknowledged' | 'resolved';
-  outcome?: string;
-  suggested_action?: string;
-}
-
-export interface KpiAlertRule {
-  id: string;
-  kpi_name: string;
-  condition: '<' | '>' | 'falls_by_%' | 'rises_by_%';
-  threshold: number;
-  compare_period: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  campaign_id?: string;
   tenant_id: string;
-  created_at: string;
-  updated_at?: string;
-  active: boolean;
+  campaign_id?: string;
 }
 
-export interface CampaignInsight {
+export interface KpiInsight {
   id: string;
   kpi_name: string;
   insight: string;
-  suggested_action?: string;
   impact_level?: string;
+  suggested_action?: string;
   campaign_id?: string;
-  tenant_id?: string;
-  created_at?: string;
-  campaigns?: {
-    id: string;
-    name: string;
-    status?: string;
-  };
+  tenant_id: string;
+  created_at: string;
 }
