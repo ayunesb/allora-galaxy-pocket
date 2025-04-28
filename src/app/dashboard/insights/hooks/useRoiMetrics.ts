@@ -1,53 +1,76 @@
 
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
-import type { TrendType } from "./useKpiHistory";
 
-export function useRoiMetrics(dateRange: string) {
+export function useRoiMetrics() {
   const { tenant } = useTenant();
-  const [roiData, setRoiData] = useState<{
-    current: number;
-    trend: TrendType;
-    change: number;
-    history?: Array<{ date: string; value: number }>;
-  } | null>(null);
 
-  const { data: kpiData } = useQuery({
-    queryKey: ['kpi-metrics-insights', tenant?.id, dateRange],
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["roi-metrics", tenant?.id],
     queryFn: async () => {
-      if (!tenant?.id) return [];
-      const { data, error } = await supabase
-        .from('kpi_metrics')
-        .select('*')
-        .eq('tenant_id', tenant.id);
+      if (!tenant?.id) return null;
 
-      if (error) throw error;
-      return data;
+      // Fetch campaign execution metrics
+      const { data: campaigns, error: campaignsError } = await supabase
+        .from("campaigns")
+        .select("execution_metrics, strategy_id")
+        .eq("tenant_id", tenant.id)
+        .not("execution_metrics", "is", null);
+
+      if (campaignsError) throw campaignsError;
+
+      // Fetch strategy data
+      const { data: strategies, error: strategiesError } = await supabase
+        .from("strategies")
+        .select("id, impact_score")
+        .eq("tenant_id", tenant.id);
+
+      if (strategiesError) throw strategiesError;
+
+      return { campaigns, strategies };
     },
-    enabled: !!tenant?.id
+    enabled: !!tenant?.id,
   });
 
-  useEffect(() => {
-    if (!tenant?.id || !kpiData) return;
+  const metrics = useMemo(() => {
+    if (!data) return null;
 
-    const revenueMetric = kpiData?.find(m => m.metric.toLowerCase() === 'revenue');
-    const costMetric = kpiData?.find(m => m.metric.toLowerCase() === 'cost_spent');
-    
-    if (revenueMetric && costMetric && parseFloat(costMetric.value) > 0) {
-      const revenue = parseFloat(revenueMetric.value);
-      const cost = parseFloat(costMetric.value);
-      const currentRoi = (revenue - cost) / cost;
-      
-      setRoiData({
-        current: currentRoi,
-        trend: 'neutral',
-        change: 0,
-        history: []
-      });
-    }
-  }, [tenant?.id, kpiData]);
+    const totalConversions = data.campaigns.reduce((sum, campaign) => {
+      const metrics = campaign.execution_metrics as { conversions?: number };
+      return sum + (metrics?.conversions || 0);
+    }, 0);
 
-  return { roiData, kpiData };
+    const totalViews = data.campaigns.reduce((sum, campaign) => {
+      const metrics = campaign.execution_metrics as { views?: number };
+      return sum + (metrics?.views || 0);
+    }, 0);
+
+    const totalClicks = data.campaigns.reduce((sum, campaign) => {
+      const metrics = campaign.execution_metrics as { clicks?: number };
+      return sum + (metrics?.clicks || 0);
+    }, 0);
+
+    // Convert to strings for display purposes
+    return {
+      conversions: totalConversions.toString(),
+      views: totalViews.toString(),
+      clicks: totalClicks.toString(),
+      conversionRate:
+        totalViews > 0
+          ? ((totalConversions / totalViews) * 100).toFixed(2) + "%"
+          : "0%",
+      clickRate:
+        totalViews > 0
+          ? ((totalClicks / totalViews) * 100).toFixed(2) + "%"
+          : "0%",
+    };
+  }, [data]);
+
+  return {
+    metrics,
+    isLoading,
+    error,
+  };
 }

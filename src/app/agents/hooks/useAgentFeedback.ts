@@ -1,55 +1,76 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenant } from "@/hooks/useTenant";
 import { AgentFeedback } from "@/types/agent";
+import { toast } from "sonner";
 
 export function useAgentFeedback() {
-  const { data: feedback = [], isLoading, error } = useQuery({
-    queryKey: ["agent-feedback"],
-    queryFn: async () => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [feedback, setFeedback] = useState<AgentFeedback[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const { tenant } = useTenant();
+
+  const getFeedback = useCallback(async (agent: string) => {
+    if (!tenant?.id) return [];
+    
+    setIsLoading(true);
+    try {
       const { data, error } = await supabase
         .from("agent_feedback")
         .select("*")
+        .eq("tenant_id", tenant.id)
+        .eq("agent", agent)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as AgentFeedback[];
-    },
-  });
-
-  const getTunedPrompt = async (tenantId: string) => {
-    try {
-      const { data: recentFeedback } = await supabase
-        .from("agent_feedback")
-        .select("feedback, rating")
-        .eq("to_agent", "CEO Agent")
-        .order("created_at", { ascending: false })
-        .limit(3);
-
-      // Using explicit type for the feedback items
-      const feedbackItems = recentFeedback || [];
-      const summary = feedbackItems
-        .map((f: { rating?: number; feedback?: string }) => 
-          `• [${f.rating || 0}/5] ${f.feedback || ''}`)
-        .join("\n");
-
-      return `
-You are the CEO Agent. Here is recent feedback on your past strategies:
-
-${summary || "No feedback yet."}
-
-Now generate a new strategy for this tenant based on their goals.
-`;
+      
+      // Explicitly cast the data to AgentFeedback[]
+      const typedFeedback = data as AgentFeedback[];
+      setFeedback(typedFeedback);
+      return typedFeedback;
     } catch (error) {
       console.error("Error fetching agent feedback:", error);
-      return `You are the CEO Agent. Generate a new strategy for this tenant based on their goals.`;
+      return [];
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, [tenant?.id]);
+
+  const submitFeedback = useCallback(async (feedbackData: Partial<AgentFeedback>) => {
+    if (!tenant?.id) {
+      toast.error("No active workspace");
+      return false;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from("agent_feedback")
+        .insert({
+          ...feedbackData,
+          tenant_id: tenant.id,
+          created_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+      
+      toast.success("Feedback submitted successfully");
+      return true;
+    } catch (error) {
+      console.error("Error submitting feedback:", error);
+      toast.error("Failed to submit feedback");
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [tenant?.id]);
 
   return {
     feedback,
     isLoading,
-    error,
-    getTunedPrompt,
+    isSubmitting,
+    getFeedback,
+    submitFeedback
   };
 }

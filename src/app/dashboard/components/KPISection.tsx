@@ -1,226 +1,215 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { KPITrackerWithData } from "@/components/KPITracker";
-import { KpiCampaignTracker } from "@/components/KpiCampaignTracker";
+
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { AlertCircle, TrendingUp, TrendingDown } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
-import { RefreshCw, AlertTriangle, ChevronRight, TrendingUp } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
-import { KPIChart } from "@/components/KPIChart";
-import { format, subDays } from "date-fns";
+import KpiMetricDialog from "./KpiMetricDialog";
+import { KpiAlert } from "@/types/kpi";
 
-type KPITrendsData = {
-  [metricName: string]: Array<{ date: string; value: number }>;
-};
-
-export function KPISection() {
+export default function KPISection() {
+  const [isLoading, setIsLoading] = useState(true);
+  const [metrics, setMetrics] = useState<any[]>([]);
+  const [alerts, setAlerts] = useState<KpiAlert[]>([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
   const { tenant } = useTenant();
-  const queryClient = useQueryClient();
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [trendTimeframe, setTrendTimeframe] = useState("7"); // default to 7 days
-  
-  const { data: kpiAlerts } = useQuery({
-    queryKey: ['kpi-alerts', tenant?.id],
-    queryFn: async () => {
-      if (!tenant?.id) return [];
-      
-      const { data, error } = await supabase
-        .from('kpi_alerts')
-        .select('*')
-        .eq('tenant_id', tenant.id)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false })
-        .limit(3);
-        
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!tenant?.id,
-  });
 
-  const { data: kpiTrends } = useQuery<KPITrendsData>({
-    queryKey: ['kpi-trends', tenant?.id, trendTimeframe],
-    queryFn: async () => {
-      if (!tenant?.id) return {};
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!tenant?.id) return;
       
-      const startDate = subDays(new Date(), parseInt(trendTimeframe)).toISOString();
-      
-      const { data, error } = await supabase
-        .from('kpi_metrics')
-        .select('*')
-        .eq('tenant_id', tenant.id)
-        .gte('recorded_at', startDate)
-        .order('recorded_at', { ascending: true });
+      setIsLoading(true);
+      try {
+        // Fetch metrics
+        const { data: metricsData, error: metricsError } = await supabase
+          .from('kpi_metrics')
+          .select('*')
+          .eq('tenant_id', tenant.id)
+          .order('updated_at', { ascending: false });
+
+        if (metricsError) throw metricsError;
         
-      if (error) throw error;
-      
-      // Group metrics by name for trend visualization
-      const groupedMetrics: KPITrendsData = {};
-      
-      if (data) {
-        data.forEach(metric => {
-          if (!groupedMetrics[metric.metric]) {
-            groupedMetrics[metric.metric] = [];
+        // Create a SQL function to alert user if this table doesn't exist
+        try {
+          // Safely attempt to fetch alerts
+          const { data: alertsData } = await supabase
+            .from('kpi_alerts')
+            .select('*')
+            .eq('tenant_id', tenant.id)
+            .eq('status', 'pending')
+            .order('created_at', { ascending: false });
+            
+          if (alertsData && alertsData.length > 0) {
+            setAlerts(alertsData as KpiAlert[]);
           }
-          
-          groupedMetrics[metric.metric].push({
-            date: format(new Date(metric.recorded_at), 'MM/dd'),
-            value: Number(metric.value)
-          });
-        });
+        } catch (alertError) {
+          console.log("KPI alerts table might not exist yet or other error:", alertError);
+          // No need to throw - we'll just have empty alerts
+        }
+        
+        setMetrics(metricsData || []);
+      } catch (error) {
+        console.error("Error fetching KPI data:", error);
+        toast.error("Failed to load KPI data");
+      } finally {
+        setIsLoading(false);
       }
-      
-      return groupedMetrics;
-    },
-    enabled: !!tenant?.id,
-  });
+    };
 
-  const refreshKPIMetrics = async () => {
-    if (!tenant?.id || isRefreshing) return;
+    fetchData();
+  }, [tenant?.id]);
+
+  const acknowledgeAlert = async (alertId: string) => {
+    if (!tenant?.id) return;
     
-    setIsRefreshing(true);
     try {
-      await supabase.functions.invoke('check-kpi-alerts', {
-        body: { tenant_id: tenant.id }
-      });
+      const { error } = await supabase
+        .from('kpi_alerts')
+        .update({ status: 'acknowledged' })
+        .eq('id', alertId)
+        .eq('tenant_id', tenant.id);
+        
+      if (error) throw error;
       
-      // Invalidate relevant queries
-      queryClient.invalidateQueries({ queryKey: ['kpi-metrics'] });
-      queryClient.invalidateQueries({ queryKey: ['kpi-alerts'] });
-      queryClient.invalidateQueries({ queryKey: ['kpi-trends'] });
-      
-      toast.success("KPI metrics refreshed successfully");
+      setAlerts(prev => prev.filter(a => a.id !== alertId));
+      toast.success("Alert acknowledged");
     } catch (error) {
-      console.error("Error refreshing KPI metrics:", error);
-      toast.error("Failed to refresh KPI metrics");
-    } finally {
-      setIsRefreshing(false);
+      console.error("Error acknowledging alert:", error);
+      toast.error("Failed to acknowledge alert");
     }
   };
 
-  const getTopMetric = () => {
-    if (!kpiTrends || Object.keys(kpiTrends).length === 0) return null;
-    
-    let bestMetric = null;
-    let highestGrowth = -Infinity;
-    
-    Object.entries(kpiTrends).forEach(([name, values]) => {
-      if (!values || values.length < 2) return;
-      
-      const firstValue = values[0].value;
-      const lastValue = values[values.length - 1].value;
-      
-      if (firstValue === 0) return; // Avoid division by zero
-      
-      const growth = ((lastValue - firstValue) / firstValue) * 100;
-      
-      if (growth > highestGrowth) {
-        highestGrowth = growth;
-        bestMetric = {
-          name,
-          growth: growth.toFixed(1),
-          data: values
-        };
+  const handleAddMetric = (metricName: string) => {
+    setSelectedMetric(metricName);
+    setIsDialogOpen(true);
+  };
+
+  const formatValue = (value: number) => {
+    if (value >= 1000000) {
+      return (value / 1000000).toFixed(1) + 'M';
+    } else if (value >= 1000) {
+      return (value / 1000).toFixed(1) + 'K';
+    }
+    return value.toString();
+  };
+
+  const getPercentChange = (metric: any) => {
+    const metricHistory = metrics.filter(m => m.metric === metric.metric);
+    if (metricHistory.length > 1) {
+      const current = metric.value;
+      const previous = metricHistory[1].value;
+      if (previous === 0) return null;
+      return ((current - previous) / previous) * 100;
+    }
+    return null;
+  };
+
+  const renderMetricCards = () => {
+    // Group by metric name and get the latest for each metric
+    const uniqueMetrics: Record<string, any> = {};
+    metrics.forEach(metric => {
+      if (!uniqueMetrics[metric.metric] || 
+          new Date(metric.updated_at) > new Date(uniqueMetrics[metric.metric].updated_at)) {
+        uniqueMetrics[metric.metric] = metric;
       }
     });
     
-    return bestMetric;
+    return Object.values(uniqueMetrics).map((metric: any) => {
+      const percentChange = getPercentChange(metric);
+      const isPositive = percentChange && percentChange > 0;
+      const isNegative = percentChange && percentChange < 0;
+      
+      return (
+        <Card key={metric.id} className="overflow-hidden">
+          <CardHeader className="py-3">
+            <CardTitle className="text-sm font-medium">{metric.metric}</CardTitle>
+          </CardHeader>
+          <CardContent className="pb-3">
+            <div className="flex justify-between items-baseline">
+              <h3 className="text-2xl font-bold">{formatValue(metric.value)}</h3>
+              {percentChange !== null && (
+                <div className={`flex items-center text-xs ${isPositive ? 'text-green-600' : isNegative ? 'text-red-600' : ''}`}>
+                  {isPositive ? <TrendingUp className="h-3 w-3 mr-1" /> : 
+                   isNegative ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
+                  {Math.abs(percentChange).toFixed(1)}%
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      );
+    });
   };
 
-  const topMetric = getTopMetric();
-
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div className="lg:col-span-2">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-medium">Key Performance Indicators</h3>
-              <div className="flex gap-2">
-                <select
-                  className="px-2 py-1 text-sm border rounded bg-background"
-                  value={trendTimeframe}
-                  onChange={(e) => setTrendTimeframe(e.target.value)}
-                >
-                  <option value="7">Last 7 days</option>
-                  <option value="14">Last 14 days</option>
-                  <option value="30">Last 30 days</option>
-                  <option value="90">Last 90 days</option>
-                </select>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={refreshKPIMetrics} 
-                  disabled={isRefreshing}
-                >
-                  <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                  Refresh
-                </Button>
-              </div>
-            </div>
-            <KPITrackerWithData />
-            
-            {topMetric && (
-              <div className="mt-6 pt-4 border-t">
-                <div className="flex justify-between items-center mb-2">
-                  <h4 className="text-sm font-medium flex items-center">
-                    <TrendingUp className="h-4 w-4 mr-2 text-green-500" />
-                    Top Performing Metric: {topMetric.name}
-                  </h4>
-                  <span className="text-green-500 text-sm font-medium">+{topMetric.growth}%</span>
-                </div>
-                <div className="h-[150px]">
-                  <KPIChart data={topMetric.data} />
-                </div>
-              </div>
-            )}
-            
-            {kpiAlerts && kpiAlerts.length > 0 && (
-              <div className="mt-4 border-t pt-4">
-                <h4 className="text-sm font-medium flex items-center mb-2">
-                  <AlertTriangle className="h-4 w-4 mr-2 text-amber-500" />
-                  Active Alerts
-                </h4>
-                <div className="space-y-2">
-                  {kpiAlerts.map(alert => (
-                    <div key={alert.id} className="text-sm p-2 bg-amber-50 border border-amber-100 rounded-md">
-                      {alert.message}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold">KPI Metrics</h2>
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => setIsDialogOpen(true)}
+        >
+          Add Metric
+        </Button>
       </div>
-      <div>
-        <KpiCampaignTracker onUpdate={() => {
-          queryClient.invalidateQueries({ queryKey: ['kpi-metrics'] });
-          queryClient.invalidateQueries({ queryKey: ['kpi-trends'] });
-        }} />
-        <Card className="mt-4">
-          <CardContent className="pt-6">
-            <div className="flex justify-between items-center">
-              <h3 className="font-medium">Quick Actions</h3>
-              <Button variant="ghost" size="sm">
-                <ChevronRight className="h-4 w-4" />
+      
+      {alerts.length > 0 && (
+        <div className="mb-4 space-y-2">
+          {alerts.map((alert) => (
+            <div 
+              key={alert.id}
+              className="flex items-center justify-between p-2 bg-amber-50 border border-amber-200 rounded-md"
+            >
+              <div className="flex items-center">
+                <AlertCircle className="h-4 w-4 text-amber-500 mr-2" />
+                <span className="text-sm">{alert.message}</span>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => acknowledgeAlert(alert.id)}
+              >
+                Dismiss
               </Button>
             </div>
-            <div className="mt-4 space-y-2">
-              <Button variant="outline" className="w-full justify-start" size="sm">
-                <TrendingUp className="h-4 w-4 mr-2" />
-                Generate KPI Report
-              </Button>
-              <Button variant="outline" className="w-full justify-start" size="sm">
-                <AlertTriangle className="h-4 w-4 mr-2" />
-                Configure Alerts
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          ))}
+        </div>
+      )}
+      
+      {isLoading ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {[...Array(3)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader className="py-3">
+                <div className="h-4 bg-gray-200 rounded-full w-2/3" />
+              </CardHeader>
+              <CardContent className="pb-3">
+                <div className="h-6 bg-gray-200 rounded-full w-1/2" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : metrics.length === 0 ? (
+        <div className="bg-muted/50 border rounded-lg p-6 text-center">
+          <p className="text-muted-foreground mb-2">No KPI metrics available yet</p>
+          <Button onClick={() => setIsDialogOpen(true)}>Add Your First Metric</Button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {renderMetricCards()}
+        </div>
+      )}
+      
+      <KpiMetricDialog 
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        selectedMetric={selectedMetric}
+        onSelectMetric={setSelectedMetric}
+      />
     </div>
   );
 }

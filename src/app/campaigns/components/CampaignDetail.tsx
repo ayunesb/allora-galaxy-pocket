@@ -1,217 +1,126 @@
+
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useTenant } from "@/hooks/useTenant";
-import { Loader2, ArrowLeft, Calendar } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
-import { CampaignExecutionTracker } from "./CampaignExecutionTracker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAgentContext } from "@/contexts/AgentContext";
-import { useCampaignExecution } from "@/hooks/campaign/useCampaignExecution";
-import { CampaignScriptPanel } from "./CampaignScriptPanel";
+import { Badge } from "@/components/ui/badge";
+import { useCampaign } from "../hooks/useCampaign";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import ErrorAlert from "@/components/ui/ErrorAlert";
+import { Campaign } from "@/types/campaign";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import CampaignScripts from "./CampaignScripts";
+import CampaignExecutionMetrics from "./CampaignExecutionMetrics";
+import { ArrowLeft, Play, Pause } from "lucide-react";
+import { useCampaignIntegration } from "@/hooks/useCampaignIntegration";
+import { toast } from "sonner";
 
-interface CampaignDetailProps {
-  id?: string;
-}
+export default function CampaignDetail() {
+  const { campaignId } = useParams<{ campaignId: string }>();
+  const navigate = useNavigate();
+  const { campaign, isLoading, error, refetchCampaign } = useCampaign(campaignId);
+  const { updateCampaignExecutionStatus } = useCampaignIntegration();
+  const [isExecuting, setIsExecuting] = useState(false);
 
-export default function CampaignDetail({ id }: CampaignDetailProps) {
-  const { tenant } = useTenant();
-  const [activeTab, setActiveTab] = useState("overview");
-  const { agentProfile } = useAgentContext();
-  const { execute, status, progress, startCampaignExecution, pauseCampaignExecution } = useCampaignExecution();
-  
-  const { data: campaign, isLoading, error, refetch } = useQuery({
-    queryKey: ['campaign', id],
-    queryFn: async () => {
-      if (!tenant?.id || !id) return null;
-      
-      const { data, error } = await supabase
-        .from('campaigns')
-        .select('*')
-        .eq('id', id)
-        .eq('tenant_id', tenant.id)
-        .single();
-        
-      if (error) throw error;
-      return data as Campaign;
-    },
-    enabled: !!tenant?.id && !!id
-  });
-  
-  if (isLoading) {
-    return (
-      <div className="container mx-auto p-6 flex items-center justify-center">
-        <Loader2 className="animate-spin h-6 w-6 mr-2" />
-        <span>Loading campaign data...</span>
-      </div>
-    );
-  }
-  
-  if (error || !campaign) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-md">
-          <h3 className="font-medium">Error loading campaign</h3>
-          <p className="text-sm mt-1">
-            {error instanceof Error ? error.message : "Campaign not found"}
-          </p>
-        </div>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="mt-4"
-          asChild
-        >
-          <Link to="/campaigns">
-            <ArrowLeft className="h-4 w-4 mr-2" /> Back to campaigns
-          </Link>
+  const handleStatusChange = async (campaign: Campaign, newStatus: string) => {
+    if (!campaignId) return;
+    
+    setIsExecuting(true);
+    try {
+      await updateCampaignExecutionStatus(
+        campaignId,
+        newStatus
+      );
+      toast.success(`Campaign ${newStatus === 'running' ? 'started' : 'paused'} successfully`);
+      refetchCampaign();
+    } catch (error) {
+      toast.error(`Failed to ${newStatus === 'running' ? 'start' : 'pause'} campaign`);
+      console.error("Error updating campaign status:", error);
+    } finally {
+      setIsExecuting(false);
+    }
+  };
+
+  if (isLoading) return <LoadingSpinner />;
+  if (error) return <ErrorAlert title="Error loading campaign" description={error.message} retry={refetchCampaign} />;
+  if (!campaign) return <ErrorAlert title="Campaign not found" description="The requested campaign could not be found" />;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" onClick={() => navigate(-1)} className="flex items-center gap-1">
+          <ArrowLeft className="h-4 w-4" /> Back
         </Button>
       </div>
-    );
-  }
-  
-  const typedCampaign: Campaign = {
-    ...campaign,
-    status: campaign.status as Campaign['status'],
-    // Add any other fields that need casting here
-  };
-  
-  const getStatusBadge = () => {
-    const variant = typedCampaign.status === 'active' 
-      ? 'default' 
-      : typedCampaign.status === 'draft' 
-        ? 'outline' 
-        : 'secondary';
-    
-    return (
-      <Badge variant={variant}>
-        {typedCampaign.status}
-      </Badge>
-    );
-  };
-  
-  const getExecutionStatusBadge = () => {
-    const variant = 
-      typedCampaign.execution_status === 'in_progress' ? 'success' :
-      typedCampaign.execution_status === 'paused' ? 'warning' :
-      typedCampaign.execution_status === 'completed' ? 'secondary' : 
-      'outline';
-    
-    return (
-      <Badge variant={variant}>
-        {typedCampaign.execution_status === 'in_progress' ? 'Running' :
-         typedCampaign.execution_status === 'pending' ? 'Not Started' :
-         typedCampaign.execution_status || 'Unknown'}
-      </Badge>
-    );
-  };
-  
-  const handleStartOrPause = async () => {
-    if (typedCampaign.execution_status === 'in_progress') {
-      await pauseCampaignExecution(typedCampaign.id);
-    } else {
-      await startCampaignExecution(typedCampaign.id);
-    }
-    refetch();
-  };
-  
-  return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <Link to="/campaigns" className="hover:text-primary transition-colors">
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-            <h1 className="text-2xl font-bold">{typedCampaign.name}</h1>
-            {getStatusBadge()}
-            {getExecutionStatusBadge()}
-          </div>
-          <p className="text-muted-foreground max-w-3xl">{typedCampaign.description}</p>
-          <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
-            <div className="flex items-center">
-              <Calendar className="h-4 w-4 mr-1" />
-              Created: {new Date(typedCampaign.created_at).toLocaleDateString()}
-            </div>
-            {typedCampaign.execution_start_date && (
-              <div>
-                Started: {new Date(typedCampaign.execution_start_date).toLocaleDateString()}
-              </div>
-            )}
-            {typedCampaign.strategy_id && (
-              <div>
-                From Strategy: <Link to={`/strategy/${typedCampaign.strategy_id}`} className="text-blue-600 hover:underline">View</Link>
-              </div>
-            )}
-          </div>
-        </div>
-        
-        <div className="flex gap-2">
-          <Button
-            variant={typedCampaign.execution_status === 'in_progress' ? "outline" : "default"}
-            onClick={handleStartOrPause}
-          >
-            {typedCampaign.execution_status === 'in_progress' ? 'Pause' : 'Start'} Campaign
-          </Button>
-        </div>
-      </div>
       
-      {/* Campaign Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Campaign Scripts</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {typedCampaign.scripts && Object.keys(typedCampaign.scripts).length > 0 ? (
-                <div className="space-y-4">
-                  {Object.entries(typedCampaign.scripts).map(([channel, content]) => (
-                    <CampaignScriptPanel 
-                      key={channel} 
-                      channel={channel} 
-                      content={String(content)} 
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="bg-muted/30 p-4 rounded-md text-center">
-                  <p className="text-muted-foreground">No scripts available for this campaign</p>
-                </div>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-2xl">{campaign.name}</CardTitle>
+            <div className="flex items-center gap-2 mt-2">
+              <Badge variant={campaign.status === 'active' ? 'default' : 'outline'}>
+                {campaign.status}
+              </Badge>
+              {campaign.execution_status && (
+                <Badge variant={
+                  campaign.execution_status === 'running' ? 'success' :
+                  campaign.execution_status === 'completed' ? 'outline' :
+                  'secondary'
+                }>
+                  {campaign.execution_status}
+                </Badge>
               )}
-            </CardContent>
-          </Card>
-        </div>
-        
-        <div className="space-y-6">
-          <CampaignExecutionTracker 
-            campaign={typedCampaign} 
-            onUpdate={refetch}
-          />
+            </div>
+          </div>
           
-          {agentProfile?.agent_name && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">AI Agent</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    {agentProfile.agent_name.substring(0, 2)}
-                  </div>
-                  <div>
-                    <p className="font-medium">{agentProfile.agent_name}</p>
-                    <p className="text-sm text-muted-foreground">{agentProfile.role}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </div>
+          <div className="flex items-center gap-2">
+            {campaign.execution_status !== 'completed' && (
+              <>
+                {campaign.execution_status === 'running' ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleStatusChange(campaign, 'paused')}
+                    disabled={isExecuting}
+                  >
+                    <Pause className="h-4 w-4 mr-2" />
+                    Pause
+                  </Button>
+                ) : (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => handleStatusChange(campaign, 'running')}
+                    disabled={isExecuting}
+                  >
+                    <Play className="h-4 w-4 mr-2" />
+                    {campaign.execution_status === 'paused' ? 'Resume' : 'Start'}
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
+        </CardHeader>
+        
+        <CardContent>
+          <p className="text-muted-foreground mb-6">{campaign.description || "No description"}</p>
+          
+          <Tabs defaultValue="scripts">
+            <TabsList>
+              <TabsTrigger value="scripts">Content</TabsTrigger>
+              <TabsTrigger value="metrics">Performance</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="scripts" className="mt-4">
+              <CampaignScripts campaign={campaign} />
+            </TabsContent>
+            
+            <TabsContent value="metrics" className="mt-4">
+              <CampaignExecutionMetrics campaign={campaign} />
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 }

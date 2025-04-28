@@ -1,120 +1,126 @@
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import React, { useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
-import { KpiMetric } from "@/types/kpi";
 
 interface KpiMetricDialogProps {
-  metric?: KpiMetric;
-  onSuccess?: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  selectedMetric: string | null;
+  onSelectMetric: (metric: string | null) => void;
 }
 
-export function KpiMetricDialog({ metric, onSuccess }: KpiMetricDialogProps) {
-  const { toast } = useToast();
+export default function KpiMetricDialog({ 
+  open, 
+  onOpenChange, 
+  selectedMetric,
+  onSelectMetric
+}: KpiMetricDialogProps) {
+  const [metricName, setMetricName] = useState(selectedMetric || "");
+  const [metricValue, setMetricValue] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { tenant } = useTenant();
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({
-    label: (metric?.label || metric?.kpi_name) || "",
-    value: metric?.value || "",
-  });
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!tenant?.id) return;
+  
+  const handleSubmit = async () => {
+    if (!metricName || !metricValue || !tenant?.id) {
+      toast.error("Please fill all required fields");
+      return;
+    }
     
-    setLoading(true);
+    setIsSubmitting(true);
     try {
+      const numericValue = parseFloat(metricValue);
+      if (isNaN(numericValue)) {
+        throw new Error("Value must be a number");
+      }
+      
       const { error } = await supabase
         .from("kpi_metrics")
-        .upsert({
-          tenant_id: tenant.id,
-          metric: form.label,
-          value: form.value
+        .insert({
+          metric: metricName,
+          value: numericValue,
+          tenant_id: tenant.id
         });
-
+        
       if (error) throw error;
-
-      toast({
-        title: metric ? "KPI Updated" : "KPI Added",
-        description: `Successfully ${metric ? "updated" : "added"} the KPI metric.`
-      });
-
-      setOpen(false);
-      if (onSuccess) onSuccess();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive"
-      });
+      
+      toast.success("Metric added successfully");
+      reset();
+      onOpenChange(false);
+      // Force a refresh of the page to show the new metric
+      window.location.reload();
+    } catch (error) {
+      console.error("Error adding metric:", error);
+      toast.error("Failed to add metric");
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
-
+  
+  const reset = () => {
+    setMetricName("");
+    setMetricValue("");
+    onSelectMetric(null);
+  };
+  
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {metric ? (
-          <Button variant="ghost" size="sm">Edit</Button>
-        ) : (
-          <Button>
-            Add KPI
-          </Button>
-        )}
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (!isOpen) reset();
+      onOpenChange(isOpen);
+    }}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{metric ? "Edit" : "Add"} KPI Metric</DialogTitle>
+          <DialogTitle>Add KPI Metric</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        
+        <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="label">Metric Name</Label>
-            <Input
-              id="label"
-              value={form.label}
-              onChange={(e) => setForm({ ...form, label: e.target.value })}
-              placeholder="e.g., Revenue, Users, Conversion Rate"
-              required
-            />
+            <label className="text-sm font-medium">Metric Name</label>
+            <Select value={metricName} onValueChange={setMetricName}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a metric" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Revenue">Revenue</SelectItem>
+                <SelectItem value="Conversion Rate">Conversion Rate</SelectItem>
+                <SelectItem value="Customer Acquisition Cost">CAC</SelectItem>
+                <SelectItem value="Churn Rate">Churn Rate</SelectItem>
+                <SelectItem value="MRR">MRR</SelectItem>
+                <SelectItem value="ARR">ARR</SelectItem>
+                <SelectItem value="Active Users">Active Users</SelectItem>
+                <SelectItem value="Leads Generated">Leads Generated</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+          
           <div className="space-y-2">
-            <Label htmlFor="value">Current Value</Label>
+            <label className="text-sm font-medium">Value</label>
             <Input
-              id="value"
               type="number"
-              step="0.01"
-              value={form.value}
-              onChange={(e) => setForm({ ...form, value: e.target.value })}
-              placeholder="e.g., 1500"
-              required
+              placeholder="Enter metric value"
+              value={metricValue}
+              onChange={(e) => setMetricValue(e.target.value)}
             />
           </div>
-          <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Saving..." : metric ? "Update" : "Add"}
-            </Button>
-          </div>
-        </form>
+        </div>
+        
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={handleSubmit} disabled={isSubmitting}>
+            {isSubmitting ? "Adding..." : "Add Metric"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

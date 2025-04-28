@@ -23,3 +23,12 @@ export interface Strategy {
   retry_prompt?: string;
   is_public?: boolean;
 }
+
+export interface StrategyFeedback {
+  id: string;
+  strategy_title: string;
+  action: 'used' | 'dismissed';
+  user_id?: string;
+  tenant_id?: string;
+  created_at: string;
+}

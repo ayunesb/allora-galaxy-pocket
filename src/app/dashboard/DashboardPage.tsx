@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useStrategyAndCampaigns } from "./hooks/useStrategyAndCampaigns";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
@@ -11,12 +12,17 @@ export default function DashboardPage() {
   // Type-safe handling of strategy and campaign data
   const typedStrategies: Strategy[] = strategies?.map(strategy => ({
     ...strategy,
-    status: strategy.status as Strategy['status']
+    status: strategy.status as Strategy['status'],
+    metrics_baseline: strategy.metrics_baseline as Record<string, any>,
+    diagnosis: strategy.diagnosis as Record<string, any>,
+    onboarding_data: strategy.onboarding_data as Record<string, any>
   })) || [];
 
   const typedCampaigns: Campaign[] = campaigns?.map(campaign => ({
     ...campaign,
-    status: campaign.status as Campaign['status']
+    status: campaign.status as Campaign['status'],
+    scripts: campaign.scripts as Record<string, string>,
+    execution_metrics: campaign.execution_metrics as Record<string, any>
   })) || [];
 
   return (
