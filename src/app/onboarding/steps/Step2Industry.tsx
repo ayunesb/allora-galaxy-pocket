@@ -17,9 +17,9 @@ import { Badge } from "@/components/ui/badge";
 const industries: { value: Industry; label: string }[] = [
   { value: "tech", label: "Technology" },
   { value: "ecommerce", label: "E-commerce" },
+  { value: "education", label: "Education" },
   { value: "healthcare", label: "Healthcare" },
   { value: "finance", label: "Finance" },
-  { value: "education", label: "Education" },
   { value: "manufacturing", label: "Manufacturing" },
   { value: "retail", label: "Retail" },
   { value: "other", label: "Other" },
@@ -40,9 +40,8 @@ export default function Step2Industry({ next, back, profile }: Props) {
   const handleNext = async () => {
     if (selected) {
       // Apply the industry kit before proceeding
-      if (await applyKit(selected)) {
-        next({ industry: selected });
-      }
+      await applyKit(selected);
+      next({ industry: selected });
     }
   };
 
@@ -56,6 +55,7 @@ export default function Step2Industry({ next, back, profile }: Props) {
   return (
     <StepTemplate
       title="Select your industry"
+      description="We'll customize your experience based on your industry"
       showBack
       onBack={back}
       onNext={handleNext}

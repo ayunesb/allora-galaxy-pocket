@@ -1,85 +1,94 @@
 
-import { useState, useEffect } from "react";
-import { getKitByIndustry } from "@/galaxy/kits/verticals";
-import { IndustryKit } from "@/types/galaxy";
-import { useTenant } from "@/hooks/useTenant";
+import { useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { getKitByIndustry } from "@/galaxy/kits/verticals";
 import { Industry } from "@/types/onboarding";
-import { toast } from "@/components/ui/sonner";
+import { useTenant } from './useTenant';
 
+/**
+ * Hook for applying industry-specific starter kits during onboarding
+ */
 export function useIndustryKit() {
-  const [selectedKit, setSelectedKit] = useState<IndustryKit | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { tenant } = useTenant();
-
-  // Load the industry kit based on company profile
-  useEffect(() => {
-    const loadIndustryKit = async () => {
-      if (!tenant?.id) return;
-      
-      setIsLoading(true);
-      try {
-        // Get the company profile to determine industry
-        const { data: companyProfile, error } = await supabase
-          .from("company_profiles")
-          .select("industry")
-          .eq("tenant_id", tenant.id)
-          .single();
-          
-        if (error) throw error;
-        
-        if (companyProfile?.industry) {
-          // Get the appropriate kit based on the industry
-          const kit = getKitByIndustry(companyProfile.industry);
-          setSelectedKit(kit);
-        }
-      } catch (error) {
-        console.error("Error loading industry kit:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadIndustryKit();
-  }, [tenant?.id]);
-
-  // Apply kit during onboarding
+  
+  /**
+   * Applies the industry-specific starter kit to the tenant
+   * @param industry The industry selected during onboarding
+   * @returns true if successful, false otherwise
+   */
   const applyKit = async (industry: Industry): Promise<boolean> => {
     if (!tenant?.id) {
-      toast.error("No active workspace");
+      toast.error("No active workspace found");
       return false;
     }
     
     setIsLoading(true);
     try {
+      // Get the appropriate kit based on industry
       const kit = getKitByIndustry(industry);
-      setSelectedKit(kit);
       
-      // Store recommended KPIs
-      if (kit.kpiPresets.length > 0) {
-        for (const kpi of kit.kpiPresets) {
-          await supabase.from("kpi_metrics").insert({
-            tenant_id: tenant.id,
-            metric: kpi.name,
-            value: 0 // Initial value will be updated later
-          });
+      // Create default KPI metrics from kit presets
+      if (kit.kpiPresets && kit.kpiPresets.length > 0) {
+        const kpiMetrics = kit.kpiPresets.map(preset => ({
+          tenant_id: tenant.id,
+          metric: preset.name,
+          value: 0, // Initial value
+        }));
+        
+        const { error: kpiError } = await supabase
+          .from('kpi_metrics')
+          .upsert(kpiMetrics);
+          
+        if (kpiError) {
+          console.error("Error creating KPI metrics:", kpiError);
+          // Continue despite errors - non-critical
         }
       }
       
-      toast.success(`${kit.name} applied to your workspace`);
+      // Create default strategies from kit
+      if (kit.defaultStrategies && kit.defaultStrategies.length > 0) {
+        const strategies = kit.defaultStrategies.map(strategy => ({
+          tenant_id: tenant.id,
+          title: strategy.title,
+          description: strategy.description,
+          status: 'draft',
+          tags: strategy.tags,
+          auto_approved: false
+        }));
+        
+        const { error: strategyError } = await supabase
+          .from('strategies')
+          .upsert(strategies);
+          
+        if (strategyError) {
+          console.error("Error creating default strategies:", strategyError);
+          toast.error("Failed to create starter strategies");
+          return false;
+        }
+      }
+      
+      // Set up recommended agents
+      if (kit.recommendedAgents && kit.recommendedAgents.length > 0) {
+        // This would typically link to agent setup
+        // For now, we'll just log this action
+        console.log("Setting up recommended agents:", kit.recommendedAgents);
+      }
+      
+      toast.success(`${industry} starter kit applied successfully`);
       return true;
     } catch (error) {
       console.error("Error applying industry kit:", error);
-      toast.error("Failed to apply industry kit");
+      toast.error("Failed to apply industry starter kit");
       return false;
     } finally {
       setIsLoading(false);
     }
   };
-
+  
   return {
-    selectedKit,
-    isLoading,
-    applyKit
+    applyKit,
+    isLoading
   };
 }

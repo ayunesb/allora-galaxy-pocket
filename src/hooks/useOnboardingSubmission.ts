@@ -23,7 +23,7 @@ export function useOnboardingSubmission() {
     setIsSubmitting(true);
 
     try {
-      // Update tenant profile with onboarding data
+      // Update tenant profile with onboarding completed flag
       if (updateTenantProfile) {
         await updateTenantProfile({
           ...tenant,
@@ -48,10 +48,29 @@ export function useOnboardingSubmission() {
       // Get and apply the appropriate industry kit
       const kit = getKitByIndustry(profile.industry || 'default');
       
+      // Create initial KPIs from kit presets
+      if (kit.kpiPresets && kit.kpiPresets.length > 0) {
+        const kpiMetrics = kit.kpiPresets.map(preset => ({
+          tenant_id: tenant.id,
+          metric: preset.name,
+          value: preset.target || 0, 
+          recorded_at: new Date().toISOString()
+        }));
+        
+        const { error: kpiError } = await supabase
+          .from('kpi_metrics')
+          .upsert(kpiMetrics);
+          
+        if (kpiError) {
+          console.error("Error saving KPI metrics during onboarding:", kpiError);
+          // Non-critical, continue despite error
+        }
+      }
+      
       // Create initial strategy from kit
       if (kit.defaultStrategies.length > 0) {
         const defaultStrategy = kit.defaultStrategies[0];
-        await supabase
+        const { error: strategyError } = await supabase
           .from('strategies')
           .insert({
             tenant_id: tenant.id,
@@ -61,15 +80,21 @@ export function useOnboardingSubmission() {
             tags: defaultStrategy.tags,
             auto_approved: false
           });
+          
+        if (strategyError) {
+          console.error("Error creating default strategy:", strategyError);
+          // Non-critical, continue despite error
+        }
       }
 
-      // Log activity
+      // Log successful onboarding completion
       await logActivity({
         event_type: 'ONBOARDING_COMPLETED',
-        message: 'User completed onboarding process',
+        message: `User completed onboarding process for ${profile.companyName}`,
         meta: {
           tenant_id: tenant.id,
-          profile: profile
+          industry: profile.industry,
+          launch_mode: profile.launch_mode
         },
         severity: 'info'
       });
