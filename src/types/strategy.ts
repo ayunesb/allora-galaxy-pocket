@@ -30,7 +30,7 @@ export interface Strategy {
   metrics_baseline: Record<string, any>;
   metrics_target: Record<string, any>;
   failure_reason?: string;
-  diagnosis: Json;
+  diagnosis: Record<string, any>;
   timeline?: any[];
   feedback?: any[];
   version?: number;
