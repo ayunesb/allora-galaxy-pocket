@@ -10,6 +10,9 @@ import { useTenant } from "@/hooks/useTenant";
 import { useSystemLogs } from "@/hooks/useSystemLogs";
 import { NotificationCenter } from "@/components/dashboard/NotificationCenter";
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
+import { useEffect } from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
+import DashboardLayout from '@/layouts/DashboardLayout';
 
 export default function DashboardPage() {
   const { tenant } = useTenant();

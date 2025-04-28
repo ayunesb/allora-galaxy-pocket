@@ -25,7 +25,9 @@ export const KpiSection: React.FC<KpiSectionProps> = ({ kpiMetrics = [] }) => {
                   <CardContent className="p-4">
                     <h3 className="font-medium">{metric.kpi_name || metric.metric}</h3>
                     <div className="flex items-center justify-between mt-2">
-                      <p className="text-2xl font-bold">{metric.value}</p>
+                      <p className="text-2xl font-bold">
+                        {typeof metric.value === 'number' ? metric.value.toLocaleString() : metric.value}
+                      </p>
                       {metric.trend && (
                         <div className={`flex items-center ${
                           metric.trend === 'up' 
@@ -60,3 +62,5 @@ export const KpiSection: React.FC<KpiSectionProps> = ({ kpiMetrics = [] }) => {
     </div>
   );
 };
+
+export default KpiSection;

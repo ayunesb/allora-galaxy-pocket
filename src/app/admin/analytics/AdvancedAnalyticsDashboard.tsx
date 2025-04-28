@@ -1,8 +1,8 @@
-
-import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { KPISection } from "@/app/dashboard/components/KPISection";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { KpiSection } from "@/app/dashboard/components/KpiSection";
 import { MetricsCard } from "./MetricsCard";
 import { PluginUsageChart } from "./PluginUsageChart";
 
@@ -54,7 +54,7 @@ export default function AdvancedAnalyticsDashboard() {
         </TabsContent>
         
         <TabsContent value="kpis">
-          <KPISection />
+          <KpiSection />
         </TabsContent>
       </Tabs>
     </div>
