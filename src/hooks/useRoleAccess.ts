@@ -32,8 +32,8 @@ export function useRoleAccess() {
       
       // Get user's role in tenant using security definer function
       const { data: userRole, error: roleError } = await supabase.rpc(
-        "get_user_role_for_tenant",
-        { user_uuid: user.id, tenant_uuid: tenant.id }
+        "get_user_role_for_tenant_safe",
+        { tenant_uuid: tenant.id, user_uuid: user.id }
       );
       
       if (roleError) {

@@ -43,7 +43,7 @@ export default function RoleGuard({
           return;
         }
         
-        // Verify tenant access first
+        // Verify tenant access first using security definer function
         const { data: hasAccess, error: accessError } = await supabase.rpc(
           "check_tenant_user_access_safe",
           { tenant_uuid: tenant.id, user_uuid: user.id }

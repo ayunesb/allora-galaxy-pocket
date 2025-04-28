@@ -1,85 +1,59 @@
 
-import { Json } from "./supabase";
+import type { Json } from "./supabase";
 
 export type StrategyStatus = 
-  | "draft" 
-  | "pending_approval" 
-  | "approved" 
-  | "rejected" 
-  | "in_progress"
-  | "completed"
-  | "archived"
-  | "auto_approved"
-  | "pending";
+  | 'draft' 
+  | 'pending' 
+  | 'approved' 
+  | 'rejected' 
+  | 'archived' 
+  | 'active'
+  | 'completed';
 
 export interface Strategy {
   id: string;
   title: string;
   description: string;
   status: StrategyStatus;
-  created_at: string;
-  tenant_id: string;
-  user_id: string | null;
-  tags: string[];
-  generated_by: string;
-  assigned_agent: string;
-  auto_approved: boolean;
-  approved_by?: string | null;
-  approved_at?: string | null;
-  health_score: number;
-  metrics_baseline: Record<string, any>;
-  metrics_target: Record<string, any>;
-  failure_reason?: string;
-  diagnosis: Record<string, any>;
-  timeline?: any[];
-  feedback?: any[];
-  version?: number;
-  updated_at?: string;
-  reason_for_recommendation?: string;
-  target_audience?: string;
-  goals?: string[] | any[];
-  channels?: string[];
-  kpis?: string[] | any[];
-  impact_score?: number;
-  is_public?: boolean;
-  onboarding_data?: Record<string, any>;
-  // Additional fields used in some components
-  industry?: string;
-  goal?: string;
-  confidence?: string;
-}
-
-export interface StrategyDraft {
-  title: string;
-  description: string;
   tenant_id: string;
   user_id: string;
   tags: string[];
-}
-
-export interface StrategyVersion {
-  id: string;
-  strategy_id: string;
-  version_number: number;  // Renamed from version to version_number
-  changes?: Record<string, any>;
   created_at: string;
-  created_by: string;
-  tenant_id: string;
-  data?: Record<string, any>;  // Add data property
-  comment?: string;  // Add comment property
-  version?: number;  // Keep version for backward compatibility
+  updated_at: string; // Added missing field
+  generated_by: string;
+  assigned_agent: string;
+  auto_approved: boolean;
+  approved_at: string | null;
+  failure_reason: string | null;
+  impact_score: number | null;
+  health_score: number | null;
+  is_public: boolean;
+  diagnosis: Record<string, any>;
+  metrics_baseline: Record<string, any>;
+  metrics_target: Record<string, any>; // Added missing field
+  version: string | number; // Added missing field
+  reason_for_recommendation: string; // Added missing field
+  target_audience: string; // Added missing field
+  goals: any[]; // Added missing field
+  channels: string[]; // Added missing field
+  kpis: any[]; // Added missing field
+  retry_prompt?: string;
 }
 
-export interface StrategyResponse {
+export interface StrategyFormData {
+  title: string;
+  description: string;
+  goals: string[];
+  industry: string;
+  target_audience?: string;
+  channels?: string[];
+}
+
+export interface StrategyFeedback {
   id: string;
-  strategy: Strategy;
-  message: string;
-  success: boolean;
-  error?: string;
-}
-
-export interface StrategyCampaignMapping {
-  strategy_id: string;
-  campaign_id: string;
+  strategy_title: string;
+  action: string;
+  user_id?: string;
+  tenant_id?: string;
   created_at: string;
 }
