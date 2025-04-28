@@ -11,7 +11,8 @@ import { ApprovalMetricsCard } from "./components/ApprovalMetricsCard";
 import { ApprovalStatsTable } from "./components/ApprovalStatsTable";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import ErrorAlert from "@/components/ui/ErrorAlert";
-import { ApprovalStats } from "@/types/decision";
+import { ApprovalStats, Decision } from "@/types/decision";
+import { Strategy, StrategyStatus } from "@/types/strategy";
 
 export default function AIDecisionsPage() {
   const [filters, setFilters] = useState<FilterState>({
@@ -29,7 +30,16 @@ export default function AIDecisionsPage() {
         .order('created_at', { ascending: false });
         
       if (error) throw error;
-      return data || [];
+
+      // Properly cast the data to Strategy type
+      return (data || []).map(item => ({
+        ...item,
+        status: item.status as StrategyStatus,
+        tags: item.tags || [],
+        metrics_baseline: item.metrics_baseline || {},
+        diagnosis: item.diagnosis || {},
+        onboarding_data: item.onboarding_data || {}
+      })) as Strategy[];
     }
   });
   
@@ -40,9 +50,9 @@ export default function AIDecisionsPage() {
         .rpc('count_strategy_approvals');
         
       if (error) throw error;
-      // Handle the case where data could be an array or a single object
-      // Type assertion to match our ApprovalStats interface
-      return data as unknown as ApprovalStats;
+      
+      // Since we're getting a single object from an RPC function, ensure it's shaped correctly
+      return data as ApprovalStats;
     }
   });
 

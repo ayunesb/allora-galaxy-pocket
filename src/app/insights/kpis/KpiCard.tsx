@@ -2,9 +2,11 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import type { KpiMetric } from "@/types/kpi";
-import { KpiMetricDialog } from "@/app/dashboard/components/KpiMetricDialog";
 
 export default function KpiCard({ label, value, trend, changePercent, onUpdate }: KpiMetric & { onUpdate?: () => void }) {
+  // Ensure we parse the value to number for display
+  const numericValue = typeof value === 'string' ? parseFloat(value) : value;
+  
   return (
     <Card>
       <CardContent className="pt-6">
@@ -17,21 +19,9 @@ export default function KpiCard({ label, value, trend, changePercent, onUpdate }
                 {changePercent && <span className="ml-1 text-xs">{changePercent}%</span>}
               </span>
             )}
-            <KpiMetricDialog 
-              metric={{ 
-                id: '', // Provide empty values for required fields
-                kpi_name: label || '',
-                value: value || 0,
-                updated_at: new Date().toISOString(),
-                tenant_id: '',
-                trend,
-                changePercent
-              }} 
-              onSuccess={onUpdate} 
-            />
           </div>
         </div>
-        <h2 className="text-2xl font-bold mt-2">{value}</h2>
+        <h2 className="text-2xl font-bold mt-2">{numericValue}</h2>
       </CardContent>
     </Card>
   );

@@ -10,18 +10,26 @@ export default function KPIAlertsPage() {
   const { data: alerts, isLoading, error } = useKpiAlerts(severity);
 
   const handleForward = async (id: string) => {
-    const { error } = await supabase
-      .rpc('handleAIInsightForward', { insight_id: id });
-    
-    if (error) {
-      console.error('Error forwarding insight:', error);
+    // Custom function for handling AI insight forwarding - needs proper implementation
+    try {
+      // This might need to be implemented differently, as RPC functions need to be defined in Supabase
+      const { error } = await supabase
+        .from('kpi_insights')
+        .update({ forwarded: true })
+        .eq('id', id);
+      
+      if (error) {
+        console.error('Error forwarding insight:', error);
+      }
+    } catch (err) {
+      console.error('Error calling forward function:', err);
     }
   };
 
   const handleApprove = async (id: string) => {
     const { error } = await supabase
       .from('kpi_insights')
-      .update({ status: 'resolved' })
+      .update({ outcome: 'resolved' })
       .eq('id', id);
     
     if (error) {

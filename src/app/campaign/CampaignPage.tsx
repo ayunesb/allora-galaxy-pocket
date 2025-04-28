@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function CampaignPage() {
-  // Only use allowed status values from type
+  // Only use allowed status values from type - ensuring we don't use 'approved' here
   const [selected, setSelected] = useState<number | null>(null);
   const [status, setStatus] = useState<"active" | "draft" | "paused" | "completed">("active");
   const { tenant } = useTenant();
@@ -30,9 +30,17 @@ export default function CampaignPage() {
       if (error) throw error;
       
       return (data || []).map(campaign => {
+        // Ensure we're casting to the accepted campaign status types
+        const typedStatus = campaign.status as CampaignStatus;
+        const typedExecutionStatus = campaign.execution_status as Campaign['execution_status'];
+        
         return {
           ...campaign,
-          status: campaign.status as Campaign['status']
+          status: typedStatus,
+          execution_status: typedExecutionStatus,
+          scripts: campaign.scripts || {},
+          execution_metrics: campaign.execution_metrics || {},
+          metrics: campaign.metrics || {}
         };
       }) as Campaign[];
     },
@@ -73,17 +81,17 @@ export default function CampaignPage() {
       <h1 className="text-3xl font-bold mb-8">Active Campaigns</h1>
       
       <div className="grid md:grid-cols-2 gap-6 mb-8">
-        {campaigns.map((c, i) => (
+        {campaigns?.map((c, i) => (
           <CampaignCard
             key={c.id}
             name={c.name}
-            status={c.status}
+            status={c.status === "approved" ? "active" : (c.status as "draft" | "paused")}
             cta={() => setSelected(i)}
           />
         ))}
       </div>
 
-      {selected !== null && campaigns[selected] && (
+      {selected !== null && campaigns?.[selected] && (
         <CampaignRecap
           name={campaigns[selected].name}
           description={campaigns[selected].description || ""}

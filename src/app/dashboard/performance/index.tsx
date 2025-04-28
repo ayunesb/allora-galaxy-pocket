@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
@@ -33,20 +32,27 @@ export default function PerformancePage() {
         data.forEach(metric => {
           const index = result.findIndex(m => m.name.toLowerCase() === metric.metric.toLowerCase());
           if (index !== -1) {
-            let value = metric.value;
-            // Format as percentage if needed
-            if (metric.metric.toLowerCase() === "ctr") {
-              value = `${metric.value}%`;
+            // For numerical metrics, parse as number
+            if (["Impressions", "Clicks", "Conversions"].includes(result[index].name)) {
+              result[index].value = parseInt(metric.value.toString(), 10);
             }
-            // Format as currency if needed
-            if (metric.metric.toLowerCase() === "cost") {
-              value = `$${metric.value}`;
+            // For percentage/formatted metrics, keep as string
+            else if (["CTR", "Cost", "ROI"].includes(result[index].name)) {
+              let value = metric.value.toString();
+              // Format as percentage if needed
+              if (result[index].name === "CTR") {
+                value = `${value}%`;
+              }
+              // Format as currency if needed
+              if (result[index].name === "Cost") {
+                value = `$${value}`;
+              }
+              // Format as multiplier if needed
+              if (result[index].name === "ROI") {
+                value = `${value}x`;
+              }
+              result[index].value = value;
             }
-            // Format as multiplier if needed
-            if (metric.metric.toLowerCase() === "roi") {
-              value = `${metric.value}x`;
-            }
-            result[index].value = value;
           }
         });
       }

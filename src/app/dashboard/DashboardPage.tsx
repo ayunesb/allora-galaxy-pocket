@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useStrategyAndCampaigns } from "./hooks/useStrategyAndCampaigns";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
@@ -16,9 +15,9 @@ export default function DashboardPage() {
       ...strategy,
       status: strategy.status as Strategy['status'],
       tags: Array.isArray(strategy.tags) ? strategy.tags : [],
-      metrics_baseline: strategy.metrics_baseline || {},
-      diagnosis: strategy.diagnosis || {},
-      onboarding_data: strategy.onboarding_data || {}
+      metrics_baseline: strategy.metrics_baseline || {} as Record<string, any>,
+      diagnosis: strategy.diagnosis || {} as Record<string, any>,
+      onboarding_data: strategy.onboarding_data || {} as Record<string, any>
     }));
   }, [strategies]);
 
@@ -28,9 +27,9 @@ export default function DashboardPage() {
       ...campaign,
       status: campaign.status as Campaign['status'],
       execution_status: campaign.execution_status as Campaign['execution_status'],
-      scripts: campaign.scripts || {},
-      execution_metrics: campaign.execution_metrics || {},
-      metrics: campaign.metrics || {}
+      scripts: campaign.scripts ? campaign.scripts as Record<string, string> : {},
+      execution_metrics: campaign.execution_metrics ? campaign.execution_metrics as Record<string, any> : {},
+      metrics: campaign.metrics ? campaign.metrics as Record<string, any> : {}
     }));
   }, [campaigns]);
 

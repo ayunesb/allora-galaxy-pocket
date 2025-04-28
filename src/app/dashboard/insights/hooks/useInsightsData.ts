@@ -34,13 +34,13 @@ interface InsightsData {
 }
 
 export function useInsightsData(dateRange: string): InsightsData {
-  const { data: kpiData, isLoading: kpiLoading, error: kpiError } = useKpiHistory(dateRange);
-  const { data: feedbackData, isLoading: feedbackLoading, error: feedbackError } = useFeedbackMetrics(dateRange);
-  const { metrics: roiMetrics, isLoading: roiLoading, error: roiError } = useRoiMetrics(dateRange);
-  const { data: campaignData, isLoading: campaignLoading, error: campaignError } = useCampaignMetrics(dateRange);
+  const kpiHistory = useKpiHistory(dateRange);
+  const feedbackMetrics = useFeedbackMetrics(dateRange);
+  const roiMetrics = useRoiMetrics(dateRange);
+  const campaignMetrics = useCampaignMetrics(dateRange);
 
-  const isLoading = kpiLoading || feedbackLoading || roiLoading || campaignLoading;
-  const error = kpiError || feedbackError || roiError || campaignError;
+  const isLoading = kpiHistory.isLoading || feedbackMetrics.isLoading || roiMetrics.isLoading || campaignMetrics.isLoading;
+  const error = kpiHistory.error || feedbackMetrics.error || roiMetrics.error || campaignMetrics.error;
 
   // Computed metrics with default values
   const campaignApprovalRate = useMemo(() => ({
@@ -70,29 +70,29 @@ export function useInsightsData(dateRange: string): InsightsData {
   // Safe access to data
   const dashboardData = useMemo(() => {
     return {
-      kpiMetrics: kpiData || [],
-      feedbackMetrics: feedbackData || { positive: 0, negative: 0, neutral: 0 },
-      roiMetrics: roiMetrics || { 
+      kpiMetrics: kpiHistory.data || [],
+      feedbackMetrics: feedbackMetrics.data || { positive: 0, negative: 0, neutral: 0, used: 0, dismissed: 0 },
+      roiMetrics: roiMetrics.metrics || { 
         conversions: "0", 
         views: "0", 
         clicks: "0", 
         conversionRate: "0%", 
         clickRate: "0%" 
       },
-      campaignMetrics: campaignData || []
+      campaignMetrics: campaignMetrics.data || []
     };
-  }, [kpiData, feedbackData, roiMetrics, campaignData]);
+  }, [kpiHistory.data, feedbackMetrics.data, roiMetrics.metrics, campaignMetrics.data]);
 
   // Return a consistent shape with all required fields
   return {
-    kpiData: kpiData || [],
-    feedbackStats: feedbackData ? {
-      used: feedbackData.used || 0,
-      dismissed: feedbackData.dismissed || 0
+    kpiData: kpiHistory.data || [],
+    feedbackStats: dashboardData.feedbackMetrics ? {
+      used: dashboardData.feedbackMetrics.used || 0,
+      dismissed: dashboardData.feedbackMetrics.dismissed || 0
     } : { used: 0, dismissed: 0 },
     pluginStats: {},
-    topCampaigns: campaignData || [],
-    roiData: null,
+    topCampaigns: campaignMetrics.data || [],
+    roiData: roiMetrics.metrics || null,
     isLoading,
     error: error as Error | null,
     campaignApprovalRate,

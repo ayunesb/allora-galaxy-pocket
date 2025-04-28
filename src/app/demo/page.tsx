@@ -28,7 +28,7 @@ export default function DemoPage() {
   return (
     <DemoLayout>
       <div className="min-h-screen flex flex-col">
-        {tenant?.isDemo && (
+        {tenant?.is_demo && (
           <div className="w-full bg-yellow-50 dark:bg-yellow-900/20 py-2 px-4 text-center">
             <Badge variant="warning" className="bg-yellow-100 text-yellow-700 dark:text-yellow-400 border-yellow-200">
               🧪 Demo Mode – View Only

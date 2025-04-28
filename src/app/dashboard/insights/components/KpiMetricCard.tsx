@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 
 interface KpiMetricCardProps {
   title: string;
-  value: string;
+  value: string | number;
   trend: 'up' | 'down' | 'neutral';
   change: number;
 }
