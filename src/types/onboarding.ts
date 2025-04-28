@@ -1,4 +1,3 @@
-
 export type TeamSize = 'solo' | '2-5' | '5-10' | '10+';
 export type SellType = 'products' | 'services' | 'both';
 export type ToneType = 'corporate' | 'friendly' | 'edgy' | 'technical';
@@ -29,7 +28,6 @@ export interface OnboardingProfile {
   revenue?: string;
   sellType?: SellType;
   launch_mode?: LaunchMode;
-  // New fields added
   productStage?: string;
   targetMarket?: string;
 }

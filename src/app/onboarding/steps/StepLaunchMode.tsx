@@ -1,105 +1,89 @@
 
 import React from "react";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { 
-  ShoppingCart, 
-  BookOpen, 
-  Briefcase, 
-  Code 
-} from "lucide-react";
-import type { LaunchMode, OnboardingProfile } from "@/types/onboarding";
+import { useForm } from "react-hook-form";
+import { LaunchMode } from "@/types/onboarding";
+import { Building, Store, GraduationCap, BriefcaseIcon } from "lucide-react";
 import StepTemplate from "./StepTemplate";
 
-type Props = {
-  next: (data: Partial<OnboardingProfile>) => void;
+interface LaunchModeFormData {
+  launch_mode: LaunchMode;
+}
+
+interface LaunchModeStepProps {
+  next: (data: LaunchModeFormData) => void;
   back: () => void;
-  profile: OnboardingProfile;
-};
+  profile: { launch_mode?: LaunchMode };
+}
 
-export default function StepLaunchMode({ next, back, profile }: Props) {
-  const [selected, setSelected] = React.useState<LaunchMode | undefined>(
-    profile.launch_mode
-  );
+const modes = [
+  { 
+    value: 'saas', 
+    label: 'SaaS Business',
+    icon: Building,
+    description: 'Software-as-a-Service company focused on recurring revenue' 
+  },
+  { 
+    value: 'ecom', 
+    label: 'E-commerce Store',
+    icon: Store,
+    description: 'Online retail business selling products' 
+  },
+  { 
+    value: 'course', 
+    label: 'Online Course',
+    icon: GraduationCap,
+    description: 'Digital education and training products' 
+  },
+  { 
+    value: 'agency', 
+    label: 'Agency/Services',
+    icon: BriefcaseIcon,
+    description: 'Professional services and consulting' 
+  }
+];
 
-  const launchModes = [
-    {
-      value: "ecom" as LaunchMode,
-      label: "E-commerce",
-      description: "Selling physical or digital products online",
-      icon: ShoppingCart,
-    },
-    {
-      value: "course" as LaunchMode,
-      label: "Online Course",
-      description: "Knowledge products, coaching, and education",
-      icon: BookOpen,
-    },
-    {
-      value: "agency" as LaunchMode,
-      label: "Agency",
-      description: "Client services, consulting, and project work",
-      icon: Briefcase,
-    },
-    {
-      value: "saas" as LaunchMode,
-      label: "SaaS",
-      description: "Software as a service with recurring revenue",
-      icon: Code,
-    },
-  ];
-
-  const handleNext = () => {
-    if (selected) {
-      next({ launch_mode: selected });
+export default function StepLaunchMode({ next, back, profile }: LaunchModeStepProps) {
+  const { handleSubmit, setValue, watch } = useForm<LaunchModeFormData>({
+    defaultValues: {
+      launch_mode: profile.launch_mode
     }
+  });
+
+  const selectedMode = watch('launch_mode');
+
+  const onSubmit = (data: LaunchModeFormData) => {
+    next(data);
   };
 
   return (
     <StepTemplate
-      title="Choose your launch mode"
-      description="This will customize your growth strategy"
+      title="What type of business are you launching?"
+      description="We'll customize your starting experience based on your business type"
       showBack
+      showNext
+      nextLabel="Continue"
+      nextDisabled={!selectedMode}
+      onNext={handleSubmit(onSubmit)}
       onBack={back}
-      onNext={handleNext}
-      nextDisabled={!selected}
-      nextLabel="Finish"
     >
-      <RadioGroup
-        value={selected}
-        onValueChange={(value) => setSelected(value as LaunchMode)}
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {launchModes.map((mode) => (
-            <div
-              key={mode.value}
-              className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                selected === mode.value
-                  ? "border-primary bg-primary/5"
-                  : "hover:border-primary/50"
-              }`}
-              onClick={() => setSelected(mode.value)}
-            >
-              <RadioGroupItem
-                value={mode.value}
-                id={mode.value}
-                className="sr-only"
-              />
-              <div className="flex flex-col items-center text-center gap-2">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                  <mode.icon className="h-6 w-6" />
-                </div>
-                <Label htmlFor={mode.value} className="font-medium">
-                  {mode.label}
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  {mode.description}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </RadioGroup>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+        {modes.map(({ value, label, icon: Icon, description }) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => setValue('launch_mode', value as LaunchMode, { shouldValidate: true })}
+            className={`flex flex-col items-center p-6 rounded-lg border transition-all ${
+              selectedMode === value 
+                ? 'border-primary bg-primary/5 shadow-sm' 
+                : 'border-border hover:border-primary/50'
+            }`}
+          >
+            <Icon className={`h-8 w-8 mb-3 ${selectedMode === value ? 'text-primary' : 'text-muted-foreground'}`} />
+            <h3 className="font-medium mb-2">{label}</h3>
+            <p className="text-sm text-muted-foreground text-center">{description}</p>
+          </button>
+        ))}
+      </div>
     </StepTemplate>
   );
 }

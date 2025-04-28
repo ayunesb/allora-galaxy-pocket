@@ -13,6 +13,7 @@ import StepLaunchMode from "./StepLaunchMode";
 
 export const steps = [
   Step1Company,
+  StepLaunchMode, // Add launch mode selection early in the flow
   Step2Industry,
   StepTeamSize,
   StepRevenue,
@@ -22,5 +23,4 @@ export const steps = [
   StepChannels,
   StepTools,
   Step3Goals,
-  StepLaunchMode,
 ];

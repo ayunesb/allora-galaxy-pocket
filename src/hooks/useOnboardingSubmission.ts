@@ -6,6 +6,7 @@ import { OnboardingProfile } from '@/types/onboarding';
 import { toast } from 'sonner';
 import { useSystemLogs } from './useSystemLogs';
 import { supabase } from "@/integrations/supabase/client";
+import { getKitByIndustry } from "@/galaxy/kits/verticals";
 
 export function useOnboardingSubmission() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,20 +45,34 @@ export function useOnboardingSubmission() {
 
       if (companyError) throw companyError;
 
-      // Log activity
-      try {
-        await logActivity({
-          event_type: 'ONBOARDING_COMPLETED',
-          message: 'User completed onboarding process',
-          meta: {
+      // Get and apply the appropriate industry kit
+      const kit = getKitByIndustry(profile.industry || 'default');
+      
+      // Create initial strategy from kit
+      if (kit.defaultStrategies.length > 0) {
+        const defaultStrategy = kit.defaultStrategies[0];
+        await supabase
+          .from('strategies')
+          .insert({
             tenant_id: tenant.id,
-            profile: profile
-          },
-          severity: 'info'
-        });
-      } catch (logError) {
-        console.error("Failed to log onboarding activity:", logError);
+            title: defaultStrategy.title,
+            description: defaultStrategy.description,
+            status: 'draft',
+            tags: defaultStrategy.tags,
+            auto_approved: false
+          });
       }
+
+      // Log activity
+      await logActivity({
+        event_type: 'ONBOARDING_COMPLETED',
+        message: 'User completed onboarding process',
+        meta: {
+          tenant_id: tenant.id,
+          profile: profile
+        },
+        severity: 'info'
+      });
 
       return { success: true };
     } catch (error: any) {
