@@ -1,54 +1,72 @@
 
-import { toast } from 'sonner';
+import { toast } from "sonner";
 
 interface ToastOptions {
   title?: string;
   description?: string;
   duration?: number;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
 }
 
-export class ToastService {
-  static success(options: ToastOptions | string) {
-    if (typeof options === 'string') {
-      toast.success(options);
-    } else {
-      toast.success(options.title || 'Success', {
-        description: options.description,
-        duration: options.duration || 3000,
-      });
-    }
-  }
+export const ToastService = {
+  /**
+   * Show a success toast notification
+   */
+  success: (options: ToastOptions) => {
+    return toast.success(options.title, {
+      description: options.description,
+      duration: options.duration,
+      action: options.action
+    });
+  },
 
-  static error(options: ToastOptions | string) {
-    if (typeof options === 'string') {
-      toast.error(options);
-    } else {
-      toast.error(options.title || 'Error', {
-        description: options.description,
-        duration: options.duration || 5000,
-      });
-    }
-  }
+  /**
+   * Show an error toast notification
+   */
+  error: (options: ToastOptions) => {
+    return toast.error(options.title, {
+      description: options.description,
+      duration: options.duration || 5000,
+      action: options.action
+    });
+  },
 
-  static info(options: ToastOptions | string) {
-    if (typeof options === 'string') {
-      toast.info(options);
-    } else {
-      toast.info(options.title || 'Information', {
-        description: options.description,
-        duration: options.duration || 3000,
-      });
-    }
-  }
+  /**
+   * Show an information toast notification
+   */
+  info: (options: ToastOptions) => {
+    return toast(options.title, {
+      description: options.description,
+      duration: options.duration,
+      action: options.action
+    });
+  },
 
-  static warning(options: ToastOptions | string) {
-    if (typeof options === 'string') {
-      toast.warning(options);
-    } else {
-      toast.warning(options.title || 'Warning', {
-        description: options.description,
-        duration: options.duration || 4000,
-      });
+  /**
+   * Show a warning toast notification
+   */
+  warning: (options: ToastOptions) => {
+    return toast.warning(options.title, {
+      description: options.description,
+      duration: options.duration,
+      action: options.action
+    });
+  },
+
+  /**
+   * Show a promise toast notification
+   */
+  promise: <T>(
+    promise: Promise<T>,
+    options: {
+      loading: string;
+      success: string | ((data: T) => string);
+      error: string | ((error: unknown) => string);
     }
+  ) => {
+    return toast.promise(promise, options);
   }
-}
+};
