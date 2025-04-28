@@ -3575,7 +3575,7 @@ export type Database = {
         Returns: boolean
       }
       is_tenant_admin: {
-        Args: { tenant_id: string }
+        Args: { tenant_id: string } | { tenant_uuid: string; user_uuid: string }
         Returns: boolean
       }
       list_tables_with_rls_status: {

@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Tenant } from '@/types/tenant';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,10 +38,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const { data: tenantIds, error: tenantIdsError } = await supabase.rpc('get_user_tenant_ids');
 
       if (tenantIdsError) {
-        // If we get a recursion error here, we'll handle it gracefully
-        if (tenantIdsError.message?.includes('infinite recursion')) {
-          throw new Error('Workspace data access issue detected. Please refresh to apply the fix.');
-        }
+        console.error('Error getting tenant IDs:', tenantIdsError);
         throw tenantIdsError;
       }
       
@@ -77,12 +75,9 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setTenant(null);
       setError(error.message || 'Failed to load workspace data');
       
-      // Show toast only for certain errors
-      if (error.message?.includes('infinite recursion')) {
-        toast.error("Workspace loading error", {
-          description: "Database policy issue detected. Please refresh the page to apply the fix."
-        });
-      }
+      toast.error("Workspace loading error", {
+        description: "There was a problem loading your workspace. Please try again."
+      });
     } finally {
       setIsLoading(false);
     }

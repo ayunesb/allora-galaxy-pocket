@@ -19,7 +19,7 @@ export function useRoleAccess() {
       );
       
       if (error) {
-        console.error('Error checking role access:', error);
+        console.error('Error checking tenant access:', error);
         return false;
       }
       

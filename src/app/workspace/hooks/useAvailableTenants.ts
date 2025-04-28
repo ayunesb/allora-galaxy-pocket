@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tenant } from "@/types/tenant";
+import { useAuth } from "@/hooks/useAuth";
 
 export interface TenantOption extends Tenant {}
 
@@ -10,29 +11,33 @@ export interface TenantOption extends Tenant {}
  * @returns List of available tenants and loading state
  */
 export function useAvailableTenants() {
+  const { user } = useAuth();
+
   const query = useQuery<Tenant[], Error>({
-    queryKey: ["available-tenants"],
+    queryKey: ["available-tenants", user?.id],
     queryFn: async () => {
+      if (!user) throw new Error("User must be authenticated");
+      
+      // Get tenant IDs the user has access to using our security definer function
+      const { data: tenantIds, error: idsError } = await supabase
+        .rpc('get_user_tenant_ids');
+
+      if (idsError) throw idsError;
+
+      if (!tenantIds?.length) return [];
+
+      // Fetch full tenant details
       const { data: tenants, error } = await supabase
         .from("tenant_profiles")
         .select("*")
+        .in("id", tenantIds)
         .order("name");
 
       if (error) throw error;
 
-      return (tenants || []).map((tenant): Tenant => ({
-        id: tenant.id,
-        name: tenant.name,
-        theme_color: tenant.theme_color,
-        theme_mode: tenant.theme_mode,
-        enable_auto_approve: tenant.enable_auto_approve,
-        isDemo: tenant.is_demo,
-        created_at: tenant.created_at,
-        updated_at: tenant.updated_at,
-        usage_credits: tenant.usage_credits,
-        slack_webhook_url: tenant.slack_webhook_url
-      }));
-    }
+      return tenants || [];
+    },
+    enabled: !!user
   });
 
   return {

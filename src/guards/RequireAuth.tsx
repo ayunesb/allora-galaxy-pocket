@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,10 +24,8 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
                              location.pathname === "/workspace" ||
                              location.pathname.startsWith("/auth/");
   
-  // Use session refresh hook
   useSessionRefresh();
 
-  // Onboarding check will be activated when user and tenant are available
   const { data: onboardingComplete, isLoading: onboardingLoading } = useOnboardingCheck(
     user,
     tenant,
@@ -36,7 +33,6 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   );
 
   useEffect(() => {
-    // Prevent infinite loops by tracking navigation attempts
     if (navigationAttempted) {
       return;
     }
@@ -60,23 +56,19 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
       console.log("RequireAuth: Onboarding incomplete, redirecting to onboarding");
     }
 
-    // Reset navigation tracking when route changes
     return () => {
       setNavigationAttempted(false);
     };
   }, [user, tenant, authLoading, tenantLoading, onboardingLoading, 
       onboardingComplete, location.pathname, skipOnboardingCheck, navigationAttempted]);
 
-  // Validate tenant access
   useEffect(() => {
-    // If no user or tenant is selected, no validation needed
     if (!user?.id || !tenant?.id || 
         location.pathname.startsWith('/auth/') || 
         location.pathname === '/workspace') return;
 
     const validateTenantAccess = async () => {
       try {
-        // Use the security definer function to validate tenant access
         const { data, error } = await supabase.rpc(
           "check_tenant_user_access",
           { tenant_uuid: tenant.id, user_uuid: user.id }
@@ -87,21 +79,17 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
           return;
         }
 
-        // If user doesn't have access to the tenant
         if (!data) {
           console.error(`User ${user.id} attempted unauthorized access to tenant ${tenant.id}`);
           
-          // Reset tenant selection
           refreshTenant();
           localStorage.removeItem('tenant_id');
           
-          // Notify user
           ToastService.error({
             title: "Access denied",
             description: "You don't have access to this workspace",
           });
 
-          // Redirect to workspace switcher
           setNavigationAttempted(true);
         }
       } catch (error) {
@@ -205,6 +193,5 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     return <Navigate to="/onboarding" state={{ from: location.pathname }} replace />;
   }
 
-  // All checks passed, render the protected component
   return <>{children}</>;
 }
