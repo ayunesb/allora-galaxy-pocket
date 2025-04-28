@@ -1,177 +1,163 @@
 
-"use client";
+'use client';
 
-import { useState, useCallback } from "react";
-import { useTenant } from "@/hooks/useTenant";
-import { useToast } from "@/hooks/use-toast";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { PromptPerformanceStats } from "../components/PromptPerformanceStats";
-import { useAgentStats } from "./hooks/useAgentStats";
-import { useAgentAlerts } from "./hooks/useAgentAlerts";
-import { AgentPerformanceChart } from "./AgentPerformanceChart";
-import { AgentSelector } from "./AgentSelector";
-import { AgentSummaryCard } from "./AgentSummaryCard";
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import AgentPerformanceChart from './AgentPerformanceChart';
+import PromptPerformanceStats from '../components/PromptPerformanceStats';
+import { useAgentStats, AgentStats } from './hooks/useAgentStats';
+import { Loader2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 export default function AgentPerformanceDashboard() {
-  const stats = useAgentStats();
-  const alerts = useAgentAlerts();
-  const { tenant } = useTenant();
-  const { toast } = useToast();
-  const [selectedAgent, setSelectedAgent] = useState<string>("");
-
-  const adjustAgentXP = useCallback(
-    async (agent: string, delta: number) => {
-      if (!tenant?.id) return;
-
-      const { error } = await (await import("@/integrations/supabase/client")).supabase
-        .from("agent_memory")
-        .insert({
-          agent_name: agent,
-          type: "feedback",
-          context: `Manual XP adjustment: ${delta}`,
-          xp_delta: delta,
-          tenant_id: tenant.id,
-        });
-
-      if (error) {
-        toast({
-          title: "XP Adjustment Error",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "XP Adjusted",
-          description: `${agent} received ${delta} XP`
-        });
-      }
-    },
-    [tenant?.id, toast]
-  );
-
-  const rateAgentTask = useCallback(
-    async (agent: string, rating: number) => {
-      if (!tenant?.id) return;
-
-      const { error } = await (await import("@/integrations/supabase/client")).supabase
-        .from("agent_feedback")
-        .insert({
-          agent,
-          rating,
-          type: "task_rating",
-          tenant_id: tenant.id,
-        });
-
-      if (error) {
-        toast({
-          title: "Rating Error",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Task Rated",
-          description: `${agent} rated ${rating}/5 stars`
-        });
-      }
-    },
-    [tenant?.id, toast]
-  );
-
-  const submitPromptFeedback = useCallback(
-    async (agent: string, feedback: string) => {
-      if (!tenant?.id || !feedback.trim()) return;
-
-      const { error } = await (await import("@/integrations/supabase/client")).supabase
-        .from("agent_feedback")
-        .insert({
-          agent,
-          type: "prompt_feedback",
-          feedback,
-          tenant_id: tenant.id,
-        });
-
-      if (error) {
-        toast({
-          title: "Prompt Feedback Error",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Prompt Feedback Submitted",
-          description: `Feedback for ${agent} sent successfully`
-        });
-      }
-    },
-    [tenant?.id, toast]
-  );
-
-  const uniqueAgents = [...new Set(stats.map((s) => s.agent))];
-
-  // When we have stats but no selected agent, default to the first one
-  if (uniqueAgents.length > 0 && !selectedAgent) {
-    setSelectedAgent(uniqueAgents[0]);
-  }
-
-  return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">
-        <span role="img" aria-label="Performance">📈</span> Agent Performance Dashboard
-      </h1>
-
-      {alerts.length > 0 && (
-        <div className="mb-6">
-          <Alert className="bg-yellow-50 border-yellow-200">
-            <AlertTitle>Prompt Version Recommendations</AlertTitle>
-            <AlertDescription>
-              <ul className="mt-2 space-y-1">
-                {alerts.map((alert) => (
-                  <li key={alert.id} className="flex items-center justify-between">
-                    <span>{alert.message}</span>
-                    <a
-                      href={`/agents/versions/compare/${alert.agent}`}
-                      className="text-primary hover:underline text-sm"
-                    >
-                      🔍 Compare Versions
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </AlertDescription>
-          </Alert>
-        </div>
-      )}
-
-      <AgentPerformanceChart stats={stats} />
-
-      <AgentSelector
-        agents={uniqueAgents}
-        selectedAgent={selectedAgent}
-        onChange={setSelectedAgent}
-      />
-
-      {selectedAgent && (
-        <div className="mb-6">
-          <PromptPerformanceStats agentName={selectedAgent} />
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
-        {uniqueAgents.map((agent) => {
-          const agentData = stats.filter((d) => d.agent === agent);
-          return (
-            <AgentSummaryCard
-              key={agent}
-              agent={agent}
-              agentData={agentData}
-              adjustAgentXP={adjustAgentXP}
-              rateAgentTask={rateAgentTask}
-              submitPromptFeedback={submitPromptFeedback}
-            />
-          );
-        })}
+  const [selectedMetric, setSelectedMetric] = useState<string>('successRate');
+  const [selectedAgent, setSelectedAgent] = useState<string>('all');
+  
+  const { stats, loading, error } = useAgentStats();
+  
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-6 min-h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          <p className="font-medium">Error loading agent performance data</p>
+          <p>{error.message}</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Extract agent names for filtering
+  const agentNames = ['all', ...Array.from(new Set(stats.map(stat => stat.agentName)))];
+  
+  // Filter agents based on selection
+  const filteredStats = selectedAgent === 'all' 
+    ? stats 
+    : stats.filter(stat => stat.agentName === selectedAgent);
+  
+  // Calculate overall metrics
+  const totalTasks = filteredStats.reduce((sum, stat) => sum + stat.totalTasks, 0);
+  const avgSuccessRate = filteredStats.length 
+    ? filteredStats.reduce((sum, stat) => sum + stat.successRate, 0) / filteredStats.length 
+    : 0;
+  const avgExecutionTime = filteredStats.length 
+    ? filteredStats.reduce((sum, stat) => sum + stat.averageExecutionTime, 0) / filteredStats.length 
+    : 0;
+  
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <h1 className="text-2xl font-bold">Agent Performance Dashboard</h1>
+        
+        <div className="flex items-center gap-4">
+          <Select value={selectedAgent} onValueChange={(value) => setSelectedAgent(value)}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by agent" />
+            </SelectTrigger>
+            <SelectContent>
+              {agentNames.map(agent => (
+                <SelectItem key={agent} value={agent}>
+                  {agent === 'all' ? 'All Agents' : agent}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Tasks
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalTasks}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Average Success Rate
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center">
+              <div className="text-2xl font-bold">{avgSuccessRate.toFixed(1)}%</div>
+              <Badge className="ml-2" variant={avgSuccessRate > 85 ? "default" : "outline"}>
+                {avgSuccessRate > 85 ? 'Good' : 'Needs Improvement'}
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Avg. Execution Time
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{avgExecutionTime.toFixed(1)}ms</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Tabs defaultValue="performance" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="performance">Performance</TabsTrigger>
+          <TabsTrigger value="prompts">Prompts</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="performance" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Agent Performance Metrics</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-2">
+              <div className="flex flex-wrap gap-2 mb-4">
+                <Select value={selectedMetric} onValueChange={setSelectedMetric}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Select metric" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="successRate">Success Rate</SelectItem>
+                    <SelectItem value="averageExecutionTime">Execution Time</SelectItem>
+                    <SelectItem value="totalTasks">Total Tasks</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="h-[350px]">
+                <AgentPerformanceChart 
+                  data={filteredStats} 
+                  metric={selectedMetric}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="prompts" className="space-y-4">
+          {filteredStats.map(agent => (
+            <div key={agent.agentName}>
+              <PromptPerformanceStats agentName={agent.agentName} />
+            </div>
+          ))}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

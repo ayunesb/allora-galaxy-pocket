@@ -5,7 +5,11 @@ import { usePromptPerformance } from "../hooks/usePromptPerformance";
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ErrorAlert from '@/components/ui/ErrorAlert';
 
-export default function PromptPerformanceStats({ agentName }: { agentName: string }) {
+interface PromptPerformanceStatsProps {
+  agentName: string;
+}
+
+export default function PromptPerformanceStats({ agentName }: PromptPerformanceStatsProps) {
   const { data, isLoading, error, generatePromptRecommendations } = usePromptPerformance(agentName);
   const recommendations = generatePromptRecommendations();
 

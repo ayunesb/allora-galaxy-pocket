@@ -26,21 +26,21 @@ export function useAgentStats() {
         
         if (apiError) throw apiError;
         
-        // Transform to AgentStats format with proper type handling
+        // Transform to AgentStats format with proper type handling and defaults
         const agentStats: AgentStats[] = (data || []).map(log => {
-          // Safely extract values from metrics object
+          // Safely extract values with defaults
           const metrics = log.metrics as Record<string, any> | null;
-          const totalTasks = metrics && typeof metrics === 'object' ? 
-            (metrics.total_tasks || 0) : 0;
-          const avgExecutionTime = metrics && typeof metrics === 'object' ? 
-            (metrics.avg_execution_time || 0) : 0;
+          const totalTasks = metrics && typeof metrics === 'object' && 'total_tasks' in metrics ? 
+            Number(metrics.total_tasks) || 0 : 0;
+          const avgExecutionTime = metrics && typeof metrics === 'object' && 'avg_execution_time' in metrics ? 
+            Number(metrics.avg_execution_time) || 0 : 0;
             
           return {
-            agentName: log.agent_name,
+            agentName: log.agent_name || 'Unknown',
             totalTasks,
-            successRate: log.success_rate || 0,
+            successRate: typeof log.success_rate === 'number' ? log.success_rate : 0,
             averageExecutionTime: avgExecutionTime,
-            lastExecuted: log.created_at
+            lastExecuted: log.created_at || new Date().toISOString()
           };
         });
         

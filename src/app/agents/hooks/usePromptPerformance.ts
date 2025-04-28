@@ -21,15 +21,15 @@ export function usePromptPerformance(agentName: string) {
           
         if (apiError) throw apiError;
         
-        // Transform to expected format
+        // Transform to expected format with safeguards
         const transformedData: PromptPerformanceData[] = (apiData || []).map(item => ({
-          agent_name: item.agent_name,
-          version: item.version,
+          agent_name: item.agent_name || '',
+          version: item.version || 1,
           success_rate: 90, // Default value as this might come from analytics
           upvotes: 10, // Default value 
           downvotes: 1, // Default value
           total_executions: 20, // Default value
-          last_executed: item.created_at
+          last_executed: item.created_at || new Date().toISOString()
         }));
         
         setData(transformedData);

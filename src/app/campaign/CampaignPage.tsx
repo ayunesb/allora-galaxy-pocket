@@ -24,7 +24,15 @@ export default function CampaignPage() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as Campaign[];
+      
+      // Ensure the data conforms to the Campaign type
+      return (data || []).map(campaign => {
+        // Cast the status to CampaignStatus to avoid type issues
+        return {
+          ...campaign,
+          status: campaign.status as Campaign['status']
+        };
+      }) as Campaign[];
     },
     enabled: !!tenant?.id
   });

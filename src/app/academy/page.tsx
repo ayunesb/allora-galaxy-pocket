@@ -39,8 +39,8 @@ export default function AcademyPage() {
       
       if (error) throw error;
       
-      // Ensure all memories have summary and tags
-      return (data || []).map(item => ({
+      // Process memories and ensure summary and tags are always available
+      return (data || []).map((item: any) => ({
         ...item,
         summary: item.summary || item.context.substring(0, 100) + (item.context.length > 100 ? "..." : ""),
         tags: item.tags || []

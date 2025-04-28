@@ -74,7 +74,7 @@ export interface AgentTask {
   error?: string;
 }
 
-// Making tags and summary optional in AgentMemoryLog to match AgentMemory
+// Making summary and tags optional in AgentMemoryLog to match AgentMemory
 export interface AgentMemoryLog {
   id: string;
   agent_name: string;
@@ -87,8 +87,8 @@ export interface AgentMemoryLog {
   ai_rating?: number;
   remix_count?: number;
   xp_delta?: number;
-  summary?: string; // Make it optional
-  tags?: string[]; // Make it optional
+  summary?: string;
+  tags?: string[];
 }
 
 export interface AgentCollabMessage {

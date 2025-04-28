@@ -1,5 +1,5 @@
 
-import { AgentProfile } from "@/app/agents/hooks/useAgentProfile";
+import { AgentProfile } from "@/types/agent";
 import { ScriptDialog } from "@/components/ScriptDialog";
 
 interface AgentPreviewProps {
@@ -73,4 +73,3 @@ export default function AgentPreview({ agent }: AgentPreviewProps) {
     </div>
   );
 }
-

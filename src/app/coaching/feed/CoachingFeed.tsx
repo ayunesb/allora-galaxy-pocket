@@ -1,3 +1,4 @@
+
 import { useToast } from "@/hooks/use-toast";
 import AgentProfile from "@/app/academy/AgentProfile";
 import RemixedStrategy from "@/app/academy/RemixedStrategy";
@@ -26,7 +27,7 @@ const CoachingFeed = () => {
     // When logging feedback, ensure types match
     const feedbackLog: FeedbackLog = {
       strategy_title: title,
-      action: 'used', // This is now strongly typed to 'used' | 'dismissed'
+      action: 'used' as const, // Explicitly define as 'used' literal type
       created_at: new Date().toISOString()
     };
     

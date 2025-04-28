@@ -1,72 +1,79 @@
 
 'use client';
 
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { AgentMemory } from "@/types/agent";
-import MemoryTable from "../components/MemoryTable";
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import ErrorAlert from "@/components/ui/ErrorAlert";
+import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { supabase } from '@/integrations/supabase/client';
+import MemoryTable from '@/app/admin/agents/components/MemoryTable';
+import { AgentMemory } from '@/types/agent';
 
-export default function AgentMemoryConsole() {
-  const [logs, setLogs] = useState<AgentMemory[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+export default function AgentMemoryAdmin() {
+  const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
+  const [agents, setAgents] = useState<string[]>([]);
 
-  useEffect(() => {
-    const fetchLogs = async () => {
-      setIsLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from("agent_memory")
-          .select("*")
-          .order("timestamp", { ascending: false });
+  const { data: memories, isLoading } = useQuery({
+    queryKey: ['admin-agent-memories', selectedAgent],
+    queryFn: async () => {
+      let query = supabase
+        .from('agent_memory')
+        .select('*')
+        .order('timestamp', { ascending: false });
         
-        if (error) {
-          throw error;
-        }
-        
-        const formattedData = (data || []).map(item => ({
-          ...item,
-          summary: item.summary || item.context.substring(0, 100) + (item.context.length > 100 ? "..." : ""),
-          tags: item.tags || []
-        })) as AgentMemory[];
-        
-        setLogs(formattedData);
-      } catch (err) {
-        console.error("Error fetching agent memory:", err);
-        setError(err instanceof Error ? err : new Error("Failed to fetch agent memory"));
-      } finally {
-        setIsLoading(false);
+      if (selectedAgent && selectedAgent !== 'all') {
+        query = query.eq('agent_name', selectedAgent);
       }
-    };
+      
+      const { data, error } = await query.limit(100);
+      if (error) throw error;
+      
+      // Process the data to ensure summary and tags exist
+      return (data || []).map((item: any) => ({
+        ...item,
+        summary: item.summary || item.context.substring(0, 100) + (item.context.length > 100 ? "..." : ""),
+        tags: item.tags || []
+      })) as AgentMemory[];
+    }
+  });
 
-    fetchLogs();
+  // Fetch all unique agent names for filtering
+  useEffect(() => {
+    async function fetchAgentNames() {
+      const { data } = await supabase
+        .from('agent_memory')
+        .select('agent_name')
+        .limit(1000);
+        
+      if (data) {
+        const uniqueAgents = [...new Set(data.map(item => item.agent_name))];
+        setAgents(['all', ...uniqueAgents]);
+      }
+    }
+    
+    fetchAgentNames();
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="container mx-auto p-6 flex justify-center">
-        <LoadingSpinner size="lg" label="Loading agent memory data..." />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="container mx-auto p-6">
-        <ErrorAlert 
-          title="Failed to load agent memory" 
-          description={error.message}
-        />
-      </div>
-    );
-  }
-
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">🧠 Agent Memory Console</h1>
-      <MemoryTable logs={logs} />
+    <div className="container mx-auto py-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Agent Memory Logs</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="all" className="mb-6" onValueChange={setSelectedAgent}>
+            <TabsList className="mb-2">
+              {agents.map(agent => (
+                <TabsTrigger key={agent} value={agent}>
+                  {agent === 'all' ? 'All Agents' : agent}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+          
+          <MemoryTable logs={memories || []} />
+        </CardContent>
+      </Card>
     </div>
   );
 }
