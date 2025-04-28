@@ -31,9 +31,11 @@ export function KpiEmptyState({ onAddKpi }: KpiEmptyStateProps) {
             Add First KPI
           </Button>
         ) : (
-          <Button component={Link} to="/kpi/add" className="flex items-center">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add First KPI
+          <Button asChild>
+            <Link to="/kpi/add" className="flex items-center">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add First KPI
+            </Link>
           </Button>
         )}
       </CardFooter>

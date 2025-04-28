@@ -1,6 +1,4 @@
 
-// Fix the useInsightsData hook ROI data access
-
 import { useMemo } from "react";
 import { useKpiHistory } from "./useKpiHistory";
 import { useFeedbackMetrics } from "./useFeedbackMetrics";

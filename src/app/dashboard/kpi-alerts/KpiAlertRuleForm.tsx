@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -50,14 +51,14 @@ export default function KpiAlertRuleForm({ onSuccess, initialData, isEditing = f
       if (isEditing && initialData?.id) {
         // Update existing rule
         response = await supabase
-          .from('kpi_alert_rules')
+          .from('kpi_alert_rules' as any)
           .update(alertData as any)
           .eq('id', initialData.id)
           .select();
       } else {
         // Create new rule
         response = await supabase
-          .from('kpi_alert_rules')
+          .from('kpi_alert_rules' as any)
           .insert({
             ...alertData,
             created_at: new Date().toISOString(),

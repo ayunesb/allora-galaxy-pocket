@@ -6,7 +6,7 @@ import { Plugin } from "@/types/plugin";
 import { toast } from "sonner";
 
 type PluginContextType = {
-  activePlugins: Plugin['key'][];
+  activePlugins: string[];
   refreshPlugins: () => Promise<void>;
   isLoading: boolean;
 };
@@ -15,7 +15,7 @@ const PluginContext = createContext<PluginContextType | undefined>(undefined);
 
 export function PluginProvider({ children }: { children: ReactNode }) {
   const { tenant } = useTenant();
-  const [activePlugins, setActivePlugins] = useState<Plugin['key'][]>([]);
+  const [activePlugins, setActivePlugins] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshPlugins = async () => {
@@ -34,7 +34,7 @@ export function PluginProvider({ children }: { children: ReactNode }) {
 
       if (error) throw error;
       
-      setActivePlugins(data.map((p) => p.plugin_key) as Plugin['key'][]);
+      setActivePlugins(data.map((p) => p.plugin_key));
     } catch (error) {
       console.error("[PluginContext] Error:", error);
       setActivePlugins([]);

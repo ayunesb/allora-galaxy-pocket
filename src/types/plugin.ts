@@ -1,21 +1,16 @@
 
-export type PluginKey = 'stripe' | 'hubspot' | 'shopify' | 'ga4' | 'twilio' | 'openai' | 'slack' | 'zapier';
-
 export interface Plugin {
   id: string;
-  key: PluginKey;
   name: string;
-  description: string;
-  version: string;
+  key: string;
+  description?: string;
+  version?: string;
   author?: string;
+  badge?: string;
   category?: string;
   icon_url?: string;
-  badge?: string;
-  tags?: string[];
-  label?: string;
-  icon?: string;
-}
-
-export interface PluginConfig {
-  [key: string]: any;
+  install_url?: string;
+  slug?: string;
+  changelog?: any;
+  created_at?: string;
 }

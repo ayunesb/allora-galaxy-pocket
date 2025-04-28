@@ -7,6 +7,14 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/componen
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, ChartLine, Activity, RefreshCw } from 'lucide-react';
 
+interface CampaignInsight {
+  id: string;
+  campaigns?: {
+    name: string;
+  };
+  insight_text?: string;
+}
+
 export function GrowthPanel() {
   const { tenant } = useTenant();
   const { alerts = [], campaignInsights = [], refreshAlerts, triggerKpiCheck, isLoading } = useKpiAlerts();
@@ -106,7 +114,7 @@ export function GrowthPanel() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {campaignInsights.slice(0, 3).map((insight) => (
+              {(campaignInsights as unknown as CampaignInsight[]).slice(0, 3).map((insight) => (
                 <div key={insight.id} className="border-l-4 border-primary pl-4 py-2">
                   <p className="font-medium">{insight.campaigns?.name || 'Unnamed Campaign'}</p>
                   <p className="text-sm text-muted-foreground">

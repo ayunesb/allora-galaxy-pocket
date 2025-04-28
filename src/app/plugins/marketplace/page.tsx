@@ -15,6 +15,22 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Plugin } from '@/types/plugin';
 import { toast } from 'sonner';
 
+// Create a type that matches what the supabase query returns
+interface PluginData {
+  id: string;
+  name: string;
+  slug?: string;
+  description?: string;
+  version?: string;
+  author?: string;
+  badge?: string;
+  category?: string;
+  icon_url?: string;
+  install_url?: string;
+  created_at?: string;
+  changelog?: any;
+}
+
 export default function PluginMarketplacePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -24,7 +40,7 @@ export default function PluginMarketplacePage() {
   const [selectedPlugin, setSelectedPlugin] = useState<Plugin | null>(null);
   
   // Fetch all available plugins
-  const { data: plugins = [], isLoading: isLoadingPlugins } = useQuery({
+  const { data: pluginsData = [], isLoading: isLoadingPlugins } = useQuery({
     queryKey: ['marketplace-plugins'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -33,9 +49,15 @@ export default function PluginMarketplacePage() {
         .order('name');
         
       if (error) throw error;
-      return data;
+      return data as PluginData[];
     }
   });
+  
+  // Transform the plugin data to match the Plugin interface
+  const plugins: Plugin[] = pluginsData.map(plugin => ({
+    ...plugin,
+    key: plugin.slug || plugin.id // Use slug as key, fallback to id
+  }));
   
   // Get all unique categories
   const categories = [...new Set(plugins.map(plugin => plugin.category).filter(Boolean))];

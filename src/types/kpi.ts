@@ -39,6 +39,7 @@ export interface KpiAlert {
   created_at: string;
   status: 'pending' | 'triggered' | 'acknowledged' | 'resolved';
   outcome?: string;
+  suggested_action?: string;
 }
 
 export interface KpiAlertRule {
@@ -53,4 +54,20 @@ export interface KpiAlertRule {
   created_at: string;
   updated_at?: string;
   active: boolean;
+}
+
+export interface CampaignInsight {
+  id: string;
+  kpi_name: string;
+  insight: string;
+  suggested_action?: string;
+  impact_level?: string;
+  campaign_id?: string;
+  tenant_id?: string;
+  created_at?: string;
+  campaigns?: {
+    id: string;
+    name: string;
+    status?: string;
+  };
 }

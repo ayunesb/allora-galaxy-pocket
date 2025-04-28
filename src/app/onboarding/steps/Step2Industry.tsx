@@ -1,103 +1,107 @@
 
-import React from "react";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import type { OnboardingProfile, Industry } from "@/types/onboarding";
-import StepTemplate from "./StepTemplate";
-import { useIndustryKit } from "@/hooks/useIndustryKit";
-import { Briefcase } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+// Import React and necessary hooks and components
+import React, { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { StepTemplate } from '../components/StepTemplate';
+import { useTenant } from '@/hooks/useTenant';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
-const industries: { value: Industry; label: string }[] = [
-  { value: "tech", label: "Technology" },
-  { value: "ecommerce", label: "E-commerce" },
-  { value: "education", label: "Education" },
-  { value: "healthcare", label: "Healthcare" },
-  { value: "finance", label: "Finance" },
-  { value: "manufacturing", label: "Manufacturing" },
-  { value: "retail", label: "Retail" },
-  { value: "other", label: "Other" },
+// Define industry options
+const industryOptions = [
+  'Technology',
+  'Finance',
+  'Healthcare',
+  'Education',
+  'Retail',
+  'Manufacturing',
+  'Media',
+  'Entertainment',
+  'Travel',
+  'Food & Beverage',
+  'Other'
 ];
 
-type Props = {
-  next: (data: Partial<OnboardingProfile>) => void;
-  back: () => void;
-  profile: OnboardingProfile;
-};
-
-export default function Step2Industry({ next, back, profile }: Props) {
-  const [selected, setSelected] = React.useState<Industry | undefined>(
-    profile.industry
-  );
-  const { applyKit, isLoading } = useIndustryKit();
+export default function Step2Industry({ onNext }: { onNext: () => void }) {
+  const [selectedIndustry, setSelectedIndustry] = useState<string>('');
+  const [otherIndustry, setOtherIndustry] = useState<string>('');
+  const [processing, setProcessing] = useState(false);
+  const { tenant, refreshTenant } = useTenant();
 
   const handleNext = async () => {
-    if (selected) {
-      // Apply the industry kit before proceeding
-      await applyKit(selected);
-      next({ industry: selected });
+    if (!tenant) {
+      toast.error('No tenant selected');
+      return;
+    }
+
+    setProcessing(true);
+    
+    try {
+      // Update the company profile with the industry
+      const finalIndustry = selectedIndustry === 'Other' ? otherIndustry : selectedIndustry;
+      
+      const { error } = await supabase
+        .from('company_profiles')
+        .update({ industry: finalIndustry })
+        .eq('tenant_id', tenant.id);
+      
+      if (error) throw error;
+      
+      await refreshTenant();
+      onNext();
+    } catch (err: any) {
+      toast.error('Failed to save industry', {
+        description: err.message
+      });
+    } finally {
+      setProcessing(false);
     }
   };
-
-  const getKitBadge = (industry: Industry) => {
-    if (industry === "tech") return "SaaS Kit";
-    if (industry === "ecommerce") return "E-commerce Kit";
-    if (industry === "education") return "Coaching Kit";
-    return null;
-  };
-
+  
   return (
-    <StepTemplate
-      title="Select your industry"
-      description="We'll customize your experience based on your industry"
-      showBack
-      onBack={back}
+    <StepTemplate 
+      title="Select Your Industry" 
+      description="This helps us customize your experience."
+      showBack={true}
+      onBack={() => window.history.back()}
       onNext={handleNext}
-      nextDisabled={!selected || isLoading}
-      isLoading={isLoading}
+      nextDisabled={!selectedIndustry || (selectedIndustry === 'Other' && !otherIndustry)}
     >
-      <div className="space-y-4">
-        <Select
-          value={selected}
-          onValueChange={(value) => setSelected(value as Industry)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Choose an industry" />
-          </SelectTrigger>
-          <SelectContent>
-            {industries.map((industry) => (
-              <SelectItem key={industry.value} value={industry.value}>
-                <div className="flex items-center justify-between w-full">
-                  <span>{industry.label}</span>
-                  {getKitBadge(industry.value) && (
-                    <Badge variant="outline" className="ml-2 bg-green-50">
-                      {getKitBadge(industry.value)}
-                    </Badge>
-                  )}
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {industryOptions.map((industry) => (
+          <Card 
+            key={industry}
+            className={`cursor-pointer transition-all hover:border-primary ${
+              selectedIndustry === industry ? 'border-2 border-primary bg-primary/5' : ''
+            }`}
+            onClick={() => setSelectedIndustry(industry)}
+          >
+            <CardContent className="p-4 flex items-center justify-center text-center min-h-[70px]">
+              {industry}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-        {selected && (getKitBadge(selected)) && (
-          <div className="p-4 bg-muted rounded-md border">
-            <div className="flex items-center gap-2 mb-2">
-              <Briefcase className="h-4 w-4 text-primary" />
-              <h3 className="font-medium">Vertical Starter Kit Included</h3>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Your selection includes a pre-configured industry kit with 
-              specialized strategies, KPIs, and agent configurations.
-            </p>
-          </div>
-        )}
+      {selectedIndustry === 'Other' && (
+        <div className="mt-4">
+          <Input 
+            value={otherIndustry}
+            onChange={(e) => setOtherIndustry(e.target.value)} 
+            placeholder="Please specify your industry"
+          />
+        </div>
+      )}
+
+      <div className="mt-8 text-center">
+        <Button 
+          onClick={handleNext} 
+          disabled={!selectedIndustry || (selectedIndustry === 'Other' && !otherIndustry) || processing}
+        >
+          {processing ? 'Saving...' : 'Continue'}
+        </Button>
       </div>
     </StepTemplate>
   );
