@@ -12,15 +12,15 @@ export const appRoutes: RouteObject[] = [
   {
     path: "/campaigns",
     children: [
-      { index: true, element: <CampaignCenter /> },
-      { path: "create", element: <CampaignCreatePage /> },
-      { path: "wizard", element: <CampaignWizard /> },
+      { index: true, element: CampaignCenter },
+      { path: "create", element: CampaignCreatePage },
+      { path: "wizard", element: CampaignWizard },
       // Other campaign routes...
     ],
   },
   {
     path: "/launch-readiness",
-    element: <LaunchReadinessPage />
+    element: LaunchReadinessPage
   },
   // Other app routes...
 ];

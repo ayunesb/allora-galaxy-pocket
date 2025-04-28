@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
@@ -99,7 +98,7 @@ export default function CampaignCreatePage() {
           target_audience: item.target_audience || '',
           industry: item.industry || '',
           confidence: item.confidence || null
-        } as Strategy));
+        } as Strategy)));
         
         if (initialStrategyId) {
           const selectedStrategy = data?.find(s => s.id === initialStrategyId) || null;
