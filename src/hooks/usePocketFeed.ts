@@ -2,138 +2,110 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/hooks/useTenant';
-import { useSystemLogs } from '@/hooks/useSystemLogs';
-import { ContentCard } from '@/utils/swipeHandlers';
-import { toast } from 'sonner';
 import { Strategy } from '@/types/strategy';
-import { Campaign } from '@/types/campaign';
-import { transformStrategyArray } from '@/utils/dataTransformers';
+import { useToast } from './use-toast';
+
+interface Card {
+  id: string;
+  type: 'strategy' | 'campaign' | 'pricing_decision' | 'hire_decision';
+  title: string;
+  description: string;
+  created_at: string;
+  metadata?: Record<string, any>;
+}
 
 export function usePocketFeed() {
-  const [cards, setCards] = useState<ContentCard[]>([]);
+  const [cards, setCards] = useState<Card[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [viewedCount, setViewedCount] = useState(0);
   const [swiped, setSwiped] = useState<string[]>([]);
-  
   const { tenant } = useTenant();
-  const { logActivity } = useSystemLogs();
-  
-  // Fetch different content types
+  const { toast } = useToast();
+
+  const incrementViewedCount = () => {
+    setViewedCount(prev => prev + 1);
+  };
+
+  const markCardSwiped = (cardId: string) => {
+    setSwiped(prev => [...prev, cardId]);
+  };
+
   useEffect(() => {
-    if (!tenant?.id) return;
-    
-    async function fetchContent() {
+    const fetchCards = async () => {
+      if (!tenant?.id) return;
+      
       setLoading(true);
       setError(null);
       
       try {
-        // Get strategies
-        const { data: strategies, error: stratError } = await supabase
+        // Fetch strategies
+        const { data: strategies, error: strategiesError } = await supabase
           .from('strategies')
           .select('*')
           .eq('tenant_id', tenant.id)
-          .eq('status', 'approved')
-          .order('created_at', { ascending: false })
-          .limit(5);
-          
-        if (stratError) throw stratError;
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false });
         
-        // Get campaigns
-        const { data: campaigns, error: campError } = await supabase
+        if (strategiesError) throw strategiesError;
+        
+        // Fetch pending campaigns
+        const { data: campaigns, error: campaignsError } = await supabase
           .from('campaigns')
           .select('*')
           .eq('tenant_id', tenant.id)
-          .order('created_at', { ascending: false })
-          .limit(5);
+          .eq('status', 'draft')
+          .order('created_at', { ascending: false });
           
-        if (campError) throw campError;
+        if (campaignsError) throw campaignsError;
         
-        // Mock data for pricing decisions and hire decisions
-        // In a real app, these would come from their respective tables
-        const pricingDecisions = [
-          {
-            id: 'price-1',
-            type: 'pricing_decision',
-            title: 'Premium Plan Price Adjustment',
-            description: 'Increase premium plan price by 10% based on competitor analysis and feature additions.',
-            created_at: new Date().toISOString()
-          },
-          {
-            id: 'price-2',
-            type: 'pricing_decision',
-            title: 'Volume Discount Strategy',
-            description: 'Implement tiered volume discounts for enterprise clients to incentivize larger contracts.',
-            created_at: new Date().toISOString()
+        // Convert strategies to cards
+        const strategyCards: Card[] = (strategies || []).map((strategy: any) => ({
+          id: strategy.id,
+          type: 'strategy',
+          title: strategy.title || 'Untitled Strategy',
+          description: strategy.description || 'No description available',
+          created_at: strategy.created_at,
+          metadata: {
+            assigned_agent: strategy.assigned_agent,
+            health_score: strategy.health_score,
+            impact_score: strategy.impact_score,
           }
-        ];
+        }));
         
-        const hireDecisions = [
-          {
-            id: 'hire-1',
-            type: 'hire_decision',
-            title: 'Marketing Specialist',
-            description: 'Hire a growth marketing specialist to focus on acquisition channels and SEO optimization.',
-            created_at: new Date().toISOString()
+        // Convert campaigns to cards
+        const campaignCards: Card[] = (campaigns || []).map((campaign: any) => ({
+          id: campaign.id,
+          type: 'campaign',
+          title: campaign.name || 'Untitled Campaign',
+          description: campaign.description || 'No description available',
+          created_at: campaign.created_at,
+          metadata: {
+            status: campaign.status,
+            execution_status: campaign.execution_status,
           }
-        ];
+        }));
         
-        // Format strategies
-        const formattedStrategies = transformToContentCards(strategies as Strategy[], 'strategy');
+        // Combine all cards and sort by created_at
+        const allCards = [...strategyCards, ...campaignCards]
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         
-        // Format campaigns
-        const formattedCampaigns = transformToContentCards(campaigns as Campaign[], 'campaign');
-        
-        // Combine all content types and shuffle
-        const allContent = [
-          ...formattedStrategies, 
-          ...formattedCampaigns,
-          ...pricingDecisions,
-          ...hireDecisions
-        ].sort(() => Math.random() - 0.5);
-        
-        setCards(allContent);
-        
-        // Log the activity
-        await logActivity({
-          event_type: 'POCKET_VIEW',
-          message: 'User viewed pocket swipe content',
-          meta: { content_count: allContent.length }
+        setCards(allCards);
+      } catch (err) {
+        console.error('Error fetching pocket feed:', err);
+        setError(err instanceof Error ? err : new Error('Failed to fetch pocket feed'));
+        toast({
+          title: "Error loading content",
+          description: err instanceof Error ? err.message : "Failed to load content",
+          variant: "destructive"
         });
-      } catch (error) {
-        console.error('Error fetching pocket content:', error);
-        setError(error instanceof Error ? error : new Error('Failed to load content'));
-        toast.error('Failed to load content');
       } finally {
         setLoading(false);
       }
-    }
+    };
     
-    fetchContent();
-  }, [tenant?.id, logActivity]);
-
-  const transformToContentCards = (items: any[], type: string): ContentCard[] => {
-    if (!items || !Array.isArray(items)) return [];
-    
-    return items.map(item => ({
-      id: item.id,
-      type,
-      title: type === 'strategy' ? item.title : undefined,
-      name: type === 'campaign' ? item.name : undefined,
-      description: item.description || 'No description provided.',
-      created_at: item.created_at,
-      // Include any additional data from the original item
-      ...item
-    }));
-  };
-  
-  const incrementViewedCount = () => {
-    setViewedCount(prev => prev + 1);
-  };
-  
-  const markCardSwiped = (cardId: string) => {
-    setSwiped(prev => [...prev, cardId]);
-  };
+    fetchCards();
+  }, [tenant?.id, toast]);
   
   return {
     cards,

@@ -1,25 +1,26 @@
 
 import { useMemo } from 'react';
 import { useTenant } from './useTenant';
-import { useAuth } from './useAuth';
 
 export function useRolePermissions() {
-  const { user } = useAuth();
   const { tenant, userRole } = useTenant();
   
   const permissions = useMemo(() => {
-    const isAdmin = userRole === 'admin';
-    const isEditor = userRole === 'editor' || isAdmin;
-    const isContributor = userRole === 'contributor' || isEditor;
+    // Default to viewer permissions if no role is set
+    const role = userRole || 'viewer';
     
     return {
-      canManageUsers: isAdmin,
-      canManagePlugins: isAdmin || isEditor,
-      canCreateStrategy: isContributor,
-      canApproveStrategy: isEditor,
-      canViewAnalytics: true,
-      canEditSettings: isAdmin,
-      isAdmin  // Add isAdmin property
+      canReadData: true, // All roles can read data
+      canWriteData: role === 'admin' || role === 'editor',
+      canApproveStrategies: role === 'admin' || role === 'editor',
+      canManageUsers: role === 'admin',
+      canViewAdminPanel: role === 'admin',
+      canViewReports: role === 'admin' || role === 'editor' || role === 'analyst',
+      canManageSettings: role === 'admin',
+      canManagePlugins: role === 'admin',
+      canManageBilling: role === 'admin',
+      canExportData: role === 'admin' || role === 'editor' || role === 'analyst',
+      role
     };
   }, [userRole]);
   

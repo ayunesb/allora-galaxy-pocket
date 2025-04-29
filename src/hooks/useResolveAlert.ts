@@ -1,39 +1,41 @@
 
 import { useState } from 'react';
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from './use-toast';
 
 export function useResolveAlert() {
   const [isResolving, setIsResolving] = useState(false);
+  const { toast } = useToast();
 
-  const resolveAlert = async (alertId: string, resolutionNote: string) => {
+  const resolveAlert = async (alertId: string) => {
+    setIsResolving(true);
     try {
-      setIsResolving(true);
-
-      // Use the database function we created in the migration that handles both alert types
-      const { data, error } = await supabase.rpc(
-        'resolve_kpi_alert',
-        {
-          alert_id: alertId,
-          resolution_note: resolutionNote
-        }
-      );
+      // Using a direct update instead of a custom function
+      const { error } = await supabase
+        .from('kpi_alerts')
+        .update({ status: 'resolved', outcome: 'manually_resolved' })
+        .eq('id', alertId);
 
       if (error) throw error;
 
-      toast.success('Alert resolved successfully');
+      toast({
+        title: "Alert resolved",
+        description: "The alert has been successfully resolved.",
+      });
+
       return true;
     } catch (error) {
       console.error('Error resolving alert:', error);
-      toast.error('Failed to resolve alert');
+      toast({
+        title: "Failed to resolve alert",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive"
+      });
       return false;
     } finally {
       setIsResolving(false);
     }
   };
 
-  return {
-    resolveAlert,
-    isResolving
-  };
+  return { resolveAlert, isResolving };
 }

@@ -15,6 +15,11 @@ export interface AgentProfile {
   personality?: string;
   specialty?: string;
   experience_level?: string;
+  memory_score?: number;
+  last_memory_update?: string;
+  role: string;
+  tone: string;
+  language: string;
 }
 
 export function useAgentProfile() {

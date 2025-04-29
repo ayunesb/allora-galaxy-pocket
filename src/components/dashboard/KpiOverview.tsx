@@ -18,12 +18,18 @@ interface KpiTrend {
   day: string;
 }
 
+interface FullKpiData {
+  currentMetrics?: KpiMetric[];
+  trends?: KpiTrend[];
+}
+
 export function KpiOverview() {
   const { data, isLoading } = useKpiData();
   
-  // Extract metrics and trends safely with defaults
-  const currentMetrics: KpiMetric[] = data?.currentMetrics || [];
-  const trends: KpiTrend[] = data?.trends || [];
+  // Safely extract metrics or use defaults
+  const kpiData = data as unknown as FullKpiData | undefined;
+  const currentMetrics: KpiMetric[] = kpiData?.currentMetrics || [];
+  const trends: KpiTrend[] = kpiData?.trends || [];
 
   if (isLoading) {
     return <div>Loading KPI data...</div>;

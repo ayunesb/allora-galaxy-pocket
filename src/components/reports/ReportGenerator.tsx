@@ -1,166 +1,206 @@
 
-import { useState } from "react";
-import { DownloadIcon, FileText, Mail, Calendar, UserIcon, Search } from "lucide-react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useExportService } from "@/hooks/useExportService";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Download, FileText, Send } from 'lucide-react';
 
 interface ReportGeneratorProps {
-  defaultType?: 'strategy' | 'campaign' | 'kpi' | 'system';
-  showEmailOption?: boolean;
+  reportTypes: string[];
+  onGenerate: (reportType: string, options: ReportOptions) => Promise<void>;
+  isLoading?: boolean;
 }
 
-export function ReportGenerator({ defaultType = 'system', showEmailOption = true }: ReportGeneratorProps) {
-  const [reportType, setReportType] = useState<'strategy' | 'campaign' | 'kpi' | 'system'>(defaultType);
-  const [dateRange, setDateRange] = useState<number>(7);
-  const [email, setEmail] = useState<string>("");
-  const [search, setSearch] = useState<string>("");
-  const [exportFormat, setExportFormat] = useState<'pdf' | 'csv'>('pdf');
-  
-  const { downloadPDF, downloadCSV, emailReport, isLoading } = useExportService();
-  
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const filters = {
-      dateRange,
-      search: search || undefined
-    };
-    
-    if (exportFormat === 'pdf') {
-      await downloadPDF(reportType, filters);
-    } else {
-      const csvType = 
-        reportType === 'strategy' ? 'strategies' :
-        reportType === 'campaign' ? 'campaigns' :
-        reportType === 'kpi' ? 'kpis' : 'system_logs';
-        
-      await downloadCSV(csvType, filters);
+interface ReportOptions {
+  includeCharts: boolean;
+  format: 'pdf' | 'csv' | 'excel';
+  delivery: 'download' | 'email';
+  timeRange: 'week' | 'month' | 'quarter' | 'year';
+  metrics: string[];
+}
+
+export function ReportGenerator({ reportTypes, onGenerate, isLoading = false }: ReportGeneratorProps) {
+  const [reportType, setReportType] = useState<string>(reportTypes[0] || '');
+  const [options, setOptions] = useState<ReportOptions>({
+    includeCharts: true,
+    format: 'pdf',
+    delivery: 'download',
+    timeRange: 'month',
+    metrics: ['revenue', 'leads', 'conversions']
+  });
+  const { toast } = useToast();
+
+  const handleGenerateReport = async () => {
+    try {
+      await onGenerate(reportType, options);
+      toast({
+        title: "Report request sent",
+        description: "Your report is being generated. It will be available shortly."
+      });
+    } catch (error) {
+      toast({
+        title: "Report generation failed",
+        description: error instanceof Error ? error.message : "Failed to generate report",
+        variant: "destructive"
+      });
     }
   };
-  
-  const handleEmailReport = async () => {
-    if (!email) return;
-    
-    await emailReport(reportType, [email], {
-      dateRange,
-      search: search || undefined
-    });
+
+  const toggleMetric = (metric: string) => {
+    setOptions(prev => ({
+      ...prev,
+      metrics: prev.metrics.includes(metric)
+        ? prev.metrics.filter(m => m !== metric)
+        : [...prev.metrics, metric]
+    }));
   };
-  
+
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Generate Report</CardTitle>
-        <CardDescription>Export data as PDF or CSV reports</CardDescription>
+        <CardTitle className="flex items-center gap-2">
+          <FileText className="h-5 w-5" />
+          Generate Report
+        </CardTitle>
       </CardHeader>
-      <CardContent>
-        <Tabs defaultValue={reportType} onValueChange={(value) => setReportType(value as any)}>
-          <TabsList className="grid grid-cols-4 mb-4">
-            <TabsTrigger value="strategy">Strategy</TabsTrigger>
-            <TabsTrigger value="campaign">Campaign</TabsTrigger>
-            <TabsTrigger value="kpi">KPI</TabsTrigger>
-            <TabsTrigger value="system">Activity</TabsTrigger>
-          </TabsList>
-          
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="date-range">Date Range</Label>
-                <Select 
-                  value={dateRange.toString()} 
-                  onValueChange={(value) => setDateRange(parseInt(value))}
-                >
-                  <SelectTrigger id="date-range" className="w-full">
-                    <SelectValue placeholder="Select date range" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">Last 24 hours</SelectItem>
-                    <SelectItem value="7">Last 7 days</SelectItem>
-                    <SelectItem value="30">Last 30 days</SelectItem>
-                    <SelectItem value="90">Last 90 days</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="format">Export Format</Label>
-                <Select 
-                  value={exportFormat} 
-                  onValueChange={(value) => setExportFormat(value as 'pdf' | 'csv')}
-                >
-                  <SelectTrigger id="format" className="w-full">
-                    <SelectValue placeholder="Select format" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pdf">PDF Report</SelectItem>
-                    <SelectItem value="csv">CSV Data</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="search">Search (Optional)</Label>
-              <Input
-                id="search"
-                placeholder={`Search ${reportType} data...`}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-            
-            {showEmailOption && (
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Report To (Optional)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="email@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={handleEmailReport}
-                    disabled={!email || isLoading}
-                  >
-                    <Mail className="h-4 w-4 mr-2" />
-                    Send
-                  </Button>
-                </div>
-              </div>
-            )}
-          </form>
-        </Tabs>
-      </CardContent>
-      <CardFooter className="flex justify-between">
-        <div className="text-sm text-muted-foreground">
-          {exportFormat === 'pdf' ? 
-            "PDF includes cover page and data summary" : 
-            "CSV contains raw data for analysis"
-          }
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label>Report Type</Label>
+          <Select
+            value={reportType}
+            onValueChange={setReportType}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select report type" />
+            </SelectTrigger>
+            <SelectContent>
+              {reportTypes.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <Button type="submit" onClick={handleSubmit} disabled={isLoading}>
+        
+        <div className="space-y-2">
+          <Label>Time Range</Label>
+          <Select
+            value={options.timeRange}
+            onValueChange={(value) => setOptions({ ...options, timeRange: value as 'week' | 'month' | 'quarter' | 'year' })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="week">Last Week</SelectItem>
+              <SelectItem value="month">Last Month</SelectItem>
+              <SelectItem value="quarter">Last Quarter</SelectItem>
+              <SelectItem value="year">Last Year</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="space-y-2">
+          <Label>Format</Label>
+          <Select
+            value={options.format}
+            onValueChange={(value) => setOptions({ ...options, format: value as 'pdf' | 'csv' | 'excel' })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="pdf">PDF</SelectItem>
+              <SelectItem value="csv">CSV</SelectItem>
+              <SelectItem value="excel">Excel</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="space-y-2">
+          <Label>Delivery Method</Label>
+          <Select
+            value={options.delivery}
+            onValueChange={(value) => setOptions({ ...options, delivery: value as 'download' | 'email' })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="download">Download Now</SelectItem>
+              <SelectItem value="email">Send to Email</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="space-y-2">
+          <Label>Include Data</Label>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="metrics-revenue" 
+                checked={options.metrics.includes('revenue')} 
+                onCheckedChange={() => toggleMetric('revenue')}
+              />
+              <label htmlFor="metrics-revenue">Revenue</label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="metrics-leads" 
+                checked={options.metrics.includes('leads')} 
+                onCheckedChange={() => toggleMetric('leads')}
+              />
+              <label htmlFor="metrics-leads">Leads</label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="metrics-conversions" 
+                checked={options.metrics.includes('conversions')} 
+                onCheckedChange={() => toggleMetric('conversions')}
+              />
+              <label htmlFor="metrics-conversions">Conversions</label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="metrics-engagement" 
+                checked={options.metrics.includes('engagement')} 
+                onCheckedChange={() => toggleMetric('engagement')}
+              />
+              <label htmlFor="metrics-engagement">Engagement</label>
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Checkbox 
+            id="include-charts" 
+            checked={options.includeCharts} 
+            onCheckedChange={() => setOptions(prev => ({ ...prev, includeCharts: !prev.includeCharts }))}
+          />
+          <Label htmlFor="include-charts">Include Charts and Graphs</Label>
+        </div>
+      </CardContent>
+      <CardFooter>
+        <Button 
+          onClick={handleGenerateReport} 
+          disabled={isLoading}
+          className="w-full"
+        >
           {isLoading ? (
-            <span className="flex items-center">
-              <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              Processing...
-            </span>
+            'Generating...'
+          ) : options.delivery === 'download' ? (
+            <>
+              <Download className="mr-2 h-4 w-4" />
+              Download Report
+            </>
           ) : (
             <>
-              {exportFormat === 'pdf' ? 
-                <FileText className="h-4 w-4 mr-2" /> : 
-                <DownloadIcon className="h-4 w-4 mr-2" />
-              }
-              Generate Report
+              <Send className="mr-2 h-4 w-4" />
+              Email Report
             </>
           )}
         </Button>
