@@ -9,10 +9,11 @@ const roleColors: Record<string, { bg: string; text: string }> = {
 };
 
 export function RoleLabel({ role }: { role: UserRole }) {
-  const colors = roleColors[role as string];
-  const displayedRole = typeof role === 'string' 
-    ? role.charAt(0).toUpperCase() + role.slice(1) 
-    : String(role);
+  const roleKey = role as string;
+  const colors = roleColors[roleKey] || { bg: "bg-gray-100", text: "text-gray-800" };
+  
+  // Convert role to display format
+  const displayedRole = (role as string).charAt(0).toUpperCase() + (role as string).slice(1);
   
   return (
     <Badge variant="secondary" className={`${colors.bg} ${colors.text}`}>

@@ -37,7 +37,7 @@ export default function AssistantPanel() {
       setTimeout(() => {
         setResponse(output);
         
-        // Log the assistant interaction with agent info
+        // Update to use positional parameters
         if (agentProfile) {
           logActivity(
             "assistant_command", 
@@ -74,7 +74,7 @@ export default function AssistantPanel() {
 
   // Helper function to generate mock responses
   const mockResponse = (command: string) => {
-    const mockResponses = {
+    const mockResponses: Record<string, string> = {
       "write a cold email": "Subject: Quick idea to boost your leads\n\nHey there — I noticed you're scaling. Here's a way Allora OS can help...",
       "schedule a zoom": "✅ Call scheduled for Friday at 3pm with Alex",
       "tweet this": "Why use 8 tools when your AI CEO does it all? 👉 all-or-a.online"

@@ -1,8 +1,8 @@
 
 import { useState } from 'react';
-import { SystemLog } from '@/types/agent';
+import { SystemLog } from '@/types/systemLog';
 import { LogFilters, DEFAULT_FILTERS } from '@/types/logFilters';
-import { useSystemLogsState } from './useSystemLogsState';
+import { useSystemLogs } from './useSystemLogs';
 
 export function useSystemLogsWithFilters() {
   const [filters, setFilters] = useState<LogFilters>(DEFAULT_FILTERS);
@@ -14,7 +14,7 @@ export function useSystemLogsWithFilters() {
   // Create our own state with the missing properties
   const [logs, setLogs] = useState<SystemLog[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { logActivity } = useSystemLogsState();
+  const { logActivity } = useSystemLogs();
 
   // Define our own fetchLogs function
   const fetchLogs = async () => {

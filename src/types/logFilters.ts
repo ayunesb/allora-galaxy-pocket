@@ -1,37 +1,24 @@
 
-import { LogSeverity } from './systemLog';
-
 export interface LogFilters {
+  eventTypes: string[];
+  severity: string[];
   dateRange: number;
-  eventType: string | null;
-  searchTerm: string;
-  severity?: LogSeverity | null;
-  dateFrom?: Date;
-  dateTo?: Date;
+  dateFrom?: string; // Add missing property
+  dateTo?: string;   // Add missing property
+  search?: string;   // Add missing property
+  tenantId?: string; // Add missing property
+  service?: string;  // Add missing property
   userId?: string;
-  tenantId?: string;
-  service?: string;
-  search?: string;
-  limit?: number;
-  offset?: number;
 }
 
 export const DEFAULT_FILTERS: LogFilters = {
+  eventTypes: [],
+  severity: [],
   dateRange: 7,
-  eventType: null,
-  searchTerm: '',
-  severity: null
+  dateFrom: undefined,
+  dateTo: undefined,
+  search: '',
+  tenantId: undefined,
+  service: undefined,
+  userId: undefined
 };
-
-export interface SystemLogFilter {
-  startDate?: Date;
-  endDate?: Date;
-  eventTypes?: string[];
-  severity?: LogSeverity[];
-  search?: string;
-  limit?: number;
-  offset?: number;
-  userId?: string;
-  tenantId?: string;
-  service?: string;
-}

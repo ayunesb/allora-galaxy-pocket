@@ -8,11 +8,11 @@ export interface AgentTask {
   agent_name: string;
   task_type: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
-  payload: any; // Using any to avoid excessive type recursion
+  payload: any;
   created_at?: string;
   completed_at?: string;
   error_message?: string;
-  result?: any; // Using any to avoid excessive type recursion
+  result?: any;
 }
 
 export async function dispatchAgentTask(task: Omit<AgentTask, 'id' | 'created_at' | 'status'>) {
@@ -24,11 +24,8 @@ export async function dispatchAgentTask(task: Omit<AgentTask, 'id' | 'created_at
       created_at: new Date().toISOString(),
     };
 
-    // Check if the table actually exists before trying to insert
-    // Let's create a fallback approach since agent_tasks might not exist yet
-    
+    // Log to system_logs instead of trying to use agent_tasks table which might not exist
     try {
-      // First try logging to system_logs instead to avoid table issues
       const { data: logData, error: logError } = await supabase
         .from('system_logs')
         .insert({
@@ -37,7 +34,8 @@ export async function dispatchAgentTask(task: Omit<AgentTask, 'id' | 'created_at
           message: `Task for ${task.agent_name}: ${task.task_type}`,
           meta: {
             task: taskRecord
-          }
+          },
+          severity: 'info'
         })
         .select()
         .single();
@@ -95,8 +93,23 @@ export async function checkTaskStatus(taskId: string, tenantId: string) {
 
 export async function getAllPendingTasks(tenantId: string) {
   try {
-    // Since we're storing in system_logs now, let's just return an empty array
-    return { success: true, tasks: [] };
+    // Since we're storing in system_logs now, let's query those instead
+    const { data, error } = await supabase
+      .from('system_logs')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .eq('event_type', 'AGENT_TASK')
+      .order('created_at', { ascending: false });
+      
+    if (error) throw error;
+    
+    // Extract tasks from log metadata
+    const tasks = data.map(log => ({
+      id: log.id,
+      ...log.meta?.task,
+    })).filter(task => task.status === 'pending');
+    
+    return { success: true, tasks };
   } catch (error: any) {
     console.error('Error getting pending tasks:', error);
     return { success: false, error, tasks: [] };

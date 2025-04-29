@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { AdminLogsFilterPanel } from "./AdminLogsFilterPanel";
 import { LogFilters } from "@/types/logFilters";
+import { SystemLog } from "@/types/systemLog";
 
 export function AdminSystemLogs() {
   const {
@@ -52,7 +53,7 @@ export function AdminSystemLogs() {
           
           <div className="mt-6">
             <AdminSystemLogsTable
-              logs={logs}
+              logs={logs as SystemLog[]}
               isLoading={isLoading}
               pagination={paginationWithLogsPerPage}
               onNextPage={nextPage}

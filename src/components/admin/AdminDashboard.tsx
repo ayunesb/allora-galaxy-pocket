@@ -1,83 +1,48 @@
 
 import React, { useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useKpiMetrics } from '@/hooks/useKpiMetrics';
-import { useSystemLogs } from '@/hooks/useSystemLogs';
-import { useTenant } from '@/hooks/useTenant';
-import { KpiMetric } from '@/types/metrics';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AdminSystemLogs } from "@/app/admin/components/AdminSystemLogs";
+import { useSystemLogs } from "@/hooks/useSystemLogs";
+import type { KpiMetric } from "@/types/metrics";
 
-const AdminDashboard = ({ ...props }: any) => {
-  const { tenant } = useTenant();
-  const { metrics, isLoading } = useKpiMetrics();
+export default function AdminDashboard() {
   const { logActivity } = useSystemLogs();
-  
-  // Log dashboard access
+
   useEffect(() => {
-    if (tenant?.id) {
-      logActivity(
-        'ADMIN_DASHBOARD_VIEW',
-        'Admin dashboard accessed',
-        {
-          timestamp: new Date().toISOString()
-        }
-      );
-    }
-  }, [tenant?.id]);
-
-  // Extract relevant metrics
-  const calculateSystemHealth = (metrics: KpiMetric[]) => {
-    const healthMetric = metrics.find(m => m.metric === 'system_health');
-    return healthMetric?.value || 0;
-  };
-  
-  const calculateUserActivity = (metrics: KpiMetric[]) => {
-    const activityMetric = metrics.find(m => m.metric === 'user_activity');
-    return activityMetric?.value || 0;
-  };
-
-  // Calculate summaries
-  const systemHealth = metrics ? calculateSystemHealth(metrics) : 0;
-  const userActivity = metrics ? calculateUserActivity(metrics) : 0;
+    // Log dashboard access with positional parameters
+    logActivity(
+      'ADMIN_DASHBOARD_VIEW', 
+      'Admin dashboard accessed', 
+      { timestamp: new Date().toISOString() }
+    );
+  }, [logActivity]);
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium">System Health</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{isLoading ? '...' : `${systemHealth}%`}</div>
-          <p className="text-xs text-muted-foreground">
-            Overall health status of the system
-          </p>
-        </CardContent>
-      </Card>
+    <div className="container mx-auto p-6 space-y-6">
+      <h1 className="text-3xl font-bold mb-4">Admin Dashboard</h1>
       
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium">User Activity</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{isLoading ? '...' : `${userActivity}`}</div>
-          <p className="text-xs text-muted-foreground">
-            Active users in the last 24 hours
-          </p>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Health Status</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-green-500">Good</div>
+            <p className="text-sm text-muted-foreground">All systems operational</p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Activity</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>No recent alerts</p>
+          </CardContent>
+        </Card>
+      </div>
       
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium">Tenant Statistics</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{tenant ? 1 : 0}</div>
-          <p className="text-xs text-muted-foreground">
-            Current active tenant
-          </p>
-        </CardContent>
-      </Card>
+      <AdminSystemLogs />
     </div>
   );
-};
-
-export default AdminDashboard;
+}

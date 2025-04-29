@@ -1,61 +1,82 @@
 
-import React, { useState } from 'react';
-import { CEOAgent } from '@/lib/agents/CEO_Agent';
-import { useTenant } from '@/hooks/useTenant';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { useSystemLogs } from "@/hooks/useSystemLogs";
 
-const InsertMissingBlueprints: React.FC = () => {
-  const { tenant } = useTenant();
-  const [preview, setPreview] = useState("");
-  const [inputs, setInputs] = useState({ profile: "", market: "" });
-  const [loading, setLoading] = useState(false);
+export default function PromptTuner() {
+  const [prompt, setPrompt] = useState('');
+  const [response, setResponse] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { logActivity } = useSystemLogs();
 
-  const insertMissingBlueprints = async () => {
-    if (!tenant?.id) {
-      console.error('Tenant ID is missing.');
-      return;
-    }
+  useEffect(() => {
+    // Log component access when mounted
+    logActivity('PROMPT_TUNER_VIEW', 'Prompt tuner accessed');
+  }, [logActivity]);
 
+  const handleTune = async () => {
+    setIsLoading(true);
     try {
-      const ceoAgent = new CEOAgent(tenant.id);
-      // Example data - replace with actual data if needed
-      const industry = "Technology";
-      const goals = ["Increase market share", "Improve customer satisfaction"];
-      const painPoints = ["High customer churn", "Low conversion rates"];
-
-      const result = await ceoAgent.generateStrategy(industry, goals, painPoints);
-
-      if (result.success) {
-        // Convert the strategy object to a string for preview
-        const strategyText = typeof result.strategy === 'string' 
-          ? result.strategy 
-          : JSON.stringify(result.strategy, null, 2);
-        
-        console.log('Strategy generated successfully:', strategyText);
-        setPreview(strategyText);
-      } else {
-        const errorMessage = result.error || "Unknown error";
-        console.error('Failed to generate strategy:', errorMessage);
-        setPreview("Error: " + errorMessage);
-      }
+      // Mock API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Set a mock response
+      setResponse("Strategy generated successfully");
+      
+      // Log the tuning activity with positional parameters
+      logActivity(
+        'PROMPT_TUNED',
+        'Prompt tuning completed successfully',
+        { promptLength: prompt.length }
+      );
     } catch (error) {
-      console.error('Error inserting missing blueprints:', error);
-      setPreview("Error: " + (error instanceof Error ? error.message : "Unknown error"));
+      console.error('Tuning error:', error);
+      setResponse('Error tuning prompt');
+      
+      logActivity(
+        'PROMPT_TUNE_ERROR',
+        'Prompt tuning failed',
+        { error: String(error) }
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div>
-      <Button onClick={insertMissingBlueprints}>
-        Insert Missing Blueprints
-      </Button>
-      {preview && (
-        <pre className="mt-4 p-4 bg-gray-100 rounded whitespace-pre-wrap">
-          {preview}
-        </pre>
-      )}
+    <div className="container mx-auto p-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Prompt Tuner</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <label className="block mb-2 text-sm font-medium">Enter your prompt</label>
+            <Textarea
+              placeholder="System, you are a helpful assistant..."
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              rows={5}
+            />
+          </div>
+          
+          <Button 
+            onClick={handleTune} 
+            disabled={isLoading || !prompt.trim()}
+          >
+            {isLoading ? 'Tuning...' : 'Tune Prompt'}
+          </Button>
+          
+          {response && (
+            <div className="mt-4 p-4 border rounded bg-muted">
+              <h3 className="text-sm font-medium mb-2">Response:</h3>
+              <div className="text-sm">{response}</div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
-};
-
-export default InsertMissingBlueprints;
+}

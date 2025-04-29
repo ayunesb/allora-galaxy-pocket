@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSystemLogs } from './useSystemLogs';
-import { SystemLog } from '@/types/agent';
+import { SystemLog } from '@/types/systemLog';
 
 // Helper hook for components that need access to system logs
 export function useSystemLogsState() {

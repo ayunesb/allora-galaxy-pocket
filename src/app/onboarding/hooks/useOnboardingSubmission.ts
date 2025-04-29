@@ -38,6 +38,7 @@ export const useOnboardingSubmission = () => {
         pain_points: data.painPoints
       };
 
+      // Update logActivity to use positional parameters
       await logActivity(
         'ONBOARDING_STARTED',
         'User started onboarding process',
@@ -77,7 +78,7 @@ export const useOnboardingSubmission = () => {
         description: "Your AI strategy is being generated. Check back soon!",
       });
 
-      // Cast to Strategy type with unknown as intermediate step
+      // Cast to Strategy type
       return strategy as unknown as Strategy;
     } catch (err: any) {
       console.error("Onboarding submission error:", err);
@@ -95,7 +96,7 @@ export const useOnboardingSubmission = () => {
   return {
     handleSubmit,
     isSubmitting: isLoading,
-    // For compatibility with components that expect completeOnboarding
+    // Add completeOnboarding as an alias to handleSubmit for backward compatibility
     completeOnboarding: handleSubmit
   };
 };
