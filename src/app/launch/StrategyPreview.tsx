@@ -36,7 +36,7 @@ export function StrategyPreview({ strategy, onApprove, onReject }: StrategyPrevi
     `Title: ${title}`,
     description ? `Description: ${description}` : null,
     industry ? `Industry: ${industry}` : null,
-    goals && goals.length > 0 ? `Goal: ${goals[0]}` : null,
+    goals && goals.length > 0 ? `Goals: ${goals.join(", ")}` : null, // Use goals array instead of goal string
     confidence !== undefined ? `AI Confidence: ${confidence}` : null,
     status ? `Status: ${status}` : null,
     created_at ? `Created at: ${new Date(created_at).toLocaleString()}` : null

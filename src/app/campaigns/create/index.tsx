@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
@@ -29,7 +30,7 @@ import {
 import { useTenant } from "@/hooks/useTenant";
 import { supabase } from "@/integrations/supabase/client"; 
 import { useAuth } from "@/hooks/useAuth";
-import { Strategy } from "@/types/strategy";
+import { Strategy, mapJsonToStrategy, mapStrategyArray } from "@/types/strategy";
 import { AlertCircle, Check, ArrowLeft, Sparkles } from "lucide-react";
 import { useSystemLogs } from "@/hooks/useSystemLogs";
 import LoadingOverlay from "@/components/ui/LoadingOverlay";
@@ -83,76 +84,20 @@ export default function CampaignCreatePage() {
           
         if (error) throw error;
         
-        const strategiesData: Strategy[] = (data || []).map(item => ({
-          id: item.id,
-          title: item.title || "",
-          description: item.description || "",
-          status: (item.status as Strategy["status"]) || "draft",
-          tenant_id: item.tenant_id,
-          user_id: item.user_id || "",
-          tags: item.tags || [],
-          created_at: item.created_at,
-          updated_at: item.updated_at || item.created_at,
-          generated_by: item.generated_by || 'CEO Agent',
-          assigned_agent: item.assigned_agent || '',
-          auto_approved: item.auto_approved || false,
-          approved_at: item.approved_at || null,
-          failure_reason: item.failure_reason || null,
-          impact_score: item.impact_score || 0,
-          health_score: item.health_score || 0,
-          is_public: item.is_public || false,
-          diagnosis: item.diagnosis || {},
-          metrics_target: item.metrics_target || {},
-          metrics_baseline: item.metrics_baseline || {},
-          version: item.version || 1,
-          reason_for_recommendation: item.reason_for_recommendation || '',
-          target_audience: item.target_audience || '',
-          goals: item.goals || [],
-          channels: item.channels || [],
-          kpis: item.kpis || [],
-          industry: item.industry || '',
-          confidence: item.confidence || null,
-        }));
-        
+        // Use the mapStrategyArray utility function to transform the data
+        const strategiesData = mapStrategyArray(data || []);
         setStrategies(strategiesData);
         
         if (initialStrategyId) {
           const selectedStrategy = data?.find(s => s.id === initialStrategyId) || null;
           
           if (selectedStrategy) {
-            setSelectedStrategy({
-              id: selectedStrategy.id,
-              title: selectedStrategy.title || "",
-              description: selectedStrategy.description || "",
-              status: (selectedStrategy.status as Strategy["status"]) || "draft",
-              tenant_id: selectedStrategy.tenant_id,
-              user_id: selectedStrategy.user_id || "",
-              tags: selectedStrategy.tags || [],
-              created_at: selectedStrategy.created_at,
-              updated_at: selectedStrategy.updated_at || selectedStrategy.created_at,
-              generated_by: selectedStrategy.generated_by || 'CEO Agent',
-              assigned_agent: selectedStrategy.assigned_agent || '',
-              auto_approved: selectedStrategy.auto_approved || false,
-              approved_at: selectedStrategy.approved_at || null,
-              failure_reason: selectedStrategy.failure_reason || null,
-              impact_score: selectedStrategy.impact_score || 0,
-              health_score: selectedStrategy.health_score || 0,
-              is_public: selectedStrategy.is_public || false,
-              diagnosis: selectedStrategy.diagnosis || {},
-              metrics_target: selectedStrategy.metrics_target || {},
-              metrics_baseline: selectedStrategy.metrics_baseline || {},
-              version: selectedStrategy.version || 1,
-              reason_for_recommendation: selectedStrategy.reason_for_recommendation || '',
-              target_audience: selectedStrategy.target_audience || '',
-              goals: selectedStrategy.goals || [],
-              channels: selectedStrategy.channels || [],
-              kpis: selectedStrategy.kpis || [],
-              industry: selectedStrategy.industry || '',
-              confidence: selectedStrategy.confidence || null,
-            } as Strategy);
+            // Use mapJsonToStrategy to ensure proper type transformation
+            const mappedStrategy = mapJsonToStrategy(selectedStrategy);
+            setSelectedStrategy(mappedStrategy);
             
-            setName(`${selectedStrategy.title} Campaign`);
-            setDescription(`Campaign based on: ${selectedStrategy.title}`);
+            setName(`${mappedStrategy.title} Campaign`);
+            setDescription(`Campaign based on: ${mappedStrategy.title}`);
           }
         }
       } catch (err: any) {

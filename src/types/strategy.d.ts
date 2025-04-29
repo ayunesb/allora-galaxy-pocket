@@ -34,6 +34,7 @@ export interface Strategy {
   confidence?: number | null;
   impact_score?: number;
   is_public?: boolean;
+  goal?: string; // For backward compatibility with older components
 }
 
 // Helper function to convert Json type to Strategy type
@@ -55,7 +56,7 @@ export function mapJsonToStrategy(data: any): Strategy {
     health_score: data.health_score || 0,
     approved_at: data.approved_at || null,
     failure_reason: data.failure_reason || null,
-    diagnosis: typeof data.diagnosis === 'string' ? JSON.parse(data.diagnosis) : (data.diagnosis || {}),
+    diagnosis: typeof data.diagnosis === 'object' ? data.diagnosis : {},
     metrics_target: data.metrics_target || {},
     metrics_baseline: data.metrics_baseline || {},
     version: data.version || '1',
@@ -67,10 +68,30 @@ export function mapJsonToStrategy(data: any): Strategy {
     industry: data.industry || '',
     confidence: data.confidence || null,
     impact_score: data.impact_score || 0,
-    is_public: !!data.is_public
+    is_public: !!data.is_public,
+    goal: data.goal || '' // For backward compatibility
   };
 }
 
 export function mapStrategyArray(data: any[]): Strategy[] {
-  return data.map(mapJsonToStrategy);
+  return (data || []).map(mapJsonToStrategy);
+}
+
+// Strategy version type
+export interface StrategyVersion {
+  id: string;
+  strategy_id: string;
+  version: number;
+  data: Strategy;
+  created_by: string;
+  created_at: string;
+  comment?: string;
+}
+
+// CheckResult interface for launch readiness
+export interface CheckResult {
+  name: string;
+  description: string;
+  passed: boolean;
+  details?: string;
 }
