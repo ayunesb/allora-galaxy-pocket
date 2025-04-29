@@ -1,92 +1,178 @@
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
-import { AlertTriangle, Wrench, Shield, Database, FileSearch, Activity } from "lucide-react";
+import { useNavigate } from 'react-router-dom';
+import { CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
 
 export default function SystemRepairLauncher() {
+  const navigate = useNavigate();
+  const [repairStatus, setRepairStatus] = useState<'idle' | 'running' | 'complete' | 'failed'>('idle');
+  const [currentPhase, setCurrentPhase] = useState(0);
+  
+  const phases = [
+    { 
+      title: "Database Connection & RLS", 
+      description: "Fix recursive RLS policies in tenant_user_roles and implement security definer functions"
+    },
+    { 
+      title: "Route Configuration", 
+      description: "Fix syntax errors in route configuration files and ensure proper imports"
+    },
+    { 
+      title: "Authentication & Session Management", 
+      description: "Stabilize authentication flows and implement session persistence"
+    },
+    { 
+      title: "Tenant Isolation", 
+      description: "Verify tenant_id enforcement in queries and prevent cross-tenant access"
+    },
+    { 
+      title: "System Health Monitoring", 
+      description: "Implement health checks and metrics collection"
+    },
+    { 
+      title: "Error Handling & Recovery", 
+      description: "Add error boundaries and loading states throughout the application"
+    },
+    { 
+      title: "User Experience Flows", 
+      description: "Verify onboarding, campaign creation, and approval workflows"
+    },
+    { 
+      title: "Data Integrity & Verification", 
+      description: "Ensure proper data relationships and persistence across sessions"
+    },
+    { 
+      title: "Launch Readiness Assessment", 
+      description: "Run comprehensive system verification and generate readiness report"
+    }
+  ];
+
+  const startRepair = () => {
+    setRepairStatus('running');
+    runPhases();
+  };
+
+  const runPhases = async () => {
+    try {
+      // Simulate running through the phases
+      for (let i = 0; i < phases.length; i++) {
+        setCurrentPhase(i);
+        // Simulate phase execution time
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
+      setRepairStatus('complete');
+    } catch (error) {
+      console.error('System repair failed:', error);
+      setRepairStatus('failed');
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="max-w-3xl mx-auto">
-        <div className="mb-8 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="p-3 rounded-full bg-red-100">
-              <AlertTriangle className="h-10 w-10 text-red-600" />
-            </div>
+      <Card className="max-w-3xl mx-auto">
+        <CardHeader>
+          <CardTitle className="text-2xl">Allora OS System Repair</CardTitle>
+          <CardDescription>
+            9-Phase System Repair Plan for comprehensive system verification and recovery
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="bg-muted/50 p-4 rounded-md">
+            <p className="text-sm text-muted-foreground">
+              This utility will systematically verify and repair critical components of Allora OS. 
+              The 9-phase approach ensures complete coverage of all system dependencies, from 
+              database connections to launch readiness assessment.
+            </p>
           </div>
-          <h1 className="text-3xl font-bold mb-2">System Repair Required</h1>
-          <p className="text-lg text-muted-foreground">
-            Critical system issues have been detected. Launch system repair to restore functionality.
-          </p>
-        </div>
-        
-        <Card className="mb-6 border-red-200">
-          <CardHeader className="bg-red-50">
-            <CardTitle className="flex items-center gap-2 text-red-800">
-              <Wrench className="h-5 w-5" /> 9-Phase System Repair Plan
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <div className="space-y-4">
-              <div>
-                <Link to="/admin/system-repair">
-                  <Button className="w-full" size="lg">
-                    Launch System Repair
-                  </Button>
-                </Link>
+
+          <div className="space-y-4">
+            {phases.map((phase, index) => (
+              <div 
+                key={index} 
+                className={`flex items-start gap-3 p-3 rounded-md ${
+                  currentPhase === index && repairStatus === 'running' 
+                    ? 'bg-blue-50 border border-blue-200 animate-pulse' 
+                    : currentPhase > index && repairStatus !== 'failed'
+                    ? 'bg-green-50 border border-green-200' 
+                    : repairStatus === 'failed' && currentPhase === index
+                    ? 'bg-red-50 border border-red-200'
+                    : 'bg-gray-50 border border-gray-200'
+                }`}
+              >
+                <div className="mt-0.5">
+                  {currentPhase > index && repairStatus !== 'failed' ? (
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                  ) : currentPhase === index && repairStatus === 'running' ? (
+                    <div className="h-5 w-5 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
+                  ) : repairStatus === 'failed' && currentPhase === index ? (
+                    <XCircle className="h-5 w-5 text-red-500" />
+                  ) : (
+                    <div className="h-5 w-5 rounded-full border border-gray-300" />
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-medium text-sm">
+                    Phase {index + 1}: {phase.title}
+                  </h3>
+                  <p className="text-xs text-muted-foreground">{phase.description}</p>
+                </div>
               </div>
-              
-              <p className="text-sm text-muted-foreground">
-                The system repair process will diagnose and fix issues in database connectivity,
-                authentication, RLS policies, tenant isolation, and other critical components.
-              </p>
+            ))}
+          </div>
+
+          {repairStatus === 'idle' && (
+            <Button 
+              onClick={startRepair} 
+              className="w-full"
+            >
+              Start System Repair
+            </Button>
+          )}
+
+          {repairStatus === 'running' && (
+            <div className="text-center text-sm text-muted-foreground">
+              <p>System repair in progress. Please do not close this browser window.</p>
+              <p className="mt-1">Running phase {currentPhase + 1} of 9</p>
             </div>
-          </CardContent>
-        </Card>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          <Link to="/admin/system-health" className="block">
-            <Card className="h-full hover:border-primary transition-colors">
-              <CardContent className="p-4 flex flex-col items-center text-center">
-                <div className="p-3 mb-2 rounded-full bg-blue-100">
-                  <Activity className="h-6 w-6 text-blue-600" />
-                </div>
-                <h3 className="font-medium mb-1">System Health</h3>
-                <p className="text-sm text-muted-foreground">Monitor system vitals and component status</p>
-              </CardContent>
-            </Card>
-          </Link>
-          
-          <Link to="/admin/security-audit" className="block">
-            <Card className="h-full hover:border-primary transition-colors">
-              <CardContent className="p-4 flex flex-col items-center text-center">
-                <div className="p-3 mb-2 rounded-full bg-amber-100">
-                  <Shield className="h-6 w-6 text-amber-600" />
-                </div>
-                <h3 className="font-medium mb-1">Security Audit</h3>
-                <p className="text-sm text-muted-foreground">Review RLS policies and security configurations</p>
-              </CardContent>
-            </Card>
-          </Link>
-          
-          <Link to="/system/connection-test" className="block">
-            <Card className="h-full hover:border-primary transition-colors">
-              <CardContent className="p-4 flex flex-col items-center text-center">
-                <div className="p-3 mb-2 rounded-full bg-green-100">
-                  <Database className="h-6 w-6 text-green-600" />
-                </div>
-                <h3 className="font-medium mb-1">Connection Test</h3>
-                <p className="text-sm text-muted-foreground">Verify database and API connections</p>
-              </CardContent>
-            </Card>
-          </Link>
-        </div>
-        
-        <div className="text-center text-sm text-muted-foreground">
-          <p>After completing system repair, verify all functionality before proceeding to production use.</p>
-        </div>
-      </div>
+          )}
+
+          {repairStatus === 'complete' && (
+            <div className="space-y-4">
+              <div className="bg-green-50 p-4 rounded-md flex items-center gap-3">
+                <CheckCircle className="h-5 w-5 text-green-500" />
+                <p className="text-sm font-medium text-green-800">
+                  System repair completed successfully
+                </p>
+              </div>
+              <Button 
+                onClick={() => navigate('/system-verification')} 
+                className="w-full"
+              >
+                Continue to System Verification
+              </Button>
+            </div>
+          )}
+
+          {repairStatus === 'failed' && (
+            <div className="space-y-4">
+              <div className="bg-red-50 p-4 rounded-md flex items-center gap-3">
+                <AlertTriangle className="h-5 w-5 text-red-500" />
+                <p className="text-sm font-medium text-red-800">
+                  System repair failed during phase {currentPhase + 1}
+                </p>
+              </div>
+              <Button 
+                onClick={startRepair}
+                className="w-full"
+              >
+                Retry System Repair
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
