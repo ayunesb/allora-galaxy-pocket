@@ -21,7 +21,7 @@ export function useStrategyAndCampaigns() {
         
       if (error) throw error;
       
-      // Use the mapStrategyArray helper to ensure all fields are properly set
+      // Use the mapStrategyArray helper to transform the data
       return mapStrategyArray(data || []);
     },
     enabled: !!tenant?.id,

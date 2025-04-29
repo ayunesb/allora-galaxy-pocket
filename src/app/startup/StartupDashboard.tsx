@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -6,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight } from "lucide-react";
 import { useTenant } from "@/hooks/useTenant";
-import { Strategy } from "@/types/strategy";
+import { Strategy, mapJsonToStrategy, mapStrategyArray } from "@/types/strategy";
 import { supabase } from '@/integrations/supabase/client';
 
 export function StartupDashboard() {
@@ -26,24 +27,8 @@ export function StartupDashboard() {
       
       if (error) throw error;
       
-      // Transform to match Strategy interface with all required fields
-      return (data || []).map(item => ({
-        ...item,
-        metrics_target: item.metrics_target || {},
-        metrics_baseline: item.metrics_baseline || {},
-        tags: item.tags || [],
-        goals: item.goals || [],
-        channels: item.channels || [],
-        kpis: item.kpis || [],
-        updated_at: item.updated_at || item.created_at, 
-        version: item.version || 1,
-        reason_for_recommendation: item.reason_for_recommendation || '',
-        target_audience: item.target_audience || '',
-        generated_by: item.generated_by || 'CEO Agent',
-        assigned_agent: item.assigned_agent || '',
-        industry: item.industry || '',
-        confidence: item.confidence || null,
-      }) as Strategy);
+      // Use the mapStrategyArray utility to transform the data
+      return mapStrategyArray(data || []);
     },
     enabled: !!tenant?.id
   });

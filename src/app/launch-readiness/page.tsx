@@ -98,7 +98,7 @@ export default function LaunchReadinessPage() {
                   <p className="font-medium">{formatCheckTypeName(checkType as CheckType)}</p>
                   <p className="text-sm text-muted-foreground">{result.details}</p>
                 </div>
-                {result.passed ? (
+                {result.status === 'success' ? (
                   <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
                 ) : (
                   <XCircle className="h-5 w-5 text-red-500 flex-shrink-0" />

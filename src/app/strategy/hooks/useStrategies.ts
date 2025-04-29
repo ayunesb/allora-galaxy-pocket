@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Strategy, StrategyStatus } from "@/types/strategy";
+import { Strategy, StrategyStatus, mapJsonToStrategy, mapStrategyArray } from "@/types/strategy";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { toast } from "sonner";
@@ -33,41 +33,8 @@ export function useStrategies() {
           
         if (error) throw error;
         
-        // Transform database data to match Strategy type
-        const typedStrategies: Strategy[] = (data || []).map(item => ({
-          id: item.id,
-          title: item.title || '',
-          description: item.description || '',
-          status: (item.status || 'draft') as StrategyStatus,
-          created_at: item.created_at,
-          tenant_id: item.tenant_id,
-          user_id: item.user_id || '',
-          tags: item.tags || [],
-          generated_by: item.generated_by || 'CEO Agent',
-          assigned_agent: item.assigned_agent || '',
-          auto_approved: item.auto_approved || false,
-          impact_score: item.impact_score || 0,
-          health_score: item.health_score || 0,
-          approved_at: item.approved_at,
-          updated_at: item.updated_at || item.created_at,
-          metrics_baseline: item.metrics_baseline || {},
-          metrics_target: item.metrics_target || {},
-          onboarding_data: item.onboarding_data || {},
-          diagnosis: item.diagnosis || {},
-          failure_reason: item.failure_reason,
-          is_public: item.is_public || false,
-          version: item.version || 1,
-          reason_for_recommendation: item.reason_for_recommendation || '',
-          target_audience: item.target_audience || '',
-          goals: item.goals || [],
-          channels: item.channels || [],
-          kpis: item.kpis || [],
-          industry: item.industry || '',
-          goal: item.goal || '',
-          confidence: item.confidence || 0,
-          retry_prompt: item.retry_prompt
-        }));
-        
+        // Transform database data to match Strategy type using our utility function
+        const typedStrategies = mapStrategyArray(data || []);
         setStrategies(typedStrategies);
       } catch (err: any) {
         console.error("Failed to fetch strategies:", err);
