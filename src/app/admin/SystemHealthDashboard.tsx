@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,7 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { AlertCircle, CheckCircle, Shield, Server, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { SecurityHealthCheck } from '@/components/SecurityHealthCheck';
+import SecurityHealthCheck from '@/components/SecurityHealthCheck';
 
 export default function SystemHealthDashboard() {
   const [healthScore, setHealthScore] = useState(0);
