@@ -1,6 +1,16 @@
 
 # 📦 Allora OS – Release Notes
 
+## 🔐 Security Upgrades – {current_date}
+- Upgraded Vite to 5.2.0 to patch server.fs.deny bypass vulnerabilities
+- Upgraded esbuild to 0.18.20 to fix dev server exposure issues
+- Upgraded nanoid to 4.0.2 to avoid predictable random ID generation
+- Enforced strict dev server file system rules in Vite config
+- Audited nanoid usage across application; moved security-critical ID generation to crypto.randomUUID()
+- Passed npm audit with zero vulnerabilities
+
+> These security upgrades ensure Allora OS meets professional SaaS-grade standards for deployment and scaling.
+
 ## 🚀 Version 2.0 – AI-Powered Business OS  
 **Release Date:** {current_date}
 

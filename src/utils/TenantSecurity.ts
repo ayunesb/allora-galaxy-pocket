@@ -68,3 +68,30 @@ export const getUserRoleForTenant = async (tenantId: string): Promise<string> =>
     return 'viewer';
   }
 };
+
+/**
+ * Generates a secure random ID for sensitive operations
+ * using Web Crypto API instead of nanoid
+ */
+export const generateSecureId = (): string => {
+  return crypto.randomUUID();
+};
+
+/**
+ * Creates a secure tenant-specific token for sensitive operations
+ */
+export const generateSecureTenantToken = (tenantId: string, purpose: string): string => {
+  // Combine randomness with tenant info
+  const randomPart = crypto.randomUUID();
+  const timestamp = Date.now().toString(36);
+  
+  // Create a token with pattern that's secure but also contains tenant info
+  return `${purpose}_${timestamp}_${tenantId.substr(0, 8)}_${randomPart}`;
+};
+
+/**
+ * Validates a security token against expected patterns
+ */
+export const validateSecurityToken = (token: string, expectedPattern: RegExp): boolean => {
+  return expectedPattern.test(token);
+};
