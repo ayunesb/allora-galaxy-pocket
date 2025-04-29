@@ -4,7 +4,7 @@ import { useLocation } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAvailableTenants } from "./hooks/useAvailableTenants";
 import { useInitializeSelectedTenant } from "./hooks/useInitializeSelectedTenant";
-import { createDefaultWorkspace } from "./utils/workspaceUtils";
+import { createWorkspace } from "./utils/workspaceUtils";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { LoadingState } from "@/components/ui/loading-state";
@@ -63,10 +63,7 @@ export default function WorkspaceSwitcher({ highlight = false }) {
     setIsCreating(true);
     try {
       console.log("[WorkspaceSwitcher] Creating new workspace for user:", user.id);
-      const newWorkspace = await createDefaultWorkspace(() => {
-        console.log("[WorkspaceSwitcher] Workspace created, refreshing tenant list");
-        retryFetch();
-      });
+      const newWorkspace = await createWorkspace("New Workspace", user.id);
       
       if (newWorkspace) {
         console.log("[WorkspaceSwitcher] New workspace created:", newWorkspace.id, newWorkspace.name);
@@ -79,6 +76,9 @@ export default function WorkspaceSwitcher({ highlight = false }) {
           title: "Workspace ready",
           description: "You can now continue with onboarding.",
         });
+        
+        // Trigger a refresh of tenant list
+        retryFetch();
       }
     } catch (err: any) {
       console.error("[WorkspaceSwitcher] Error in workspace creation flow:", err);
@@ -170,17 +170,29 @@ export default function WorkspaceSwitcher({ highlight = false }) {
 
   return (
     <div className="space-y-6">
-      <WorkspaceSelector
-        selected={selected || ""}
-        onTenantChange={onTenantChange}
-        availableTenants={availableTenants}
-        highlight={highlight}
-        isOnboarding={isOnboarding}
-        tenant={tenant}
-        isCreating={isCreating || isChanging}
-        onCreateWorkspace={handleCreateWorkspace}
-        userExists={!!user}
-      />
+      {/* We'll render our own workspace selector here since the component version expects different props */}
+      <div className="flex items-center gap-2">
+        <select
+          value={selected || ""}
+          onChange={(e) => onTenantChange(e.target.value)}
+          disabled={isCreating || isChanging}
+          className="w-full p-2 border rounded"
+        >
+          {availableTenants.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.name || "Unnamed Workspace"}
+            </option>
+          ))}
+        </select>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleCreateWorkspace}
+          disabled={isCreating || isChanging}
+        >
+          {isCreating ? "Creating..." : "New"}
+        </Button>
+      </div>
 
       {tenant && !isOnboarding && (
         <div className="flex flex-col space-y-2">

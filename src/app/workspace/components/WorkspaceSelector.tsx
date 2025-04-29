@@ -21,28 +21,14 @@ import { Tenant } from '@/types/tenant';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 
-interface TenantOption extends Tenant {
-  label: string;
-  value: string;
+interface WorkspaceSelectorProps {
+  onTenantChange?: (value: string) => void;
 }
 
-export function WorkspaceSelector() {
-  const { tenant, tenants, selectTenant } = useTenant();
+export function WorkspaceSelector({ onTenantChange }: WorkspaceSelectorProps) {
+  const { tenant } = useTenant();
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
-
-  // Format tenants for the dropdown
-  const options: TenantOption[] = tenants?.map(t => ({
-    ...t,
-    label: t.name || 'Unnamed Workspace',
-    value: t.id
-  })) || [];
-
-  const currentSelection = tenant ? {
-    ...tenant,
-    label: tenant.name || 'Unnamed Workspace',
-    value: tenant.id
-  } : null;
 
   const handleCreateWorkspace = () => {
     setOpen(false);
@@ -54,6 +40,13 @@ export function WorkspaceSelector() {
     navigate('/workspace/settings');
   };
 
+  const handleSelectTenant = (value: string) => {
+    setOpen(false);
+    if (onTenantChange) {
+      onTenantChange(value);
+    }
+  };
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -61,12 +54,12 @@ export function WorkspaceSelector() {
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-[200px] justify-between"
+          className="w-full justify-between"
         >
           <span className="truncate">
-            {currentSelection ? currentSelection.label : "Select workspace"}
+            {tenant ? tenant.name || "Unnamed workspace" : "Select workspace"}
           </span>
-          {currentSelection?.is_demo && (
+          {tenant?.is_demo && (
             <Badge variant="outline" className="ml-2 mr-1">Demo</Badge>
           )}
           <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
@@ -77,27 +70,7 @@ export function WorkspaceSelector() {
           <CommandInput placeholder="Search workspace..." />
           <CommandList>
             <CommandEmpty>No workspace found.</CommandEmpty>
-            <CommandGroup heading="Workspaces">
-              {options.map((option) => (
-                <CommandItem
-                  key={option.value}
-                  value={option.label}
-                  onSelect={() => {
-                    selectTenant(option);
-                    setOpen(false);
-                  }}
-                  className="flex items-center justify-between"
-                >
-                  <span className={option.is_demo ? 'text-muted-foreground' : ''}>
-                    {option.label}
-                  </span>
-                  {option.value === currentSelection?.value && (
-                    <Check className="ml-auto h-4 w-4" />
-                  )}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-            <CommandGroup>
+            <CommandGroup heading="Actions">
               <CommandItem onSelect={handleCreateWorkspace}>
                 <Plus className="mr-2 h-4 w-4" />
                 <span>Create workspace</span>

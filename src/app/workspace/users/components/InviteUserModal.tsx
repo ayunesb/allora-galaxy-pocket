@@ -18,12 +18,12 @@ interface InviteUserModalProps {
   onInviteSuccess: () => void;
 }
 
-// Define the valid roles as a union type
+// Define the valid roles as a union type matching what's in the database
 type UserRole = 'admin' | 'editor' | 'viewer';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
-  role: z.enum(['owner', 'admin', 'member', 'viewer'] as const, { required_error: 'Please select a role' }),
+  role: z.enum(['admin', 'editor', 'viewer'] as const, { required_error: 'Please select a role' }),
 });
 
 export function InviteUserModal({ isOpen, onClose, onInviteSuccess }: InviteUserModalProps) {
@@ -34,7 +34,7 @@ export function InviteUserModal({ isOpen, onClose, onInviteSuccess }: InviteUser
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: '',
-      role: 'member',
+      role: 'editor',
     },
   });
 
@@ -111,9 +111,8 @@ export function InviteUserModal({ isOpen, onClose, onInviteSuccess }: InviteUser
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="owner">Owner</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="member">Member</SelectItem>
+                      <SelectItem value="editor">Editor</SelectItem>
                       <SelectItem value="viewer">Viewer</SelectItem>
                     </SelectContent>
                   </Select>

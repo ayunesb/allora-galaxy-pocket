@@ -22,7 +22,18 @@ export function KPITracker({ kpis }: KPITrackerProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4">
       {kpis.map((metric) => (
-        <KpiCard key={metric.id || `metric-${metric.kpi_name}`} {...metric} />
+        <KpiCard 
+          key={metric.id || `metric-${metric.kpi_name}`} 
+          id={metric.id || `metric-${metric.kpi_name}`}
+          kpi_name={metric.kpi_name || ""}
+          metric={metric.metric || ""}
+          value={typeof metric.value === 'string' ? parseFloat(metric.value) : metric.value || 0}
+          trend={metric.trend || "neutral"}
+          changePercent={metric.changePercent || 0}
+          target={metric.target || 0}
+          unit={metric.unit || ""}
+          updated_at={metric.updated_at || ""}
+        />
       ))}
     </div>
   );

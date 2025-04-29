@@ -13,7 +13,7 @@ export default function LoadingOverlay({ show, label }: LoadingOverlayProps) {
   if (!show) return null;
   return (
     <div className={overlayStyle} role="alert" aria-busy="true" aria-live="polite" tabIndex={-1}>
-      <LoadingSpinner size={40} label={label ?? "Loading..."} />
+      <LoadingSpinner size="lg" label={label ?? "Loading..."} />
     </div>
   );
 }

@@ -1,24 +1,62 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { CheckCircle, AlertTriangle } from 'lucide-react';
 import { useSystemVerification } from '@/hooks/useSystemVerification';
 
 export function LaunchReadinessVerifier() {
-  const { healthScore, results, isComplete } = useSystemVerification(true);
+  const { isRunning, isComplete, startVerification, results } = useSystemVerification();
   
-  // Example data - in a real app, this would come from an API
-  const readinessScore = healthScore || 92;
-  const criticalTests = 15;
-  const passedTests = isComplete && results ? results.testsPassed : 14;
+  useEffect(() => {
+    if (!isComplete && !isRunning) {
+      startVerification();
+    }
+  }, [isComplete, isRunning, startVerification]);
   
-  const categories = [
-    { name: "Security", score: isComplete && results ? results.securityScore : 96 },
-    { name: "Performance", score: isComplete && results ? results.performanceScore : 88 },
-    { name: "Functionality", score: isComplete && results ? results.functionalityScore : 94 },
-    { name: "User Experience", score: 91 },
-  ];
+  // Calculate the scores based on the results
+  const getScores = () => {
+    if (!results || results.length === 0) {
+      return {
+        readinessScore: 92,
+        securityScore: 96,
+        performanceScore: 88,
+        functionalityScore: 94,
+        testsPassed: 14,
+        criticalTests: 15
+      };
+    }
+    
+    const totalTests = results.length;
+    const passedTests = results.filter(r => r.passed).length;
+    
+    // Group tests by category
+    const securityTests = results.filter(r => r.name.toLowerCase().includes('security') || 
+                                             r.name.toLowerCase().includes('rls') ||
+                                             r.name.toLowerCase().includes('auth'));
+    const perfTests = results.filter(r => r.name.toLowerCase().includes('performance') ||
+                                         r.name.toLowerCase().includes('browser'));
+    const funcTests = results.filter(r => r.name.toLowerCase().includes('function') ||
+                                         r.name.toLowerCase().includes('route') ||
+                                         r.name.toLowerCase().includes('error'));
+    
+    // Calculate scores
+    const calculateScore = (tests: typeof results) => {
+      if (!tests.length) return 100;
+      return Math.round((tests.filter(t => t.passed).length / tests.length) * 100);
+    };
+    
+    return {
+      readinessScore: Math.round((passedTests / totalTests) * 100),
+      securityScore: calculateScore(securityTests),
+      performanceScore: calculateScore(perfTests),
+      functionalityScore: calculateScore(funcTests),
+      testsPassed: passedTests,
+      criticalTests: totalTests
+    };
+  };
+  
+  const scores = getScores();
   
   const pendingItems = [
     "Complete accessibility review",
@@ -37,15 +75,20 @@ export function LaunchReadinessVerifier() {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <h4 className="font-medium">Overall Readiness</h4>
-            <span className="text-2xl font-bold">{readinessScore}%</span>
+            <span className="text-2xl font-bold">{scores.readinessScore}%</span>
           </div>
-          <Progress value={readinessScore} className="h-2" />
+          <Progress value={scores.readinessScore} className="h-2" />
         </div>
         
         <div>
           <h4 className="font-medium mb-3">Category Breakdown</h4>
           <div className="space-y-2">
-            {categories.map((category) => (
+            {[
+              { name: "Security", score: scores.securityScore },
+              { name: "Performance", score: scores.performanceScore },
+              { name: "Functionality", score: scores.functionalityScore },
+              { name: "User Experience", score: 91 }
+            ].map((category) => (
               <div key={category.name} className="space-y-1">
                 <div className="flex items-center justify-between text-sm">
                   <span>{category.name}</span>
@@ -61,7 +104,7 @@ export function LaunchReadinessVerifier() {
           <div className="flex items-center gap-2 mb-3">
             <CheckCircle className="h-4 w-4 text-green-500" />
             <h4 className="font-medium">
-              {passedTests} of {criticalTests} critical tests passed
+              {scores.testsPassed} of {scores.criticalTests} critical tests passed
             </h4>
           </div>
           

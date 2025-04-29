@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,7 +31,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 // Directly specify the enum type with the same values as the database
-type UserRoleType = 'owner' | 'admin' | 'member' | 'viewer';
+type UserRoleType = 'admin' | 'editor' | 'viewer';
 
 type WorkspaceUser = {
   id: string;
@@ -149,12 +148,10 @@ export default function WorkspaceUsersPage() {
   
   const getRoleBadge = (role: string) => {
     switch (role.toLowerCase()) {
-      case 'owner':
-        return <Badge className="bg-primary">Owner</Badge>;
       case 'admin':
         return <Badge className="bg-purple-600">Admin</Badge>;
-      case 'member':
-        return <Badge>Member</Badge>;
+      case 'editor':
+        return <Badge>Editor</Badge>;
       case 'viewer':
         return <Badge variant="outline">Viewer</Badge>;
       default:
@@ -182,6 +179,7 @@ export default function WorkspaceUsersPage() {
   }
 
   return (
+    
     <WorkspaceErrorBoundary>
       <div className="container mx-auto py-8">
         <div className="flex items-center justify-between mb-6">
@@ -286,9 +284,8 @@ export default function WorkspaceUsersPage() {
                                   <SelectValue placeholder="Role" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="owner">Owner</SelectItem>
                                   <SelectItem value="admin">Admin</SelectItem>
-                                  <SelectItem value="member">Member</SelectItem>
+                                  <SelectItem value="editor">Editor</SelectItem>
                                   <SelectItem value="viewer">Viewer</SelectItem>
                                 </SelectContent>
                               </Select>
@@ -355,5 +352,6 @@ export default function WorkspaceUsersPage() {
         </Card>
       </div>
     </WorkspaceErrorBoundary>
+    
   );
 }
