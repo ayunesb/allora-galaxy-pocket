@@ -80,16 +80,16 @@ export default function OnboardingWizard() {
       if (result.success) {
         // Log the successful onboarding completion
         try {
-          await logActivity({
-            event_type: "ONBOARDING_COMPLETED",
-            message: `Onboarding completed for ${finalProfile.companyName}`,
-            meta: {
+          await logActivity(
+            "ONBOARDING_COMPLETED",
+            `Onboarding completed for ${finalProfile.companyName}`,
+            {
               industry: finalProfile.industry,
               teamSize: finalProfile.teamSize,
               launchMode: finalProfile.launch_mode
             },
-            severity: 'info'
-          });
+            'info'
+          );
         } catch (logError) {
           console.error("Failed to log onboarding completion:", logError);
         }

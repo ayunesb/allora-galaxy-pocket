@@ -52,8 +52,8 @@ export function useSystemLogs() {
   const logEvent = async (
     eventType: string, 
     message: string, 
-    severity: LogSeverity = 'info', 
-    meta: Record<string, any> = {}
+    meta: Record<string, any> = {}, 
+    severity: LogSeverity = 'info'
   ) => {
     if (!tenant?.id) {
       console.error("Cannot log event: No tenant ID");
@@ -94,8 +94,8 @@ export function useSystemLogs() {
       await logEvent(
         'module_verification', 
         `Attempting to verify module: ${modulePath}`, 
-        'info',
-        { module: modulePath }
+        { module: modulePath },
+        'info'
       );
       
       // Simulate verification process
@@ -116,8 +116,8 @@ export function useSystemLogs() {
       await logEvent(
         'module_verification_result',
         `Module ${modulePath} verification ${result.message.verified ? 'succeeded' : 'failed'}`,
-        result.message.verified ? 'info' : 'error',
-        result.message
+        result.message,
+        result.message.verified ? 'info' : 'error'
       );
       
       return result;
@@ -128,8 +128,8 @@ export function useSystemLogs() {
       await logEvent(
         'module_verification_error',
         `Failed to verify module ${modulePath}: ${err.message}`,
-        'error',
-        { module: modulePath, error: err.message }
+        { module: modulePath, error: err.message },
+        'error'
       );
       
       return { 
@@ -154,7 +154,7 @@ export function useSystemLogs() {
     }
     
     try {
-      await logEvent('logs_cleared', 'System logs cleared by user', 'info');
+      await logEvent('logs_cleared', 'System logs cleared by user', {}, 'info');
       
       toast.success("Logs cleared successfully");
       return true;
@@ -179,7 +179,7 @@ export function useSystemLogs() {
     meta: Record<string, any> = {},
     severity: LogSeverity = 'info'
   ) => {
-    return logEvent(eventType, message, severity, meta);
+    return logEvent(eventType, message, meta, severity);
   };
 
   // Get recent logs
@@ -196,13 +196,13 @@ export function useSystemLogs() {
     return logEvent(
       'ERROR',
       message,
-      'error',
       {
         ...meta,
         errorMessage: error.message,
         stack: error.stack,
         code: error.code
-      }
+      },
+      'error'
     );
   };
 
@@ -215,8 +215,8 @@ export function useSystemLogs() {
     return logEvent(
       `SECURITY_${eventType}`,
       message,
-      'warning',
-      meta
+      meta,
+      'warning'
     );
   };
 
@@ -229,12 +229,12 @@ export function useSystemLogs() {
     return logEvent(
       'USER_JOURNEY',
       `User navigated from ${from} to ${to}`,
-      'info',
       {
         from,
         to,
         ...details
-      }
+      },
+      'info'
     );
   };
 

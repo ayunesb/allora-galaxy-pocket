@@ -6,7 +6,7 @@ import { Tenant } from '@/types/tenant';
 
 export function useTenantSwitcher() {
   const [isChanging, setIsChanging] = useState(false);
-  const { tenant, setTenant } = useTenant();
+  const { tenant, selectTenant } = useTenant();
   const { toast } = useToast();
 
   const switchTenant = useCallback(async (newTenant: Tenant) => {
@@ -14,7 +14,7 @@ export function useTenantSwitcher() {
       setIsChanging(true);
       
       // Set the new tenant in the context
-      setTenant(newTenant);
+      selectTenant(newTenant);
       
       toast({
         title: "Workspace changed",
@@ -35,7 +35,7 @@ export function useTenantSwitcher() {
     } finally {
       setIsChanging(false);
     }
-  }, [setTenant, toast]);
+  }, [selectTenant, toast]);
 
   return {
     currentTenant: tenant,

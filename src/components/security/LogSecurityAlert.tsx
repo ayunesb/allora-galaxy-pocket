@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ToastService } from "@/services/ToastService";
 import { useSystemLogs } from "@/hooks/useSystemLogs";
 import { format } from 'date-fns';
+import { LogSeverity } from "@/types/systemLog";
 
 interface LogSecurityAlertProps {
   title: string;
@@ -80,18 +81,21 @@ export function LogSecurityAlert({
 
   const handleAcknowledge = async () => {
     try {
+      // Map severity to LogSeverity type
+      const logSeverityValue: LogSeverity = severity === "critical" || severity === "high" ? 'error' : 'warning';
+      
       // Log the acknowledgement
-      await logActivity({
-        event_type: "SECURITY_ALERT_ACKNOWLEDGED",
-        message: `Security alert acknowledged: ${title}`,
-        meta: {
+      await logActivity(
+        "SECURITY_ALERT_ACKNOWLEDGED",
+        `Security alert acknowledged: ${title}`,
+        {
           ...metadata,
           alert_severity: severity,
           alert_source: source,
           alert_description: description
         },
-        severity: severity === "critical" || severity === "high" ? "error" : "warning"
-      });
+        logSeverityValue
+      );
 
       ToastService.success({
         title: "Alert acknowledged",

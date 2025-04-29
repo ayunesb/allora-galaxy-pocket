@@ -18,4 +18,9 @@ export interface TenantContextType {
   isLoading: boolean;
   setTenant: (tenant: Tenant | null) => void;
   userRole?: string;
+  tenants?: Tenant[];
+  selectTenant?: (tenant: Tenant) => void;
+  error?: string | null;
+  refreshTenant: () => Promise<void>;
+  updateTenantProfile: (updatedTenant: Partial<Tenant>) => Promise<void>;
 }

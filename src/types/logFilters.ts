@@ -5,12 +5,14 @@ export interface LogFilters {
   dateRange: number;
   eventType: string | null;
   searchTerm: string;
+  severity?: LogSeverity | null;
 }
 
 export const DEFAULT_FILTERS: LogFilters = {
   dateRange: 7,
   eventType: null,
-  searchTerm: ''
+  searchTerm: '',
+  severity: null
 };
 
 export interface SystemLogFilter {

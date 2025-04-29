@@ -1,30 +1,54 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { RoleLabel } from "@/components/RoleLabel";
-import { Button } from "@/components/ui/button";
 import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
 import { useTeamManagement } from "@/hooks/useTeamManagement";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { MoreHorizontal } from "lucide-react";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
 import { UserRole } from "@/types/invite";
-import { Loader2 } from "lucide-react";
 
 export function TeamMembersList() {
   const { 
     teamMembers, 
-    isLoadingMembers,
-    updateRole
+    isLoadingMembers, 
+    updateMemberRole, 
+    removeMember 
   } = useTeamManagement();
+
+  const getRoleBadgeVariant = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return 'destructive';
+      case 'editor':
+        return 'secondary';
+      default:
+        return 'outline';
+    }
+  };
 
   if (isLoadingMembers) {
     return (
-      <div className="flex justify-center p-4">
-        <Loader2 className="h-6 w-6 animate-spin" />
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Team Members</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-center p-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary" />
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -35,30 +59,60 @@ export function TeamMembersList() {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {teamMembers?.map((member) => (
-            <div key={member.id} className="flex items-center justify-between p-2 border rounded">
-              <div>
-                <div>{member.profiles?.email}</div>
-                <RoleLabel role={member.role} />
+          {teamMembers.map((member) => (
+            <div 
+              key={member.id} 
+              className="flex items-center justify-between p-2 border rounded"
+            >
+              <div className="flex items-center gap-3">
+                <Avatar>
+                  <AvatarFallback>
+                    {member.profiles.email.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                  {member.profiles.avatar_url && (
+                    <AvatarImage src={member.profiles.avatar_url} />
+                  )}
+                </Avatar>
+                <div>
+                  <div>{member.profiles.email}</div>
+                  <Badge variant={getRoleBadgeVariant(member.role)}>
+                    {member.role}
+                  </Badge>
+                </div>
               </div>
-              <Select
-                value={member.role}
-                onValueChange={(newRole) => {
-                  updateRole({ 
-                    userId: member.user_id, 
-                    role: newRole as UserRole 
-                  });
-                }}
-              >
-                <SelectTrigger className="w-32">
-                  <SelectValue placeholder="Select role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="editor">Editor</SelectItem>
-                  <SelectItem value="viewer">Viewer</SelectItem>
-                </SelectContent>
-              </Select>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem 
+                    onClick={() => updateMemberRole({ userId: member.user_id, newRole: 'admin' as UserRole })}
+                    disabled={member.role === 'admin'}
+                  >
+                    Make Admin
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => updateMemberRole({ userId: member.user_id, newRole: 'editor' as UserRole })}
+                    disabled={member.role === 'editor'}
+                  >
+                    Make Editor
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => updateMemberRole({ userId: member.user_id, newRole: 'viewer' as UserRole })}
+                    disabled={member.role === 'viewer'}
+                  >
+                    Make Viewer
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    className="text-destructive"
+                    onClick={() => removeMember(member.user_id)}
+                  >
+                    Remove
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           ))}
         </div>

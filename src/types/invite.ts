@@ -1,15 +1,18 @@
 
-import { Database } from "@/integrations/supabase/types";
+export type UserRole = "admin" | "editor" | "viewer" | "manager";
 
-export type UserRole = Database["public"]["Enums"]["user_role"];
-
-export interface TeamInvite {
-  id: string;
+export interface InviteCreateRequest {
   email: string;
   role: UserRole;
-  tenant_id: string | null;
+}
+
+export interface Invite {
+  id: string;
+  tenant_id: string;
+  email: string;
+  role: UserRole;
   created_at: string;
-  expires_at: string | null;
-  accepted_at: string | null;
-  created_by: string | null;
+  expires_at: string;
+  accepted?: string | null;
+  token: string;
 }

@@ -19,7 +19,7 @@ export function AutoApprovalSettings() {
         </div>
         <Switch 
           id="auto-approve"
-          checked={tenant?.enable_auto_approve ?? true}
+          checked={tenant?.enable_auto_approve ?? false}
           onCheckedChange={(checked) => {
             if (tenant?.id) {
               toggleAutoApproval(checked);

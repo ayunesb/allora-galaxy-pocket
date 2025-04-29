@@ -4,15 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-
-interface Tenant {
-  id: string;
-  name: string;
-  theme_color?: string;
-  theme_mode?: string;
-  usage_credits: number;
-  is_demo?: boolean;
-}
+import { Tenant } from '@/types/tenant';
 
 interface TenantContextType {
   tenant: Tenant | null;
@@ -22,6 +14,11 @@ interface TenantContextType {
   switchTenant: (tenantId: string) => Promise<void>;
   createTenant: (name: string) => Promise<void>;
   updateTenantPreference: (key: string, value: any) => Promise<void>;
+  refreshTenant: () => Promise<void>;
+  setTenant: (tenant: Tenant | null) => void;
+  selectTenant: (tenant: Tenant) => void;
+  updateTenantProfile: (updatedTenant: Partial<Tenant>) => Promise<void>;
+  error: string | null;
 }
 
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
@@ -31,6 +28,7 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [userRole, setUserRole] = useState<string>('viewer');
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -47,6 +45,7 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
 
   const loadTenants = async () => {
     setIsLoading(true);
+    setError(null);
     try {
       const { data: userTenants, error } = await supabase
         .from('tenant_user_roles')
@@ -59,7 +58,10 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
             theme_color,
             theme_mode,
             usage_credits,
-            is_demo
+            is_demo,
+            created_at,
+            slack_webhook_url,
+            enable_auto_approve
           )
         `)
         .eq('user_id', user?.id);
@@ -90,10 +92,37 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
         setUserRole(formattedTenants[0].role || 'viewer');
         localStorage.setItem('currentTenantId', formattedTenants[0].id);
       }
-
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading tenants:', error);
       toast.error("Failed to load workspace data");
+      setError(error.message || "Failed to load workspaces");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const refreshTenant = async () => {
+    if (!tenant?.id || !user?.id) return;
+    
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('tenant_profiles')
+        .select('*')
+        .eq('id', tenant.id)
+        .single();
+        
+      if (error) throw error;
+      if (data) {
+        setTenant({
+          ...tenant,
+          ...data
+        });
+      }
+    } catch (error: any) {
+      console.error('Error refreshing tenant:', error);
+      setError(error.message || "Failed to refresh workspace");
+      toast.error("Failed to refresh workspace data");
     } finally {
       setIsLoading(false);
     }
@@ -112,8 +141,19 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const selectTenant = (newTenant: Tenant) => {
+    if (newTenant?.id) {
+      setTenant(newTenant);
+      setUserRole(newTenant.role || 'viewer');
+      localStorage.setItem('currentTenantId', newTenant.id);
+      toast.success(`Switched to ${newTenant.name}`);
+      navigate('/dashboard');
+    }
+  };
+
   const createTenant = async (name: string) => {
     setIsLoading(true);
+    setError(null);
     try {
       // Create the tenant
       const { data: newTenant, error: tenantError } = await supabase
@@ -151,8 +191,9 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
         description: `You're now in ${name}`
       });
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating tenant:', error);
+      setError(error.message || "Failed to create workspace");
       toast({
         title: "Failed to create workspace",
         description: "Please try again later"
@@ -162,8 +203,40 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const updateTenantProfile = async (updatedData: Partial<Tenant>) => {
+    if (!tenant?.id) return;
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { error } = await supabase
+        .from('tenant_profiles')
+        .update(updatedData)
+        .eq('id', tenant.id);
+
+      if (error) throw error;
+
+      setTenant(prev => prev ? { ...prev, ...updatedData } : null);
+      toast({
+        title: "Profile updated",
+        description: "Workspace profile updated successfully"
+      });
+      
+    } catch (error: any) {
+      console.error('Error updating tenant profile:', error);
+      setError(error.message || "Failed to update profile");
+      toast({
+        title: "Update failed",
+        description: "Could not update workspace profile"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const updateTenantPreference = async (key: string, value: any) => {
     if (!tenant) return;
+    setError(null);
 
     try {
       const { error } = await supabase
@@ -179,8 +252,9 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
         description: `Updated ${key.replace('_', ' ')} successfully`
       });
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating tenant preference:', error);
+      setError(error.message || "Failed to update preference");
       toast({
         title: "Failed to update preference",
         description: "Please try again later"
@@ -194,10 +268,15 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
         tenant, 
         tenants, 
         userRole,
-        isLoading, 
+        isLoading,
         switchTenant, 
         createTenant,
-        updateTenantPreference
+        updateTenantPreference,
+        refreshTenant,
+        setTenant,
+        selectTenant,
+        updateTenantProfile,
+        error
       }}
     >
       {children}

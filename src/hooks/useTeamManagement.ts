@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from './useTenant';
 import { toast } from 'sonner';
+import { UserRole } from '@/types/invite';
 
 export interface TeamMember {
   id: string;
@@ -17,12 +18,22 @@ export interface TeamMember {
   };
 }
 
+export interface PendingInvite {
+  id: string;
+  email: string;
+  role: UserRole;
+  tenant_id: string;
+  created_at: string;
+  expires_at: string;
+}
+
 export function useTeamManagement() {
   const { tenant } = useTenant();
   const queryClient = useQueryClient();
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const { data: teamMembers, isLoading } = useQuery({
+  // Fetch team members
+  const { data: teamMembers, isLoading: isLoadingMembers } = useQuery({
     queryKey: ['team-members', tenant?.id],
     queryFn: async () => {
       if (!tenant?.id) return [];
@@ -61,8 +72,28 @@ export function useTeamManagement() {
     enabled: !!tenant?.id
   });
 
+  // Fetch pending invites
+  const { data: pendingInvites, isLoading: isLoadingInvites } = useQuery({
+    queryKey: ['pending-invites', tenant?.id],
+    queryFn: async () => {
+      if (!tenant?.id) return [];
+
+      const { data, error } = await supabase
+        .from('invites')
+        .select('*')
+        .eq('tenant_id', tenant.id)
+        .is('accepted', null)
+        .gt('expires_at', new Date().toISOString());
+
+      if (error) throw error;
+      return data as PendingInvite[];
+    },
+    enabled: !!tenant?.id
+  });
+
+  // Update member role
   const updateMemberRole = useMutation({
-    mutationFn: async ({ userId, newRole }: { userId: string; newRole: 'admin' | 'editor' | 'viewer' }) => {
+    mutationFn: async ({ userId, newRole }: { userId: string; newRole: UserRole }) => {
       if (!tenant?.id) throw new Error('No tenant selected');
       setIsProcessing(true);
 
@@ -87,6 +118,7 @@ export function useTeamManagement() {
     }
   });
 
+  // Remove team member
   const removeMember = useMutation({
     mutationFn: async (userId: string) => {
       if (!tenant?.id) throw new Error('No tenant selected');
@@ -113,10 +145,51 @@ export function useTeamManagement() {
     }
   });
 
+  // Invite team member
+  const inviteTeamMember = async ({ email, role }: { email: string; role: UserRole }) => {
+    if (!tenant?.id) {
+      toast.error('No workspace selected');
+      return false;
+    }
+
+    setIsProcessing(true);
+    try {
+      // Create expiration date (24 hours from now)
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 24);
+
+      const { error } = await supabase
+        .from('invites')
+        .insert({
+          tenant_id: tenant.id,
+          email: email.toLowerCase().trim(),
+          role,
+          expires_at: expiresAt.toISOString()
+        });
+
+      if (error) throw error;
+
+      toast.success(`Invitation sent to ${email}`);
+      queryClient.invalidateQueries({ queryKey: ['pending-invites'] });
+      return true;
+    } catch (error) {
+      console.error('Error inviting team member:', error);
+      toast.error('Failed to send invitation');
+      return false;
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return {
     teamMembers: teamMembers || [],
-    isLoading: isLoading || isProcessing,
-    updateMemberRole: updateMemberRole.mutate,
-    removeMember: removeMember.mutate
+    isLoading: isProcessing || isLoadingMembers || isLoadingInvites,
+    isLoadingMembers,
+    isLoadingInvites,
+    updateMemberRole,
+    updateRole: updateMemberRole.mutate,  // For backward compatibility
+    removeMember: removeMember.mutate,
+    pendingInvites: pendingInvites || [],
+    inviteTeamMember
   };
 }
