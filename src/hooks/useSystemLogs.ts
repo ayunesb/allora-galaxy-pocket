@@ -1,219 +1,170 @@
 
-import { useState, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useTenant } from '@/hooks/useTenant';
-import { useAuth } from '@/hooks/useAuth';
-import { SystemLog, LogSeverity, SystemLogFilter } from '@/types/systemLog';
+import { SystemLog, SystemLogFilter, LogSeverity } from '@/types/systemLog';
+import { useTenant } from './useTenant';
 
-export function useSystemLogs() {
+interface UseSystemLogsOptions {
+  filter?: SystemLogFilter;
+  enabled?: boolean;
+}
+
+export const useSystemLogs = ({ filter = {}, enabled = true }: UseSystemLogsOptions = {}) => {
   const { tenant } = useTenant();
-  const { user } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
-  const [logs, setLogs] = useState<SystemLog[]>([]);
-  const [error, setError] = useState<Error | null>(null);
 
-  const logActivity = async (
-    event_type: string,
-    message: string,
-    meta: Record<string, any> = {},
-    severity: LogSeverity = 'info'
-  ): Promise<{ success: boolean; log?: SystemLog; error?: any }> => {
-    if (!tenant?.id) {
-      console.warn("Can't log activity: No tenant ID available");
-      return { success: false, error: "No tenant ID" };
-    }
-    
-    setIsLoading(true);
-    
-    try {
-      const logPayload = {
-        tenant_id: tenant.id,
-        event_type,
-        message,
-        meta: { ...meta },
-        severity, // Add severity field directly to the payload
-        user_id: user?.id,
-        created_at: new Date().toISOString()
-      };
-      
-      const { data, error } = await supabase
-        .from('system_logs')
-        .insert(logPayload)
-        .select()
-        .single();
-        
-      if (error) throw error;
-      
-      return { success: true, log: data as SystemLog };
-    } catch (err) {
-      console.error("Failed to log activity:", err);
-      return { success: false, error: err };
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  return useQuery({
+    queryKey: ['system-logs', tenant?.id, filter],
+    queryFn: async () => {
+      if (!tenant?.id) {
+        return [];
+      }
 
-  const logError = async (
-    message: string,
-    error: Error | any,
-    meta: Record<string, any> = {}
-  ) => {
-    return logActivity(
-      'ERROR',
-      message,
-      {
-        ...meta,
-        errorMessage: error.message,
-        stack: error.stack,
-        code: error.code
-      },
-      'error'
-    );
-  };
-
-  const logSecurityEvent = async (
-    message: string,
-    eventType: string,
-    meta: Record<string, any> = {}
-  ) => {
-    return logActivity(
-      `SECURITY_${eventType}`,
-      message,
-      meta,
-      'warning'
-    );
-  };
-
-  const logJourneyStep = async (
-    from: string,
-    to: string,
-    details: Record<string, any> = {}
-  ) => {
-    return logActivity(
-      'USER_JOURNEY',
-      `User navigated from ${from} to ${to}`,
-      {
-        from,
-        to,
-        ...details
-      },
-      'info'
-    );
-  };
-
-  // Function to fetch logs with filtering - avoiding deep type instantiation
-  const fetchLogs = useCallback(async (filter?: SystemLogFilter) => {
-    if (!tenant?.id) return { logs: [], count: 0 };
-    
-    setIsLoading(true);
-    setError(null);
-    
-    try {
       let query = supabase
         .from('system_logs')
-        .select('*', { count: 'exact' })
-        .eq('tenant_id', tenant.id)
-        .order('created_at', { ascending: false });
-        
-      // Apply filters
-      if (filter) {
-        if (filter.startDate) {
-          query = query.gte('created_at', filter.startDate.toISOString());
-        }
-        
-        if (filter.endDate) {
-          query = query.lte('created_at', filter.endDate.toISOString());
-        }
-        
-        if (filter.eventTypes && filter.eventTypes.length) {
-          query = query.in('event_type', filter.eventTypes);
-        }
-        
-        if (filter.severity && filter.severity.length) {
-          query = query.in('severity', filter.severity);
-        }
-        
-        if (filter.search) {
-          query = query.or(`message.ilike.%${filter.search}%,event_type.ilike.%${filter.search}%`);
-        }
-        
-        if (filter.userId) {
-          query = query.eq('user_id', filter.userId);
-        }
-        
-        if (filter.tenantId) {
-          query = query.eq('tenant_id', filter.tenantId);
-        }
-        
-        if (filter.limit) {
-          query = query.limit(filter.limit);
-        }
-        
-        if (filter.offset) {
-          query = query.range(filter.offset, filter.offset + (filter.limit || 10) - 1);
-        }
+        .select('*')
+        .eq('tenant_id', tenant.id);
+
+      // Apply filters if provided
+      if (filter.startDate) {
+        query = query.gte('created_at', filter.startDate.toISOString());
       }
-      
+
+      if (filter.endDate) {
+        query = query.lte('created_at', filter.endDate.toISOString());
+      }
+
+      if (filter.eventTypes && filter.eventTypes.length > 0) {
+        query = query.in('event_type', filter.eventTypes);
+      }
+
+      if (filter.severity && filter.severity.length > 0) {
+        query = query.in('severity', filter.severity);
+      }
+
+      if (filter.userId) {
+        query = query.eq('user_id', filter.userId);
+      }
+
+      if (filter.search) {
+        query = query.ilike('message', `%${filter.search}%`);
+      }
+
+      // Apply limit and offset
+      if (filter.limit) {
+        query = query.limit(filter.limit);
+      }
+
+      if (filter.offset) {
+        query = query.range(filter.offset, filter.offset + (filter.limit || 10) - 1);
+      }
+
+      // Order by created_at descending
+      query = query.order('created_at', { ascending: false });
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw new Error(`Failed to fetch system logs: ${error.message}`);
+      }
+
+      // Cast data to prevent recursive type issues
+      const safeData = data as unknown;
+      return safeData as SystemLog[];
+    },
+    enabled: !!tenant?.id && enabled
+  });
+};
+
+export const useTenantSystemLogTypes = () => {
+  const { tenant } = useTenant();
+
+  return useQuery({
+    queryKey: ['system-log-types', tenant?.id],
+    queryFn: async () => {
+      if (!tenant?.id) {
+        return [];
+      }
+
+      const { data, error } = await supabase
+        .from('system_logs')
+        .select('event_type')
+        .eq('tenant_id', tenant.id)
+        .order('event_type')
+        .distinct();
+
+      if (error) {
+        throw new Error(`Failed to fetch system log types: ${error.message}`);
+      }
+
+      // Use explicit typing to avoid recursion
+      return (data as Array<{event_type: string}>).map(item => item.event_type);
+    },
+    enabled: !!tenant?.id
+  });
+};
+
+export const useSystemLogMetrics = ({ severity, days = 30 }: { severity?: LogSeverity; days?: number } = {}) => {
+  const { tenant } = useTenant();
+
+  return useQuery({
+    queryKey: ['system-log-metrics', tenant?.id, severity, days],
+    queryFn: async () => {
+      if (!tenant?.id) {
+        return { total: 0, byType: {}, byDay: [] };
+      }
+
+      // Calculate date range
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+
+      // Base query
+      let query = supabase
+        .from('system_logs')
+        .select('event_type, created_at', { count: 'exact' })
+        .eq('tenant_id', tenant.id)
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString());
+
+      // Apply severity filter if provided
+      if (severity) {
+        query = query.eq('severity', severity);
+      }
+
       const { data, error, count } = await query;
-      
-      if (error) throw error;
-      
-      // Use explicit casting to avoid deep instantiation issues
-      const typedLogs = data as unknown as SystemLog[];
-      setLogs(typedLogs);
-      return { logs: typedLogs, count: count || 0 };
-    } catch (err) {
-      console.error('Error fetching logs:', err);
-      setError(err as Error);
-      return { logs: [], count: 0, error: err };
-    } finally {
-      setIsLoading(false);
-    }
-  }, [tenant?.id]);
 
-  // Function to refresh logs with current filters
-  const refresh = useCallback(async () => {
-    return fetchLogs();
-  }, [fetchLogs]);
+      if (error) {
+        throw new Error(`Failed to fetch system log metrics: ${error.message}`);
+      }
 
-  // Added to match the function referenced in errors
-  const verifyModuleImplementation = async (modulePath: string) => {
-    try {
-      const result = await logActivity(
-        'MODULE_VERIFICATION',
-        `Verifying module implementation for ${modulePath}`,
-        { modulePath },
-        'info'
-      );
-      
-      // Mock verification result for now
+      // Process data for metrics
+      const typeCounts: Record<string, number> = {};
+      const dayCounts: Record<string, number> = {};
+
+      // Cast data to avoid excessive type depth
+      const safeData = data as unknown as Array<{event_type: string, created_at: string}>;
+
+      safeData.forEach(log => {
+        // Count by type
+        typeCounts[log.event_type] = (typeCounts[log.event_type] || 0) + 1;
+
+        // Count by day
+        const day = log.created_at.split('T')[0];
+        dayCounts[day] = (dayCounts[day] || 0) + 1;
+      });
+
+      // Convert day counts to array for charts
+      const byDay = Object.entries(dayCounts).map(([date, count]) => ({
+        date,
+        count
+      }));
+
       return {
-        success: true,
-        message: {
-          verified: true,
-          phase1Complete: true,
-          phase2Complete: true,
-          phase3Complete: false,
-          modulePath,
-          options: {}
-        }
+        total: count || 0,
+        byType: typeCounts,
+        byDay
       };
-    } catch (error) {
-      console.error(`Error verifying module ${modulePath}:`, error);
-      return { success: false, error };
-    }
-  };
-
-  return {
-    logs,
-    isLoading,
-    error,
-    logActivity,
-    logError,
-    logSecurityEvent,
-    logJourneyStep,
-    fetchLogs,
-    refresh,
-    verifyModuleImplementation
-  };
-}
+    },
+    enabled: !!tenant?.id
+  });
+};

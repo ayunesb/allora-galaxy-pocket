@@ -13,7 +13,7 @@ import { KpiAlertsPanel } from "./components/KpiAlertsPanel";
 
 export default function KpiDashboard() {
   const [timeframe, setTimeframe] = useState<number>(7);
-  const { data: metrics, isLoading, error, refetch } = useKpiMetrics({ dateRange: timeframe });
+  const { metrics, isLoading, refresh } = useKpiMetrics({ dateRange: timeframe });
   const { alerts, isLoading: isLoadingAlerts } = useKpiAlerts({ activeOnly: true });
 
   const handleTimeframeChange = (days: number) => {
@@ -27,7 +27,7 @@ export default function KpiDashboard() {
           <CardTitle className="text-2xl font-bold tracking-tight">
             KPI Metrics Dashboard
           </CardTitle>
-          <Button variant="outline" onClick={() => refetch()} disabled={isLoading}>
+          <Button variant="outline" onClick={() => refresh()} disabled={isLoading}>
             {isLoading ? (
               <>
                 <AlertCircle className="mr-2 h-4 w-4 animate-spin" />
@@ -50,8 +50,6 @@ export default function KpiDashboard() {
             <TabsContent value="summary">
               {isLoading ? (
                 <KpiLoadingState />
-              ) : error ? (
-                <KpiErrorState error={error} onRetry={() => refetch()} />
               ) : metrics && metrics.length > 0 ? (
                 <>
                   <KpiMetricSummaryGrid metrics={metrics} />

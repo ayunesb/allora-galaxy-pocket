@@ -17,12 +17,12 @@ export function useLogActivity() {
   const { user } = useAuth();
   const [isLogging, setIsLogging] = useState(false);
 
-  const logActivity = async ({
-    event_type,
-    message,
-    meta = {},
-    severity = 'info'
-  }: LogActivityParams): Promise<{ success: boolean; log?: SystemLog; error?: any }> => {
+  const logActivity = async (
+    event_type: string,
+    message: string,
+    meta: Record<string, any> = {},
+    severity: LogSeverity = 'info'
+  ): Promise<{ success: boolean; log?: SystemLog; error?: any }> => {
     if (!tenant?.id) {
       console.warn("Can't log activity: No tenant ID available");
       return { success: false, error: "No tenant ID" };
@@ -35,8 +35,8 @@ export function useLogActivity() {
         tenant_id: tenant.id,
         event_type,
         message,
-        meta: { ...meta },
-        severity, // Add severity field directly to the payload
+        meta,
+        severity,
         user_id: user?.id,
         created_at: new Date().toISOString()
       };
@@ -63,17 +63,17 @@ export function useLogActivity() {
     error: Error | any,
     meta: Record<string, any> = {}
   ) => {
-    return logActivity({
-      event_type: 'ERROR',
+    return logActivity(
+      'ERROR',
       message,
-      meta: {
+      {
         ...meta,
         errorMessage: error.message,
         stack: error.stack,
         code: error.code
       },
-      severity: 'error'
-    });
+      'error'
+    );
   };
 
   const logSecurityEvent = async (
@@ -81,12 +81,12 @@ export function useLogActivity() {
     eventType: string,
     meta: Record<string, any> = {}
   ) => {
-    return logActivity({
-      event_type: `SECURITY_${eventType}`,
+    return logActivity(
+      `SECURITY_${eventType}`,
       message,
       meta,
-      severity: 'warning'
-    });
+      'warning'
+    );
   };
 
   const logJourneyStep = async (
@@ -94,16 +94,16 @@ export function useLogActivity() {
     to: string,
     details: Record<string, any> = {}
   ) => {
-    return logActivity({
-      event_type: 'USER_JOURNEY',
-      message: `User navigated from ${from} to ${to}`,
-      meta: {
+    return logActivity(
+      'USER_JOURNEY',
+      `User navigated from ${from} to ${to}`,
+      {
         from,
         to,
         ...details
       },
-      severity: 'info'
-    });
+      'info'
+    );
   };
 
   return {

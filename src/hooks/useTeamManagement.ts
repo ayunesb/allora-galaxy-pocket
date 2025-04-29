@@ -10,10 +10,10 @@ export interface TeamMember {
   id: string;
   user_id: string;
   tenant_id: string;
-  role: 'admin' | 'editor' | 'viewer' | 'manager';
+  role: UserRole;
   created_at: string;
-  profiles: {
-    email: string;
+  profiles?: {
+    email?: string;
     avatar_url?: string;
   };
 }
@@ -57,18 +57,25 @@ export function useTeamManagement() {
         .select('id, email, avatar_url')
         .in('id', userIds);
 
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        // Continue with what we have, don't throw
+      }
 
       // Map profile data safely
-      const profileMap = (profiles || []).reduce((acc: Record<string, any>, profile) => {
-        if (profile && profile.id) {
-          acc[profile.id] = {
-            email: profile.email || 'No email',
-            avatar_url: profile.avatar_url
-          };
-        }
-        return acc;
-      }, {});
+      const profileMap: Record<string, {email?: string, avatar_url?: string}> = {};
+      
+      // Only process profiles if we have valid data (not an error)
+      if (profiles && !('error' in profiles)) {
+        profiles.forEach(profile => {
+          if (profile && profile.id) {
+            profileMap[profile.id] = {
+              email: profile.email || 'No email',
+              avatar_url: profile.avatar_url
+            };
+          }
+        });
+      }
 
       // Combine the data safely
       const members = teamRoles.map(role => {
@@ -77,7 +84,7 @@ export function useTeamManagement() {
         return {
           ...role,
           profiles: profileData
-        } as unknown as TeamMember;
+        } as TeamMember;
       });
 
       return members;
@@ -85,13 +92,13 @@ export function useTeamManagement() {
     enabled: !!tenant?.id
   });
 
-  // Fetch pending invites - use team_invites table
+  // Fetch pending invites
   const { data: pendingInvites, isLoading: isLoadingInvites } = useQuery({
     queryKey: ['pending-invites', tenant?.id],
     queryFn: async () => {
       if (!tenant?.id) return [];
 
-      // Use team_invites table instead of invites
+      // Use team_invites table
       const { data, error } = await supabase
         .from('team_invites')
         .select('*')
@@ -101,8 +108,9 @@ export function useTeamManagement() {
 
       if (error) throw error;
       
-      // Cast to the correct type
-      return (data || []) as unknown as PendingInvite[];
+      // Cast to the correct type to avoid recursion issues
+      const safeData = data as unknown;
+      return safeData as PendingInvite[];
     },
     enabled: !!tenant?.id
   });

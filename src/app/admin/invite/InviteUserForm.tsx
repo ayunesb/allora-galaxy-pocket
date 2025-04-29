@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTenant } from "@/hooks/useTenant";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from 'sonner';
 import { UserRole } from "@/types/invite";
 
 export default function InviteUserForm() {
@@ -14,7 +14,6 @@ export default function InviteUserForm() {
   const [role, setRole] = useState<UserRole>("editor");
   const [isLoading, setIsLoading] = useState(false);
   const { tenant } = useTenant();
-  const { toast } = useToast();
 
   const handleInvite = async () => {
     if (!email || !role || !tenant) return;
@@ -31,16 +30,13 @@ export default function InviteUserForm() {
 
       if (error) throw error;
       
-      toast({
-        title: "Invite sent",
+      toast.success("Invite sent", {
         description: "Team member has been successfully invited"
       });
       setEmail("");
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to send invite",
-        variant: "destructive"
+      toast.error("Error", {
+        description: error.message || "Failed to send invite"
       });
     } finally {
       setIsLoading(false);
@@ -64,7 +60,7 @@ export default function InviteUserForm() {
         <div className="space-y-2">
           <Select
             value={role}
-            onValueChange={(value) => setRole(value as UserRole)}
+            onValueChange={(value: string) => setRole(value as UserRole)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select a role" />

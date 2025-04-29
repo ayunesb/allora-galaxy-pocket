@@ -1,5 +1,5 @@
 
-export type UserRole = 'admin' | 'editor' | 'viewer' | 'manager';
+export type UserRole = 'admin' | 'editor' | 'viewer';
 
 export interface Invite {
   id: string;

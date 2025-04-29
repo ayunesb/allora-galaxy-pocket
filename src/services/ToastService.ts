@@ -1,13 +1,12 @@
 
 import { toast } from "sonner";
 
-interface ToastOptions {
-  title: string;
+type ToastOptions = {
   description?: string | React.ReactNode;
   duration?: number;
   id?: string | number;
   position?: 'top-left' | 'top-right' | 'top-center' | 'bottom-left' | 'bottom-right' | 'bottom-center';
-}
+};
 
 export class ToastService {
   // Helper method to ensure value is a valid React child (not an object)
@@ -25,55 +24,55 @@ export class ToastService {
     return value;
   }
 
-  static success(options: ToastOptions): string | number {
-    const safeDescription = this.ensureValidReactChild(options.description);
-    return toast.success(options.title, {
+  static success(message: string, options?: ToastOptions): string | number {
+    const safeDescription = options?.description ? this.ensureValidReactChild(options.description) : undefined;
+    return toast.success(message, {
       description: safeDescription,
-      duration: options.duration || 4000,
-      id: options.id,
-      position: options.position
+      duration: options?.duration || 4000,
+      id: options?.id,
+      position: options?.position
     });
   }
   
-  static error(options: ToastOptions): string | number {
+  static error(message: string, options?: ToastOptions): string | number {
     // Log errors to console for debugging
-    console.error(`Toast Error: ${options.title}${options.description ? ` - ${options.description}` : ''}`);
+    console.error(`Toast Error: ${message}${options?.description ? ` - ${options.description}` : ''}`);
     
-    const safeDescription = this.ensureValidReactChild(options.description);
-    return toast.error(options.title, {
+    const safeDescription = options?.description ? this.ensureValidReactChild(options.description) : undefined;
+    return toast.error(message, {
       description: safeDescription,
-      duration: options.duration || 5000,
-      id: options.id,
-      position: options.position
+      duration: options?.duration || 5000,
+      id: options?.id,
+      position: options?.position
     });
   }
   
-  static info(options: ToastOptions): string | number {
-    const safeDescription = this.ensureValidReactChild(options.description);
-    return toast.info(options.title, {
+  static info(message: string, options?: ToastOptions): string | number {
+    const safeDescription = options?.description ? this.ensureValidReactChild(options.description) : undefined;
+    return toast.info(message, {
       description: safeDescription,
-      duration: options.duration || 3000,
-      id: options.id,
-      position: options.position
+      duration: options?.duration || 3000,
+      id: options?.id,
+      position: options?.position
     });
   }
   
-  static warning(options: ToastOptions): string | number {
-    const safeDescription = this.ensureValidReactChild(options.description);
-    return toast.warning(options.title, {
+  static warning(message: string, options?: ToastOptions): string | number {
+    const safeDescription = options?.description ? this.ensureValidReactChild(options.description) : undefined;
+    return toast.warning(message, {
       description: safeDescription,
-      duration: options.duration || 4000,
-      id: options.id,
-      position: options.position
+      duration: options?.duration || 4000,
+      id: options?.id,
+      position: options?.position
     });
   }
   
-  static loading(options: ToastOptions): string | number {
-    const safeDescription = this.ensureValidReactChild(options.description);
-    return toast.loading(options.title, {
+  static loading(message: string, options?: ToastOptions): string | number {
+    const safeDescription = options?.description ? this.ensureValidReactChild(options.description) : undefined;
+    return toast.loading(message, {
       description: safeDescription,
-      id: options.id,
-      position: options.position
+      id: options?.id,
+      position: options?.position
     });
   }
   
@@ -92,7 +91,7 @@ export class ToastService {
       position?: 'top-left' | 'top-right' | 'top-center' | 'bottom-left' | 'bottom-right' | 'bottom-center';
     }
   ): Promise<T> {
-    const safeDescription = this.ensureValidReactChild(options.description);
+    const safeDescription = options.description ? this.ensureValidReactChild(options.description) : undefined;
     return toast.promise(promise, {
       loading: options.loading,
       success: options.success,
@@ -103,18 +102,18 @@ export class ToastService {
     });
   }
   
-  static custom(options: ToastOptions & { icon?: React.ReactNode }): string | number {
-    const safeDescription = this.ensureValidReactChild(options.description);
-    return toast(options.title, {
+  static custom(message: string, options?: ToastOptions & { icon?: React.ReactNode }): string | number {
+    const safeDescription = options?.description ? this.ensureValidReactChild(options.description) : undefined;
+    return toast(message, {
       description: safeDescription,
-      duration: options.duration || 4000,
-      id: options.id,
-      position: options.position,
-      icon: options.icon
+      duration: options?.duration || 4000,
+      id: options?.id,
+      position: options?.position,
+      icon: options?.icon
     });
   }
   
-  static network(error: unknown, options?: Partial<ToastOptions>): string | number {
+  static network(error: unknown, options?: ToastOptions & { title?: string }): string | number {
     let message = "Network error";
     
     if (error instanceof Error) {
@@ -126,8 +125,7 @@ export class ToastService {
     }
     
     const safeDescription = options?.description ? this.ensureValidReactChild(options.description) : message;
-    return this.error({
-      title: options?.title || "Connection problem",
+    return this.error(options?.title || "Connection problem", {
       description: safeDescription,
       duration: options?.duration || 5000,
       id: options?.id,

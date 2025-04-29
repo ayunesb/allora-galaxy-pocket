@@ -26,11 +26,8 @@ interface FullKpiData {
 export function KpiOverview() {
   const { data, isLoading } = useKpiData();
   
-  // Break recursion by using unknown cast and then safely access the fields
-  const safeData = data as unknown;
-  
   // Safely cast and extract metrics with fallbacks to empty arrays
-  const kpiData = safeData as FullKpiData | undefined;
+  const kpiData = data as FullKpiData | undefined;
   const currentMetrics: KpiMetric[] = kpiData?.currentMetrics || [];
   const trends: KpiTrend[] = kpiData?.trends || [];
 
