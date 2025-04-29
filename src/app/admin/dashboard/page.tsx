@@ -1,5 +1,6 @@
 
-import AdminDashboard from "@/components/admin/AdminDashboard";
+import React from 'react';
+import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import AdminOnly from "@/guards/AdminOnly";
 
 export default function AdminDashboardPage() {

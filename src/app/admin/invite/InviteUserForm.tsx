@@ -60,7 +60,7 @@ export default function InviteUserForm() {
         <div className="space-y-2">
           <Select
             value={role}
-            onValueChange={(value: string) => setRole(value as UserRole)}
+            onValueChange={(value) => setRole(value as UserRole)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select a role" />

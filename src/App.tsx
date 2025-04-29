@@ -11,9 +11,6 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { ResponsiveToastProvider } from "@/components/ui/ResponsiveToastProvider";
 
-// Create router outside of component to avoid re-creation on renders
-const router = createBrowserRouter(baseRoutes);
-
 // Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,24 +38,26 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <TenantProvider>
-            <ThemeProvider defaultTheme="light" storageKey="allora-theme-preference">
-              <ResponsiveToastProvider>
-                <Suspense fallback={
-                  <div className="flex items-center justify-center h-screen">
-                    <LoadingSpinner size="lg" label="Loading application..." />
-                  </div>
-                }>
-                  <RouterProvider router={router} />
-                </Suspense>
-              </ResponsiveToastProvider>
-            </ThemeProvider>
-          </TenantProvider>
-        </AuthProvider>
-        <ReactQueryDevtools initialIsOpen={false} />
-      </QueryClientProvider>
+      <BrowserRouter>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <TenantProvider>
+              <ThemeProvider defaultTheme="light" storageKey="allora-theme-preference">
+                <ResponsiveToastProvider>
+                  <Suspense fallback={
+                    <div className="flex items-center justify-center h-screen">
+                      <LoadingSpinner size="lg" label="Loading application..." />
+                    </div>
+                  }>
+                    <RouterProvider router={createBrowserRouter(baseRoutes)} />
+                  </Suspense>
+                </ResponsiveToastProvider>
+              </ThemeProvider>
+            </TenantProvider>
+          </AuthProvider>
+          <ReactQueryDevtools initialIsOpen={false} />
+        </QueryClientProvider>
+      </BrowserRouter>
     </ErrorBoundary>
   );
 }

@@ -22,9 +22,7 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-
-// Define valid user roles (removing 'manager')
-type UserRole = 'admin' | 'editor' | 'viewer';
+import { UserRole } from '@/types/invite';
 
 export default function UserManagementPage() {
   const { 

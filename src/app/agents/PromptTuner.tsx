@@ -26,11 +26,13 @@ const InsertMissingBlueprints: React.FC = () => {
       const result = await ceoAgent.generateStrategy(industry, goals, painPoints);
 
       if (result.success) {
-        console.log('Strategy generated successfully:', result.strategy);
-        setPreview(result.strategy || "Strategy generated successfully");
+        const strategyText = result.strategy || "Strategy generated successfully";
+        console.log('Strategy generated successfully:', strategyText);
+        setPreview(strategyText);
       } else {
-        console.error('Failed to generate strategy:', result.error);
-        setPreview("Error: " + (result.error || "Unknown error"));
+        const errorMessage = result.error || "Unknown error";
+        console.error('Failed to generate strategy:', errorMessage);
+        setPreview("Error: " + errorMessage);
       }
     } catch (error) {
       console.error('Error inserting missing blueprints:', error);

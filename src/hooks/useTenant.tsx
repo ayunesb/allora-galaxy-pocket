@@ -3,7 +3,7 @@ import { useState, useEffect, createContext, useContext, ReactNode } from 'react
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { ToastService } from '@/services/ToastService';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Tenant } from '@/types/tenant';
 
 interface TenantContextType {
@@ -30,7 +30,19 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
-  const navigate = useNavigate();
+  
+  // Safely access navigation
+  let navigate;
+  try {
+    navigate = useNavigate();
+  } catch (e) {
+    console.warn("TenantProvider: Router context not available");
+    // Create a dummy navigate function that logs instead of navigating
+    navigate = (path: string) => {
+      console.log(`Navigation to ${path} was attempted but Router is not available`);
+      return false;
+    };
+  }
 
   // Load tenants and current tenant
   useEffect(() => {
@@ -72,7 +84,7 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
 
       const formattedTenants = userTenants.map(item => ({
         ...item.tenant_profiles,
-        role: item.role
+        userRole: item.role
       }));
 
       setTenants(formattedTenants);
@@ -86,13 +98,13 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
       if (targetTenant) {
         setTenant(targetTenant);
         // Use the role from the tenant data directly
-        const tenantRole = targetTenant.role as string || 'viewer';
+        const tenantRole = targetTenant.userRole as string || 'viewer';
         setUserRole(tenantRole);
         localStorage.setItem('currentTenantId', targetTenant.id);
       } else if (formattedTenants.length > 0) {
         setTenant(formattedTenants[0]);
         // Use the role from the first tenant
-        const tenantRole = formattedTenants[0].role as string || 'viewer';
+        const tenantRole = formattedTenants[0].userRole as string || 'viewer';
         setUserRole(tenantRole);
         localStorage.setItem('currentTenantId', formattedTenants[0].id);
       }
@@ -136,7 +148,7 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
     const newTenant = tenants.find(t => t.id === tenantId);
     if (newTenant) {
       setTenant(newTenant);
-      const tenantRole = newTenant.role as string || 'viewer';
+      const tenantRole = newTenant.userRole as string || 'viewer';
       setUserRole(tenantRole);
       localStorage.setItem('currentTenantId', tenantId);
       ToastService.success(`Switched to ${newTenant.name}`);
@@ -149,7 +161,7 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
   const selectTenant = (newTenant: Tenant) => {
     if (newTenant?.id) {
       setTenant(newTenant);
-      const tenantRole = newTenant.role as string || 'viewer'; 
+      const tenantRole = newTenant.userRole as string || 'viewer'; 
       setUserRole(tenantRole);
       localStorage.setItem('currentTenantId', newTenant.id);
       ToastService.success(`Switched to ${newTenant.name}`);

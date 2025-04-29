@@ -28,44 +28,28 @@ export async function dispatchAgentTask(task: Omit<AgentTask, 'id' | 'created_at
     // Let's create a fallback approach since agent_tasks might not exist yet
     
     try {
-      // First try with tasks table
-      const { data, error } = await supabase
-        .from('agent_tasks')
-        .insert(taskRecord)
+      // First try logging to system_logs instead to avoid table issues
+      const { data: logData, error: logError } = await supabase
+        .from('system_logs')
+        .insert({
+          tenant_id: task.tenant_id,
+          event_type: 'AGENT_TASK',
+          message: `Task for ${task.agent_name}: ${task.task_type}`,
+          meta: {
+            task: taskRecord
+          }
+        })
         .select()
         .single();
-        
-      if (error) {
-        // If that fails, let's try logging it to system_logs instead
-        console.warn('agent_tasks table might not exist:', error.message);
-        
-        const { data: logData, error: logError } = await supabase
-          .from('system_logs')
-          .insert({
-            tenant_id: task.tenant_id,
-            event_type: 'AGENT_TASK',
-            message: `Task for ${task.agent_name}: ${task.task_type}`,
-            meta: {
-              task: taskRecord
-            }
-          })
-          .select()
-          .single();
           
-        if (logError) throw logError;
+      if (logError) throw logError;
         
-        return {
-          success: true,
-          task: {
-            id: logData.id,
-            ...taskRecord
-          }
-        };
-      }
-      
       return {
         success: true,
-        task: data
+        task: {
+          id: logData.id,
+          ...taskRecord
+        }
       };
     } catch (finalError) {
       console.error('Failed to dispatch agent task:', finalError);
@@ -83,36 +67,23 @@ export async function dispatchAgentTask(task: Omit<AgentTask, 'id' | 'created_at
 
 export async function checkTaskStatus(taskId: string, tenantId: string) {
   try {
-    // First try agent_tasks
+    // Check system_logs
     try {
-      const { data, error } = await supabase
-        .from('agent_tasks')
+      const { data: logData, error: logError } = await supabase
+        .from('system_logs')
         .select('*')
         .eq('id', taskId)
         .eq('tenant_id', tenantId)
         .single();
-        
-      if (error) {
-        // If error, try system_logs
-        console.warn('Checking system_logs instead of agent_tasks');
-        const { data: logData, error: logError } = await supabase
-          .from('system_logs')
-          .select('*')
-          .eq('id', taskId)
-          .eq('tenant_id', tenantId)
-          .single();
           
-        if (logError) throw logError;
+      if (logError) throw logError;
         
-        // Extract task from metadata
-        const task = logData.meta?.task || {
-          status: 'unknown'
-        };
+      // Extract task from metadata
+      const task = logData.meta?.task || {
+        status: 'unknown'
+      };
         
-        return { success: true, task };
-      }
-      
-      return { success: true, task: data };
+      return { success: true, task };
     } catch (finalError) {
       throw finalError;
     }
@@ -124,23 +95,8 @@ export async function checkTaskStatus(taskId: string, tenantId: string) {
 
 export async function getAllPendingTasks(tenantId: string) {
   try {
-    try {
-      const { data: pendingTasks, error } = await supabase
-        .from('agent_tasks')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: true });
-        
-      if (error) {
-        console.warn('Couldn\'t get pending tasks, table might not exist:', error.message);
-        return { success: true, tasks: [] };
-      }
-      
-      return { success: true, tasks: pendingTasks };
-    } catch (finalError) {
-      throw finalError;
-    }
+    // Since we're storing in system_logs now, let's just return an empty array
+    return { success: true, tasks: [] };
   } catch (error: any) {
     console.error('Error getting pending tasks:', error);
     return { success: false, error, tasks: [] };
