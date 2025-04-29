@@ -8,7 +8,11 @@ function ensureValidReactChild(value: any): string | React.ReactNode {
     return '';
   }
   if (typeof value === 'object' && !React.isValidElement(value)) {
-    return JSON.stringify(value);
+    try {
+      return JSON.stringify(value);
+    } catch (e) {
+      return String(value);
+    }
   }
   return value;
 }
@@ -19,33 +23,37 @@ function ensureValidReactChild(value: any): string | React.ReactNode {
  */
 export const showToast = {
   success: (title: string, options?: { description?: string | React.ReactNode, duration?: number }) => {
+    const safeDescription = options?.description ? ensureValidReactChild(options.description) : undefined;
     ToastService.success({
       title,
-      description: options?.description ? ensureValidReactChild(options.description) : undefined,
+      description: safeDescription,
       duration: options?.duration
     });
   },
   
   error: (title: string, options?: { description?: string | React.ReactNode, duration?: number }) => {
+    const safeDescription = options?.description ? ensureValidReactChild(options.description) : undefined;
     ToastService.error({
       title,
-      description: options?.description ? ensureValidReactChild(options.description) : undefined,
+      description: safeDescription,
       duration: options?.duration
     });
   },
   
   warning: (title: string, options?: { description?: string | React.ReactNode, duration?: number }) => {
+    const safeDescription = options?.description ? ensureValidReactChild(options.description) : undefined;
     ToastService.warning({
       title,
-      description: options?.description ? ensureValidReactChild(options.description) : undefined,
+      description: safeDescription,
       duration: options?.duration
     });
   },
   
   info: (title: string, options?: { description?: string | React.ReactNode, duration?: number }) => {
+    const safeDescription = options?.description ? ensureValidReactChild(options.description) : undefined;
     ToastService.info({
       title,
-      description: options?.description ? ensureValidReactChild(options.description) : undefined,
+      description: safeDescription,
       duration: options?.duration
     });
   },
@@ -59,11 +67,12 @@ export const showToast = {
       description?: string | React.ReactNode;
     }
   ) => {
+    const safeDescription = messages.description ? ensureValidReactChild(messages.description) : undefined;
     return ToastService.promise(promise, {
       loading: messages.loading,
       success: messages.success,
       error: messages.error,
-      description: messages.description ? ensureValidReactChild(messages.description) : undefined
+      description: safeDescription
     });
   },
   
@@ -137,9 +146,16 @@ export function withLoadingToast<T extends (...args: any[]) => Promise<any>>(
       });
       return result;
     } catch (error) {
+      let errorMessage = messages.error;
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
       ToastService.error({
         title: messages.error,
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
+        description: errorMessage,
         id: toastId
       });
       throw error;

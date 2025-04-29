@@ -22,13 +22,6 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         toastOptions={{
           duration: 4000,
           className: "shadow-md",
-          // Ensuring all content is rendered as strings to prevent React child errors
-          render: (data) => {
-            if (typeof data === 'object' && data !== null) {
-              return JSON.stringify(data);
-            }
-            return data;
-          }
         }}
       />
     </>

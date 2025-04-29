@@ -9,7 +9,7 @@ import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import { baseRoutes } from "./routes/appRoutesConfig";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import ResponsiveToastProvider from "@/components/ui/ResponsiveToastProvider";
+import { ResponsiveToastProvider } from "@/components/ui/ResponsiveToastProvider";
 
 // Create router outside of component to avoid re-creation on renders
 const router = createBrowserRouter(baseRoutes);

@@ -18,7 +18,11 @@ function ensureValidReactChild(value: any): string | React.ReactNode {
     return '';
   }
   if (typeof value === 'object' && !React.isValidElement(value)) {
-    return JSON.stringify(value);
+    try {
+      return JSON.stringify(value);
+    } catch (e) {
+      return String(value);
+    }
   }
   return value;
 }
@@ -29,9 +33,10 @@ function ensureValidReactChild(value: any): string | React.ReactNode {
  * @param options Additional configuration options
  */
 export const showSuccess = (message: string, options?: ToastOptions) => {
+  const safeDescription = options?.description ? ensureValidReactChild(options.description) : undefined;
   return toast.success(message, {
     ...options,
-    description: options?.description ? ensureValidReactChild(options.description) : undefined
+    description: safeDescription
   });
 };
 
@@ -41,9 +46,10 @@ export const showSuccess = (message: string, options?: ToastOptions) => {
  * @param options Additional configuration options
  */
 export const showError = (message: string, options?: ToastOptions) => {
+  const safeDescription = options?.description ? ensureValidReactChild(options.description) : undefined;
   return toast.error(message, {
     ...options,
-    description: options?.description ? ensureValidReactChild(options.description) : undefined
+    description: safeDescription
   });
 };
 
@@ -53,9 +59,10 @@ export const showError = (message: string, options?: ToastOptions) => {
  * @param options Additional configuration options
  */
 export const showInfo = (message: string, options?: ToastOptions) => {
+  const safeDescription = options?.description ? ensureValidReactChild(options.description) : undefined;
   return toast(message, {
     ...options,
-    description: options?.description ? ensureValidReactChild(options.description) : undefined
+    description: safeDescription
   });
 };
 
@@ -65,9 +72,10 @@ export const showInfo = (message: string, options?: ToastOptions) => {
  * @param options Additional configuration options
  */
 export const showWarning = (message: string, options?: ToastOptions) => {
+  const safeDescription = options?.description ? ensureValidReactChild(options.description) : undefined;
   return toast.warning(message, {
     ...options,
-    description: options?.description ? ensureValidReactChild(options.description) : undefined
+    description: safeDescription
   });
 };
 
@@ -86,12 +94,13 @@ export const showPromise = <T>(
   },
   options?: ToastOptions
 ) => {
+  const safeDescription = options?.description ? ensureValidReactChild(options.description) : undefined;
   // The toast.promise API accepts only two arguments: the promise and the messages object
   // The options can be passed as part of the messages object
   return toast.promise(promise, {
     ...messages,
     ...options,
-    description: options?.description ? ensureValidReactChild(options.description) : undefined
+    description: safeDescription
   });
 };
 
