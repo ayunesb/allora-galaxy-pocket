@@ -3,16 +3,27 @@ import { toast, ToastT } from "sonner";
 
 interface ToastOptions {
   title: string;
-  description?: string;
+  description?: string | React.ReactNode;
   duration?: number;
   id?: string | number;
   position?: 'top-left' | 'top-right' | 'top-center' | 'bottom-left' | 'bottom-right' | 'bottom-center';
 }
 
 export class ToastService {
+  // Helper method to ensure value is a valid React child (not an object)
+  private static ensureValidReactChild(value: any): string | React.ReactNode {
+    if (value === null || value === undefined) {
+      return '';
+    }
+    if (typeof value === 'object' && !React.isValidElement(value)) {
+      return JSON.stringify(value);
+    }
+    return value;
+  }
+
   static success(options: ToastOptions): string | number {
     return toast.success(options.title, {
-      description: options.description,
+      description: this.ensureValidReactChild(options.description),
       duration: options.duration || 4000,
       id: options.id,
       position: options.position
@@ -24,7 +35,7 @@ export class ToastService {
     console.error(`Toast Error: ${options.title}${options.description ? ` - ${options.description}` : ''}`);
     
     return toast.error(options.title, {
-      description: options.description,
+      description: this.ensureValidReactChild(options.description),
       duration: options.duration || 5000,
       id: options.id,
       position: options.position
@@ -33,7 +44,7 @@ export class ToastService {
   
   static info(options: ToastOptions): string | number {
     return toast.info(options.title, {
-      description: options.description,
+      description: this.ensureValidReactChild(options.description),
       duration: options.duration || 3000,
       id: options.id,
       position: options.position
@@ -42,7 +53,7 @@ export class ToastService {
   
   static warning(options: ToastOptions): string | number {
     return toast.warning(options.title, {
-      description: options.description,
+      description: this.ensureValidReactChild(options.description),
       duration: options.duration || 4000,
       id: options.id,
       position: options.position
@@ -51,7 +62,7 @@ export class ToastService {
   
   static loading(options: ToastOptions): string | number {
     return toast.loading(options.title, {
-      description: options.description,
+      description: this.ensureValidReactChild(options.description),
       id: options.id,
       position: options.position
     });
@@ -67,7 +78,7 @@ export class ToastService {
       loading: string;
       success: string | ((data: T) => string);
       error: string | ((error: unknown) => string);
-      description?: string;
+      description?: string | React.ReactNode;
       id?: string | number;
       position?: 'top-left' | 'top-right' | 'top-center' | 'bottom-left' | 'bottom-right' | 'bottom-center';
     }
@@ -76,7 +87,7 @@ export class ToastService {
       loading: options.loading,
       success: options.success,
       error: options.error,
-      description: options.description,
+      description: this.ensureValidReactChild(options.description),
       id: options.id,
       position: options.position
     });
@@ -84,7 +95,7 @@ export class ToastService {
   
   static custom(options: ToastOptions & { icon?: React.ReactNode }): string | number {
     return toast(options.title, {
-      description: options.description,
+      description: this.ensureValidReactChild(options.description),
       duration: options.duration || 4000,
       id: options.id,
       position: options.position,

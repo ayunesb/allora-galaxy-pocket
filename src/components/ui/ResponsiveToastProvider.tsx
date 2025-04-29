@@ -29,7 +29,14 @@ export function ResponsiveToastProvider({ children }: { children: React.ReactNod
         visibleToasts={isMobile ? 2 : 3}
         toastOptions={{ 
           duration: isMobile ? 3000 : 4000,
-          className: isMobile ? 'w-[calc(100vw-32px)] shadow-md' : 'shadow-md'
+          className: isMobile ? 'w-[calc(100vw-32px)] shadow-md' : 'shadow-md',
+          // Ensuring all content is rendered as strings to prevent React child errors
+          render: (data) => {
+            if (typeof data === 'object' && data !== null) {
+              return JSON.stringify(data);
+            }
+            return data;
+          }
         }}
       />
     </>

@@ -2,39 +2,50 @@
 import { ToastService } from "@/services/ToastService";
 import { toast } from 'sonner';
 
+// Helper function to ensure valid React child (not an object)
+function ensureValidReactChild(value: any): string | React.ReactNode {
+  if (value === null || value === undefined) {
+    return '';
+  }
+  if (typeof value === 'object' && !React.isValidElement(value)) {
+    return JSON.stringify(value);
+  }
+  return value;
+}
+
 /**
  * Standardized toast utilities that wrap the ToastService 
  * for convenient usage across the application
  */
 export const showToast = {
-  success: (title: string, options?: { description?: string, duration?: number }) => {
+  success: (title: string, options?: { description?: string | React.ReactNode, duration?: number }) => {
     ToastService.success({
       title,
-      description: options?.description,
+      description: options?.description ? ensureValidReactChild(options.description) : undefined,
       duration: options?.duration
     });
   },
   
-  error: (title: string, options?: { description?: string, duration?: number }) => {
+  error: (title: string, options?: { description?: string | React.ReactNode, duration?: number }) => {
     ToastService.error({
       title,
-      description: options?.description,
+      description: options?.description ? ensureValidReactChild(options.description) : undefined,
       duration: options?.duration
     });
   },
   
-  warning: (title: string, options?: { description?: string, duration?: number }) => {
+  warning: (title: string, options?: { description?: string | React.ReactNode, duration?: number }) => {
     ToastService.warning({
       title,
-      description: options?.description,
+      description: options?.description ? ensureValidReactChild(options.description) : undefined,
       duration: options?.duration
     });
   },
   
-  info: (title: string, options?: { description?: string, duration?: number }) => {
+  info: (title: string, options?: { description?: string | React.ReactNode, duration?: number }) => {
     ToastService.info({
       title,
-      description: options?.description,
+      description: options?.description ? ensureValidReactChild(options.description) : undefined,
       duration: options?.duration
     });
   },
@@ -45,14 +56,14 @@ export const showToast = {
       loading: string;
       success: string | ((data: T) => string);
       error: string | ((error: unknown) => string);
-      description?: string;
+      description?: string | React.ReactNode;
     }
   ) => {
     return ToastService.promise(promise, {
       loading: messages.loading,
       success: messages.success,
       error: messages.error,
-      description: messages.description
+      description: messages.description ? ensureValidReactChild(messages.description) : undefined
     });
   },
   

@@ -8,8 +8,19 @@ interface ToastOptions {
     label: string;
     onClick: () => void;
   };
-  description?: string;
+  description?: string | React.ReactNode;
   icon?: React.ReactNode;
+}
+
+// Helper function to ensure valid React child (not an object)
+function ensureValidReactChild(value: any): string | React.ReactNode {
+  if (value === null || value === undefined) {
+    return '';
+  }
+  if (typeof value === 'object' && !React.isValidElement(value)) {
+    return JSON.stringify(value);
+  }
+  return value;
 }
 
 /**
@@ -18,7 +29,10 @@ interface ToastOptions {
  * @param options Additional configuration options
  */
 export const showSuccess = (message: string, options?: ToastOptions) => {
-  return toast.success(message, options);
+  return toast.success(message, {
+    ...options,
+    description: options?.description ? ensureValidReactChild(options.description) : undefined
+  });
 };
 
 /**
@@ -27,7 +41,10 @@ export const showSuccess = (message: string, options?: ToastOptions) => {
  * @param options Additional configuration options
  */
 export const showError = (message: string, options?: ToastOptions) => {
-  return toast.error(message, options);
+  return toast.error(message, {
+    ...options,
+    description: options?.description ? ensureValidReactChild(options.description) : undefined
+  });
 };
 
 /**
@@ -36,7 +53,10 @@ export const showError = (message: string, options?: ToastOptions) => {
  * @param options Additional configuration options
  */
 export const showInfo = (message: string, options?: ToastOptions) => {
-  return toast(message, options);
+  return toast(message, {
+    ...options,
+    description: options?.description ? ensureValidReactChild(options.description) : undefined
+  });
 };
 
 /**
@@ -45,7 +65,10 @@ export const showInfo = (message: string, options?: ToastOptions) => {
  * @param options Additional configuration options
  */
 export const showWarning = (message: string, options?: ToastOptions) => {
-  return toast.warning(message, options);
+  return toast.warning(message, {
+    ...options,
+    description: options?.description ? ensureValidReactChild(options.description) : undefined
+  });
 };
 
 /**
@@ -67,7 +90,8 @@ export const showPromise = <T>(
   // The options can be passed as part of the messages object
   return toast.promise(promise, {
     ...messages,
-    ...options
+    ...options,
+    description: options?.description ? ensureValidReactChild(options.description) : undefined
   });
 };
 
