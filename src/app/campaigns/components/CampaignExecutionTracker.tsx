@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -14,9 +15,17 @@ interface CampaignExecutionTrackerProps {
   onUpdate?: () => void;
 }
 
+interface ExecutionMetrics {
+  views?: number;
+  clicks?: number;
+  conversions?: number;
+  last_tracked?: string;
+  [key: string]: any;
+}
+
 export function CampaignExecutionTracker({ campaign, onUpdate }: CampaignExecutionTrackerProps) {
   const { updateCampaignExecutionStatus, getCampaignExecutionMetrics } = useCampaignIntegration();
-  const [metrics, setMetrics] = useState<Record<string, any> | null>(null);
+  const [metrics, setMetrics] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -26,7 +35,8 @@ export function CampaignExecutionTracker({ campaign, onUpdate }: CampaignExecuti
     try {
       const result = await getCampaignExecutionMetrics(campaign.id);
       if (result) {
-        setMetrics(result);
+        // Ensure we're setting a proper object
+        setMetrics(result || {});
       }
     } finally {
       setLoading(false);
@@ -65,16 +75,25 @@ export function CampaignExecutionTracker({ campaign, onUpdate }: CampaignExecuti
     }
   };
 
+  // Safely extract execution metrics
+  const safeExecutionMetrics: ExecutionMetrics = 
+    typeof metrics?.execution_metrics === 'object' && metrics.execution_metrics !== null 
+      ? metrics.execution_metrics 
+      : {};
+
   const getProgressPercent = () => {
-    if (!metrics?.execution_metrics) return 0;
+    // Safely access metrics
+    const views = safeExecutionMetrics.views || 0;
+    const clicks = safeExecutionMetrics.clicks || 0;
+    const conversions = safeExecutionMetrics.conversions || 0;
     
-    // Simple calculation based on metrics
-    const { views, clicks, conversions } = metrics.execution_metrics;
     if (views === 0) return 5; // Just started
     if (clicks === 0) return 25; // Has views but no clicks
     if (conversions === 0) return 60; // Has clicks but no conversions
     return 100; // Has conversions
   };
+
+  const executionStatus = metrics?.execution_status || 'pending';
 
   return (
     <Card>
@@ -82,12 +101,11 @@ export function CampaignExecutionTracker({ campaign, onUpdate }: CampaignExecuti
         <CardTitle className="text-lg font-medium flex items-center justify-between">
           Campaign Execution
           <Badge 
-            variant={metrics?.execution_status === 'in_progress' ? 'default' : 'outline'}
-            className={getStatusColor(metrics?.execution_status || 'pending')}
+            variant={executionStatus === 'in_progress' ? 'default' : 'outline'}
+            className={getStatusColor(executionStatus)}
           >
-            {metrics?.execution_status === 'in_progress' ? 'Running' : 
-             metrics?.execution_status === 'pending' ? 'Not Started' : 
-             metrics?.execution_status || 'Unknown'}
+            {executionStatus === 'in_progress' ? 'Running' : 
+             executionStatus === 'pending' ? 'Not Started' : executionStatus}
           </Badge>
         </CardTitle>
       </CardHeader>
@@ -104,21 +122,21 @@ export function CampaignExecutionTracker({ campaign, onUpdate }: CampaignExecuti
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-muted/50 p-2 rounded-md">
               <div className="text-xs text-muted-foreground">Views</div>
-              <div className="font-medium">{metrics?.execution_metrics?.views || 0}</div>
+              <div className="font-medium">{safeExecutionMetrics.views || 0}</div>
             </div>
             <div className="bg-muted/50 p-2 rounded-md">
               <div className="text-xs text-muted-foreground">Clicks</div>
-              <div className="font-medium">{metrics?.execution_metrics?.clicks || 0}</div>
+              <div className="font-medium">{safeExecutionMetrics.clicks || 0}</div>
             </div>
             <div className="bg-muted/50 p-2 rounded-md">
               <div className="text-xs text-muted-foreground">Conversions</div>
-              <div className="font-medium">{metrics?.execution_metrics?.conversions || 0}</div>
+              <div className="font-medium">{safeExecutionMetrics.conversions || 0}</div>
             </div>
             <div className="bg-muted/50 p-2 rounded-md">
               <div className="text-xs text-muted-foreground">CTR</div>
               <div className="font-medium">
-                {metrics?.execution_metrics?.views && metrics?.execution_metrics?.clicks ? 
-                  `${((metrics.execution_metrics.clicks / metrics.execution_metrics.views) * 100).toFixed(1)}%` : 
+                {safeExecutionMetrics.views && safeExecutionMetrics.clicks ? 
+                  `${((safeExecutionMetrics.clicks / safeExecutionMetrics.views) * 100).toFixed(1)}%` : 
                   '0.0%'}
               </div>
             </div>
@@ -129,7 +147,7 @@ export function CampaignExecutionTracker({ campaign, onUpdate }: CampaignExecuti
               size="sm" 
               variant="outline" 
               className="flex-1"
-              disabled={loading || metrics?.execution_status === 'pending'}
+              disabled={loading || executionStatus === 'pending'}
               onClick={() => handleStatusUpdate('paused')}
             >
               <Pause className="h-4 w-4 mr-1" />
@@ -137,9 +155,9 @@ export function CampaignExecutionTracker({ campaign, onUpdate }: CampaignExecuti
             </Button>
             <Button 
               size="sm" 
-              variant={metrics?.execution_status === 'in_progress' ? 'outline' : 'default'}  
+              variant={executionStatus === 'in_progress' ? 'outline' : 'default'}  
               className="flex-1"
-              disabled={loading || metrics?.execution_status === 'in_progress'}
+              disabled={loading || executionStatus === 'in_progress'}
               onClick={() => handleStatusUpdate('in_progress')}
             >
               <Play className="h-4 w-4 mr-1" />
@@ -159,8 +177,8 @@ export function CampaignExecutionTracker({ campaign, onUpdate }: CampaignExecuti
           </Button>
           
           <div className="text-xs text-muted-foreground text-center">
-            {metrics?.execution_metrics?.last_tracked ? 
-              `Last updated: ${new Date(metrics.execution_metrics.last_tracked).toLocaleString()}` : 
+            {safeExecutionMetrics.last_tracked ? 
+              `Last updated: ${new Date(safeExecutionMetrics.last_tracked).toLocaleString()}` : 
               'No data yet'}
           </div>
         </div>

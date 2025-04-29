@@ -24,7 +24,6 @@ export default function CampaignDetailPage() {
   const { executeCampaign, pauseCampaign, deleteCampaign } = useCampaignActions();
   const { checkAccess, showRestrictionWarning } = useDemoRestrictions();
 
-  // Handle campaign execution
   const handleExecute = async () => {
     if (!campaign) return;
     
@@ -44,7 +43,6 @@ export default function CampaignDetailPage() {
     }
   };
 
-  // Handle campaign pausing
   const handlePause = async () => {
     if (!campaign) return;
     
@@ -64,7 +62,6 @@ export default function CampaignDetailPage() {
     }
   };
 
-  // Handle campaign deletion
   const handleDelete = () => {
     if (!checkAccess('delete')) {
       showRestrictionWarning('delete');
@@ -153,7 +150,7 @@ export default function CampaignDetailPage() {
                 Pause
               </Button>
             ) : (
-              <Button variant="default" onClick={handleExecute} disabled={campaign.status === 'failed' || campaign.execution_status === 'failed'}>
+              <Button variant="default" onClick={handleExecute} disabled={campaign.execution_status === 'failed'}>
                 <Play className="h-4 w-4 mr-2" />
                 {campaign.status === 'paused' ? 'Resume' : 'Execute'}
               </Button>

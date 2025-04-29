@@ -10,14 +10,16 @@ export function useDemoRestrictions() {
   const [isResetting, setIsResetting] = useState(false);
   const [lastResetTime, setLastResetTime] = useState<Date | null>(null);
 
-  const isDemoTenant = !!tenant?.id && tenant.id.includes('demo');
+  const isDemoTenant = !!tenant?.id && (tenant.id.includes('demo') || !!tenant.is_demo);
   const isDemoMode = isDemoTenant; // Alias for backward compatibility
 
   useEffect(() => {
     // Load last reset time from localStorage
-    const storedTime = localStorage.getItem(`demo_reset_${tenant?.id}`);
-    if (storedTime) {
-      setLastResetTime(new Date(storedTime));
+    if (tenant?.id) {
+      const storedTime = localStorage.getItem(`demo_reset_${tenant.id}`);
+      if (storedTime) {
+        setLastResetTime(new Date(storedTime));
+      }
     }
   }, [tenant?.id]);
 

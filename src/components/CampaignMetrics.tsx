@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,14 +37,13 @@ export const CampaignMetrics: React.FC<CampaignMetricsProps> = ({ campaignId, de
   const getChartData = () => {
     if (!campaign || !campaign.execution_metrics) return [];
     
-    // Use the existing execution_metrics to create time-series data
-    // This is a fallback since we don't have the campaign_metrics table
+    // Safely access execution_metrics with type checking
     const metrics = campaign.execution_metrics;
     
-    // If metrics has a history array, use it
-    if (Array.isArray(metrics.history)) {
+    // Check if metrics is an object and has a history array
+    if (typeof metrics === 'object' && metrics !== null && 'history' in metrics && Array.isArray(metrics.history)) {
       return metrics.history.map((item: any) => ({
-        date: new Date(item.date || item.timestamp).toLocaleDateString(),
+        date: new Date(item.date || item.timestamp || Date.now()).toLocaleDateString(),
         views: item.views || 0,
         clicks: item.clicks || 0,
         conversions: item.conversions || 0,
@@ -53,9 +53,9 @@ export const CampaignMetrics: React.FC<CampaignMetricsProps> = ({ campaignId, de
     // Otherwise, just create a single data point
     return [{
       date: new Date().toLocaleDateString(),
-      views: metrics.views || 0,
-      clicks: metrics.clicks || 0,
-      conversions: metrics.conversions || 0,
+      views: typeof metrics === 'object' && metrics !== null && 'views' in metrics ? Number(metrics.views) || 0 : 0,
+      clicks: typeof metrics === 'object' && metrics !== null && 'clicks' in metrics ? Number(metrics.clicks) || 0 : 0,
+      conversions: typeof metrics === 'object' && metrics !== null && 'conversions' in metrics ? Number(metrics.conversions) || 0 : 0,
     }];
   };
   
@@ -83,6 +83,14 @@ export const CampaignMetrics: React.FC<CampaignMetricsProps> = ({ campaignId, de
   // Get metrics from campaign execution_metrics
   const metrics = campaign.execution_metrics || {};
   const chartData = getChartData();
+  
+  // Helper function to safely extract numeric values
+  const safeGetMetricValue = (metricName: string): number => {
+    if (typeof metrics !== 'object' || metrics === null) return 0;
+    if (!(metricName in metrics)) return 0;
+    const value = metrics[metricName as keyof typeof metrics];
+    return typeof value === 'number' ? value : 0;
+  };
   
   return (
     <div className="space-y-6">
@@ -118,7 +126,7 @@ export const CampaignMetrics: React.FC<CampaignMetricsProps> = ({ campaignId, de
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">
-                {metrics.views || 0}
+                {safeGetMetricValue('views')}
               </div>
             </CardContent>
           </Card>
@@ -129,7 +137,7 @@ export const CampaignMetrics: React.FC<CampaignMetricsProps> = ({ campaignId, de
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">
-                {metrics.clicks || 0}
+                {safeGetMetricValue('clicks')}
               </div>
             </CardContent>
           </Card>
@@ -140,7 +148,7 @@ export const CampaignMetrics: React.FC<CampaignMetricsProps> = ({ campaignId, de
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">
-                {metrics.conversions || 0}
+                {safeGetMetricValue('conversions')}
               </div>
             </CardContent>
           </Card>

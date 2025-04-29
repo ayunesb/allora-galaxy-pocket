@@ -74,7 +74,7 @@ export function useAppLayout() {
 
   const updateLayouts = async (newLayouts: AppLayout[]) => {
     try {
-      // Convert layouts to string for storage as Json
+      // Convert layouts to a JSON string for storage
       const configString = JSON.stringify({ layouts: newLayouts });
       
       const { error: updateError } = await supabase

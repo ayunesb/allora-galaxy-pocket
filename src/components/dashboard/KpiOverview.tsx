@@ -5,8 +5,25 @@ import { useKpiData } from "@/hooks/useKpiData";
 import { ArrowUpIcon, ArrowDownIcon } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
+interface KpiMetric {
+  id?: string;
+  metric?: string;
+  value: number;
+  trend?: 'up' | 'down' | 'neutral';
+}
+
+interface KpiTrend {
+  metric: string;
+  value: number;
+  day: string;
+}
+
 export function KpiOverview() {
-  const { currentMetrics, trends, isLoading } = useKpiData();
+  const { data, isLoading } = useKpiData();
+  
+  // Extract metrics and trends safely with defaults
+  const currentMetrics: KpiMetric[] = data?.currentMetrics || [];
+  const trends: KpiTrend[] = data?.trends || [];
 
   if (isLoading) {
     return <div>Loading KPI data...</div>;

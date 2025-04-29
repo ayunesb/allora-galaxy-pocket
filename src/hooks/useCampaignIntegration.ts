@@ -42,7 +42,6 @@ export function useCampaignIntegration() {
     }
   };
 
-  // Add missing methods
   const trackCampaignOutcome = async (
     campaignId: string,
     eventType: string,
@@ -64,12 +63,26 @@ export function useCampaignIntegration() {
       if (existingData.error) throw existingData.error;
       
       const currentMetrics = existingData.data?.execution_metrics || {};
-      const updatedMetrics = {
-        ...currentMetrics,
-        [eventType]: value,
-        last_updated: new Date().toISOString(),
-        ...metadata
-      };
+      
+      // Create a proper metrics object to avoid spread issues
+      let updatedMetrics: Record<string, any>;
+      
+      if (typeof currentMetrics === 'object' && currentMetrics !== null) {
+        updatedMetrics = { ...currentMetrics };
+      } else {
+        updatedMetrics = {};
+      }
+      
+      // Add new metrics data
+      updatedMetrics[eventType] = value;
+      updatedMetrics.last_updated = new Date().toISOString();
+      
+      // Add metadata if provided
+      if (metadata && typeof metadata === 'object') {
+        Object.entries(metadata).forEach(([key, val]) => {
+          updatedMetrics[key] = val;
+        });
+      }
       
       await updateCampaignExecutionStatus(campaignId, 'running', updatedMetrics);
       
@@ -102,17 +115,17 @@ export function useCampaignIntegration() {
     try {
       const { data, error } = await supabase
         .from('campaigns')
-        .select('execution_metrics')
+        .select('execution_metrics, execution_status, execution_start_date')
         .eq('id', campaignId)
         .eq('tenant_id', tenant.id)
         .single();
       
       if (error) throw error;
       
-      return data?.execution_metrics || {};
+      return data;
     } catch (error) {
       console.error("Failed to get campaign execution metrics:", error);
-      throw error;
+      return null;
     }
   };
 
@@ -125,16 +138,18 @@ export function useCampaignIntegration() {
       const { data, error } = await supabase
         .from('campaigns')
         .insert({
-          name: `Campaign from: ${strategy.title}`,
-          description: strategy.description,
+          name: `Campaign from: ${strategy.title || 'Untitled Strategy'}`,
+          description: strategy.description || '',
           status: 'draft',
           execution_status: 'pending',
           strategy_id: strategy.id,
           tenant_id: tenant.id,
-          scripts: {
-            channels: strategy.channels || []
-          },
-          metrics: strategy.metrics_target || {}
+          scripts: typeof strategy.channels === 'object' 
+            ? { channels: strategy.channels } 
+            : {},
+          metrics: typeof strategy.metrics_target === 'object' 
+            ? strategy.metrics_target 
+            : {}
         })
         .select()
         .single();
@@ -143,7 +158,7 @@ export function useCampaignIntegration() {
       
       toast({
         title: "Campaign Created",
-        description: `Successfully created campaign from strategy "${strategy.title}"`,
+        description: `Successfully created campaign from strategy "${strategy.title || 'Untitled'}"`,
       });
       
       return data;

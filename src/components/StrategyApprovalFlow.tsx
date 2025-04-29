@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { mapJsonToStrategy } from '@/types/strategy';
+import type { Strategy } from '@/types/strategy';
 
 interface StrategyApprovalFlowProps {
   strategyId: string;
@@ -9,18 +9,22 @@ interface StrategyApprovalFlowProps {
 
 export const StrategyApprovalFlow = ({ strategyId }: StrategyApprovalFlowProps) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [strategy, setStrategy] = useState(null);
+  const [strategy, setStrategy] = useState<Strategy | null>(null);
 
   const handleLoadStrategy = async () => {
     setIsLoading(true);
     try {
       // Fetch strategy data
       const response = await fetch(`/api/strategies/${strategyId}`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to load strategy: ${response.status}`);
+      }
+      
       const data = await response.json();
       
-      // Use the mapping function to convert API data to Strategy type
-      const mappedStrategy = mapJsonToStrategy(data);
-      setStrategy(mappedStrategy);
+      // Safely cast the data to Strategy type
+      setStrategy(data as Strategy);
     } catch (error) {
       console.error('Error loading strategy:', error);
     } finally {
@@ -41,6 +45,13 @@ export const StrategyApprovalFlow = ({ strategyId }: StrategyApprovalFlowProps) 
       {strategy && (
         <div className="border p-4 rounded-md">
           <p className="font-medium">Strategy loaded successfully</p>
+          <div className="mt-2">
+            <p><strong>Title:</strong> {strategy.title}</p>
+            <p><strong>Status:</strong> {strategy.status}</p>
+            {strategy.description && (
+              <p><strong>Description:</strong> {strategy.description}</p>
+            )}
+          </div>
         </div>
       )}
     </div>

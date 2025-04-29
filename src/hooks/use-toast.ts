@@ -1,111 +1,74 @@
 
-import { toast } from "sonner";
+import * as React from 'react';
+import { toast as sonnerToast } from 'sonner';
 
-type ToastProps = {
-  title?: string;
-  description?: string | React.ReactNode;
-  variant?: "default" | "destructive";
-  duration?: number;
-  [key: string]: any;
-};
+type ToastProps = React.ComponentPropsWithoutRef<typeof sonnerToast>;
 
-// Helper function to ensure toast descriptions are valid
-function ensureValidDescription(description: any): string | undefined {
+function sanitizeToastDescription(description: any): string | React.ReactNode {
   if (description === undefined || description === null) {
-    return undefined;
+    return '';
   }
   
-  if (typeof description === 'string') {
+  // If it's already a string or ReactNode, return it directly
+  if (typeof description === 'string' || React.isValidElement(description)) {
     return description;
   }
   
-  if (React.isValidElement(description)) {
-    return undefined; // Sonner supports React elements, so return as is
+  // If it's a simple object, convert to string safely
+  if (typeof description === 'object') {
+    try {
+      return JSON.stringify(description);
+    } catch (e) {
+      return 'Invalid description format';
+    }
   }
   
-  // For objects, try to stringify them
-  try {
-    return JSON.stringify(description);
-  } catch (e) {
-    return String(description);
-  }
+  // Default case: convert to string
+  return String(description);
 }
 
-export function useToast() {
-  return {
-    toast: (props: ToastProps | string) => {
-      if (typeof props === "string") {
-        return toast(props);
-      }
-      
-      const { title, description, variant, ...rest } = props;
-      const safeDescription = ensureValidDescription(description);
-      
-      if (variant === "destructive") {
-        return toast.error(title || "", {
-          description: safeDescription,
-          ...rest
+export const useToast = () => {
+  const toast = React.useMemo(
+    () => ({
+      toast: ({ title, description, ...props }: ToastProps) => {
+        sonnerToast(title, {
+          description: sanitizeToastDescription(description),
+          ...props,
         });
-      }
-      
-      return toast(title || "", {
-        description: safeDescription,
-        ...rest
-      });
-    },
-    success: (props: ToastProps | string) => {
-      if (typeof props === "string") {
-        return toast.success(props);
-      }
-      const { title, description, ...rest } = props;
-      const safeDescription = ensureValidDescription(description);
-      return toast.success(title || "", {
-        description: safeDescription,
-        ...rest
-      });
-    },
-    error: (props: ToastProps | string) => {
-      if (typeof props === "string") {
-        return toast.error(props);
-      }
-      const { title, description, ...rest } = props;
-      const safeDescription = ensureValidDescription(description);
-      return toast.error(title || "", {
-        description: safeDescription,
-        ...rest
-      });
-    },
-    warning: (props: ToastProps | string) => {
-      if (typeof props === "string") {
-        return toast.warning(props);
-      }
-      const { title, description, ...rest } = props;
-      const safeDescription = ensureValidDescription(description);
-      return toast.warning(title || "", {
-        description: safeDescription,
-        ...rest
-      });
-    },
-    info: (props: ToastProps | string) => {
-      if (typeof props === "string") {
-        return toast.info(props);
-      }
-      const { title, description, ...rest } = props;
-      const safeDescription = ensureValidDescription(description);
-      return toast.info(title || "", {
-        description: safeDescription,
-        ...rest
-      });
-    },
-    promise: <T>(
-      promise: Promise<T>,
-      messages: {
-        loading?: string;
-        success?: string | ((data: T) => string);
-        error?: string | ((error: unknown) => string);
-      }
-    ) => {
-      return toast.promise(promise, messages);
-    }
-  };
-}
+      },
+      success: ({ title, description, ...props }: ToastProps) => {
+        sonnerToast.success(title, { 
+          description: sanitizeToastDescription(description),
+          ...props, 
+        });
+      },
+      error: ({ title, description, ...props }: ToastProps) => {
+        sonnerToast.error(title, {
+          description: sanitizeToastDescription(description),
+          ...props,
+        });
+      },
+      warning: ({ title, description, ...props }: ToastProps) => {
+        sonnerToast.warning(title, {
+          description: sanitizeToastDescription(description),
+          ...props,
+        });
+      },
+      info: ({ title, description, ...props }: ToastProps) => {
+        sonnerToast.info(title, {
+          description: sanitizeToastDescription(description),
+          ...props,
+        });
+      },
+      message: (message: string) => {
+        sonnerToast(message);
+      },
+    }),
+    []
+  );
+  
+  return toast;
+};
+
+// Default export
+export default useToast;

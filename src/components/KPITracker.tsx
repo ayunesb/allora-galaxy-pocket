@@ -39,7 +39,11 @@ export function KPITracker({ data, loading = false }: KPITrackerProps) {
       </CardHeader>
       <CardContent className="space-y-6">
         {data.map((metric, index) => {
-          const progress = metric.value / (metric.target || 1) * 100;
+          // Ensure value is numeric
+          const numericValue = typeof metric.value === 'string' ? parseFloat(metric.value) : metric.value;
+          const numericTarget = typeof metric.target === 'string' ? parseFloat(metric.target) : metric.target;
+          
+          const progress = numericTarget ? (numericValue / numericTarget * 100) : 0;
           const cappedProgress = Math.min(100, Math.max(0, progress));
 
           return (
@@ -47,7 +51,7 @@ export function KPITracker({ data, loading = false }: KPITrackerProps) {
               <div className="flex justify-between items-center">
                 <span className="font-medium text-sm">{metric.name}</span>
                 <span className="text-sm text-muted-foreground">
-                  {metric.value} / {metric.target}
+                  {numericValue} / {numericTarget}
                   {metric.percentChange !== undefined && (
                     <span className={metric.percentChange >= 0 ? "text-green-500 ml-2" : "text-red-500 ml-2"}>
                       {metric.percentChange >= 0 ? '↑' : '↓'} {Math.abs(metric.percentChange)}%

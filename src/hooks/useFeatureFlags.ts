@@ -62,7 +62,7 @@ export function useFeatureFlags() {
       toast({
         title: "Failed to load feature flags",
         description: "There was a problem loading the feature flags.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsLoading(false);
@@ -97,7 +97,7 @@ export function useFeatureFlags() {
       toast({
         title: "Failed to save feature flags",
         description: "There was a problem saving your feature flag settings.",
-        variant: "destructive",
+        variant: "destructive"
       });
       return false;
     }
