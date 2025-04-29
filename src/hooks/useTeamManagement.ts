@@ -1,142 +1,122 @@
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useTenant } from "./useTenant";
-import { toast } from "sonner";
-import { UserRole } from "@/types/invite";
+import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from './useTenant';
+import { toast } from 'sonner';
 
-interface TeamMember {
+export interface TeamMember {
   id: string;
   user_id: string;
   tenant_id: string;
-  role: UserRole;
+  role: 'admin' | 'editor' | 'viewer';
+  created_at: string;
   profiles: {
     email: string;
+    avatar_url?: string;
   };
-  created_at: string;
-}
-
-interface RoleUpdateParams {
-  userId: string;
-  role: UserRole;
-}
-
-interface InviteParams {
-  email: string;
-  role: UserRole;
 }
 
 export function useTeamManagement() {
   const { tenant } = useTenant();
   const queryClient = useQueryClient();
-  const [isInviting, setIsInviting] = useState(false);
-  
-  // Fetch team members
-  const { 
-    data: teamMembers,
-    isLoading: isLoadingMembers,
-    error: teamError
-  } = useQuery({
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const { data: teamMembers, isLoading } = useQuery({
     queryKey: ['team-members', tenant?.id],
     queryFn: async () => {
       if (!tenant?.id) return [];
-      
-      const { data, error } = await supabase
+
+      // First get the user_ids from tenant_user_roles
+      const { data: teamRoles, error: rolesError } = await supabase
         .from('tenant_user_roles')
-        .select('*, profiles:user_id(*)')
-        .eq('tenant_id', tenant.id);
-      
-      if (error) throw error;
-      return data as TeamMember[];
-    },
-    enabled: !!tenant?.id
-  });
-  
-  // Fetch pending invites
-  const { 
-    data: pendingInvites,
-    isLoading: isLoadingInvites,
-    error: invitesError
-  } = useQuery({
-    queryKey: ['pending-invites', tenant?.id],
-    queryFn: async () => {
-      if (!tenant?.id) return [];
-      
-      const { data, error } = await supabase
-        .from('team_invites')
         .select('*')
-        .eq('tenant_id', tenant.id)
-        .is('accepted_at', null);
-      
-      if (error) throw error;
-      return data;
+        .eq('tenant_id', tenant.id);
+
+      if (rolesError) throw rolesError;
+
+      // Then get the user profiles for each user
+      const userIds = teamRoles.map(role => role.user_id);
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, email, avatar_url')
+        .in('id', userIds);
+
+      if (profilesError) throw profilesError;
+
+      // Combine the data
+      const members = teamRoles.map(role => {
+        const profile = profiles.find(p => p.id === role.user_id);
+        return {
+          ...role,
+          profiles: {
+            email: profile?.email || 'No email',
+            avatar_url: profile?.avatar_url
+          }
+        } as unknown as TeamMember;
+      });
+
+      return members as TeamMember[];
     },
     enabled: !!tenant?.id
   });
-  
-  // Update user role
-  const updateRoleMutation = useMutation({
-    mutationFn: async ({ userId, role }: RoleUpdateParams) => {
-      if (!tenant?.id) return false;
-      
+
+  const updateMemberRole = useMutation({
+    mutationFn: async ({ userId, newRole }: { userId: string; newRole: 'admin' | 'editor' | 'viewer' }) => {
+      if (!tenant?.id) throw new Error('No tenant selected');
+      setIsProcessing(true);
+
       const { error } = await supabase
         .from('tenant_user_roles')
-        .update({ role })
+        .update({ role: newRole })
         .eq('tenant_id', tenant.id)
         .eq('user_id', userId);
-      
+
       if (error) throw error;
       return true;
     },
     onSuccess: () => {
+      toast.success('Team member role updated');
       queryClient.invalidateQueries({ queryKey: ['team-members'] });
-      toast.success("Role updated successfully");
+      setIsProcessing(false);
     },
     onError: (error) => {
-      console.error("Error updating role:", error);
-      toast.error("Failed to update role");
+      console.error('Error updating member role:', error);
+      toast.error('Failed to update member role');
+      setIsProcessing(false);
     }
   });
-  
-  // Invite team member
-  const inviteTeamMember = async ({ email, role }: InviteParams) => {
-    if (!tenant?.id || isInviting) return;
-    
-    setIsInviting(true);
-    try {
+
+  const removeMember = useMutation({
+    mutationFn: async (userId: string) => {
+      if (!tenant?.id) throw new Error('No tenant selected');
+      setIsProcessing(true);
+
       const { error } = await supabase
-        .from('team_invites')
-        .insert({
-          tenant_id: tenant.id,
-          email,
-          role,
-          created_by: (await supabase.auth.getUser()).data.user?.id
-        });
-      
+        .from('tenant_user_roles')
+        .delete()
+        .eq('tenant_id', tenant.id)
+        .eq('user_id', userId);
+
       if (error) throw error;
-      
-      // Refresh invites
-      queryClient.invalidateQueries({ queryKey: ['pending-invites'] });
-      
-      toast.success(`Invitation sent to ${email}`);
-    } catch (err) {
-      console.error("Error inviting team member:", err);
-      toast.error("Failed to send invitation");
-    } finally {
-      setIsInviting(false);
+      return true;
+    },
+    onSuccess: () => {
+      toast.success('Team member removed');
+      queryClient.invalidateQueries({ queryKey: ['team-members'] });
+      setIsProcessing(false);
+    },
+    onError: (error) => {
+      console.error('Error removing team member:', error);
+      toast.error('Failed to remove team member');
+      setIsProcessing(false);
     }
-  };
-  
+  });
+
   return {
-    teamMembers,
-    isLoadingMembers,
-    teamError,
-    pendingInvites,
-    isLoadingInvites,
-    invitesError,
-    updateRole: updateRoleMutation.mutate,
-    inviteTeamMember,
-    isInviting
+    teamMembers: teamMembers || [],
+    isLoading: isLoading || isProcessing,
+    updateMemberRole: updateMemberRole.mutate,
+    removeMember: removeMember.mutate
   };
 }

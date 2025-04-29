@@ -1,151 +1,205 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Tenant } from '@/types/tenant';
+import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
-import { getUserTenants } from '@/utils/TenantSecurity';
-import { useUserRole } from './useUserRole';
+import { useNavigate } from 'react-router-dom';
 
-// Define the updated TenantContext type
+interface Tenant {
+  id: string;
+  name: string;
+  theme_color?: string;
+  theme_mode?: string;
+  usage_credits: number;
+  is_demo?: boolean;
+}
+
 interface TenantContextType {
   tenant: Tenant | null;
-  setTenant: React.Dispatch<React.SetStateAction<Tenant | null>>;
   tenants: Tenant[];
-  selectTenant: (tenant: Tenant) => void;
+  userRole: string;
   isLoading: boolean;
-  refreshTenant: () => Promise<void>;
-  updateTenantProfile: (updatedTenant: Partial<Tenant>) => Promise<void>;
-  error: string | null;
-  userRole?: string;
+  switchTenant: (tenantId: string) => Promise<void>;
+  createTenant: (name: string) => Promise<void>;
+  updateTenantPreference: (key: string, value: any) => Promise<void>;
 }
 
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
 
-export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const TenantProvider = ({ children }: { children: ReactNode }) => {
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [userRole, setUserRole] = useState<string>('viewer');
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
-  const { role: userRole } = useUserRole();
+  const navigate = useNavigate();
 
-  const refreshTenant = async () => {
-    if (!user) {
+  // Load tenants and current tenant
+  useEffect(() => {
+    if (user) {
+      loadTenants();
+    } else {
       setTenant(null);
       setTenants([]);
       setIsLoading(false);
-      setError(null);
-      return;
     }
+  }, [user]);
 
+  const loadTenants = async () => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      setError(null);
-      
-      // Get all tenants for user safely using our security definer function wrapper
-      const tenantIds = await getUserTenants();
+      const { data: userTenants, error } = await supabase
+        .from('tenant_user_roles')
+        .select(`
+          tenant_id,
+          role,
+          tenant_profiles:tenant_id (
+            id,
+            name,
+            theme_color,
+            theme_mode,
+            usage_credits,
+            is_demo
+          )
+        `)
+        .eq('user_id', user?.id);
 
-      // If no tenants, set to null
-      if (!tenantIds?.length) {
-        setTenant(null);
-        setTenants([]);
-        setIsLoading(false);
-        return;
+      if (error) {
+        throw error;
       }
 
-      // Fetch all available tenants
-      const { data: allTenants, error: tenantsError } = await supabase
+      const formattedTenants = userTenants.map(item => ({
+        ...item.tenant_profiles,
+        role: item.role
+      }));
+
+      setTenants(formattedTenants);
+
+      // Load current tenant from localStorage or use first available
+      const savedTenantId = localStorage.getItem('currentTenantId');
+      const targetTenant = savedTenantId 
+        ? formattedTenants.find(t => t.id === savedTenantId)
+        : formattedTenants[0];
+
+      if (targetTenant) {
+        setTenant(targetTenant);
+        setUserRole(targetTenant.role || 'viewer');
+        localStorage.setItem('currentTenantId', targetTenant.id);
+      } else if (formattedTenants.length > 0) {
+        setTenant(formattedTenants[0]);
+        setUserRole(formattedTenants[0].role || 'viewer');
+        localStorage.setItem('currentTenantId', formattedTenants[0].id);
+      }
+
+    } catch (error) {
+      console.error('Error loading tenants:', error);
+      toast.error("Failed to load workspace data");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const switchTenant = async (tenantId: string) => {
+    const newTenant = tenants.find(t => t.id === tenantId);
+    if (newTenant) {
+      setTenant(newTenant);
+      setUserRole(newTenant.role || 'viewer');
+      localStorage.setItem('currentTenantId', tenantId);
+      toast.success(`Switched to ${newTenant.name}`);
+      navigate('/dashboard');
+    } else {
+      toast.error("Workspace not found");
+    }
+  };
+
+  const createTenant = async (name: string) => {
+    setIsLoading(true);
+    try {
+      // Create the tenant
+      const { data: newTenant, error: tenantError } = await supabase
         .from('tenant_profiles')
-        .select('*')
-        .in('id', tenantIds);
-        
-      if (tenantsError) throw tenantsError;
-      
-      setTenants(allTenants || []);
-      
-      // Attempt to load stored tenant preference
-      const storedTenantId = localStorage.getItem('tenant_id');
-      
-      // Check if stored tenant is in user's available tenants
-      const tenantIdToUse = storedTenantId && 
-        tenantIds.some(id => id === storedTenantId) 
-        ? storedTenantId 
-        : tenantIds[0];
-      
-      // Find tenant in already fetched tenants
-      const selectedTenant = allTenants?.find(t => t.id === tenantIdToUse) || null;
-      
-      if (selectedTenant) {
-        // Store selected tenant
-        localStorage.setItem('tenant_id', selectedTenant.id);
-        setTenant(selectedTenant);
-      } else {
-        // Fallback if tenant not found
-        setTenant(null);
-      }
-      
-    } catch (error: any) {
-      console.error('Error loading tenant:', error);
-      setTenant(null);
-      setError(error.message || 'Failed to load workspace data');
+        .insert({
+          name,
+          usage_credits: 100,
+          theme_mode: 'light',
+          theme_color: 'indigo',
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (tenantError) throw tenantError;
+
+      // Add the current user as admin
+      const { error: roleError } = await supabase
+        .from('tenant_user_roles')
+        .insert({
+          user_id: user?.id,
+          tenant_id: newTenant.id,
+          role: 'admin',
+          created_at: new Date().toISOString()
+        });
+
+      if (roleError) throw roleError;
+
+      // Reload tenants and switch to new one
+      await loadTenants();
+      await switchTenant(newTenant.id);
       
       toast({
-        description: "There was a problem loading your workspace. Please try again."
+        title: "Workspace created",
+        description: `You're now in ${name}`
+      });
+      
+    } catch (error) {
+      console.error('Error creating tenant:', error);
+      toast({
+        title: "Failed to create workspace",
+        description: "Please try again later"
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const selectTenant = (selected: Tenant) => {
-    localStorage.setItem('tenant_id', selected.id);
-    setTenant(selected);
-  };
-  
-  const updateTenantProfile = async (updatedTenant: Partial<Tenant>) => {
-    if (!tenant?.id) return;
-    
+  const updateTenantPreference = async (key: string, value: any) => {
+    if (!tenant) return;
+
     try {
       const { error } = await supabase
         .from('tenant_profiles')
-        .update(updatedTenant)
+        .update({ [key]: value })
         .eq('id', tenant.id);
-        
+
       if (error) throw error;
-      
-      setTenant(prev => prev ? { ...prev, ...updatedTenant } : null);
-      
+
+      setTenant(prev => prev ? { ...prev, [key]: value } : null);
       toast({
-        description: "Workspace settings have been updated successfully."
-      });
-    } catch (error: any) {
-      console.error('Error updating tenant:', error);
-      
-      toast({
-        description: error.message || "Failed to update workspace settings.",
+        title: "Preferences updated",
+        description: `Updated ${key.replace('_', ' ')} successfully`
       });
       
-      throw error;
+    } catch (error) {
+      console.error('Error updating tenant preference:', error);
+      toast({
+        title: "Failed to update preference",
+        description: "Please try again later"
+      });
     }
   };
 
-  useEffect(() => {
-    refreshTenant();
-  }, [user]);
-
   return (
-    <TenantContext.Provider value={{ 
-      tenant, 
-      setTenant, 
-      tenants, 
-      selectTenant,
-      isLoading, 
-      refreshTenant,
-      updateTenantProfile,
-      error,
-      userRole
-    }}>
+    <TenantContext.Provider 
+      value={{ 
+        tenant, 
+        tenants, 
+        userRole,
+        isLoading, 
+        switchTenant, 
+        createTenant,
+        updateTenantPreference
+      }}
+    >
       {children}
     </TenantContext.Provider>
   );
@@ -153,7 +207,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
 export const useTenant = () => {
   const context = useContext(TenantContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useTenant must be used within a TenantProvider');
   }
   return context;

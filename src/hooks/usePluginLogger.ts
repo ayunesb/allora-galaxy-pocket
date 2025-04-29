@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from './useTenant';
-import { LogSeverity } from '@/types/systemLog';
+import { useSystemLogs } from './useSystemLogs';
 
 interface PluginLogOptions {
   pluginKey: string;
@@ -11,12 +11,12 @@ interface PluginLogOptions {
   count?: number;
   eventType?: string;
   metadata?: Record<string, any>;
-  severity?: LogSeverity;
 }
 
 export function usePluginLogger() {
   const { tenant } = useTenant();
   const [isLogging, setIsLogging] = useState(false);
+  const { logActivity } = useSystemLogs();
 
   const logPluginEvent = async ({
     pluginKey,
@@ -24,8 +24,7 @@ export function usePluginLogger() {
     page,
     count = 1,
     eventType = 'usage',
-    metadata = {},
-    severity = 'info'
+    metadata = {}
   }: PluginLogOptions) => {
     if (!tenant?.id || !pluginKey) {
       console.warn("Can't log plugin event: Missing tenant ID or plugin key");
@@ -51,23 +50,17 @@ export function usePluginLogger() {
       if (usageError) throw usageError;
 
       // Also log to system_logs for visibility in admin panel
-      const { error: systemError } = await supabase
-        .from('system_logs')
-        .insert({
-          tenant_id: tenant.id,
-          event_type: `PLUGIN_${eventType.toUpperCase()}`,
-          message: `Plugin "${pluginKey}" ${event}`,
-          meta: {
-            plugin_key: pluginKey,
-            event,
-            page,
-            ...metadata
-          },
-          severity,
-          created_at: new Date().toISOString()
-        });
-        
-      if (systemError) throw systemError;
+      await logActivity(
+        `PLUGIN_${eventType.toUpperCase()}`,
+        `Plugin "${pluginKey}" ${event}`,
+        {
+          plugin_key: pluginKey,
+          event,
+          page,
+          ...metadata
+        },
+        'info'
+      );
       
       return { success: true };
     } catch (error) {
@@ -78,8 +71,19 @@ export function usePluginLogger() {
     }
   };
 
+  // Simplified version for direct component usage
+  const logUsage = async (pluginKey: string, event: string, source?: string) => {
+    return logPluginEvent({
+      pluginKey,
+      event,
+      eventType: source || 'interaction',
+      metadata: { source }
+    });
+  };
+
   return {
     logPluginEvent,
+    logUsage,
     isLogging
   };
 }

@@ -67,13 +67,15 @@ export function useStrategySystem() {
     mutationFn: async ({ strategyId, feedback }: { strategyId: string, feedback: StrategyFeedback }) => {
       if (!tenant?.id) throw new Error("No tenant selected");
 
+      const { data: { user } } = await supabase.auth.getUser();
+      
       const { error } = await supabase
         .from('strategy_feedback')
         .insert({
           tenant_id: tenant.id,
           strategy_title: feedback.comment.substring(0, 50), // Use comment as title if needed
           action: `Rating: ${feedback.rating}`, // Store rating in action field
-          user_id: supabase.auth.getUser()?.data?.user?.id,
+          user_id: user?.id,
           created_at: new Date().toISOString()
         });
 

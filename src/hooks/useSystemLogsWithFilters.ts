@@ -13,8 +13,8 @@ type PaginationState = {
 export function useSystemLogsWithFilters() {
   const { 
     logs: allLogs, 
-    getRecentLogs, 
-    loading: isLoading, 
+    fetchLogs, 
+    isLoading, 
     logSecurityEvent,
     logActivity
   } = useSystemLogs();
@@ -82,9 +82,9 @@ export function useSystemLogsWithFilters() {
     setPagination(prev => ({ ...prev, currentPage: 1 }));
   };
 
-  const fetchLogs = async () => {
+  const fetchLogs100 = async () => {
     try {
-      await getRecentLogs(100); // Fetch more logs for client-side filtering
+      await fetchLogs({ limit: 100 }); // Fetch more logs for client-side filtering
     } catch (error) {
       console.error('Error fetching logs:', error);
       toast.error('Failed to fetch system logs');
@@ -112,7 +112,7 @@ export function useSystemLogsWithFilters() {
 
   // Initial fetch
   useEffect(() => {
-    fetchLogs();
+    fetchLogs100();
   }, []);
 
   return {
@@ -122,7 +122,7 @@ export function useSystemLogsWithFilters() {
     filters,
     updateFilters,
     resetFilters,
-    fetchLogs,
+    fetchLogs: fetchLogs100,
     pagination,
     nextPage,
     prevPage,

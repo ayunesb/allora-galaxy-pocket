@@ -19,7 +19,7 @@ export interface SystemLogFilter {
   startDate?: Date;
   endDate?: Date;
   eventTypes?: string[];
-  severity?: string[];
+  severity?: LogSeverity[];
   search?: string;
   limit?: number;
   offset?: number;

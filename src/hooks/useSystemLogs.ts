@@ -174,12 +174,17 @@ export function useSystemLogs() {
 
   // Log activity (general purpose logging)
   const logActivity = async (
-    event_type: string,
+    eventType: string,
     message: string,
     meta: Record<string, any> = {},
     severity: LogSeverity = 'info'
   ) => {
-    return logEvent(event_type, message, severity, meta);
+    return logEvent(eventType, message, severity, meta);
+  };
+
+  // Get recent logs
+  const getRecentLogs = async (limit: number = 100) => {
+    return fetchLogs({ limit });
   };
 
   // Log specific error
@@ -245,6 +250,8 @@ export function useSystemLogs() {
     logActivity,
     logError,
     logSecurityEvent,
-    logJourneyStep
+    logJourneyStep,
+    getRecentLogs,
+    refresh: () => fetchLogs()
   };
 }

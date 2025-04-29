@@ -1,154 +1,95 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Strategy, StrategyVersion, mapJsonToStrategy } from '@/types/strategy';
+import { useTenant } from './useTenant';
 import { toast } from 'sonner';
-import { useAuth } from './useAuth';
+import type { Strategy } from '@/types/strategy';
+
+interface UpdateStrategyParams {
+  id: string;
+  title?: string;
+  description?: string;
+  impact_score?: number;
+  health_score?: number;
+  diagnosis?: any;
+  status?: string;
+  updated_at?: string;
+  tags?: string[];
+  // Add any other fields as needed
+}
 
 export function useStrategyDetail(strategyId: string) {
-  const [strategy, setStrategy] = useState<Strategy | null>(null);
-  const [versions, setVersions] = useState<StrategyVersion[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { tenant } = useTenant();
+  const [isLoading, setIsLoading] = useState(false);
+  const queryClient = useQueryClient();
 
-  // Load strategy details and version history
-  const fetchStrategyDetail = useCallback(async () => {
-    if (!strategyId) {
-      setError("No strategy ID provided");
-      setIsLoading(false);
-      return;
-    }
-    
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      // Fetch strategy details
-      const { data: strategyData, error: strategyError } = await supabase
+  const { data: strategy, isLoading: isLoadingStrategy } = useQuery({
+    queryKey: ['strategy', strategyId],
+    queryFn: async () => {
+      if (!tenant?.id || !strategyId) return null;
+
+      const { data, error } = await supabase
         .from('strategies')
         .select('*')
         .eq('id', strategyId)
+        .eq('tenant_id', tenant.id)
         .single();
-      
-      if (strategyError) throw strategyError;
-      
-      if (!strategyData) {
-        throw new Error('Strategy not found');
+
+      if (error) {
+        console.error('Error loading strategy:', error);
+        toast.error('Failed to load strategy');
+        return null;
       }
 
-      // Break recursion by using intermediate unknown cast
-      const safeStrategyData = strategyData as unknown;
-      
-      // Apply mapJsonToStrategy to ensure all required fields exist
-      setStrategy(mapJsonToStrategy(safeStrategyData as any));
-      
-      // Fetch strategy history from strategies table 
-      // Note: strategy_versions table doesn't exist, so we're using strategies as substitute
-      const { data: versionData, error: versionError } = await supabase
-        .from('strategies')
-        .select('*')
-        .eq('id', strategyId)
-        .order('updated_at', { ascending: false });
-      
-      if (versionError) throw versionError;
-      
-      // Create synthetic versions since the real table doesn't exist
-      const syntheticVersions: StrategyVersion[] = versionData ? [
-        {
-          id: strategyData.id,
-          strategy_id: strategyData.id,
-          version: 1,
-          data: mapJsonToStrategy(strategyData as any),
-          created_by: strategyData.user_id,
-          created_at: strategyData.created_at,
-          comment: 'Initial version'
-        }
-      ] : [];
-      
-      setVersions(syntheticVersions);
-      
-    } catch (err: any) {
-      console.error('Error fetching strategy details:', err);
-      setError(err.message || 'Failed to load strategy details');
-      toast.error('Failed to load strategy details');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [strategyId]);
+      return data as unknown as Strategy;
+    },
+    enabled: !!tenant?.id && !!strategyId
+  });
 
-  // Create a new version of the strategy
-  const createNewVersion = useCallback(async (comment: string) => {
-    if (!strategy || !user) {
-      toast.error('Cannot create version: missing strategy or user data');
-      return;
-    }
-    
-    try {
-      // Determine next version number
-      const nextVersion = versions.length > 0 
-        ? Math.max(...versions.map(v => v.version)) + 1 
-        : 1;
-      
-      // Since strategy_versions doesn't exist, we're just updating the strategy
-      const updatePayload = {
-        updated_at: new Date().toISOString()
+  const updateStrategy = useMutation({
+    mutationFn: async (params: UpdateStrategyParams) => {
+      if (!tenant?.id) {
+        throw new Error('No tenant selected');
+      }
+
+      setIsLoading(true);
+
+      // Ensure updated_at is always present
+      const updateData: Record<string, any> = {
+        ...params,
+        updated_at: params.updated_at || new Date().toISOString()
       };
-      
+
       const { error } = await supabase
         .from('strategies')
-        .update(updatePayload)
-        .eq('id', strategy.id);
-      
-      if (error) throw error;
-      
-      // Create a local version record
-      const newVersion: StrategyVersion = {
-        id: `${strategy.id}-v${nextVersion}`,
-        strategy_id: strategy.id,
-        version: nextVersion,
-        data: strategy,
-        created_by: user.id,
-        created_at: new Date().toISOString(),
-        comment
-      };
-      
-      // Add to local versions
-      setVersions(prev => [newVersion, ...prev]);
-      
-      toast.success('New version created successfully');
-      
-    } catch (err: any) {
-      console.error('Error creating new version:', err);
-      toast.error('Failed to create new version');
-      throw err;
-    }
-  }, [strategy, user, versions]);
+        .update(updateData)
+        .eq('id', params.id)
+        .eq('tenant_id', tenant.id);
 
-  // Compare two versions and calculate differences
-  const compareVersions = useCallback(async (v1: StrategyVersion, v2: StrategyVersion) => {
-    try {
-      console.log('Comparing versions:', v1.version, v2.version);
-      return { success: true };
-    } catch (err: any) {
-      console.error('Error comparing versions:', err);
-      toast.error('Failed to compare versions');
-      return { success: false, error: err.message };
-    }
-  }, []);
+      if (error) {
+        throw error;
+      }
 
-  // Load data on component mount or when strategyId changes
-  useEffect(() => {
-    fetchStrategyDetail();
-  }, [fetchStrategyDetail]);
+      return true;
+    },
+    onSuccess: () => {
+      toast.success('Strategy updated successfully');
+      queryClient.invalidateQueries({ queryKey: ['strategy', strategyId] });
+      queryClient.invalidateQueries({ queryKey: ['strategies'] });
+    },
+    onError: (error) => {
+      console.error('Error updating strategy:', error);
+      toast.error('Failed to update strategy');
+    },
+    onSettled: () => {
+      setIsLoading(false);
+    }
+  });
 
   return {
     strategy,
-    versions,
-    isLoading,
-    error,
-    createNewVersion,
-    compareVersions,
-    refresh: fetchStrategyDetail
+    isLoading: isLoading || isLoadingStrategy,
+    updateStrategy: updateStrategy.mutate
   };
 }

@@ -16,18 +16,13 @@ export const logSystemEvent = async ({
   user_id,
   event_type,
   message,
-  severity,
+  severity = 'info', // Default to info if not provided
   meta = {}
 }: LogSystemEventParams): Promise<SystemLog | null> => {
   try {
     if (!tenant_id) {
       console.error("Cannot log system event: tenant_id is required");
       return null;
-    }
-    
-    // Ensure severity field is always present
-    if (!severity) {
-      severity = 'info';
     }
     
     const { data, error } = await supabase

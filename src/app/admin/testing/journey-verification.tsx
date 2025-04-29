@@ -45,8 +45,10 @@ export default function JourneyVerification() {
     try {
       const result = await verifyModuleImplementation(modulePath);
       
-      // Safely extract verification data from the response structure
-      const verification = result.message as ModuleStatusEntry;
+      // Safely extract verification data - ensure we parse the message correctly
+      const verification = typeof result.message === 'object' 
+        ? result.message as ModuleStatusEntry
+        : { verified: false, phase1Complete: false, phase2Complete: false, phase3Complete: false, modulePath, options: {} };
       
       if (verification && verification.verified) {
         setModuleStatus(prev => ({

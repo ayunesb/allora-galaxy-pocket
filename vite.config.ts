@@ -15,8 +15,8 @@ export default defineConfig(({ mode }) => ({
     hmr: {
       // Configure explicit HMR settings to prevent unexpected identifiers
       protocol: 'ws',
-      clientPort: 24678, // Default HMR port for Vite
       host: 'localhost',
+      port: 24678, // Default HMR port for Vite
       overlay: false, // Disable the error overlay that could cause issues
     },
     allowedHosts: [
@@ -28,8 +28,12 @@ export default defineConfig(({ mode }) => ({
   optimizeDeps: {
     exclude: ['nanoid'], // Force using latest nanoid build tree
   },
+  build: {
+    sourcemap: true,
+    chunkSizeWarningLimit: 2000, // Increase chunk warning limit
+  },
   define: {
-    // Define the WebSocket token for HMR
+    // Define the WebSocket token for HMR - with fallback
     __WS_TOKEN__: JSON.stringify(process.env.VITE_WS_TOKEN || "dev-ws-token")
   },
   plugins: [

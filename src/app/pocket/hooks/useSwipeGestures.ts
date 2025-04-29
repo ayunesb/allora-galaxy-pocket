@@ -34,22 +34,37 @@ export function useSwipeGestures() {
       // Handle different card types
       switch (card.type) {
         case 'strategy':
-          // Convert logActivity to async function call
+          // Convert logActivity to async function call with proper parameters
           handleStrategySwipe(direction, card.id, navigate, async (params) => {
-            await logActivity(params);
+            await logActivity(
+              params.event_type || 'strategy_swipe',
+              params.message || `Strategy ${direction} swipe`,
+              params.meta || { strategy_id: card.id, direction },
+              params.severity || 'info'
+            );
             return Promise.resolve();
           });
           break;
         case 'campaign':
           handleCampaignSwipe(direction, card.id, navigate, async (params) => {
-            await logActivity(params);
+            await logActivity(
+              params.event_type || 'campaign_swipe', 
+              params.message || `Campaign ${direction} swipe`,
+              params.meta || { campaign_id: card.id, direction },
+              params.severity || 'info'
+            );
             return Promise.resolve();
           });
           break;
         case 'pricing_decision':
         case 'hire_decision':
           handleDecisionSwipe(direction, card.id, card.type, async (params) => {
-            await logActivity(params);
+            await logActivity(
+              params.event_type || 'decision_swipe',
+              params.message || `Decision ${direction} swipe`,
+              params.meta || { decision_id: card.id, decision_type: card.type, direction },
+              params.severity || 'info'
+            );
             return Promise.resolve();
           });
           break;

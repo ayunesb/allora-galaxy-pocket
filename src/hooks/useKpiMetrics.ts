@@ -47,22 +47,20 @@ export function useKpiMetrics(options: UseKpiMetricsOptions = {}) {
       const safeData = data as unknown;
       
       // Transform the data to match the KpiMetric interface with proper type handling
-      const kpiMetrics = ((safeData as any[]) || []).map(metric => {
-        return {
-          id: metric.id,
-          tenant_id: metric.tenant_id,
-          kpi_name: metric.metric || '',
-          metric: metric.metric || '',
-          label: metric.metric || '', // Add label for compatibility
-          value: Number(metric.value),
-          trend: determineTrend(Number(metric.value)),
-          changePercent: 0, // Would ideally be calculated by comparing to historical data
-          created_at: metric.created_at,
-          updated_at: metric.updated_at,
-          recorded_at: metric.recorded_at,
-          description: '' // Add empty description for compatibility
-        } as KpiMetric;
-      });
+      const kpiMetrics = ((safeData as any[]) || []).map(metric => ({
+        id: metric.id,
+        tenant_id: metric.tenant_id,
+        kpi_name: metric.metric || '',
+        metric: metric.metric || '',
+        label: metric.metric || '', // Add label for compatibility
+        value: Number(metric.value),
+        trend: determineTrend(Number(metric.value)),
+        changePercent: 0, // Would ideally be calculated by comparing to historical data
+        created_at: metric.created_at,
+        updated_at: metric.updated_at,
+        recorded_at: metric.recorded_at,
+        description: '' // Add empty description for compatibility
+      })) as KpiMetric[];
       
       return kpiMetrics;
     },

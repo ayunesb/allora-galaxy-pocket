@@ -9,7 +9,7 @@ export function useSystemLogsState() {
     offset: 0
   });
   
-  const { logs, loading, error, refresh } = useSystemLogs(filters);
+  const { logs, isLoading, error, fetchLogs, refresh } = useSystemLogs();
   
   const updateFilters = (newFilters: Partial<SystemLogFilter>) => {
     setFilters(prev => ({
@@ -36,12 +36,12 @@ export function useSystemLogsState() {
   
   return {
     logs,
-    loading,
+    loading: isLoading,
     error,
     filters,
     updateFilters,
     nextPage,
     prevPage,
-    refresh
+    refresh: () => refresh()
   };
 }
