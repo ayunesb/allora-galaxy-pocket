@@ -13,7 +13,11 @@ export function useResolveAlert() {
       // Using a direct update instead of a custom function
       const { error } = await supabase
         .from('kpi_alerts')
-        .update({ status: 'resolved', outcome: 'manually_resolved' })
+        .update({ 
+          status: 'resolved', 
+          outcome: 'manually_resolved',
+          updated_at: new Date().toISOString() 
+        })
         .eq('id', alertId);
 
       if (error) throw error;

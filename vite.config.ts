@@ -18,6 +18,11 @@ export default defineConfig(({ mode }) => ({
       host: 'localhost',
       port: 24678, // Default HMR port for Vite
     },
+    allowedHosts: [
+      "localhost",
+      "127.0.0.1",
+      "ca760ad3-2f64-4134-9279-88c7538fb3cf.lovableproject.com"
+    ],
   },
   optimizeDeps: {
     exclude: ['nanoid'], // Force using latest nanoid build tree

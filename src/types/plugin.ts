@@ -33,3 +33,4 @@ export interface PluginConfig {
 }
 
 export type PluginStatus = 'active' | 'disabled' | 'error' | 'updating';
+export type PluginKey = string;

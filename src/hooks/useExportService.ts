@@ -5,7 +5,7 @@ import { useToast } from './use-toast';
 
 export function useExportService() {
   const [isExporting, setIsExporting] = useState(false);
-  const [isLoading, setIsLoading] = useState(false); // Added isLoading state
+  const [isLoading, setIsLoading] = useState(false); 
   const { exportTable } = useExportCSV();
   const { toast } = useToast();
 

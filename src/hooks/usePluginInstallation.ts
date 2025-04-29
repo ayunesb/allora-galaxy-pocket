@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
-import { Plugin } from "@/types/plugin";
+import { Plugin, PluginKey } from "@/types/plugin";
 import { toast } from "sonner";
 import { usePlugins } from "./usePlugins";
 import { useSystemLogs } from "./useSystemLogs";

@@ -59,19 +59,33 @@ export function usePocketFeed() {
           
         if (campaignsError) throw campaignsError;
         
-        // Convert strategies to cards
-        const strategyCards: Card[] = (strategies || []).map((strategy: any) => ({
-          id: strategy.id,
-          type: 'strategy',
-          title: strategy.title || 'Untitled Strategy',
-          description: strategy.description || 'No description available',
-          created_at: strategy.created_at,
-          metadata: {
-            assigned_agent: strategy.assigned_agent,
-            health_score: strategy.health_score,
-            impact_score: strategy.impact_score,
-          }
-        }));
+        // Convert strategies to cards with required property guards
+        const strategyCards: Card[] = (strategies || []).map((strategy: any) => {
+          // Ensure all required properties exist
+          const guardedStrategy = {
+            ...strategy,
+            title: strategy.title || 'Untitled Strategy',
+            description: strategy.description || 'No description available',
+            health_score: strategy.health_score || 0,
+            impact_score: strategy.impact_score || 0,
+            metrics_baseline: strategy.metrics_baseline || {},
+            metrics_target: strategy.metrics_target || {},
+            updated_at: strategy.updated_at || strategy.created_at || new Date().toISOString(),
+          };
+          
+          return {
+            id: guardedStrategy.id,
+            type: 'strategy',
+            title: guardedStrategy.title,
+            description: guardedStrategy.description,
+            created_at: guardedStrategy.created_at,
+            metadata: {
+              assigned_agent: guardedStrategy.assigned_agent,
+              health_score: guardedStrategy.health_score,
+              impact_score: guardedStrategy.impact_score,
+            }
+          };
+        });
         
         // Convert campaigns to cards
         const campaignCards: Card[] = (campaigns || []).map((campaign: any) => ({
