@@ -25,7 +25,7 @@ export function useStrategyDetail(strategyId: string) {
   const queryClient = useQueryClient();
   const { logActivity } = useSystemLogs();
 
-  // Strategy versions data (using strategies table)
+  // Strategy versions data (using strategies table as a fallback since strategy_versions doesn't exist)
   const { data: versions } = useQuery({
     queryKey: ['strategy-versions', strategyId],
     queryFn: async () => {
@@ -41,12 +41,17 @@ export function useStrategyDetail(strategyId: string) {
       if (error) throw error;
       
       // Create synthetic versions from strategies history
-      const syntheticVersions = (data || []).map((item, index) => ({
-        id: item.id,
-        strategy_id: item.id,
+      const strategies = data || [];
+      
+      // Create synthetic versions from strategies
+      const syntheticVersions = strategies.map((strategy, index) => ({
+        id: strategy.id || '',
+        strategy_id: strategy.id || '',
         version: index + 1,
         changes: `Version ${index + 1}`,
-        created_at: item.created_at || item.updated_at || new Date().toISOString()
+        created_at: strategy.created_at || strategy.updated_at || new Date().toISOString(),
+        data: null, // Add missing properties expected by StrategyVersion
+        created_by: null // Add missing properties expected by StrategyVersion
       }));
       
       return syntheticVersions;

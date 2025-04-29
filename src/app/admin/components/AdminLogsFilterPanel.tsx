@@ -1,117 +1,155 @@
-
-import React from "react";
+import React, { useState } from "react";
+import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, X } from "lucide-react";
+import { Search } from "lucide-react";
+import { DatePicker } from "@/components/ui/date-picker";
 import { LogFilters } from "@/types/logFilters";
+import { LogSeverity } from "@/types/systemLog";
 
-export interface AdminLogsFilterPanelProps {
+interface AdminLogsFilterPanelProps {
   filters: LogFilters;
-  onFilterChange: (newFilters: Partial<LogFilters>) => void;
+  onFilterChange: (filters: Partial<LogFilters>) => void;
   onClearFilters?: () => void;
-  eventTypes?: string[];
+  eventTypes: string[];
 }
 
 export function AdminLogsFilterPanel({
   filters,
   onFilterChange,
   onClearFilters,
-  eventTypes = ['all', 'ERROR', 'WARNING', 'INFO', 'AUTH', 'SECURITY', 'USER_JOURNEY']
+  eventTypes
 }: AdminLogsFilterPanelProps) {
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col md:flex-row gap-4">
+    <div className="space-y-4 mb-6">
+      <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1">
+          <Label htmlFor="search" className="text-sm font-medium">
+            Search
+          </Label>
           <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              type="text"
+              id="search"
               placeholder="Search logs..."
               className="pl-8"
-              value={filters.searchTerm}
+              value={filters.searchTerm || filters.search || ''}
               onChange={(e) => onFilterChange({ searchTerm: e.target.value })}
             />
-            {filters.searchTerm && (
-              <button
-                type="button"
-                onClick={() => onFilterChange({ searchTerm: '' })}
-                className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
           </div>
         </div>
 
-        <div className="w-full md:w-48">
+        <div className="w-full sm:w-[180px]">
+          <Label htmlFor="event-type" className="text-sm font-medium">
+            Event Type
+          </Label>
           <Select
-            value={filters.eventType || 'all'}
+            value={filters.eventType || ''}
             onValueChange={(value) => onFilterChange({ eventType: value === 'all' ? null : value })}
           >
-            <SelectTrigger>
-              <SelectValue placeholder="Event Type" />
+            <SelectTrigger id="event-type">
+              <SelectValue placeholder="All events" />
             </SelectTrigger>
             <SelectContent>
-              {eventTypes.map((type) => (
+              <SelectItem value="all">All events</SelectItem>
+              {eventTypes.filter(type => type !== 'all').map((type) => (
                 <SelectItem key={type} value={type}>
-                  {type === 'all' ? 'All Events' : type}
+                  {type}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
-        <div className="w-full md:w-48">
+        <div className="w-full sm:w-[180px]">
+          <Label htmlFor="severity" className="text-sm font-medium">
+            Severity
+          </Label>
           <Select
-            value={filters.severity || 'all'}
-            onValueChange={(value) => onFilterChange({ severity: value === 'all' ? null : value })}
+            value={filters.severity || ''}
+            onValueChange={(value) => onFilterChange({ severity: value === '' ? null : value as LogSeverity })}
           >
-            <SelectTrigger>
-              <SelectValue placeholder="Severity" />
+            <SelectTrigger id="severity">
+              <SelectValue placeholder="All severities" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Severities</SelectItem>
+              <SelectItem value="">All severities</SelectItem>
               <SelectItem value="info">Info</SelectItem>
+              <SelectItem value="success">Success</SelectItem>
               <SelectItem value="warning">Warning</SelectItem>
               <SelectItem value="error">Error</SelectItem>
-              <SelectItem value="success">Success</SelectItem>
+              <SelectItem value="critical">Critical</SelectItem>
+              <SelectItem value="low">Low</SelectItem>
+              <SelectItem value="medium">Medium</SelectItem>
+              <SelectItem value="high">High</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="w-full sm:w-[180px]">
+          <Label htmlFor="date-range" className="text-sm font-medium">
+            Date Range
+          </Label>
+          <Select
+            value={filters.dateRange ? filters.dateRange.toString() : '7'}
+            onValueChange={(value) => {
+              if (value === "custom") {
+                setShowDatePicker(true);
+              } else {
+                setShowDatePicker(false);
+                onFilterChange({ dateRange: parseInt(value), dateFrom: undefined, dateTo: undefined });
+              }
+            }}
+          >
+            <SelectTrigger id="date-range">
+              <SelectValue placeholder="Last 7 days" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1">Last 24 hours</SelectItem>
+              <SelectItem value="7">Last 7 days</SelectItem>
+              <SelectItem value="30">Last 30 days</SelectItem>
+              <SelectItem value="90">Last 90 days</SelectItem>
+              <SelectItem value="custom">Custom range</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
-        <div className="w-full md:w-48">
-          <Select
-            value={String(filters.dateRange)}
-            onValueChange={(value) => onFilterChange({ dateRange: parseInt(value) })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Time Range" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1">Last 24 Hours</SelectItem>
-              <SelectItem value="7">Last 7 Days</SelectItem>
-              <SelectItem value="30">Last 30 Days</SelectItem>
-              <SelectItem value="90">Last 90 Days</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
+        {showDatePicker && (
+          <>
+            <div className="w-full sm:w-auto">
+              <Label htmlFor="date-from" className="text-sm font-medium">
+                From
+              </Label>
+              <DatePicker
+                id="date-from"
+                date={filters.dateFrom ? new Date(filters.dateFrom) : null}
+                setDate={(date) => onFilterChange({ dateFrom: date || undefined, dateRange: 0 })}
+              />
+            </div>
+            <div className="w-full sm:w-auto">
+              <Label htmlFor="date-to" className="text-sm font-medium">
+                To
+              </Label>
+              <DatePicker
+                id="date-to"
+                date={filters.dateTo ? new Date(filters.dateTo) : null}
+                setDate={(date) => onFilterChange({ dateTo: date || undefined, dateRange: 0 })}
+              />
+            </div>
+          </>
+        )}
+
         {onClearFilters && (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={onClearFilters}
-            className="whitespace-nowrap"
-          >
-            Clear Filters
-          </Button>
+          <div className="flex items-end">
+            <Button variant="ghost" onClick={onClearFilters} className="mb-0.5">
+              Clear filters
+            </Button>
+          </div>
         )}
       </div>
     </div>

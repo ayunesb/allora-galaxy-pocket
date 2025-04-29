@@ -48,6 +48,10 @@ export function useTeamManagement() {
 
       // Then get the user profiles for each user
       const userIds = teamRoles.map(role => role.user_id);
+      
+      // Only proceed if we have user IDs
+      if (!userIds.length) return [];
+      
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id, email, avatar_url')
@@ -55,38 +59,50 @@ export function useTeamManagement() {
 
       if (profilesError) throw profilesError;
 
-      // Combine the data
+      // Map profile data safely
+      const profileMap = (profiles || []).reduce((acc: Record<string, any>, profile) => {
+        if (profile && profile.id) {
+          acc[profile.id] = {
+            email: profile.email || 'No email',
+            avatar_url: profile.avatar_url
+          };
+        }
+        return acc;
+      }, {});
+
+      // Combine the data safely
       const members = teamRoles.map(role => {
-        const profile = profiles.find(p => p.id === role.user_id);
+        const profileData = profileMap[role.user_id] || { email: 'Unknown email', avatar_url: null };
+        
         return {
           ...role,
-          profiles: {
-            email: profile?.email || 'No email',
-            avatar_url: profile?.avatar_url
-          }
+          profiles: profileData
         } as unknown as TeamMember;
       });
 
-      return members as TeamMember[];
+      return members;
     },
     enabled: !!tenant?.id
   });
 
-  // Fetch pending invites
+  // Fetch pending invites - use team_invites table
   const { data: pendingInvites, isLoading: isLoadingInvites } = useQuery({
     queryKey: ['pending-invites', tenant?.id],
     queryFn: async () => {
       if (!tenant?.id) return [];
 
+      // Use team_invites table instead of invites
       const { data, error } = await supabase
-        .from('invites')
+        .from('team_invites')
         .select('*')
         .eq('tenant_id', tenant.id)
-        .is('accepted', null)
+        .is('accepted_at', null)
         .gt('expires_at', new Date().toISOString());
 
       if (error) throw error;
-      return data as PendingInvite[];
+      
+      // Cast to the correct type
+      return (data || []) as unknown as PendingInvite[];
     },
     enabled: !!tenant?.id
   });
@@ -158,8 +174,9 @@ export function useTeamManagement() {
       const expiresAt = new Date();
       expiresAt.setHours(expiresAt.getHours() + 24);
 
+      // Use team_invites table
       const { error } = await supabase
-        .from('invites')
+        .from('team_invites')
         .insert({
           tenant_id: tenant.id,
           email: email.toLowerCase().trim(),

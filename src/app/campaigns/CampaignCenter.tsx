@@ -77,10 +77,7 @@ export default function CampaignCenter() {
         .update(updatePayload)
         .eq('id', campaign.id);
         
-      if (updateError) {
-        console.error("Error updating campaign status:", updateError);
-        throw updateError;
-      }
+      if (updateError) throw updateError;
 
       setApproved(true);
       toast({
@@ -92,15 +89,16 @@ export default function CampaignCenter() {
         ? { agent_id: agentProfile.id, agent_name: agentProfile.agent_name }
         : {};
         
-      await logActivity({
-        event_type: "campaign_approved",
-        message: `Campaign "${campaign.name}" approved${agentProfile ? ` using agent ${agentProfile.agent_name}` : ''}`,
-        meta: { 
+      await logActivity(
+        "campaign_approved",
+        `Campaign "${campaign.name}" approved${agentProfile ? ` using agent ${agentProfile.agent_name}` : ''}`,
+        { 
           campaign_id: campaign.id,
           campaign_name: campaign.name,
           ...agentInfo
-        }
-      });
+        },
+        'info'
+      );
       
       queryClient.invalidateQueries({ queryKey: ['campaigns'] });
     } catch (error) {

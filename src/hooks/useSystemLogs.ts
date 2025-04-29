@@ -1,199 +1,69 @@
 
 import { useState } from 'react';
-import { supabase } from "@/integrations/supabase/client";
-import { SystemLog, SystemLogFilter, LogSeverity } from "@/types/systemLog";
-import { logSystemEvent } from "@/lib/logging/systemLogger";
-import { useAuth } from "./useAuth";
-import { useTenant } from "./useTenant";
-import { toast } from "sonner";
+import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from '@/hooks/useTenant';
+import { useAuth } from '@/hooks/useAuth';
+import { SystemLog, LogSeverity } from '@/types/systemLog';
+
+interface LogActivityParams {
+  event_type: string;
+  message: string;
+  meta?: Record<string, any>;
+  severity?: LogSeverity;
+}
 
 export function useSystemLogs() {
-  const [logs, setLogs] = useState<SystemLog[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
   const { tenant } = useTenant();
-  
-  // Fetch logs with filters
-  const fetchLogs = async (filters: SystemLogFilter = {}) => {
-    if (!tenant?.id) {
-      setError("No tenant selected");
-      return [];
-    }
-    
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const { data, error } = await supabase
-        .from('system_logs')
-        .select('*')
-        .eq('tenant_id', tenant.id)
-        .order('created_at', { ascending: false });
-        
-      if (error) {
-        throw error;
-      }
-      
-      // Cast safely to avoid deep recursion
-      const safeData = data as unknown as SystemLog[];
-      setLogs(safeData);
-      return safeData;
-    } catch (err: any) {
-      setError(err.message || "Failed to fetch system logs");
-      console.error("Error fetching system logs:", err);
-      return [];
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  // Log a new system event
-  const logEvent = async (
-    eventType: string, 
-    message: string, 
-    meta: Record<string, any> = {}, 
-    severity: LogSeverity = 'info'
-  ) => {
-    if (!tenant?.id) {
-      console.error("Cannot log event: No tenant ID");
-      return null;
-    }
-    
-    try {
-      const log = await logSystemEvent({
-        tenant_id: tenant.id,
-        user_id: user?.id,
-        event_type: eventType,
-        message,
-        severity,
-        meta
-      });
-      
-      // Refresh logs if successful
-      if (log) {
-        fetchLogs();
-      }
-      
-      return log;
-    } catch (err) {
-      console.error("Failed to log system event:", err);
-      return null;
-    }
-  };
+  const { user } = useAuth();
+  const [isLogging, setIsLogging] = useState(false);
 
-  // Verify module implementation for journey-verification
-  const verifyModuleImplementation = async (modulePath: string) => {
-    if (!tenant?.id) {
-      console.error("Cannot verify module: No tenant ID");
-      return { success: false, message: "No tenant selected" };
-    }
-    
-    try {
-      // Log the verification attempt
-      await logEvent(
-        'module_verification', 
-        `Attempting to verify module: ${modulePath}`, 
-        { module: modulePath },
-        'info'
-      );
-      
-      // Simulate verification process
-      // This would typically call a Supabase function or API
-      const result = {
-        success: true,
-        message: {
-          verified: true,
-          phase1Complete: true,
-          phase2Complete: true,
-          phase3Complete: modulePath.includes('stripe') ? false : true,
-          modulePath: modulePath,
-          options: { requireAuth: true }
-        }
-      };
-      
-      // Log the verification result
-      await logEvent(
-        'module_verification_result',
-        `Module ${modulePath} verification ${result.message.verified ? 'succeeded' : 'failed'}`,
-        result.message,
-        result.message.verified ? 'info' : 'error'
-      );
-      
-      return result;
-    } catch (err: any) {
-      console.error("Error verifying module implementation:", err);
-      
-      // Log the error
-      await logEvent(
-        'module_verification_error',
-        `Failed to verify module ${modulePath}: ${err.message}`,
-        { module: modulePath, error: err.message },
-        'error'
-      );
-      
-      return { 
-        success: false, 
-        message: {
-          verified: false,
-          phase1Complete: false,
-          phase2Complete: false,
-          phase3Complete: false,
-          modulePath: modulePath,
-          options: {}
-        }
-      };
-    }
-  };
-  
-  // Clear all logs
-  const clearLogs = async () => {
-    if (!tenant?.id || !user?.id) {
-      setError("No tenant or user selected");
-      return false;
-    }
-    
-    try {
-      await logEvent('logs_cleared', 'System logs cleared by user', {}, 'info');
-      
-      toast.success("Logs cleared successfully");
-      return true;
-    } catch (err) {
-      console.error("Failed to clear logs:", err);
-      toast.error("Failed to clear logs");
-      return false;
-    }
-  };
-  
-  // Export logs to CSV
-  const exportLogs = async (filters: SystemLogFilter = {}) => {
-    // This would be implemented to export logs to CSV
-    toast.info("Exporting logs...");
-    return true;
-  };
-
-  // Log activity (general purpose logging)
   const logActivity = async (
-    eventType: string,
+    event_type: string,
     message: string,
     meta: Record<string, any> = {},
     severity: LogSeverity = 'info'
-  ) => {
-    return logEvent(eventType, message, meta, severity);
+  ): Promise<{ success: boolean; log?: SystemLog; error?: any }> => {
+    if (!tenant?.id) {
+      console.warn("Can't log activity: No tenant ID available");
+      return { success: false, error: "No tenant ID" };
+    }
+    
+    setIsLogging(true);
+    
+    try {
+      const logPayload = {
+        tenant_id: tenant.id,
+        event_type,
+        message,
+        meta: { ...meta },
+        severity, // Add severity field directly to the payload
+        user_id: user?.id,
+        created_at: new Date().toISOString()
+      };
+      
+      const { data, error } = await supabase
+        .from('system_logs')
+        .insert(logPayload)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      return { success: true, log: data as unknown as SystemLog };
+    } catch (err) {
+      console.error("Failed to log activity:", err);
+      return { success: false, error: err };
+    } finally {
+      setIsLogging(false);
+    }
   };
 
-  // Get recent logs
-  const getRecentLogs = async (limit: number = 100) => {
-    return fetchLogs({ limit });
-  };
-
-  // Log specific error
   const logError = async (
     message: string,
     error: Error | any,
     meta: Record<string, any> = {}
   ) => {
-    return logEvent(
+    return logActivity(
       'ERROR',
       message,
       {
@@ -206,13 +76,12 @@ export function useSystemLogs() {
     );
   };
 
-  // Log security event
   const logSecurityEvent = async (
     message: string,
     eventType: string,
     meta: Record<string, any> = {}
   ) => {
-    return logEvent(
+    return logActivity(
       `SECURITY_${eventType}`,
       message,
       meta,
@@ -220,13 +89,12 @@ export function useSystemLogs() {
     );
   };
 
-  // Log journey step
   const logJourneyStep = async (
     from: string,
     to: string,
     details: Record<string, any> = {}
   ) => {
-    return logEvent(
+    return logActivity(
       'USER_JOURNEY',
       `User navigated from ${from} to ${to}`,
       {
@@ -238,20 +106,40 @@ export function useSystemLogs() {
     );
   };
 
+  // Added to match the function referenced in errors
+  const verifyModuleImplementation = async (modulePath: string) => {
+    try {
+      const result = await logActivity(
+        'MODULE_VERIFICATION',
+        `Verifying module implementation for ${modulePath}`,
+        { modulePath },
+        'info'
+      );
+      
+      // Mock verification result for now
+      return {
+        success: true,
+        message: {
+          verified: true,
+          phase1Complete: true,
+          phase2Complete: true,
+          phase3Complete: false,
+          modulePath,
+          options: {}
+        }
+      };
+    } catch (error) {
+      console.error(`Error verifying module ${modulePath}:`, error);
+      return { success: false, error };
+    }
+  };
+
   return {
-    logs,
-    isLoading,
-    error,
-    fetchLogs,
-    logEvent,
-    clearLogs,
-    exportLogs,
-    verifyModuleImplementation,
     logActivity,
     logError,
     logSecurityEvent,
     logJourneyStep,
-    getRecentLogs,
-    refresh: () => fetchLogs()
+    isLogging,
+    verifyModuleImplementation
   };
 }
