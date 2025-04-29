@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { Loader2 } from "lucide-react";
-import { Strategy } from "@/types/strategy";
+import { Strategy, mapJsonToStrategy } from "@/types/strategy";
 import { StrategyReasonCard } from "@/components/strategy-reason/StrategyReasonCard";
 
 export function StrategyDetailContent() {
@@ -30,35 +30,8 @@ export function StrategyDetailContent() {
         throw error;
       }
       
-      // Cast and ensure all required fields exist
-      const strategyData: Strategy = {
-        ...data,
-        id: data.id,
-        status: data.status as Strategy['status'],
-        created_at: data.created_at,
-        description: data.description || '',
-        title: data.title || '',
-        // Add default values for potentially missing fields
-        tags: data.tags || [],
-        goals: data.goals || [],
-        channels: data.channels || [],
-        kpis: data.kpis || [],
-        target_audience: data.target_audience || '',
-        reason_for_recommendation: data.reason_for_recommendation || '',
-        updated_at: data.updated_at || data.created_at,
-        version: data.version || 1,
-        metrics_baseline: data.metrics_baseline || {},
-        metrics_target: data.metrics_target || {},
-        diagnosis: data.diagnosis || {},
-        tenant_id: data.tenant_id,
-        user_id: data.user_id,
-        generated_by: data.generated_by || 'CEO Agent',
-        assigned_agent: data.assigned_agent || '',
-        auto_approved: data.auto_approved || false,
-        health_score: data.health_score || 0
-      };
-      
-      return strategyData;
+      // Transform data to Strategy type using our helper
+      return mapJsonToStrategy(data);
     },
     enabled: !!id && !!tenant?.id
   });

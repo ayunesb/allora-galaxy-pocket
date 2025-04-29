@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { useTenant } from '@/hooks/useTenant';
 import { useTenantValidation } from '@/hooks/useTenantValidation';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { WorkspaceErrorBoundary } from '../components/WorkspaceErrorBoundary';
 import { InviteUserModal } from './components/InviteUserModal';
 import { PendingInvites } from './components/PendingInvites';
@@ -30,10 +31,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+// Directly specify the enum type with the same values as the database
+type UserRoleType = 'owner' | 'admin' | 'member' | 'viewer';
+
 type WorkspaceUser = {
   id: string;
   email: string;
-  role: string;
+  role: UserRoleType;
   created_at: string;
   last_sign_in?: string;
 }
@@ -43,7 +47,6 @@ export default function WorkspaceUsersPage() {
   const { isValidating, isValid } = useTenantValidation();
   const [users, setUsers] = useState<WorkspaceUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<string>('members');
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
@@ -73,7 +76,7 @@ export default function WorkspaceUsersPage() {
       const formattedUsers = data.map(item => ({
         id: item.user_id,
         email: item.users ? (item.users as any).email || 'No email' : 'No email',
-        role: item.role,
+        role: item.role as UserRoleType,
         created_at: item.created_at,
         last_sign_in: item.users ? (item.users as any).last_sign_in_at : undefined,
       }));
@@ -81,11 +84,7 @@ export default function WorkspaceUsersPage() {
       setUsers(formattedUsers);
     } catch (error: any) {
       console.error('Error fetching workspace users:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load workspace users',
-        variant: 'destructive',
-      });
+      toast.error('Failed to load workspace users');
     } finally {
       setIsLoading(false);
     }
@@ -97,7 +96,7 @@ export default function WorkspaceUsersPage() {
     }
   }, [tenant, isValid]);
   
-  const handleRoleChange = async (userId: string, newRole: string) => {
+  const handleRoleChange = async (userId: string, newRole: UserRoleType) => {
     if (!tenant) return;
     
     try {
@@ -109,21 +108,14 @@ export default function WorkspaceUsersPage() {
       
       if (error) throw error;
       
-      toast({
-        title: 'Role updated',
-        description: 'User role has been updated successfully',
-      });
+      toast.success('Role updated successfully');
       
       setUsers(users.map(user => 
         user.id === userId ? { ...user, role: newRole } : user
       ));
       
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: 'Failed to update user role',
-        variant: 'destructive',
-      });
+      toast.error('Failed to update user role');
     }
   };
   
@@ -144,21 +136,14 @@ export default function WorkspaceUsersPage() {
       
       if (error) throw error;
       
-      toast({
-        title: 'User removed',
-        description: 'User has been removed from the workspace',
-      });
+      toast.success('User has been removed from the workspace');
       
       setUsers(users.filter(user => user.id !== selectedUserId));
       setIsRemoveDialogOpen(false);
       setSelectedUserId(null);
       
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: 'Failed to remove user',
-        variant: 'destructive',
-      });
+      toast.error('Failed to remove user');
     }
   };
   
@@ -295,7 +280,7 @@ export default function WorkspaceUsersPage() {
                             <div className="flex items-center gap-2">
                               <Select
                                 defaultValue={user.role}
-                                onValueChange={(value) => handleRoleChange(user.id, value)}
+                                onValueChange={(value) => handleRoleChange(user.id, value as UserRoleType)}
                               >
                                 <SelectTrigger className="w-[100px] h-8">
                                   <SelectValue placeholder="Role" />

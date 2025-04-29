@@ -24,7 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StrategyErrorBoundary } from './components/StrategyErrorBoundary';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StrategyReasonCard } from '@/components/strategy-reason/StrategyReasonCard';
-import { Strategy, StrategyStatus } from '@/types/strategy';
+import { Strategy, StrategyStatus, mapJsonToStrategy } from '@/types/strategy';
 
 const StrategyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -40,27 +40,10 @@ const StrategyDetail: React.FC = () => {
       
       if (error) throw error;
       
-      // Add default values for potentially missing fields
-      const enhancedData: Strategy = {
-        ...data,
-        status: (data.status as StrategyStatus) || 'draft',
-        updated_at: data.updated_at || data.created_at,
-        version: data.version || 1,
-        reason_for_recommendation: data.reason_for_recommendation || '',
-        target_audience: data.target_audience || 'No target audience defined.',
-        goals: data.goals || [],
-        channels: data.channels || [],
-        kpis: data.kpis || [],
-        metrics_target: data.metrics_target || {},
-        metrics_baseline: data.metrics_baseline || {},
-        tags: data.tags || []
-      };
-      
-      return enhancedData;
+      return mapJsonToStrategy(data);
     }
   });
 
-  // Use the enhanced strategyData with all required fields
   const strategy = strategyData;
 
   if (isLoading) {

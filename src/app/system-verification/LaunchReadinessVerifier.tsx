@@ -5,14 +5,14 @@ import { CheckCircle, AlertTriangle } from 'lucide-react';
 import { useSystemVerification } from '@/hooks/useSystemVerification';
 
 export function LaunchReadinessVerifier() {
-  const { isComplete, isRunning, runChecks } = useSystemVerification();
+  const { isComplete, isRunning, startVerification } = useSystemVerification();
 
   useEffect(() => {
     if (!isComplete && !isRunning) {
       // Run verification check on component mount if not already complete
-      runChecks();
+      startVerification();
     }
-  }, [isComplete, isRunning]);
+  }, [isComplete, isRunning, startVerification]);
 
   const checks = [
     { name: "Database Connectivity", status: "passed" },

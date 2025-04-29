@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from '@/components/ui/sonner';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/hooks/useTenant';
 import { useForm } from 'react-hook-form';
@@ -18,9 +18,12 @@ interface InviteUserModalProps {
   onInviteSuccess: () => void;
 }
 
+// Define the valid roles as a union type
+type UserRole = 'admin' | 'editor' | 'viewer';
+
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
-  role: z.string({ required_error: 'Please select a role' }),
+  role: z.enum(['owner', 'admin', 'member', 'viewer'] as const, { required_error: 'Please select a role' }),
 });
 
 export function InviteUserModal({ isOpen, onClose, onInviteSuccess }: InviteUserModalProps) {

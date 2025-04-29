@@ -1,117 +1,115 @@
 
-import React from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
+import React, { useState } from 'react';
+import { Check, ChevronsUpDown, Plus, Wrench } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, RefreshCw, Check } from "lucide-react";
-import { Tenant } from "@/types/tenant";
-import { Badge } from "@/components/ui/badge";
-import { TenantOption } from "../hooks/useAvailableTenants";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { useTenant } from '@/hooks/useTenant';
+import { Tenant } from '@/types/tenant';
+import { useNavigate } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
 
-interface WorkspaceSelectorProps {
-  selected: string;
-  onTenantChange: (value: string) => Promise<void>;
-  availableTenants: TenantOption[];
-  highlight?: boolean;
-  isOnboarding?: boolean;
-  tenant: Tenant | null;
-  isCreating: boolean;
-  onCreateWorkspace: () => Promise<void>;
-  userExists: boolean;
+interface TenantOption extends Tenant {
+  label: string;
+  value: string;
 }
 
-export function WorkspaceSelector({
-  selected,
-  onTenantChange,
-  availableTenants,
-  highlight = false,
-  isOnboarding = false,
-  tenant,
-  isCreating,
-  onCreateWorkspace,
-  userExists
-}: WorkspaceSelectorProps) {
-  // Split tenants into owned and invited
-  const ownedTenants = availableTenants.filter(t => t.isOwner);
-  const invitedTenants = availableTenants.filter(t => !t.isOwner);
+export function WorkspaceSelector() {
+  const { tenant, tenants, selectTenant } = useTenant();
+  const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+
+  // Format tenants for the dropdown
+  const options: TenantOption[] = tenants?.map(t => ({
+    ...t,
+    label: t.name || 'Unnamed Workspace',
+    value: t.id
+  })) || [];
+
+  const currentSelection = tenant ? {
+    ...tenant,
+    label: tenant.name || 'Unnamed Workspace',
+    value: tenant.id
+  } : null;
+
+  const handleCreateWorkspace = () => {
+    setOpen(false);
+    navigate('/workspace/new');
+  };
+
+  const handleOpenSettings = () => {
+    setOpen(false);
+    navigate('/workspace/settings');
+  };
 
   return (
-    <div className="space-y-4">
-      <div className={highlight ? "bg-primary/10 p-4 rounded-md border" : ""}>
-        <Select
-          value={selected}
-          onValueChange={onTenantChange}
-          disabled={isCreating}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select a workspace" />
-          </SelectTrigger>
-          <SelectContent>
-            {ownedTenants.length > 0 && (
-              <SelectGroup>
-                <SelectLabel>My Workspaces</SelectLabel>
-                {ownedTenants.map((t) => (
-                  <SelectItem key={t.id} value={t.id} className="flex items-center justify-between">
-                    <div className="flex items-center w-full justify-between">
-                      <span>{t.name}</span>
-                      <div className="flex gap-1">
-                        {t.isDemo && <Badge variant="outline" className="ml-2">Demo</Badge>}
-                        {tenant?.id === t.id && <Badge variant="secondary" className="ml-2">Current</Badge>}
-                        <Badge variant="outline" className="bg-green-100 text-green-800 ml-2">Admin</Badge>
-                      </div>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            )}
-            
-            {invitedTenants.length > 0 && (
-              <SelectGroup>
-                <SelectLabel>Invited Workspaces</SelectLabel>
-                {invitedTenants.map((t) => (
-                  <SelectItem key={t.id} value={t.id} className="flex items-center justify-between">
-                    <div className="flex items-center w-full justify-between">
-                      <span>{t.name}</span>
-                      <div className="flex gap-1">
-                        {t.isDemo && <Badge variant="outline" className="ml-2">Demo</Badge>}
-                        {tenant?.id === t.id && <Badge variant="secondary" className="ml-2">Current</Badge>}
-                        <Badge variant="outline" className="ml-2">{t.role}</Badge>
-                      </div>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            )}
-
-            {availableTenants.length === 0 && (
-              <div className="p-2 text-center text-sm text-muted-foreground">
-                No workspaces found
-              </div>
-            )}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {userExists && (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
         <Button
-          onClick={onCreateWorkspace}
           variant="outline"
-          size="sm"
-          className="w-full"
-          disabled={isCreating}
+          role="combobox"
+          aria-expanded={open}
+          className="w-[200px] justify-between"
         >
-          {isCreating ? (
-            <>
-              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              Creating workspace...
-            </>
-          ) : (
-            <>
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Create New Workspace
-            </>
+          <span className="truncate">
+            {currentSelection ? currentSelection.label : "Select workspace"}
+          </span>
+          {currentSelection?.is_demo && (
+            <Badge variant="outline" className="ml-2 mr-1">Demo</Badge>
           )}
+          <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
         </Button>
-      )}
-    </div>
+      </PopoverTrigger>
+      <PopoverContent className="w-[200px] p-0">
+        <Command>
+          <CommandInput placeholder="Search workspace..." />
+          <CommandList>
+            <CommandEmpty>No workspace found.</CommandEmpty>
+            <CommandGroup heading="Workspaces">
+              {options.map((option) => (
+                <CommandItem
+                  key={option.value}
+                  value={option.label}
+                  onSelect={() => {
+                    selectTenant(option);
+                    setOpen(false);
+                  }}
+                  className="flex items-center justify-between"
+                >
+                  <span className={option.is_demo ? 'text-muted-foreground' : ''}>
+                    {option.label}
+                  </span>
+                  {option.value === currentSelection?.value && (
+                    <Check className="ml-auto h-4 w-4" />
+                  )}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            <CommandGroup>
+              <CommandItem onSelect={handleCreateWorkspace}>
+                <Plus className="mr-2 h-4 w-4" />
+                <span>Create workspace</span>
+              </CommandItem>
+              <CommandItem onSelect={handleOpenSettings}>
+                <Wrench className="mr-2 h-4 w-4" />
+                <span>Manage workspaces</span>
+              </CommandItem>
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }

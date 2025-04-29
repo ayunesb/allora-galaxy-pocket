@@ -1,185 +1,260 @@
 
-import React from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useTenant } from '@/hooks/useTenant';
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Shield, Users, Database, Settings, RefreshCw } from 'lucide-react';
-import { useAvailableTenants } from '../hooks/useAvailableTenants';
-import { WorkspaceErrorBoundary } from '../components/WorkspaceErrorBoundary';
-import { useUserRole } from '@/hooks/useUserRole';
+import { useTenant } from '@/hooks/useTenant';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
+import { Label } from '@/components/ui/label';
+import { Trash2, Wrench } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-export default function WorkspaceEnvironmentPage() {
+const formSchema = z.object({
+  name: z.string().min(3, 'Workspace name must be at least 3 characters'),
+  slack_webhook_url: z.string().optional(),
+  enable_auto_approve: z.boolean(),
+});
+
+export default function EnvironmentPage() {
   const { tenant } = useTenant();
-  const { role } = useUserRole();
-  const { retryFetch } = useAvailableTenants();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const [isDeleting, setIsDeleting] = useState(false);
   
-  const isAdmin = role === 'admin';
+  // Set up form with default values from the tenant
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: tenant?.name || '',
+      slack_webhook_url: tenant?.slack_webhook_url || '',
+      enable_auto_approve: tenant?.enable_auto_approve || false,
+    },
+  });
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (!tenant) return;
+    
+    try {
+      const { error } = await supabase
+        .from('tenant_profiles')
+        .update({
+          name: values.name,
+          slack_webhook_url: values.slack_webhook_url || null,
+          enable_auto_approve: values.enable_auto_approve,
+        })
+        .eq('id', tenant.id);
+      
+      if (error) throw error;
+      
+      toast.success('Workspace settings updated');
+      queryClient.invalidateQueries({ queryKey: ['tenants'] });
+      
+    } catch (error: any) {
+      console.error('Error updating workspace:', error);
+      toast.error('Failed to update workspace settings', {
+        description: error.message
+      });
+    }
+  };
+  
+  const handleDeleteWorkspace = async () => {
+    if (!tenant) return;
+    
+    try {
+      setIsDeleting(true);
+      
+      // First delete all user roles for the tenant
+      const { error: rolesError } = await supabase
+        .from('tenant_user_roles')
+        .delete()
+        .eq('tenant_id', tenant.id);
+      
+      if (rolesError) throw rolesError;
+      
+      // Then delete the tenant profile
+      const { error } = await supabase
+        .from('tenant_profiles')
+        .delete()
+        .eq('id', tenant.id);
+      
+      if (error) throw error;
+      
+      toast.success('Workspace deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ['tenants'] });
+      navigate('/dashboard');
+      
+    } catch (error: any) {
+      console.error('Error deleting workspace:', error);
+      toast.error('Failed to delete workspace', {
+        description: error.message
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
   
   if (!tenant) {
     return (
-      <Card className="my-6 p-6">
-        <CardHeader className="pb-3">
-          <CardTitle>No Workspace Selected</CardTitle>
-          <CardDescription>
-            Please select a workspace to view environment details
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button variant="outline" asChild>
-            <a href="/workspace">Select Workspace</a>
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="container mx-auto py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>No Workspace Selected</CardTitle>
+            <CardDescription>Please select a workspace to configure its environment</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">{tenant.name}</h1>
-          <p className="text-muted-foreground">Workspace Environment Management</p>
-        </div>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => retryFetch()} 
-          className="flex items-center gap-1"
-        >
-          <RefreshCw className="h-4 w-4" />
-          Refresh
-        </Button>
-      </div>
-
-      <WorkspaceErrorBoundary>
-        <Tabs defaultValue="overview">
-          <TabsList className="mb-6">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="data">Data</TabsTrigger>
-            {isAdmin && <TabsTrigger value="settings">Settings</TabsTrigger>}
-          </TabsList>
-          
-          <TabsContent value="overview">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Workspace Details</CardTitle>
-                  <CardDescription>General information about this workspace</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <dl className="space-y-4">
-                    <div>
-                      <dt className="text-sm font-medium text-muted-foreground">ID</dt>
-                      <dd className="mt-1 text-sm">{tenant.id}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-muted-foreground">Name</dt>
-                      <dd className="mt-1 text-sm">{tenant.name}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-muted-foreground">Theme</dt>
-                      <dd className="mt-1 text-sm capitalize">{tenant.theme_color} / {tenant.theme_mode}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-muted-foreground">Auto-Approve</dt>
-                      <dd className="mt-1 text-sm">{tenant.enable_auto_approve ? 'Enabled' : 'Disabled'}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-muted-foreground">Demo Workspace</dt>
-                      <dd className="mt-1 text-sm">{tenant.isDemo ? 'Yes' : 'No'}</dd>
-                    </div>
-                  </dl>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle>Security Status</CardTitle>
-                  <CardDescription>RLS policy protection status</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-2 mb-4">
-                    <Shield className="h-5 w-5 text-green-500" />
-                    <span className="text-sm font-medium">Tenant isolation active</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    This workspace is protected by Row-Level Security policies that ensure
-                    data cannot be accessed by users from other workspaces.
-                  </p>
-                  {isAdmin && (
-                    <Button variant="outline" size="sm" asChild>
-                      <a href="/admin/security-audit">Security Audit</a>
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="users">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>Workspace Users</CardTitle>
-                  <CardDescription>Manage user access to this workspace</CardDescription>
-                </div>
-                {isAdmin && (
-                  <Button size="sm" className="flex items-center gap-1">
-                    <Users className="h-4 w-4" />
-                    Invite User
-                  </Button>
+    <div className="container mx-auto py-8 space-y-6">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-2xl">Workspace Environment</CardTitle>
+              <CardDescription>
+                Configure your workspace settings and integrations
+              </CardDescription>
+            </CardHeader>
+            
+            <CardContent className="space-y-6">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Workspace Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="My Workspace" />
+                    </FormControl>
+                    <FormDescription>
+                      This is the name that will appear in the workspace selector
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
                 )}
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  This feature will be implemented in a future phase.
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="data">
-            <Card>
-              <CardHeader>
-                <CardTitle>Workspace Data</CardTitle>
-                <CardDescription>Manage data in this workspace</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2 mb-4">
-                  <Database className="h-5 w-5 text-blue-500" />
-                  <span className="text-sm font-medium">Multi-tenant data isolation</span>
-                </div>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Data in this workspace is isolated from other workspaces using 
-                  Row-Level Security policies to ensure privacy and security.
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          {isAdmin && (
-            <TabsContent value="settings">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Workspace Settings</CardTitle>
-                  <CardDescription>Configure workspace settings</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-2 mb-4">
-                    <Settings className="h-5 w-5 text-gray-500" />
-                    <span className="text-sm font-medium">Admin Settings</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Advanced settings for this workspace will be available in a future update.
+              />
+              
+              <Separator />
+              
+              <div>
+                <h3 className="text-lg font-medium mb-3">Integrations</h3>
+                
+                <FormField
+                  control={form.control}
+                  name="slack_webhook_url"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Slack Webhook URL</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="https://hooks.slack.com/services/..." />
+                      </FormControl>
+                      <FormDescription>
+                        Connect a Slack webhook to receive notifications about strategies and campaigns
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <Separator />
+              
+              <div>
+                <h3 className="text-lg font-medium mb-3">AI Settings</h3>
+                
+                <FormField
+                  control={form.control}
+                  name="enable_auto_approve"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">
+                          Auto-approve Strategies
+                        </FormLabel>
+                        <FormDescription>
+                          Allow the AI to automatically approve strategies without human review
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              {tenant.is_demo && (
+                <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-md">
+                  <Label className="font-medium text-yellow-800">Demo Workspace</Label>
+                  <p className="text-sm text-yellow-700 mt-1">
+                    This is a demo workspace with limited functionality. Some settings cannot be changed.
                   </p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          )}
-        </Tabs>
-      </WorkspaceErrorBoundary>
+                </div>
+              )}
+            </CardContent>
+            
+            <CardFooter className="flex justify-between">
+              <Button 
+                type="button" 
+                variant="destructive"
+                onClick={() => setIsDeleting(true)}
+                disabled={tenant.is_demo || isDeleting}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Workspace
+              </Button>
+              
+              <Button type="submit">
+                <Wrench className="h-4 w-4 mr-2" />
+                Save Changes
+              </Button>
+            </CardFooter>
+          </Card>
+        </form>
+      </Form>
+      
+      {isDeleting && (
+        <Card className="border-red-200 bg-red-50">
+          <CardHeader>
+            <CardTitle className="text-red-700">Delete Workspace</CardTitle>
+            <CardDescription className="text-red-600">
+              This action cannot be undone. This will permanently delete the workspace and all associated data.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-red-600 font-medium mb-4">
+              Are you absolutely sure you want to delete this workspace?
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setIsDeleting(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={handleDeleteWorkspace}
+              >
+                Delete Workspace
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
