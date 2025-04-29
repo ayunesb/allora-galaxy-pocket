@@ -26,6 +26,7 @@ export function useRouteLogger() {
         
         // Log the route with tenant_id if available, or use a placeholder UUID
         const placeholderUuid = '00000000-0000-0000-0000-000000000000';
+        const tenantId = tenant?.id || placeholderUuid;
         
         await supabase
           .from('route_logs')
@@ -33,7 +34,7 @@ export function useRouteLogger() {
             user_id: user.id,
             role: role,
             route: location.pathname,
-            tenant_id: tenant?.id || placeholderUuid
+            tenant_id: tenantId
           });
       } catch (error) {
         console.error('Error logging route:', error);

@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/hooks/useTenant';
-import { Strategy } from '@/types/strategy';
+import { Strategy, mapJsonToStrategy } from '@/types/strategy';
 import { useToast } from './use-toast';
 
 interface Card {
@@ -59,19 +59,13 @@ export function usePocketFeed() {
           
         if (campaignsError) throw campaignsError;
         
+        // First cast to break recursion
+        const safeStrategies = strategies as unknown;
+        
         // Convert strategies to cards with required property guards
-        const strategyCards: Card[] = (strategies || []).map((strategy: any) => {
-          // Ensure all required properties exist
-          const guardedStrategy = {
-            ...strategy,
-            title: strategy.title || 'Untitled Strategy',
-            description: strategy.description || 'No description available',
-            health_score: strategy.health_score || 0,
-            impact_score: strategy.impact_score || 0,
-            metrics_baseline: strategy.metrics_baseline || {},
-            metrics_target: strategy.metrics_target || {},
-            updated_at: strategy.updated_at || strategy.created_at || new Date().toISOString(),
-          };
+        const strategyCards: Card[] = ((safeStrategies as any[]) || []).map((strategy) => {
+          // Map with mapJsonToStrategy to ensure all required properties
+          const guardedStrategy = mapJsonToStrategy(strategy);
           
           return {
             id: guardedStrategy.id,
@@ -87,8 +81,11 @@ export function usePocketFeed() {
           };
         });
         
+        // Break recursion for campaigns
+        const safeCampaigns = campaigns as unknown;
+        
         // Convert campaigns to cards
-        const campaignCards: Card[] = (campaigns || []).map((campaign: any) => ({
+        const campaignCards: Card[] = ((safeCampaigns as any[]) || []).map((campaign) => ({
           id: campaign.id,
           type: 'campaign',
           title: campaign.name || 'Untitled Campaign',

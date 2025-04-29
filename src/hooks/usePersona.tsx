@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,12 +30,15 @@ export function usePersona(userId: string) {
 
         if (error) throw error;
 
+        // Safely cast to prevent deep recursion
+        const safeProfile = data as unknown;
+        
         // Combine with local storage data for other fields
         return {
           ...localPersona,
-          industry: data.industry || localPersona.industry,
+          industry: (safeProfile as any)?.industry || localPersona.industry,
           // Use other fields from local storage
-        } as unknown as PersonaPreferences;
+        } as PersonaPreferences;
       } catch (err) {
         // Fallback to local storage if Supabase fetch fails
         return localPersona;

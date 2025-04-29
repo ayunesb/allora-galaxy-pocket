@@ -10,7 +10,7 @@ export function useExportCSV() {
   // Check if table exists without using custom DB functions
   const checkTableExists = async (tableName: string): Promise<boolean> => {
     try {
-      // Use a type assertion to avoid the TypeScript error
+      // Use a direct select with count to check if the table exists
       const query = supabase
         .from(tableName as any)
         .select('*', { count: 'exact', head: true });

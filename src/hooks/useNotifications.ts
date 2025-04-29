@@ -1,140 +1,83 @@
 
-import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "./useTenant";
-import { toast } from "sonner";
-import { useAuth } from "./useAuth";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "./use-toast";
 
-export interface NotificationInput {
+interface Notification {
+  id: string;
+  description?: string;
   event_type: string;
-  description: string;
-  priority?: 'low' | 'medium' | 'high';
-  link?: string;
-  send_webhook?: boolean;
+  tenant_id?: string;
+  updated_at?: string;
+  created_at?: string;
+  is_read?: boolean;
 }
 
 export function useNotifications() {
   const { tenant } = useTenant();
-  const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [isProcessing, setIsProcessing] = useState(false);
-
+  const { toast } = useToast();
+  
   const { data: notifications, isLoading } = useQuery({
-    queryKey: ['notifications', user?.id],
+    queryKey: ['notifications', tenant?.id],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!tenant?.id) return [];
       
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(20);
+      try {
+        const { data, error } = await supabase
+          .from('notifications')
+          .select('*')
+          .eq('tenant_id', tenant.id)
+          .order('created_at', { ascending: false })
+          .limit(100);
+          
+        if (error) throw error;
         
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!user?.id,
-  });
-
-  const sendNotification = async (notification: NotificationInput) => {
-    if (!tenant?.id || !user?.id || isProcessing) return false;
-    
-    setIsProcessing(true);
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .insert({
-          tenant_id: tenant.id,
-          user_id: user.id,
-          event_type: notification.event_type,
-          description: notification.description,
-          priority: notification.priority || 'medium',
-          link: notification.link,
-          is_read: false // Use is_read instead of read
-        });
+        // Break the recursion by using unknown cast
+        const safeData = data as unknown;
+        return (safeData as Notification[]) || [];
         
-      if (error) throw error;
-      
-      // If webhook flag is provided, send webhook notification
-      if (notification.send_webhook) {
-        try {
-          await supabase.functions.invoke('send-webhook-notification', {
-            body: { 
-              event_type: notification.event_type,
-              description: notification.description,
-              tenant_id: tenant.id
-            }
-          });
-        } catch (webhookError) {
-          console.error("Error sending webhook notification:", webhookError);
-          // Non-blocking error
-        }
+      } catch (err) {
+        console.error('Error fetching notifications:', err);
+        return [];
       }
+    },
+    enabled: !!tenant?.id
+  });
+  
+  const markAsRead = useMutation({
+    mutationFn: async (notificationId: string) => {
+      if (!tenant?.id) return false;
       
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      return true;
-    } catch (error) {
-      console.error("Error sending notification:", error);
-      return false;
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const markAsRead = async (notificationId: string) => {
-    if (!user?.id || isProcessing) return false;
-    
-    setIsProcessing(true);
-    try {
       const { error } = await supabase
         .from('notifications')
-        .update({ is_read: true }) // Use is_read instead of read
+        .update({ is_read: true })
         .eq('id', notificationId)
-        .eq('user_id', user.id);
+        .eq('tenant_id', tenant.id);
         
       if (error) throw error;
-      
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       return true;
-    } catch (error) {
-      console.error("Error marking notification as read:", error);
-      return false;
-    } finally {
-      setIsProcessing(false);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications', tenant?.id] });
+    },
+    onError: (error) => {
+      console.error('Error marking notification as read:', error);
+      toast({
+        title: "Error",
+        description: "Failed to mark notification as read",
+        variant: "destructive"
+      });
     }
-  };
-
-  const markAllAsRead = async () => {
-    if (!user?.id || isProcessing) return false;
-    
-    setIsProcessing(true);
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: true }) // Use is_read instead of read
-        .eq('user_id', user.id)
-        .eq('is_read', false);
-        
-      if (error) throw error;
-      
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      return true;
-    } catch (error) {
-      console.error("Error marking all notifications as read:", error);
-      return false;
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
+  });
+  
+  const unreadCount = notifications?.filter(n => !n.is_read)?.length || 0;
+  
   return {
     notifications,
     isLoading,
-    sendNotification,
-    markAsRead,
-    markAllAsRead,
-    unreadCount: notifications?.filter(n => !n.is_read)?.length || 0
+    unreadCount,
+    markAsRead
   };
 }

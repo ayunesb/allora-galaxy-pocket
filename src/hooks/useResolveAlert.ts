@@ -41,7 +41,7 @@ export function useResolveAlert() {
         message: `KPI Alert (${alertId}) was manually resolved`,
         created_at: new Date().toISOString(),
         meta: { alert_id: alertId },
-        severity: 'info'
+        severity: 'info' // Add severity field as required
       });
 
       toast({

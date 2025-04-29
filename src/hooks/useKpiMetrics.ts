@@ -43,24 +43,23 @@ export function useKpiMetrics(options: UseKpiMetricsOptions = {}) {
 
       if (error) throw error;
       
+      // Break the deep recursion by using unknown first
+      const safeData = data as unknown;
+      
       // Transform the data to match the KpiMetric interface using proper type handling
-      const kpiMetrics = (data || []).map(metric => {
-        // First cast to unknown to break deep recursion
-        const metricAsUnknown = metric as unknown;
-        
-        // Then safely map to the KpiMetric type
+      const kpiMetrics = ((safeData as any[]) || []).map(metric => {
         return {
-          id: (metricAsUnknown as any).id,
-          tenant_id: (metricAsUnknown as any).tenant_id,
-          kpi_name: (metricAsUnknown as any).metric || '',
-          metric: (metricAsUnknown as any).metric || '',
-          label: (metricAsUnknown as any).metric || '', // Add label for compatibility
-          value: Number((metricAsUnknown as any).value),
-          trend: determineTrend(Number((metricAsUnknown as any).value)),
+          id: metric.id,
+          tenant_id: metric.tenant_id,
+          kpi_name: metric.metric || '',
+          metric: metric.metric || '',
+          label: metric.metric || '', // Add label for compatibility
+          value: Number(metric.value),
+          trend: determineTrend(Number(metric.value)),
           changePercent: 0, // Would ideally be calculated by comparing to historical data
-          created_at: (metricAsUnknown as any).created_at,
-          updated_at: (metricAsUnknown as any).updated_at,
-          recorded_at: (metricAsUnknown as any).recorded_at,
+          created_at: metric.created_at,
+          updated_at: metric.updated_at,
+          recorded_at: metric.recorded_at,
           description: '' // Add empty description for compatibility
         };
       });

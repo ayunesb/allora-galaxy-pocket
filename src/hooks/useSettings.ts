@@ -43,17 +43,24 @@ export function useSettings(category?: string) {
           return [];
         }
 
+        // Break the recursion by casting to unknown first
+        const safeData = data as unknown;
+        
         // Transform the data to match the AppSetting interface
-        const transformedData: AppSetting[] = data.map(item => ({
-          id: item.key,
-          key: item.key,
-          value: item.config.value,
-          category: item.config.category || 'general',
-          description: item.config.description,
-          tenant_id: tenant.id,
-          created_at: item.created_at,
-          updated_at: item.updated_at
-        }));
+        const transformedData: AppSetting[] = ((safeData as any[]) || []).map(item => {
+          const config = item.config && typeof item.config === 'object' ? item.config : {};
+          
+          return {
+            id: item.key,
+            key: item.key,
+            value: config.value,
+            category: config.category || 'general',
+            description: config.description,
+            tenant_id: tenant.id,
+            created_at: item.created_at,
+            updated_at: item.updated_at
+          };
+        });
 
         return transformedData;
       } catch (err) {
