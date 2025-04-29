@@ -20,13 +20,13 @@ export function useToast() {
       
       if (variant === "destructive") {
         return toast.error(title || "", {
-          description,
+          description: description || undefined,
           ...rest
         });
       }
       
       return toast(title || "", {
-        description,
+        description: description || undefined,
         ...rest
       });
     },
@@ -36,7 +36,7 @@ export function useToast() {
       }
       const { title, description, ...rest } = props;
       return toast.success(title || "", {
-        description,
+        description: description || undefined,
         ...rest
       });
     },
@@ -46,7 +46,7 @@ export function useToast() {
       }
       const { title, description, ...rest } = props;
       return toast.error(title || "", {
-        description,
+        description: description || undefined,
         ...rest
       });
     },
@@ -56,7 +56,7 @@ export function useToast() {
       }
       const { title, description, ...rest } = props;
       return toast.warning(title || "", {
-        description,
+        description: description || undefined,
         ...rest
       });
     },
@@ -66,7 +66,7 @@ export function useToast() {
       }
       const { title, description, ...rest } = props;
       return toast.info(title || "", {
-        description,
+        description: description || undefined,
         ...rest
       });
     },
