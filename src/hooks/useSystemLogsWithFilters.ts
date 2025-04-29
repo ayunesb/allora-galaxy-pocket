@@ -1,14 +1,8 @@
 
 import { useState, useEffect } from 'react';
 import { useSystemLogs } from './useSystemLogs';
+import { LogFilters, DEFAULT_FILTERS } from '@/types/logFilters';
 import { toast } from 'sonner';
-
-type Filters = {
-  searchTerm?: string;
-  dateRange?: number;
-  eventType?: string;
-  userId?: string;
-};
 
 type PaginationState = {
   currentPage: number;
@@ -17,15 +11,16 @@ type PaginationState = {
 };
 
 export function useSystemLogsWithFilters() {
-  const { logs: allLogs, getRecentLogs, isLogging, logSecurityEvent } = useSystemLogs();
+  const { 
+    logs: allLogs, 
+    getRecentLogs, 
+    loading: isLoading, 
+    logSecurityEvent,
+    logActivity
+  } = useSystemLogs();
+  
   const [logs, setLogs] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [filters, setFilters] = useState<Filters>({
-    searchTerm: '',
-    dateRange: 7,
-    eventType: 'all',
-    userId: 'all'
-  });
+  const [filters, setFilters] = useState<LogFilters>(DEFAULT_FILTERS);
   
   const [pagination, setPagination] = useState<PaginationState>({
     currentPage: 1,
@@ -77,30 +72,22 @@ export function useSystemLogsWithFilters() {
     setLogs(paginatedLogs);
   };
 
-  const updateFilters = (newFilters: Partial<Filters>) => {
+  const updateFilters = (newFilters: Partial<LogFilters>) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
     setPagination(prev => ({ ...prev, currentPage: 1 })); // Reset to page 1 when changing filters
   };
 
   const resetFilters = () => {
-    setFilters({
-      searchTerm: '',
-      dateRange: 7,
-      eventType: 'all',
-      userId: 'all'
-    });
+    setFilters(DEFAULT_FILTERS);
     setPagination(prev => ({ ...prev, currentPage: 1 }));
   };
 
   const fetchLogs = async () => {
-    setIsLoading(true);
     try {
       await getRecentLogs(100); // Fetch more logs for client-side filtering
     } catch (error) {
       console.error('Error fetching logs:', error);
       toast.error('Failed to fetch system logs');
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -141,6 +128,7 @@ export function useSystemLogsWithFilters() {
     prevPage,
     goToPage,
     logSecurityEvent,
-    isLogging
+    isLogging: false, // Added for compatibility
+    logActivity // Added for page compatibility
   };
 }

@@ -156,7 +156,7 @@ export function AdminSystemLogsTable({
                   {log.tenant_id ? log.tenant_id.substring(0, 8) : 'System'}
                 </TableCell>
                 <TableCell>
-                  {getSeverityBadge(log.meta?.severity)}
+                  {getSeverityBadge(log.severity)}
                 </TableCell>
               </TableRow>
             ))}

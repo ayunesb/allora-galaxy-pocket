@@ -25,7 +25,8 @@ export function useRolePermissions() {
         { id: 'view_all', name: 'View All', description: 'Can view all resources' },
         { id: 'edit_all', name: 'Edit All', description: 'Can edit all resources' },
         { id: 'delete_all', name: 'Delete All', description: 'Can delete all resources' },
-        { id: 'manage_users', name: 'Manage Users', description: 'Can manage users' }
+        { id: 'manage_users', name: 'Manage Users', description: 'Can manage users' },
+        { id: 'manage_plugins', name: 'Manage Plugins', description: 'Can manage plugins' }
       ]
     },
     editor: {
@@ -63,6 +64,10 @@ export function useRolePermissions() {
   const hasAllPermissions = (permissionIds: string[]): boolean => {
     return permissionIds.every(id => hasPermission(id));
   };
+
+  // Helper for common permission checks
+  const canManageUsers = hasPermission('manage_users');
+  const canManagePlugins = hasPermission('manage_plugins');
   
   return {
     currentRole,
@@ -70,6 +75,8 @@ export function useRolePermissions() {
     hasPermission,
     hasAnyPermission,
     hasAllPermissions,
-    isAdmin: currentRole === 'admin'
+    isAdmin: currentRole === 'admin',
+    canManageUsers,
+    canManagePlugins
   };
 }

@@ -2,6 +2,8 @@
 // If this file doesn't exist, create it with the SystemLog type definition
 import { Json } from "@/integrations/supabase/types";
 
+export type LogSeverity = 'low' | 'medium' | 'high' | 'critical' | 'info' | 'error' | 'warning' | 'success';
+
 export interface SystemLog {
   id: string;
   tenant_id: string;
@@ -10,7 +12,7 @@ export interface SystemLog {
   message: string;
   meta: Json;
   created_at: string;
-  severity: 'low' | 'medium' | 'high' | 'critical'; // Required field
+  severity: LogSeverity; // Required field
 }
 
 export interface SystemLogFilter {

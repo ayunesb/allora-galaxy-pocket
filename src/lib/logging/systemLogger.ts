@@ -1,8 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { SystemLog } from "@/types/systemLog"; 
-
-type LogSeverity = 'low' | 'medium' | 'high' | 'critical';
+import { SystemLog, LogSeverity } from "@/types/systemLog"; 
 
 interface LogSystemEventParams {
   tenant_id: string;

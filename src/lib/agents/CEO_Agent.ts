@@ -20,17 +20,77 @@ interface FeedbackFormData {
   rating: number;
 }
 
-// Mock the useAgentFeedback hook implementation
-const useAgentFeedback = () => {
+// Implement the useAgentFeedback hook
+export const useAgentFeedback = () => {
+  // Mock functions for the hook
+  const getFeedback = async (agent: string): Promise<AgentFeedback[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('agent_feedback')
+        .select('*')
+        .eq('agent', agent)
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
+      return (data as unknown) as AgentFeedback[];
+    } catch (err) {
+      console.error("Error fetching agent feedback:", err);
+      return [];
+    }
+  };
+  
+  const submitFeedback = async (feedbackData: FeedbackFormData): Promise<any> => {
+    try {
+      const { error } = await supabase
+        .from('agent_feedback')
+        .insert({
+          agent: feedbackData.agent,
+          feedback: feedbackData.feedback,
+          rating: feedbackData.rating
+        });
+        
+      if (error) throw error;
+      return { success: true };
+    } catch (err) {
+      console.error("Error submitting feedback:", err);
+      return { success: false, error: err };
+    }
+  };
+  
+  const getTunedPrompt = async (agent: string): Promise<string> => {
+    try {
+      // Get feedback for this agent
+      const feedback = await getFeedback(agent);
+      
+      // If no feedback exists, return a default prompt
+      if (!feedback || feedback.length === 0) {
+        return "Default CEO agent prompt if feedback unavailable.";
+      }
+      
+      // Calculate average rating
+      const avgRating = feedback.reduce((sum, f) => sum + f.rating, 0) / feedback.length;
+      
+      // Simple tuning based on feedback rating
+      if (avgRating > 4) {
+        return "Enhanced CEO agent prompt for high-rated performance.";
+      } else if (avgRating > 3) {
+        return "Standard CEO agent prompt with minor improvements.";
+      } else {
+        return "Basic CEO agent prompt with core functionality only.";
+      }
+    } catch (error) {
+      console.error("Error getting tuned prompt:", error);
+      return "Fallback CEO agent prompt due to error.";
+    }
+  };
+  
   return {
     feedback: [] as AgentFeedback[],
     isLoading: false,
     isSubmitting: false,
-    getFeedback: async (agent: string): Promise<AgentFeedback[]> => [],
-    submitFeedback: async (feedbackData: FeedbackFormData): Promise<any> => ({}),
-    getTunedPrompt: async (agent: string): Promise<string> => {
-      return "Default CEO agent prompt if feedback unavailable.";
-    }
+    getFeedback,
+    submitFeedback,
+    getTunedPrompt
   };
 };
 

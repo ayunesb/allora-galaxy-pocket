@@ -5,16 +5,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 import { getUserTenants } from '@/utils/TenantSecurity';
+import { useUserRole } from './useUserRole';
 
+// Define the updated TenantContext type
 interface TenantContextType {
   tenant: Tenant | null;
   setTenant: React.Dispatch<React.SetStateAction<Tenant | null>>;
-  tenants: Tenant[];  // Added for WorkspaceSelector
-  selectTenant: (tenant: Tenant) => void;  // Added for WorkspaceSelector
+  tenants: Tenant[];
+  selectTenant: (tenant: Tenant) => void;
   isLoading: boolean;
   refreshTenant: () => Promise<void>;
   updateTenantProfile: (updatedTenant: Partial<Tenant>) => Promise<void>;
   error: string | null;
+  userRole?: string;
 }
 
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
@@ -25,6 +28,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+  const { role: userRole } = useUserRole();
 
   const refreshTenant = async () => {
     if (!user) {
@@ -87,7 +91,6 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setError(error.message || 'Failed to load workspace data');
       
       toast({
-        title: "Workspace loading error",
         description: "There was a problem loading your workspace. Please try again."
       });
     } finally {
@@ -114,14 +117,12 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setTenant(prev => prev ? { ...prev, ...updatedTenant } : null);
       
       toast({
-        title: "Workspace updated",
         description: "Workspace settings have been updated successfully."
       });
     } catch (error: any) {
       console.error('Error updating tenant:', error);
       
       toast({
-        title: "Update failed",
         description: error.message || "Failed to update workspace settings.",
       });
       
@@ -142,7 +143,8 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       isLoading, 
       refreshTenant,
       updateTenantProfile,
-      error
+      error,
+      userRole
     }}>
       {children}
     </TenantContext.Provider>

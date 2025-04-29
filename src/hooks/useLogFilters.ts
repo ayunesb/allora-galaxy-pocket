@@ -16,7 +16,8 @@ export function useLogFilters(logs: SystemLog[]) {
 
       // Filter by severity
       if (filters.severity && filters.severity !== 'all') {
-        const logSeverity = log.severity || log.meta?.severity || 'info';
+        // Safely access severity field
+        const logSeverity = log.severity || 'info';
         if (logSeverity !== filters.severity) {
           return false;
         }
@@ -54,9 +55,13 @@ export function useLogFilters(logs: SystemLog[]) {
         return false;
       }
 
-      // Check for service if it exists in the log
-      if (filters.service && filters.service !== 'all' && log.service !== filters.service) {
-        return false;
+      // Check for service if it exists in the meta data
+      if (filters.service && filters.service !== 'all') {
+        const meta = log.meta as any;
+        const service = meta?.service;
+        if (!service || service !== filters.service) {
+          return false;
+        }
       }
 
       // Search through text fields
