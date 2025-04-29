@@ -8,6 +8,7 @@ import {
   handleDecisionSwipe,
   ContentCard 
 } from '@/utils/swipeHandlers';
+import { swipeHapticFeedback } from '@/utils/hapticFeedback';
 
 export function useSwipeGestures() {
   const [swipingDirection, setSwipingDirection] = useState<'left' | 'right' | null>(null);
@@ -22,6 +23,9 @@ export function useSwipeGestures() {
   const onSwipe = async (direction: 'left' | 'right', card: ContentCard) => {
     setSwipingDirection(null);
     setAnimatingCard(card.id);
+    
+    // Trigger haptic feedback based on swipe direction
+    swipeHapticFeedback(direction);
     
     // Short delay to ensure animation completes
     setTimeout(() => {
