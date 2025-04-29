@@ -1,11 +1,24 @@
 
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Home, ArrowLeft, RefreshCw } from 'lucide-react';
+import { useLocation } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Home, RefreshCw } from "lucide-react";
 
 export default function NotFoundPage() {
+  const location = useLocation();
   const navigate = useNavigate();
+
+  const goToStartup = () => {
+    navigate("/dashboard");
+  };
+
+  const goBack = () => {
+    navigate(-1);
+  };
+
+  const tryAgain = () => {
+    window.location.reload();
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background dark:bg-gray-900 p-4">
@@ -14,11 +27,15 @@ export default function NotFoundPage() {
         <p className="text-xl text-foreground dark:text-white mb-6">Page not found</p>
         <p className="text-muted-foreground dark:text-gray-300 mb-8">
           The page you're looking for doesn't exist or you may not have access to it.
+          <br />
+          <code className="text-sm bg-muted p-1 rounded mt-2 inline-block overflow-hidden text-ellipsis max-w-full">
+            {location.pathname}
+          </code>
         </p>
         
         <div className="space-y-4">
           <Button 
-            onClick={() => navigate(-1)}
+            onClick={goBack}
             className="w-full flex items-center justify-center gap-2"
             variant="default"
           >
@@ -26,7 +43,7 @@ export default function NotFoundPage() {
             Go Back
           </Button>
           <Button 
-            onClick={() => navigate('/')}
+            onClick={goToStartup} 
             className="w-full flex items-center justify-center gap-2"
             variant="outline"
           >
@@ -34,7 +51,7 @@ export default function NotFoundPage() {
             Go to Dashboard
           </Button>
           <Button
-            onClick={() => window.location.reload()}
+            onClick={tryAgain}
             className="w-full flex items-center justify-center gap-2"
             variant="ghost"
           >

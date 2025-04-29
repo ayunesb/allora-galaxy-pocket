@@ -1,10 +1,5 @@
 
-export type UserRole = "admin" | "editor" | "viewer" | "manager";
-
-export interface InviteCreateRequest {
-  email: string;
-  role: UserRole;
-}
+export type UserRole = 'admin' | 'editor' | 'viewer' | 'manager';
 
 export interface Invite {
   id: string;
@@ -12,7 +7,8 @@ export interface Invite {
   email: string;
   role: UserRole;
   created_at: string;
+  invitation_code: string;
   expires_at: string;
-  accepted?: string | null;
-  token: string;
+  accepted_at: string | null;
+  created_by: string | null;
 }
