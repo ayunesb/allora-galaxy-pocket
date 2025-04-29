@@ -9,6 +9,7 @@ import { pluginRoutes } from './pluginRoutes';
 import { billingRoutes } from './billingRoutes';
 import { workspaceRoutes } from '@/app/workspace/routes';
 import { systemRoutes } from '@/app/system/routes';
+import { systemRepairRoutes } from '@/app/admin/system-repair/routes';
 import ErrorPage from '@/ErrorPage';
 import RequireAuth from '@/guards/RequireAuth';
 import Layout from '@/components/Layout';
@@ -58,6 +59,7 @@ export const baseRoutes: RouteObject[] = [
       ...billingRoutes,
       ...workspaceRoutes,
       ...systemRoutes,
+      ...systemRepairRoutes,
       
       // Catch-all route - this should be LAST
       { path: "*", element: <NotFound /> }

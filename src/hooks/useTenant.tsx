@@ -4,6 +4,7 @@ import { Tenant } from '@/types/tenant';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
+import { getUserTenants } from '@/utils/TenantSecurity';
 
 interface TenantContextType {
   tenant: Tenant | null;
@@ -34,14 +35,9 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setIsLoading(true);
       setError(null);
       
-      // Get all tenants for user safely using our security definer function
-      const { data: tenantIds, error: tenantIdsError } = await supabase.rpc('get_user_tenant_ids_safe');
+      // Get all tenants for user safely using our security definer function wrapper
+      const tenantIds = await getUserTenants();
 
-      if (tenantIdsError) {
-        console.error('Error getting tenant IDs:', tenantIdsError);
-        throw tenantIdsError;
-      }
-      
       // If no tenants, set to null
       if (!tenantIds?.length) {
         setTenant(null);
@@ -108,7 +104,6 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       toast({
         title: "Update failed",
         description: error.message || "Failed to update workspace settings.",
-        variant: "destructive"
       });
       
       throw error;

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -8,8 +8,8 @@ import { Progress } from "@/components/ui/progress";
 import { CheckCircle, AlertTriangle, XCircle, ArrowRight } from "lucide-react";
 
 export default function SystemRepairDashboard() {
-  const [currentPhase, setCurrentPhase] = React.useState(1);
-  const [phaseStatuses, setPhaseStatuses] = React.useState({
+  const [currentPhase, setCurrentPhase] = useState(1);
+  const [phaseStatuses, setPhaseStatuses] = useState({
     1: 'in-progress',
     2: 'pending',
     3: 'pending',
@@ -32,6 +32,30 @@ export default function SystemRepairDashboard() {
     { id: 8, title: "Data Integrity Check", description: "Verify data consistency across related tables" },
     { id: 9, title: "Launch Readiness Verification", description: "Final pre-launch system verification" }
   ];
+  
+  const startPhase = (phaseId) => {
+    // Update current phase
+    setCurrentPhase(phaseId);
+    
+    // Set phase status to in-progress
+    setPhaseStatuses(prev => ({
+      ...prev,
+      [phaseId]: 'in-progress'
+    }));
+    
+    // Simulate phase execution (in a real app, this would perform the actual repair actions)
+    setTimeout(() => {
+      setPhaseStatuses(prev => ({
+        ...prev,
+        [phaseId]: 'completed'
+      }));
+      
+      // Move to next phase if available
+      if (phaseId < 9) {
+        setCurrentPhase(phaseId + 1);
+      }
+    }, 2000);
+  };
   
   const getStatusBadge = (status) => {
     switch(status) {
@@ -93,6 +117,7 @@ export default function SystemRepairDashboard() {
                     </div>
                     <Button 
                       size="sm" 
+                      onClick={() => startPhase(phase.id)}
                       disabled={phase.id !== currentPhase && phaseStatuses[phase.id] !== 'completed'}
                     >
                       {phaseStatuses[phase.id] === 'completed' ? 'Rerun' : 'Start'}

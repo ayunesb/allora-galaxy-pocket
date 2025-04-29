@@ -1,114 +1,91 @@
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
-import { AlertTriangle, CheckCircle, Shield, Wrench } from "lucide-react";
+import { Link } from "react-router-dom";
+import { AlertTriangle, Wrench, Shield, Database, FileSearch, Activity } from "lucide-react";
 
 export default function SystemRepairLauncher() {
-  const navigate = useNavigate();
-  
   return (
-    <div className="container mx-auto py-12 px-4 max-w-4xl">
-      <Card className="mb-8 shadow-lg">
-        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
-          <div className="flex items-center gap-3 mb-2">
-            <Shield className="h-8 w-8 text-indigo-500" />
-            <CardTitle className="text-2xl font-bold">Allora OS System Repair</CardTitle>
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-3xl mx-auto">
+        <div className="mb-8 text-center">
+          <div className="flex justify-center mb-4">
+            <div className="p-3 rounded-full bg-red-100">
+              <AlertTriangle className="h-10 w-10 text-red-600" />
+            </div>
           </div>
-          <CardDescription className="text-base">
-            Systematic troubleshooting and repair for core system functionality
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pt-6">
-          <div className="space-y-6">
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="h-6 w-6 text-amber-500 mt-1" />
-                <div>
-                  <h3 className="font-semibold text-amber-800">System Issues Detected</h3>
-                  <p className="text-amber-700 mt-1">
-                    The diagnostics have identified several system issues that need to be addressed
-                    before proceeding with normal operation.
-                  </p>
-                </div>
+          <h1 className="text-3xl font-bold mb-2">System Repair Required</h1>
+          <p className="text-lg text-muted-foreground">
+            Critical system issues have been detected. Launch system repair to restore functionality.
+          </p>
+        </div>
+        
+        <Card className="mb-6 border-red-200">
+          <CardHeader className="bg-red-50">
+            <CardTitle className="flex items-center gap-2 text-red-800">
+              <Wrench className="h-5 w-5" /> 9-Phase System Repair Plan
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <div className="space-y-4">
+              <div>
+                <Link to="/admin/system-repair">
+                  <Button className="w-full" size="lg">
+                    Launch System Repair
+                  </Button>
+                </Link>
               </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer" 
-                    onClick={() => navigate('/admin/system-repair')}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-center gap-2">
-                    <Wrench className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-base">System Repair Dashboard</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    Begin the 9-phase system repair process to fix core functionality.
-                  </p>
-                </CardContent>
-              </Card>
               
-              <Card className="bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
-                    onClick={() => navigate('/admin/security-audit')}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-center gap-2">
-                    <Shield className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-base">Security Audit</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    Run a complete security audit of RLS policies and tenant isolation.
-                  </p>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
-                    onClick={() => navigate('/admin/system-status')}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-base">System Status Check</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    Verify the health and status of all system components.
-                  </p>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
-                    onClick={() => navigate('/admin/launch-readiness')}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-base">Launch Readiness Report</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    Generate a comprehensive launch readiness report.
-                  </p>
-                </CardContent>
-              </Card>
+              <p className="text-sm text-muted-foreground">
+                The system repair process will diagnose and fix issues in database connectivity,
+                authentication, RLS policies, tenant isolation, and other critical components.
+              </p>
             </div>
-            
-            <div className="flex justify-center mt-4">
-              <Button onClick={() => navigate('/dashboard')}>
-                Return to Dashboard
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <div className="text-center text-sm text-muted-foreground">
-        <p>Allora OS System Repair Tool • Version 1.0.0</p>
-        <p className="mt-1">Run all repair phases in order for best results</p>
+          </CardContent>
+        </Card>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+          <Link to="/admin/system-health" className="block">
+            <Card className="h-full hover:border-primary transition-colors">
+              <CardContent className="p-4 flex flex-col items-center text-center">
+                <div className="p-3 mb-2 rounded-full bg-blue-100">
+                  <Activity className="h-6 w-6 text-blue-600" />
+                </div>
+                <h3 className="font-medium mb-1">System Health</h3>
+                <p className="text-sm text-muted-foreground">Monitor system vitals and component status</p>
+              </CardContent>
+            </Card>
+          </Link>
+          
+          <Link to="/admin/security-audit" className="block">
+            <Card className="h-full hover:border-primary transition-colors">
+              <CardContent className="p-4 flex flex-col items-center text-center">
+                <div className="p-3 mb-2 rounded-full bg-amber-100">
+                  <Shield className="h-6 w-6 text-amber-600" />
+                </div>
+                <h3 className="font-medium mb-1">Security Audit</h3>
+                <p className="text-sm text-muted-foreground">Review RLS policies and security configurations</p>
+              </CardContent>
+            </Card>
+          </Link>
+          
+          <Link to="/system/connection-test" className="block">
+            <Card className="h-full hover:border-primary transition-colors">
+              <CardContent className="p-4 flex flex-col items-center text-center">
+                <div className="p-3 mb-2 rounded-full bg-green-100">
+                  <Database className="h-6 w-6 text-green-600" />
+                </div>
+                <h3 className="font-medium mb-1">Connection Test</h3>
+                <p className="text-sm text-muted-foreground">Verify database and API connections</p>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+        
+        <div className="text-center text-sm text-muted-foreground">
+          <p>After completing system repair, verify all functionality before proceeding to production use.</p>
+        </div>
       </div>
     </div>
   );
