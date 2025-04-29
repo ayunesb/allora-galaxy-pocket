@@ -42,7 +42,7 @@ export function useAgentCollaborationSystem() {
         }
       });
       
-      if (initialPrompt && agents.length > 0) {
+      if (initialPrompt && agents.length > 0 && newSessionId) {
         await logMessage(agents[0], initialPrompt);
       }
       
@@ -92,7 +92,7 @@ export function useAgentCollaborationSystem() {
         }
       });
       
-      if (sessionId) {
+      if (sessionId && logMessage) {
         await logMessage('System', `Task assigned to ${agentName}: ${description}`);
       }
       
@@ -131,7 +131,7 @@ export function useAgentCollaborationSystem() {
         }
       });
       
-      if (sessionId) {
+      if (sessionId && logMessage) {
         const message = status === 'completed'
           ? `Task completed by ${task.assignedTo}: ${task.description}`
           : status === 'failed'
@@ -149,7 +149,7 @@ export function useAgentCollaborationSystem() {
   };
   
   const endCollaboration = async (summary?: string) => {
-    if (!tenant?.id || !sessionId) return false;
+    if (!tenant?.id || !sessionId || !logMessage) return false;
     
     try {
       if (summary) {

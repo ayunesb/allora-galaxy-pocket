@@ -1,116 +1,114 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useTenant } from "./useTenant";
 
-interface AppLayout {
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from './use-toast';
+import { useTenant } from './useTenant';
+
+export interface AppLayout {
   id: string;
   name: string;
-  tenant_id?: string;
-  is_global: boolean;
   config: {
-    sidebar?: {
-      enabled: boolean;
-      collapsed?: boolean;
-    };
-    topbar?: {
-      enabled: boolean;
-    };
-    theme?: {
-      mode: 'light' | 'dark' | 'auto';
-      color: string;
-    };
-    navigation?: Array<{
-      id: string;
-      label: string;
-      path: string;
+    sidebar?: boolean;
+    header?: boolean;
+    footer?: boolean;
+    darkMode?: boolean;
+    navigationItems?: {
+      name: string;
+      href: string;
       icon?: string;
-    }>;
+    }[];
   };
 }
 
 export function useAppLayout() {
+  const [layouts, setLayouts] = useState<AppLayout[]>([]);
+  const [currentLayout, setCurrentLayout] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
   const { tenant } = useTenant();
-  
-  const { data: layout, isLoading, error } = useQuery({
-    queryKey: ['app-layout', tenant?.id],
-    queryFn: async () => {
-      try {
-        // First try to get tenant specific layout
-        if (tenant?.id) {
-          const { data: tenantLayout } = await supabase
-            .from('layouts')
-            .select('*')
-            .eq('tenant_id', tenant.id)
-            .maybeSingle();
-            
-          if (tenantLayout) {
-            return tenantLayout as AppLayout;
-          }
-        }
-        
-        // Fall back to global layout
-        const { data: globalLayout } = await supabase
-          .from('layouts')
-          .select('*')
-          .eq('is_global', true)
-          .maybeSingle();
-          
-        // If we found a global layout, return it
-        if (globalLayout) {
-          return globalLayout as AppLayout;
-        }
-        
-        // Otherwise return default layout
-        return {
-          id: 'default',
-          name: 'Default Layout',
-          is_global: true,
-          config: {
-            sidebar: { enabled: true },
-            topbar: { enabled: true },
-            theme: {
-              mode: tenant?.theme_mode as 'light' | 'dark' | 'auto' || 'light',
-              color: tenant?.theme_color || 'indigo',
-            },
-          }
-        } as AppLayout;
-      } catch (err) {
-        console.error("Error fetching layout:", err);
-        
-        // Return default if error
-        return {
-          id: 'default',
-          name: 'Default Layout',
-          is_global: true,
-          config: {
-            sidebar: { enabled: true },
-            topbar: { enabled: true },
-            theme: { 
-              mode: 'light',
-              color: 'indigo'
-            },
-          }
-        } as AppLayout;
+
+  // Mock function to get layouts until we have a proper table
+  const fetchLayouts = useCallback(async () => {
+    if (!tenant?.id) return [];
+    
+    setIsLoading(true);
+    
+    try {
+      // Since we don't have a 'layouts' table in Supabase,
+      // we'll use system_config to store layouts
+      const { data, error } = await supabase
+        .from('system_config')
+        .select('*')
+        .eq('key', 'app_layouts');
+      
+      if (error) throw error;
+      
+      // Extract layouts from config
+      const layoutsData = data?.[0]?.config?.layouts || [];
+      return layoutsData as AppLayout[];
+    } catch (err) {
+      console.error('Error fetching layouts:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to load application layouts',
+        variant: 'destructive',
+      });
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  }, [tenant, toast]);
+
+  useEffect(() => {
+    const loadLayouts = async () => {
+      const data = await fetchLayouts();
+      setLayouts(data);
+    };
+    
+    loadLayouts();
+  }, [fetchLayouts]);
+
+  const saveLayout = useCallback(async (layout: AppLayout) => {
+    if (!tenant?.id) return false;
+    
+    try {
+      // Update the layouts in the system_config table
+      const updatedLayouts = [...layouts];
+      const existingIndex = updatedLayouts.findIndex(l => l.id === layout.id);
+      
+      if (existingIndex >= 0) {
+        updatedLayouts[existingIndex] = layout;
+      } else {
+        updatedLayouts.push(layout);
       }
-    },
-    enabled: true, // Always try to load a layout
-  });
+      
+      const { error } = await supabase
+        .from('system_config')
+        .upsert({
+          key: 'app_layouts',
+          config: { layouts: updatedLayouts }
+        });
+      
+      if (error) throw error;
+      
+      setLayouts(updatedLayouts);
+      return true;
+    } catch (err) {
+      console.error('Error saving layout:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to save layout',
+        variant: 'destructive',
+      });
+      return false;
+    }
+  }, [layouts, tenant, toast]);
 
   return {
-    layout: layout || {
-      id: 'default',
-      name: 'Default Layout',
-      is_global: true,
-      config: {
-        sidebar: { enabled: true },
-        topbar: { enabled: true },
-        theme: { 
-          mode: 'light',
-          color: 'indigo'
-        },
-      }
-    },
+    layouts,
+    currentLayout,
     isLoading,
-    error
+    setCurrentLayout,
+    saveLayout
   };
 }

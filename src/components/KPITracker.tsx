@@ -27,7 +27,7 @@ export function KPITracker({ kpis }: KPITrackerProps) {
           id={metric.id || `metric-${metric.kpi_name}`}
           kpi_name={metric.kpi_name || ""}
           metric={metric.metric || ""}
-          value={typeof metric.value === 'number' ? metric.value : 0}
+          value={typeof metric.value === 'number' ? metric.value : Number(metric.value) || 0}
           trend={metric.trend || "neutral"}
           changePercent={metric.changePercent || 0}
           target={metric.target || 0}

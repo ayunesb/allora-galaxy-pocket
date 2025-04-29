@@ -84,7 +84,7 @@ export default function AgentCollaborationPanel({
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
             <Calendar className="h-6 w-6 mb-2" />
             <p>Start a new collaboration by sending a message.</p>
-            <p className="text-xs mt-1">Session ID: {sessionId.substring(0, 8)}</p>
+            <p className="text-xs mt-1">Session ID: {sessionId?.substring(0, 8)}</p>
           </div>
         ) : (
           messages.map((msg) => (

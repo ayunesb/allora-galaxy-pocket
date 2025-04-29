@@ -1,208 +1,112 @@
 
-import { useState, useEffect } from "react";
-import { Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
-import { useTenant } from "@/hooks/useTenant";
-import { LoadingState } from "@/components/ui/loading-state";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { useSessionRefresh } from "@/hooks/useSessionRefresh";
-import { useOnboardingCheck } from "@/hooks/useOnboardingCheck";
-import { toast } from "sonner";
-import { AlertCircle, RefreshCw } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { TransitionErrorHandler } from "@/components/TransitionErrorHandler";
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
+import { useTenant } from '@/hooks/useTenant';
+import { Loader2 } from 'lucide-react';
+import MaintenanceMode from '@/components/MaintenanceMode';
+import { supabase } from '@/integrations/supabase/client';
 
-export default function RequireAuth({ children }: { children: React.ReactNode }) {
-  const { user, session, isLoading: authLoading, refreshSession } = useAuth();
-  const { tenant, isLoading: tenantLoading, refreshTenant } = useTenant();
-  const location = useLocation();
-  const [shouldCheckOnboarding, setShouldCheckOnboarding] = useState(true);
-  const [authAttempts, setAuthAttempts] = useState(0);
-  const [authError, setAuthError] = useState<string | null>(null);
-  const [navigationAttempted, setNavigationAttempted] = useState(false);
-  
-  const skipOnboardingCheck = location.pathname === "/onboarding" || 
-                             location.pathname === "/workspace" ||
-                             location.pathname.startsWith("/auth/");
-  
-  useSessionRefresh();
+const LoadingScreen = () => (
+  <div className="flex h-screen w-screen items-center justify-center">
+    <div className="flex flex-col items-center gap-2">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <p className="text-sm text-muted-foreground">Loading your workspace...</p>
+    </div>
+  </div>
+);
 
-  const { data: onboardingComplete, isLoading: onboardingLoading } = useOnboardingCheck(
-    user,
-    tenant,
-    shouldCheckOnboarding && !skipOnboardingCheck
-  );
+interface RequireAuthProps {
+  children: React.ReactNode;
+  allowDemo?: boolean;
+}
 
+export function RequireAuth({ children, allowDemo = false }: RequireAuthProps) {
+  const { user, isLoading: authLoading } = useAuth();
+  const { tenant, isLoading: tenantLoading } = useTenant();
+  const navigate = useNavigate();
+  const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
+  const [isCheckingMaintenance, setIsCheckingMaintenance] = useState(true);
+
+  // Handle authentication
   useEffect(() => {
-    if (navigationAttempted) {
-      return;
+    // Don't navigate away while still loading
+    if (authLoading) return;
+
+    // If no user, navigate to login screen 
+    if (!user) {
+      const path = window.location.pathname;
+      navigate(`/auth/login?redirect=${encodeURIComponent(path)}`);
     }
+  }, [authLoading, user, navigate]);
 
-    if (!authLoading && !tenantLoading && !user && !location.pathname.startsWith("/auth/")) {
-      setNavigationAttempted(true);
-      console.log("RequireAuth: User not logged in, redirecting to login");
-    }
-
-    if (!authLoading && !tenantLoading && user && !tenant && 
-        !location.pathname.startsWith("/auth/") && 
-        location.pathname !== "/onboarding" && 
-        location.pathname !== "/workspace") {
-      setNavigationAttempted(true);
-      console.log("RequireAuth: No tenant selected, redirecting to workspace");
-    }
-
-    if (!authLoading && !tenantLoading && !onboardingLoading && 
-        user && tenant && onboardingComplete === false && !skipOnboardingCheck) {
-      setNavigationAttempted(true);
-      console.log("RequireAuth: Onboarding incomplete, redirecting to onboarding");
-    }
-
-    return () => {
-      setNavigationAttempted(false);
-    };
-  }, [user, tenant, authLoading, tenantLoading, onboardingLoading, 
-      onboardingComplete, location.pathname, skipOnboardingCheck, navigationAttempted]);
-
+  // Check for maintenance mode
   useEffect(() => {
-    // Skip validation for pages that don't require a tenant
-    if (!user?.id || !tenant?.id || 
-        location.pathname.startsWith('/auth/') || 
-        location.pathname === '/workspace') return;
-
-    const validateTenantAccess = async () => {
+    const checkMaintenanceMode = async () => {
       try {
-        // Use the safe function to avoid recursion
-        const { data, error } = await supabase.rpc(
-          "check_tenant_user_access_safe",
-          { tenant_uuid: tenant.id, user_uuid: user.id }
-        );
+        const { data } = await supabase
+          .from('system_config')
+          .select('config')
+          .eq('key', 'maintenance_mode')
+          .maybeSingle();
 
-        if (error) {
-          console.error("Error validating tenant access:", error);
-          return;
-        }
-
-        if (!data) {
-          console.error(`User ${user.id} attempted unauthorized access to tenant ${tenant.id}`);
-          
-          // Log security event
-          await supabase.from('system_logs').insert({
-            event_type: 'SECURITY_UNAUTHORIZED_ACCESS',
-            message: `Unauthorized attempt to access tenant ${tenant.id}`,
-            user_id: user.id,
-            tenant_id: tenant.id,
-            meta: {
-              path: location.pathname
-            }
-          }).catch(err => console.error("Error logging security event:", err));
-          
-          refreshTenant();
-          localStorage.removeItem('tenant_id');
-          
-          toast.error("Access denied", {
-            description: "You don't have access to this workspace"
-          });
-
-          setNavigationAttempted(true);
-        }
+        setIsMaintenanceMode(!!data?.config?.enabled);
       } catch (error) {
-        console.error("Error validating tenant access:", error);
+        console.error('Failed to check maintenance mode:', error);
+      } finally {
+        setIsCheckingMaintenance(false);
       }
     };
 
-    validateTenantAccess();
-  }, [user?.id, tenant?.id, location.pathname, refreshTenant]);
+    checkMaintenanceMode();
+  }, []);
 
-  const handleRetry = async () => {
-    try {
-      setAuthAttempts(prev => prev + 1);
-      setAuthError(null);
-      await refreshSession();
-      
-      console.log("Authentication retry attempt", authAttempts + 1);
-    } catch (error) {
-      const e = error as Error;
-      setAuthError(e.message || "Authentication failed after retry");
-      
-      toast.error("Authentication failed", {
-        description: "Please try logging in again"
-      });
+  // Check for system alerts
+  useEffect(() => {
+    const checkSystemAlerts = async () => {
+      if (!user?.id) return;
+
+      // Check for unresolved system alerts
+      const { data } = await supabase
+        .from('system_alerts')
+        .select('*')
+        .is('resolved_at', null)
+        .eq('status', 'active')
+        .limit(1);
+
+      if (data && data.length > 0) {
+        console.warn('Active system alert:', data[0].message);
+      }
+    };
+
+    checkSystemAlerts();
+  }, [user?.id]);
+
+  // Handle demo access
+  useEffect(() => {
+    if (authLoading || tenantLoading) return;
+
+    // If we have a user and tenant but it's a demo
+    if (user && tenant?.is_demo && !allowDemo) {
+      navigate('/demo/restricted');
     }
-  };
 
-  const handleReload = () => {
-    window.location.reload();
-  };
-
-  if (authError) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-        <Alert variant="destructive" className="max-w-md">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Authentication Error</AlertTitle>
-          <AlertDescription className="space-y-4">
-            <p>{authError}</p>
-            <div className="flex space-x-2 mt-2">
-              <Button size="sm" variant="outline" onClick={handleRetry}>
-                Retry
-              </Button>
-              <Button size="sm" onClick={() => window.location.href = "/auth/login"}>
-                Login
-              </Button>
-            </div>
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
-  if (authLoading || tenantLoading || (shouldCheckOnboarding && !skipOnboardingCheck && onboardingLoading)) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-background">
-        <div className="text-center space-y-4">
-          <LoadingState size="md" message={authLoading ? "Loading authentication..." : "Preparing application..."} />
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleReload}
-            className="mt-4"
-          >
-            <RefreshCw className="mr-2 h-3 w-3" /> Refresh Page
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    if (location.pathname.startsWith("/auth/")) {
-      return <TransitionErrorHandler><>{children}</></TransitionErrorHandler>;
+    // Handle tenant missing case - only after auth is confirmed
+    if (user && !tenantLoading && !tenant && !window.location.pathname.includes('/onboarding')) {
+      navigate('/onboarding');
     }
-    
-    console.log("RequireAuth: User not logged in, redirecting to login");
-    return <Navigate to="/auth/login" state={{ from: location.pathname }} replace />;
+  }, [user, tenant, tenantLoading, authLoading, allowDemo, navigate]);
+
+  // Loading states
+  if (authLoading || tenantLoading || isCheckingMaintenance) {
+    return <LoadingScreen />;
   }
 
-  if (!tenant && !location.pathname.startsWith("/auth/")) {
-    if (location.pathname === "/onboarding" || location.pathname === "/workspace") {
-      return <TransitionErrorHandler><>{children}</></TransitionErrorHandler>;
-    }
-    
-    console.log("RequireAuth: No tenant selected, redirecting to workspace");
-    toast.warning("Workspace required", {
-      description: "Please select or create a workspace to continue"
-    });
-    return <Navigate to="/workspace" state={{ from: location.pathname }} replace />;
+  // Maintenance mode
+  if (isMaintenanceMode) {
+    return <MaintenanceMode />;
   }
 
-  if (onboardingComplete === false && !skipOnboardingCheck) {
-    console.log("RequireAuth: Onboarding incomplete, redirecting to onboarding");
-    toast.info("Complete your setup", {
-      description: "Please finish onboarding to continue"
-    });
-    return <Navigate to="/onboarding" state={{ from: location.pathname }} replace />;
-  }
-
-  return <TransitionErrorHandler><>{children}</></TransitionErrorHandler>;
+  // Show children only when authenticated and with a valid tenant
+  return <>{children}</>;
 }

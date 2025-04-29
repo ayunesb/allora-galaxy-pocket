@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRolePermissions } from "@/hooks/useRolePermissions";
@@ -9,7 +10,7 @@ import { AgentCollaborationHub } from "./components/AgentCollaborationHub";
 import AgentBlueprintCount from "./AgentBlueprintCount";
 import InsertMissingBlueprints from "./InsertMissingBlueprints";
 import { supabase } from "@/integrations/supabase/client";
-import { AgentMemoryLog } from "@/types/agent";
+import { AgentMemory } from "@/types/agent";
 import { Button } from "@/components/ui/button";
 import { MemoryScoreIndicator } from "./components/MemoryScoreIndicator";
 import AgentTabs from "./AgentTabs";

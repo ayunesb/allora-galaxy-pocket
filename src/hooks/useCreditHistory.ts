@@ -1,64 +1,60 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "./useTenant";
 
-export interface CreditUsage {
-  id: string;
-  feature_name: string;
-  credits_used: number;
-  description: string;
-  created_at: string;
-}
-
-export interface CreditPurchase {
+export interface CreditHistoryItem {
   id: string;
   amount: number;
-  price_paid: number;
+  type: string;
   created_at: string;
-  payment_status: string;
+  user_id: string;
 }
 
 export function useCreditHistory() {
+  const [history, setHistory] = useState<CreditHistoryItem[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
   const { tenant } = useTenant();
-  
-  const { data: usageHistory, isLoading: isLoadingUsage } = useQuery({
-    queryKey: ['credit-usage', tenant?.id],
-    queryFn: async () => {
-      if (!tenant?.id) return [];
-      
-      const { data, error } = await supabase
-        .from('credit_usage_details')
-        .select('*')
-        .eq('tenant_id', tenant.id)
-        .order('created_at', { ascending: false });
-        
-      if (error) throw error;
-      return data as CreditUsage[];
-    },
-    enabled: !!tenant?.id
-  });
-  
-  const { data: purchaseHistory, isLoading: isLoadingPurchases } = useQuery({
-    queryKey: ['credit-purchases', tenant?.id],
-    queryFn: async () => {
-      if (!tenant?.id) return [];
-      
-      const { data, error } = await supabase
-        .from('credit_purchases')
-        .select('*')
-        .eq('tenant_id', tenant.id)
-        .order('created_at', { ascending: false });
-        
-      if (error) throw error;
-      return data as CreditPurchase[];
-    },
-    enabled: !!tenant?.id
-  });
-  
-  return {
-    usageHistory,
-    purchaseHistory,
-    isLoading: isLoadingUsage || isLoadingPurchases
-  };
+
+  useEffect(() => {
+    const fetchCreditHistory = async () => {
+      if (!tenant?.id) {
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        // Use credit_usage_log instead of credit_usage_details
+        const { data, error: supabaseError } = await supabase
+          .from("credit_usage_log")
+          .select("*")
+          .eq("tenant_id", tenant.id)
+          .order("created_at", { ascending: false });
+
+        if (supabaseError) throw supabaseError;
+
+        // Transform the data into our expected format
+        const formattedHistory = data?.map(item => ({
+          id: item.id,
+          amount: item.credits_used,
+          type: item.module || 'general',
+          created_at: item.created_at,
+          user_id: ''  // This field might not be available in credit_usage_log
+        })) || [];
+
+        setHistory(formattedHistory);
+      } catch (err) {
+        console.error("Error fetching credit history:", err);
+        setError(err instanceof Error ? err : new Error("Failed to load credit history"));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCreditHistory();
+  }, [tenant]);
+
+  return { history, isLoading, error };
 }

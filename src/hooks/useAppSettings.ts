@@ -1,79 +1,113 @@
 
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from './use-toast';
+import { useTenant } from './useTenant';
 
 interface AppSetting {
   key: string;
-  value: string | number | boolean | object | null;
-  category: string;
+  value: any;
+  category?: string;
   description?: string;
 }
 
-export function useAppSettings(category?: string) {
-  const queryKey = category ? ['app-settings', category] : ['app-settings'];
+export function useAppSettings() {
+  const [settings, setSettings] = useState<AppSetting[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+  const { tenant } = useTenant();
 
-  const { data: settings, isLoading, error } = useQuery({
-    queryKey,
-    queryFn: async () => {
-      // Check if the settings table exists
+  useEffect(() => {
+    async function loadSettings() {
+      if (!tenant?.id) return;
+      
       try {
-        // Use system_config table instead of settings
-        const query = supabase.from('system_config').select('*');
+        setIsLoading(true);
+        const { data, error } = await supabase
+          .from('system_config')
+          .select('*');
         
-        if (category) {
-          // Filter by category stored in config JSON
-          query.filter('config->category', 'eq', category);
-        }
-
-        const { data, error } = await query;
+        if (error) throw error;
         
-        if (error) {
-          console.warn("Error fetching settings:", error);
-          return [];
-        }
-
-        // Transform the data to match the AppSetting interface
-        const transformedData: AppSetting[] = data.map(item => ({
-          key: item.key,
-          value: item.config.value,
-          category: item.config.category || 'general',
-          description: item.config.description
-        }));
-
-        return transformedData;
-      } catch (err) {
-        console.error("Error in settings query:", err);
-        return [];
+        // Transform the data into the expected format
+        const formattedSettings = data.map(item => {
+          const config = typeof item.config === 'object' ? item.config : {};
+          return {
+            key: item.key,
+            value: config.value !== undefined ? config.value : null,
+            category: config.category || 'General',
+            description: config.description || '',
+          };
+        });
+        
+        setSettings(formattedSettings);
+      } catch (error) {
+        console.error('Error loading settings:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load application settings',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
       }
-    },
-    // Settings don't change often, so we can cache them for longer
-    staleTime: 1000 * 60 * 5 // 5 minutes
-  });
+    }
+    
+    loadSettings();
+  }, [tenant, toast]);
 
-  // Helper to get a single setting by key
-  const getSetting = (key: string): any => {
-    if (!settings) return null;
-    const setting = settings.find(s => s.key === key);
-    return setting?.value ?? null;
+  const updateSetting = async (key: string, value: any) => {
+    if (!tenant?.id) return false;
+    
+    try {
+      const existingSetting = settings.find(s => s.key === key);
+      const category = existingSetting?.category || 'General';
+      const description = existingSetting?.description || '';
+      
+      const { error } = await supabase
+        .from('system_config')
+        .upsert({
+          key,
+          config: {
+            value,
+            category,
+            description
+          }
+        });
+      
+      if (error) throw error;
+      
+      // Update the local state
+      setSettings(prev => 
+        prev.map(s => s.key === key ? { ...s, value } : s)
+      );
+      
+      toast({
+        title: 'Success',
+        description: 'Setting updated successfully',
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error updating setting:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update setting',
+        variant: 'destructive',
+      });
+      return false;
+    }
   };
 
-  // Get all settings in a category as an object
-  const getCategorySettings = (categoryName: string): Record<string, any> => {
-    if (!settings) return {};
-    
-    return settings
-      .filter(s => s.category === categoryName)
-      .reduce((acc, setting) => {
-        acc[setting.key] = setting.value;
-        return acc;
-      }, {} as Record<string, any>);
+  const getSetting = (key: string, defaultValue?: any) => {
+    const setting = settings.find(s => s.key === key);
+    return setting !== undefined ? setting.value : defaultValue;
   };
 
   return {
     settings,
     isLoading,
-    error,
-    getSetting,
-    getCategorySettings
+    updateSetting,
+    getSetting
   };
 }

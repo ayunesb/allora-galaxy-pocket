@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardFooter } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { AgentMemory } from "@/types/agent";
+import { AgentMemory } from "@/types/agent";
 
 export function RemixLeaderboard() {
   const { data: leaderboard, isLoading } = useQuery({

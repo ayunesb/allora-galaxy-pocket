@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,12 +12,9 @@ import AgentCollaborationPanel from "@/components/AgentCollaborationPanel";
 export function AgentCollaborationHub() {
   const [activeSession, setActiveSession] = useState<string | null>(null);
   const { toast } = useToast();
-  const { 
-    initializeCollaboration, 
-    loadCollaborationHistory 
-  } = useAgentCollaboration();
+  const { initializeCollaboration } = useAgentCollaboration();
 
-  const startNewCollaboration = async () => {
+  const startNewCollaboration = () => {
     const sessionId = initializeCollaboration();
     setActiveSession(sessionId);
     toast({
