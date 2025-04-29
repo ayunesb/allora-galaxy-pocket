@@ -29,8 +29,19 @@ export default defineConfig(({ mode }) => ({
     exclude: ['nanoid'], // Force using latest nanoid build tree
   },
   build: {
-    sourcemap: true,
+    sourcemap: mode === 'development',
     chunkSizeWarningLimit: 2000, // Increase chunk warning limit
+    minify: mode === 'production',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ['react', 'react-dom', 'react-router-dom'],
+          ui: ['@/components/ui'],
+          shadcn: ['@radix-ui'],
+          utils: ['@/lib/utils']
+        }
+      }
+    }
   },
   define: {
     // Define the WebSocket token for HMR - with fallback
@@ -38,8 +49,7 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    mode === 'development' &&
-    componentTagger(),
+    mode === 'development' && componentTagger(),
   ].filter(Boolean),
   resolve: {
     alias: {

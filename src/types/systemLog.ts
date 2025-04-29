@@ -6,12 +6,12 @@ export type LogSeverity = 'low' | 'medium' | 'high' | 'critical' | 'info' | 'err
 export interface SystemLog {
   id: string;
   tenant_id: string;
-  user_id: string;
+  user_id: string | null;
   event_type: string;
   message: string;
   meta: Json;
   created_at: string;
-  severity: LogSeverity; // Required field
+  severity: LogSeverity;
 }
 
 export interface SystemLogFilter {

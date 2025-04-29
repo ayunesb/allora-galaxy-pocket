@@ -12,6 +12,8 @@ export interface LogFilters {
   tenantId?: string;
   service?: string;
   search?: string;
+  limit?: number;
+  offset?: number;
 }
 
 export const DEFAULT_FILTERS: LogFilters = {

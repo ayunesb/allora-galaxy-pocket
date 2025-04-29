@@ -1,21 +1,16 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/hooks/useTenant';
 import { useAuth } from '@/hooks/useAuth';
-import { SystemLog, LogSeverity } from '@/types/systemLog';
-
-interface LogActivityParams {
-  event_type: string;
-  message: string;
-  meta?: Record<string, any>;
-  severity?: LogSeverity;
-}
+import { SystemLog, LogSeverity, SystemLogFilter } from '@/types/systemLog';
 
 export function useSystemLogs() {
   const { tenant } = useTenant();
   const { user } = useAuth();
-  const [isLogging, setIsLogging] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [logs, setLogs] = useState<SystemLog[]>([]);
+  const [error, setError] = useState<Error | null>(null);
 
   const logActivity = async (
     event_type: string,
@@ -28,7 +23,7 @@ export function useSystemLogs() {
       return { success: false, error: "No tenant ID" };
     }
     
-    setIsLogging(true);
+    setIsLoading(true);
     
     try {
       const logPayload = {
@@ -54,7 +49,7 @@ export function useSystemLogs() {
       console.error("Failed to log activity:", err);
       return { success: false, error: err };
     } finally {
-      setIsLogging(false);
+      setIsLoading(false);
     }
   };
 
@@ -106,6 +101,71 @@ export function useSystemLogs() {
     );
   };
 
+  // Function to fetch logs with filtering
+  const fetchLogs = useCallback(async (filter?: SystemLogFilter) => {
+    if (!tenant?.id) return { logs: [], count: 0 };
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      let query = supabase
+        .from('system_logs')
+        .select('*', { count: 'exact' })
+        .eq('tenant_id', tenant.id)
+        .order('created_at', { ascending: false });
+        
+      // Apply filters
+      if (filter) {
+        if (filter.startDate) {
+          query = query.gte('created_at', filter.startDate.toISOString());
+        }
+        
+        if (filter.endDate) {
+          query = query.lte('created_at', filter.endDate.toISOString());
+        }
+        
+        if (filter.eventTypes && filter.eventTypes.length) {
+          query = query.in('event_type', filter.eventTypes);
+        }
+        
+        if (filter.severity && filter.severity.length) {
+          query = query.in('severity', filter.severity);
+        }
+        
+        if (filter.search) {
+          query = query.or(`message.ilike.%${filter.search}%,event_type.ilike.%${filter.search}%`);
+        }
+        
+        if (filter.limit) {
+          query = query.limit(filter.limit);
+        }
+        
+        if (filter.offset) {
+          query = query.range(filter.offset, filter.offset + (filter.limit || 10) - 1);
+        }
+      }
+      
+      const { data, error, count } = await query;
+      
+      if (error) throw error;
+      
+      setLogs(data as SystemLog[]);
+      return { logs: data as SystemLog[], count: count || 0 };
+    } catch (err) {
+      console.error('Error fetching logs:', err);
+      setError(err as Error);
+      return { logs: [], count: 0, error: err };
+    } finally {
+      setIsLoading(false);
+    }
+  }, [tenant?.id]);
+
+  // Function to refresh logs with current filters
+  const refresh = useCallback(async () => {
+    return fetchLogs();
+  }, [fetchLogs]);
+
   // Added to match the function referenced in errors
   const verifyModuleImplementation = async (modulePath: string) => {
     try {
@@ -135,11 +195,15 @@ export function useSystemLogs() {
   };
 
   return {
+    logs,
+    isLoading,
+    error,
     logActivity,
     logError,
     logSecurityEvent,
     logJourneyStep,
-    isLogging,
+    fetchLogs,
+    refresh,
     verifyModuleImplementation
   };
 }

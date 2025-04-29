@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -126,7 +127,6 @@ export function AdminLogsFilterPanel({
                 From
               </Label>
               <DatePicker
-                id="date-from"
                 date={filters.dateFrom ? new Date(filters.dateFrom) : null}
                 setDate={(date) => onFilterChange({ dateFrom: date || undefined, dateRange: 0 })}
               />
@@ -136,7 +136,6 @@ export function AdminLogsFilterPanel({
                 To
               </Label>
               <DatePicker
-                id="date-to"
                 date={filters.dateTo ? new Date(filters.dateTo) : null}
                 setDate={(date) => onFilterChange({ dateTo: date || undefined, dateRange: 0 })}
               />

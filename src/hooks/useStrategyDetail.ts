@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from './useTenant';
@@ -19,6 +19,16 @@ interface UpdateStrategyParams {
   tags?: string[];
 }
 
+interface StrategyVersion {
+  id: string;
+  strategy_id: string;
+  version: number;
+  changes: string;
+  created_at: string;
+  data: any | null;
+  created_by: string | null;
+}
+
 export function useStrategyDetail(strategyId: string) {
   const { tenant } = useTenant();
   const [isLoading, setIsLoading] = useState(false);
@@ -31,30 +41,35 @@ export function useStrategyDetail(strategyId: string) {
     queryFn: async () => {
       if (!tenant?.id || !strategyId) return [];
       
-      const { data, error } = await supabase
-        .from('strategies')
-        .select('id, created_at, updated_at')
-        .eq('id', strategyId)
-        .eq('tenant_id', tenant.id)
-        .order('updated_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('strategies')
+          .select('id, created_at, updated_at')
+          .eq('id', strategyId)
+          .eq('tenant_id', tenant.id)
+          .order('updated_at', { ascending: false });
+          
+        if (error) throw error;
         
-      if (error) throw error;
-      
-      // Create synthetic versions from strategies history
-      const strategies = data || [];
-      
-      // Create synthetic versions from strategies
-      const syntheticVersions = strategies.map((strategy, index) => ({
-        id: strategy.id || '',
-        strategy_id: strategy.id || '',
-        version: index + 1,
-        changes: `Version ${index + 1}`,
-        created_at: strategy.created_at || strategy.updated_at || new Date().toISOString(),
-        data: null, // Add missing properties expected by StrategyVersion
-        created_by: null // Add missing properties expected by StrategyVersion
-      }));
-      
-      return syntheticVersions;
+        // Create synthetic versions from strategies history
+        const strategies = data || [];
+        
+        // Create synthetic versions from strategies
+        const syntheticVersions: StrategyVersion[] = strategies.map((strategy, index) => ({
+          id: strategy.id || '',
+          strategy_id: strategy.id || '',
+          version: index + 1,
+          changes: `Version ${index + 1}`,
+          created_at: strategy.created_at || (strategy.updated_at || new Date().toISOString()),
+          data: null,
+          created_by: null
+        }));
+        
+        return syntheticVersions;
+      } catch (err) {
+        console.error("Error fetching strategy versions:", err);
+        return [];
+      }
     },
     enabled: !!tenant?.id && !!strategyId
   });
@@ -180,14 +195,14 @@ export function useStrategyDetail(strategyId: string) {
   };
 
   // Refresh strategy data
-  const refresh = () => {
+  const refresh = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['strategy', strategyId] });
     queryClient.invalidateQueries({ queryKey: ['strategy-versions', strategyId] });
-  };
+  }, [queryClient, strategyId]);
 
   return {
     strategy,
-    versions,
+    versions: versions || [],
     isLoading: isLoading || isLoadingStrategy,
     updateStrategy: updateStrategy.mutate,
     createNewVersion,

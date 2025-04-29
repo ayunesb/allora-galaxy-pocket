@@ -7,7 +7,7 @@ import { useTheme } from '@/components/ui/theme-provider';
 export function ResponsiveToastProvider({ children }: { children: React.ReactNode }) {
   const { theme } = useTheme();
   const isMobile = useMediaQuery('(max-width: 640px)');
-  const [position, setPosition] = useState<'top-right' | 'bottom-center'>('top-right');
+  const [position, setPosition] = useState<'top-right' | 'top-center' | 'bottom-center'>('top-right');
   
   // Explicit type assertion to match Sonner's theme types
   const toasterTheme = (theme || 'light') as 'light' | 'dark' | 'system';
@@ -30,7 +30,7 @@ export function ResponsiveToastProvider({ children }: { children: React.ReactNod
         visibleToasts={isMobile ? 2 : 3}
         toastOptions={{ 
           duration: isMobile ? 3000 : 4000,
-          className: isMobile ? 'w-[calc(100vw-32px)] shadow-md' : 'shadow-md',
+          className: isMobile ? 'w-[calc(100vw-32px)] shadow-md max-w-sm text-sm' : 'shadow-md',
         }}
       />
     </>
