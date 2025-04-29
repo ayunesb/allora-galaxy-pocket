@@ -40,25 +40,23 @@ function App() {
   
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <TenantProvider>
-            <ThemeProvider defaultTheme="light" storageKey="allora-theme-preference">
-              <ResponsiveToastProvider>
-                <Suspense fallback={
-                  <div className="flex items-center justify-center h-screen">
-                    <LoadingSpinner size="lg" label="Loading application..." />
-                  </div>
-                }>
-                  {/* The RouterProvider must be the outermost router component */}
-                  <RouterProvider router={router} />
-                </Suspense>
-              </ResponsiveToastProvider>
-            </ThemeProvider>
-          </TenantProvider>
-        </AuthProvider>
-        <ReactQueryDevtools initialIsOpen={false} />
-      </QueryClientProvider>
+      <AuthProvider>
+        <TenantProvider>
+          <ThemeProvider defaultTheme="light" storageKey="allora-theme-preference">
+            <ResponsiveToastProvider>
+              <Suspense fallback={
+                <div className="flex items-center justify-center h-screen">
+                  <LoadingSpinner size="lg" label="Loading application..." />
+                </div>
+              }>
+                {/* The RouterProvider must be the outermost router component */}
+                <RouterProvider router={router} />
+              </Suspense>
+            </ResponsiveToastProvider>
+          </ThemeProvider>
+        </TenantProvider>
+      </AuthProvider>
+      <ReactQueryDevtools initialIsOpen={false} />
     </ErrorBoundary>
   );
 }

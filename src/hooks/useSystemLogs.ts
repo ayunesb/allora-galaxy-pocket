@@ -44,7 +44,7 @@ export function useSystemLogs() {
         
       if (error) throw error;
       
-      return { success: true, log: data as unknown as SystemLog };
+      return { success: true, log: data as SystemLog };
     } catch (err) {
       console.error("Failed to log activity:", err);
       return { success: false, error: err };
@@ -101,7 +101,7 @@ export function useSystemLogs() {
     );
   };
 
-  // Function to fetch logs with filtering
+  // Function to fetch logs with filtering - avoiding deep type instantiation
   const fetchLogs = useCallback(async (filter?: SystemLogFilter) => {
     if (!tenant?.id) return { logs: [], count: 0 };
     
@@ -137,6 +137,14 @@ export function useSystemLogs() {
           query = query.or(`message.ilike.%${filter.search}%,event_type.ilike.%${filter.search}%`);
         }
         
+        if (filter.userId) {
+          query = query.eq('user_id', filter.userId);
+        }
+        
+        if (filter.tenantId) {
+          query = query.eq('tenant_id', filter.tenantId);
+        }
+        
         if (filter.limit) {
           query = query.limit(filter.limit);
         }
@@ -150,8 +158,10 @@ export function useSystemLogs() {
       
       if (error) throw error;
       
-      setLogs(data as SystemLog[]);
-      return { logs: data as SystemLog[], count: count || 0 };
+      // Use explicit casting to avoid deep instantiation issues
+      const typedLogs = data as unknown as SystemLog[];
+      setLogs(typedLogs);
+      return { logs: typedLogs, count: count || 0 };
     } catch (err) {
       console.error('Error fetching logs:', err);
       setError(err as Error);

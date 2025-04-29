@@ -47,15 +47,15 @@ export function useStrategyDetail(strategyId: string) {
           .select('id, created_at, updated_at')
           .eq('id', strategyId)
           .eq('tenant_id', tenant.id)
-          .order('updated_at', { ascending: false });
+          .order('created_at', { ascending: false });
           
         if (error) throw error;
         
         // Create synthetic versions from strategies history
         const strategies = data || [];
         
-        // Create synthetic versions from strategies
-        const syntheticVersions: StrategyVersion[] = strategies.map((strategy, index) => ({
+        // Create synthetic versions from strategies with safe access
+        const syntheticVersions: StrategyVersion[] = strategies.map((strategy: any, index) => ({
           id: strategy.id || '',
           strategy_id: strategy.id || '',
           version: index + 1,

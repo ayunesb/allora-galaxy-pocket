@@ -37,7 +37,12 @@ export default defineConfig(({ mode }) => ({
         manualChunks: {
           react: ['react', 'react-dom', 'react-router-dom'],
           ui: ['@/components/ui'],
-          shadcn: ['@radix-ui'],
+          // Fix: Don't reference @radix-ui directly, reference specific packages
+          shadcn: [
+            '@radix-ui/react-accordion',
+            '@radix-ui/react-alert-dialog',
+            '@radix-ui/react-avatar'
+          ],
           utils: ['@/lib/utils']
         }
       }

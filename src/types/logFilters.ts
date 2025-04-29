@@ -31,4 +31,7 @@ export interface SystemLogFilter {
   search?: string;
   limit?: number;
   offset?: number;
+  userId?: string;
+  tenantId?: string;
+  service?: string;
 }

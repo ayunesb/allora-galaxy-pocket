@@ -29,3 +29,5 @@ export function RouteDebugger() {
     return null;
   }
 }
+
+export default RouteDebugger;
