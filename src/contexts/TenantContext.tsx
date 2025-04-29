@@ -8,6 +8,7 @@ export interface TenantContextType {
   isLoading: boolean;
   refreshTenant: () => Promise<void>;
   updateTenantProfile: (updatedTenant: Partial<Tenant>) => Promise<void>;
+  userRole?: string;
 }
 
 export const TenantContext = createContext<TenantContextType | undefined>(undefined);

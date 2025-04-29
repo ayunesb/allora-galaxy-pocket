@@ -72,12 +72,43 @@ export function useNotifications() {
     }
   });
   
+  const markAllAsRead = useMutation({
+    mutationFn: async () => {
+      if (!tenant?.id) return false;
+      
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('tenant_id', tenant.id)
+        .eq('is_read', false);
+        
+      if (error) throw error;
+      return true;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications', tenant?.id] });
+      toast({
+        title: "Success",
+        description: "All notifications marked as read"
+      });
+    },
+    onError: (error) => {
+      console.error('Error marking all notifications as read:', error);
+      toast({
+        title: "Error",
+        description: "Failed to mark all notifications as read",
+        variant: "destructive"
+      });
+    }
+  });
+  
   const unreadCount = notifications?.filter(n => !n.is_read)?.length || 0;
   
   return {
     notifications,
     isLoading,
     unreadCount,
-    markAsRead
+    markAsRead,
+    markAllAsRead
   };
 }

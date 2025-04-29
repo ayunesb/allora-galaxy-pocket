@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Bell, ChartLine, CheckCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +18,7 @@ export default function NotificationsPage() {
   const [activeTab, setActiveTab] = useState("all");
   const { tenant } = useTenant();
   const queryClient = useQueryClient();
-  const { markAsRead, markAllAsRead } = useNotifications();
+  const { markAsRead, markAllAsRead, unreadCount } = useNotifications();
   
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ["notifications", tenant?.id],
@@ -39,16 +40,14 @@ export default function NotificationsPage() {
     },
     enabled: !!tenant?.id
   });
-
-  const unreadCount = notifications.filter(n => !n.is_read).length;
   
   const handleMarkAsRead = async (id: string) => {
-    await markAsRead(id);
+    await markAsRead.mutateAsync(id);
     queryClient.invalidateQueries({ queryKey: ["notifications"] });
   };
   
   const handleMarkAllAsRead = async () => {
-    await markAllAsRead();
+    await markAllAsRead.mutateAsync();
     queryClient.invalidateQueries({ queryKey: ["notifications"] });
   };
 

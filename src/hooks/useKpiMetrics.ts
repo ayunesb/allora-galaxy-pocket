@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useTenant } from "@/hooks/useTenant";
+import { useTenant } from "./useTenant";
 import { KpiMetric } from "@/types/kpi";
 import { subDays } from "date-fns";
 
@@ -46,7 +46,7 @@ export function useKpiMetrics(options: UseKpiMetricsOptions = {}) {
       // Break the deep recursion by using unknown first
       const safeData = data as unknown;
       
-      // Transform the data to match the KpiMetric interface using proper type handling
+      // Transform the data to match the KpiMetric interface with proper type handling
       const kpiMetrics = ((safeData as any[]) || []).map(metric => {
         return {
           id: metric.id,
