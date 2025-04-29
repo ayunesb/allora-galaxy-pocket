@@ -12,9 +12,19 @@ export default defineConfig(({ mode }) => ({
     fs: {
       strict: true, // Forces allowed directories ONLY
     },
+    hmr: {
+      // Add explicit HMR configuration
+      protocol: 'ws',
+      host: 'localhost',
+      port: 24678, // Default HMR port for Vite
+    },
   },
   optimizeDeps: {
     exclude: ['nanoid'], // Force using latest nanoid build tree
+  },
+  define: {
+    // Define the WebSocket token for HMR
+    __WS_TOKEN__: JSON.stringify(process.env.VITE_WS_TOKEN || "dev-ws-token")
   },
   plugins: [
     react(),
