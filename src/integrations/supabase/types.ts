@@ -3744,7 +3744,9 @@ export type Database = {
         Returns: string
       }
       get_user_role_for_tenant_safe: {
-        Args: { tenant_uuid: string; user_uuid: string }
+        Args:
+          | { tenant_uuid: string }
+          | { tenant_uuid: string; user_uuid: string }
         Returns: string
       }
       get_user_tenant_ids: {
