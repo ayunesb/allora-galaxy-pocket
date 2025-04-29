@@ -6,6 +6,12 @@ export interface LogFilters {
   eventType: string | null;
   searchTerm: string;
   severity?: LogSeverity | null;
+  dateFrom?: Date;
+  dateTo?: Date;
+  userId?: string;
+  tenantId?: string;
+  service?: string;
+  search?: string;
 }
 
 export const DEFAULT_FILTERS: LogFilters = {

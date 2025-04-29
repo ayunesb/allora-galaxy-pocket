@@ -22,7 +22,7 @@ export function TeamMembersList() {
   const { 
     teamMembers, 
     isLoadingMembers, 
-    updateMemberRole, 
+    updateRole, 
     removeMember 
   } = useTeamManagement();
 
@@ -88,19 +88,19 @@ export function TeamMembersList() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem 
-                    onClick={() => updateMemberRole({ userId: member.user_id, newRole: 'admin' as UserRole })}
+                    onClick={() => updateRole(member.user_id, 'admin' as UserRole)}
                     disabled={member.role === 'admin'}
                   >
                     Make Admin
                   </DropdownMenuItem>
                   <DropdownMenuItem 
-                    onClick={() => updateMemberRole({ userId: member.user_id, newRole: 'editor' as UserRole })}
+                    onClick={() => updateRole(member.user_id, 'editor' as UserRole)}
                     disabled={member.role === 'editor'}
                   >
                     Make Editor
                   </DropdownMenuItem>
                   <DropdownMenuItem 
-                    onClick={() => updateMemberRole({ userId: member.user_id, newRole: 'viewer' as UserRole })}
+                    onClick={() => updateRole(member.user_id, 'viewer' as UserRole)}
                     disabled={member.role === 'viewer'}
                   >
                     Make Viewer

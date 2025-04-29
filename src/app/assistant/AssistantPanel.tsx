@@ -39,22 +39,24 @@ export default function AssistantPanel() {
         
         // Log the assistant interaction with agent info
         if (agentProfile) {
-          logActivity({
-            event_type: "assistant_command",
-            message: `Assistant (${agentProfile.agent_name}) processed command: ${command}`,
-            meta: { 
+          logActivity(
+            "assistant_command", 
+            `Assistant (${agentProfile.agent_name}) processed command: ${command}`,
+            { 
               command,
               agent_id: agentProfile.id,
               agent_name: agentProfile.agent_name,
               tone: agentProfile.tone
-            }
-          });
+            },
+            'info'
+          );
         } else {
-          logActivity({
-            event_type: "assistant_command",
-            message: `Assistant processed command: ${command}`,
-            meta: { command }
-          });
+          logActivity(
+            "assistant_command", 
+            `Assistant processed command: ${command}`,
+            { command },
+            'info'
+          );
         }
         
         toast.success("Task Complete", {

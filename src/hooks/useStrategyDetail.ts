@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from './useTenant';
 import { toast } from 'sonner';
 import type { Strategy } from '@/types/strategy';
+import { useSystemLogs } from './useSystemLogs';
 
 interface UpdateStrategyParams {
   id: string;
@@ -16,14 +17,44 @@ interface UpdateStrategyParams {
   status?: string;
   updated_at?: string;
   tags?: string[];
-  // Add any other fields as needed
 }
 
 export function useStrategyDetail(strategyId: string) {
   const { tenant } = useTenant();
   const [isLoading, setIsLoading] = useState(false);
   const queryClient = useQueryClient();
+  const { logActivity } = useSystemLogs();
 
+  // Strategy versions data (using strategies table)
+  const { data: versions } = useQuery({
+    queryKey: ['strategy-versions', strategyId],
+    queryFn: async () => {
+      if (!tenant?.id || !strategyId) return [];
+      
+      const { data, error } = await supabase
+        .from('strategies')
+        .select('id, created_at, updated_at')
+        .eq('id', strategyId)
+        .eq('tenant_id', tenant.id)
+        .order('updated_at', { ascending: false });
+        
+      if (error) throw error;
+      
+      // Create synthetic versions from strategies history
+      const syntheticVersions = (data || []).map((item, index) => ({
+        id: item.id,
+        strategy_id: item.id,
+        version: index + 1,
+        changes: `Version ${index + 1}`,
+        created_at: item.created_at || item.updated_at || new Date().toISOString()
+      }));
+      
+      return syntheticVersions;
+    },
+    enabled: !!tenant?.id && !!strategyId
+  });
+
+  // Get strategy details
   const { data: strategy, isLoading: isLoadingStrategy } = useQuery({
     queryKey: ['strategy', strategyId],
     queryFn: async () => {
@@ -47,6 +78,7 @@ export function useStrategyDetail(strategyId: string) {
     enabled: !!tenant?.id && !!strategyId
   });
 
+  // Update strategy
   const updateStrategy = useMutation({
     mutationFn: async (params: UpdateStrategyParams) => {
       if (!tenant?.id) {
@@ -71,6 +103,14 @@ export function useStrategyDetail(strategyId: string) {
         throw error;
       }
 
+      // Log the strategy update
+      await logActivity(
+        'strategy_updated',
+        `Strategy "${params.title || 'Unknown'}" updated`,
+        { strategy_id: params.id, updates: Object.keys(params) },
+        'info'
+      );
+
       return true;
     },
     onSuccess: () => {
@@ -87,9 +127,66 @@ export function useStrategyDetail(strategyId: string) {
     }
   });
 
+  // Create a new strategy version
+  const createNewVersion = async (changes: string) => {
+    if (!tenant?.id || !strategy) {
+      toast.error('Cannot create new version - missing data');
+      return false;
+    }
+
+    try {
+      setIsLoading(true);
+      
+      // Update the strategy with new timestamp to simulate a version
+      const { error } = await supabase
+        .from('strategies')
+        .update({
+          updated_at: new Date().toISOString(),
+          description: `${strategy.description || ''}\n\nChanges: ${changes}`
+        })
+        .eq('id', strategyId)
+        .eq('tenant_id', tenant.id);
+        
+      if (error) throw error;
+      
+      // Log the version creation
+      await logActivity(
+        'strategy_version_created',
+        `New version created for strategy "${strategy.title || 'Unknown'}"`,
+        {
+          strategy_id: strategyId,
+          changes
+        },
+        'info'
+      );
+      
+      toast.success('Strategy version created');
+      queryClient.invalidateQueries({ queryKey: ['strategy-versions'] });
+      queryClient.invalidateQueries({ queryKey: ['strategy', strategyId] });
+      
+      return true;
+    } catch (error) {
+      console.error('Error creating strategy version:', error);
+      toast.error('Failed to create new version');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Refresh strategy data
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['strategy', strategyId] });
+    queryClient.invalidateQueries({ queryKey: ['strategy-versions', strategyId] });
+  };
+
   return {
     strategy,
+    versions,
     isLoading: isLoading || isLoadingStrategy,
-    updateStrategy: updateStrategy.mutate
+    updateStrategy: updateStrategy.mutate,
+    createNewVersion,
+    refresh,
+    error: updateStrategy.error
   };
 }

@@ -46,6 +46,8 @@ export function AdminSystemLogs() {
           <AdminLogsFilterPanel 
             filters={filters as LogFilters} 
             onFilterChange={updateFilters} 
+            onClearFilters={resetFilters}
+            eventTypes={['all', 'ERROR', 'WARNING', 'INFO', 'AUTH', 'SECURITY', 'USER_JOURNEY']}
           />
           
           <div className="mt-6">
@@ -57,12 +59,6 @@ export function AdminSystemLogs() {
               onPrevPage={prevPage}
               onGoToPage={goToPage}
             />
-          </div>
-
-          <div className="flex justify-end mt-4">
-            <Button variant="outline" size="sm" onClick={resetFilters}>
-              Reset Filters
-            </Button>
           </div>
         </CardContent>
       </Card>

@@ -10,7 +10,7 @@ export interface TeamMember {
   id: string;
   user_id: string;
   tenant_id: string;
-  role: 'admin' | 'editor' | 'viewer';
+  role: 'admin' | 'editor' | 'viewer' | 'manager';
   created_at: string;
   profiles: {
     email: string;
@@ -187,7 +187,7 @@ export function useTeamManagement() {
     isLoadingMembers,
     isLoadingInvites,
     updateMemberRole,
-    updateRole: updateMemberRole.mutate,  // For backward compatibility
+    updateRole: (userId: string, newRole: UserRole) => updateMemberRole.mutate({ userId, newRole }),
     removeMember: removeMember.mutate,
     pendingInvites: pendingInvites || [],
     inviteTeamMember

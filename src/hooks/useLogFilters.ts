@@ -15,7 +15,7 @@ export function useLogFilters(logs: SystemLog[]) {
       }
 
       // Filter by severity
-      if (filters.severity && filters.severity !== 'all') {
+      if (filters.severity && filters.severity !== null) {
         // Safely access severity field
         const logSeverity = log.severity || 'info';
         if (logSeverity !== filters.severity) {

@@ -1,76 +1,221 @@
 
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useTenant } from "./useTenant";
-import { KpiMetric } from "@/types/kpi";
-import { subDays } from "date-fns";
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from './useTenant';
+import { toast } from 'sonner';
+import { useSystemLogs } from './useSystemLogs';
 
-interface UseKpiMetricsOptions {
-  dateRange?: number | string;
-  category?: string;
-  searchQuery?: string;
+interface KpiMetric {
+  id: string;
+  metric: string;
+  value: number;
+  tenant_id: string;
+  created_at: string;
+  updated_at: string;
+  recorded_at: string;
 }
 
-export function useKpiMetrics(options: UseKpiMetricsOptions = {}) {
-  const { tenant } = useTenant();
-  const { dateRange = 30, category, searchQuery } = options;
-  
-  const daysNumber = typeof dateRange === 'string' ? parseInt(dateRange) : dateRange;
-  const startDate = subDays(new Date(), daysNumber);
+interface AddKpiParams {
+  metric: string;
+  value: number;
+  recorded_at?: string;
+}
 
-  return useQuery({
-    queryKey: ['kpi-metrics', tenant?.id, daysNumber, category, searchQuery],
+export function useKpiMetrics() {
+  const { tenant } = useTenant();
+  const queryClient = useQueryClient();
+  const [isUpdating, setIsUpdating] = useState(false);
+  const { logActivity } = useSystemLogs();
+
+  // Fetch KPI metrics
+  const { data: metrics, isLoading } = useQuery({
+    queryKey: ['kpi-metrics', tenant?.id],
     queryFn: async () => {
       if (!tenant?.id) return [];
-
-      // Query the kpi_metrics table
-      let query = supabase
+      
+      const { data, error } = await supabase
         .from('kpi_metrics')
         .select('*')
         .eq('tenant_id', tenant.id)
-        .gte('updated_at', startDate.toISOString())
         .order('updated_at', { ascending: false });
-
-      if (category && category !== 'all') {
-        query = query.eq('category', category);
-      }
-
-      if (searchQuery) {
-        query = query.ilike('metric', `%${searchQuery}%`);
-      }
-
-      const { data, error } = await query;
-
+      
       if (error) throw error;
       
-      // Break the deep recursion by using unknown first
-      const safeData = data as unknown;
-      
-      // Transform the data to match the KpiMetric interface with proper type handling
-      const kpiMetrics = ((safeData as any[]) || []).map(metric => ({
-        id: metric.id,
-        tenant_id: metric.tenant_id,
-        kpi_name: metric.metric || '',
-        metric: metric.metric || '',
-        label: metric.metric || '', // Add label for compatibility
-        value: Number(metric.value),
-        trend: determineTrend(Number(metric.value)),
-        changePercent: 0, // Would ideally be calculated by comparing to historical data
-        created_at: metric.created_at,
-        updated_at: metric.updated_at,
-        recorded_at: metric.recorded_at,
-        description: '' // Add empty description for compatibility
-      })) as KpiMetric[];
-      
-      return kpiMetrics;
+      // Safely cast data to avoid deep recursion
+      const safeData = data as unknown as KpiMetric[];
+      return safeData;
     },
     enabled: !!tenant?.id
   });
-}
 
-// Helper function to determine the trend based on the value
-function determineTrend(value: number): 'up' | 'down' | 'neutral' {
-  if (value > 0) return 'up';
-  if (value < 0) return 'down';
-  return 'neutral';
+  // Add a new KPI metric
+  const addKpi = useMutation({
+    mutationFn: async ({ metric, value, recorded_at }: AddKpiParams) => {
+      if (!tenant?.id) throw new Error('No tenant selected');
+      
+      setIsUpdating(true);
+      
+      const newMetric = {
+        tenant_id: tenant.id,
+        metric: metric.trim(),
+        value,
+        recorded_at: recorded_at || new Date().toISOString()
+      };
+      
+      const { data, error } = await supabase
+        .from('kpi_metrics')
+        .insert(newMetric)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      // Log the activity
+      await logActivity(
+        'kpi_added',
+        `New KPI "${metric}" added with value ${value}`,
+        {
+          metric,
+          value,
+          recorded_at
+        },
+        'info'
+      );
+      
+      return data;
+    },
+    onSuccess: () => {
+      toast.success('KPI metric added successfully');
+      queryClient.invalidateQueries({ queryKey: ['kpi-metrics'] });
+    },
+    onError: (error) => {
+      console.error('Error adding KPI metric:', error);
+      toast.error('Failed to add KPI metric');
+    },
+    onSettled: () => {
+      setIsUpdating(false);
+    }
+  });
+
+  // Update existing KPI metric
+  const updateKpi = useMutation({
+    mutationFn: async ({ id, value }: { id: string; value: number }) => {
+      if (!tenant?.id) throw new Error('No tenant selected');
+      
+      setIsUpdating(true);
+      
+      const { error, data } = await supabase
+        .from('kpi_metrics')
+        .update({
+          value,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .eq('tenant_id', tenant.id)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      // Log the activity
+      await logActivity(
+        'kpi_updated',
+        `KPI "${(data as any).metric}" updated to ${value}`,
+        {
+          kpi_id: id,
+          new_value: value,
+          old_value: metrics?.find(m => m.id === id)?.value
+        },
+        'info'
+      );
+      
+      return data;
+    },
+    onSuccess: () => {
+      toast.success('KPI metric updated successfully');
+      queryClient.invalidateQueries({ queryKey: ['kpi-metrics'] });
+    },
+    onError: (error) => {
+      console.error('Error updating KPI metric:', error);
+      toast.error('Failed to update KPI metric');
+    },
+    onSettled: () => {
+      setIsUpdating(false);
+    }
+  });
+
+  // Delete KPI metric
+  const deleteKpi = useMutation({
+    mutationFn: async (id: string) => {
+      if (!tenant?.id) throw new Error('No tenant selected');
+      
+      setIsUpdating(true);
+      
+      const metricToDelete = metrics?.find(m => m.id === id);
+      
+      const { error } = await supabase
+        .from('kpi_metrics')
+        .delete()
+        .eq('id', id)
+        .eq('tenant_id', tenant.id);
+        
+      if (error) throw error;
+      
+      // Log the activity
+      await logActivity(
+        'kpi_deleted',
+        `KPI "${metricToDelete?.metric || 'Unknown'}" deleted`,
+        {
+          kpi_id: id,
+          metric_name: metricToDelete?.metric
+        },
+        'warning'
+      );
+      
+      return true;
+    },
+    onSuccess: () => {
+      toast.success('KPI metric deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ['kpi-metrics'] });
+    },
+    onError: (error) => {
+      console.error('Error deleting KPI metric:', error);
+      toast.error('Failed to delete KPI metric');
+    },
+    onSettled: () => {
+      setIsUpdating(false);
+    }
+  });
+
+  // Return cleaned up metrics with namespace
+  const getMetricsByNamespace = () => {
+    if (!metrics) return {};
+    
+    const namespaces: Record<string, KpiMetric[]> = {};
+    
+    metrics.forEach(metric => {
+      const parts = metric.metric.split('.');
+      const namespace = parts.length > 1 ? parts[0] : 'general';
+      
+      if (!namespaces[namespace]) {
+        namespaces[namespace] = [];
+      }
+      
+      namespaces[namespace].push(metric);
+    });
+    
+    return namespaces;
+  };
+
+  return {
+    metrics: metrics || [],
+    metricsByNamespace: getMetricsByNamespace(),
+    isLoading,
+    isUpdating,
+    addKpi: addKpi.mutate,
+    updateKpi: updateKpi.mutate,
+    deleteKpi: deleteKpi.mutate,
+    refresh: () => queryClient.invalidateQueries({ queryKey: ['kpi-metrics'] })
+  };
 }

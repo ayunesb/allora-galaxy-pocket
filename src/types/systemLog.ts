@@ -1,5 +1,4 @@
 
-// If this file doesn't exist, create it with the SystemLog type definition
 import { Json } from "@/integrations/supabase/types";
 
 export type LogSeverity = 'low' | 'medium' | 'high' | 'critical' | 'info' | 'error' | 'warning' | 'success';

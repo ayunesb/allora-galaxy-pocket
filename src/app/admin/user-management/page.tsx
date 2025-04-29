@@ -28,7 +28,7 @@ export default function UserManagementPage() {
   const { 
     teamMembers, 
     isLoadingMembers, 
-    updateMemberRole 
+    updateRole 
   } = useTeamManagement();
   
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -42,7 +42,7 @@ export default function UserManagementPage() {
   }, [teamMembers, searchQuery]);
 
   const handleRoleChange = (userId: string, newRole: UserRole) => {
-    updateMemberRole({ userId, role: newRole });
+    updateRole(userId, newRole);
   };
   
   const getRoleBadgeVariant = (role: string) => {
