@@ -80,3 +80,6 @@ export function KPITrackerWithData() {
   
   return <KPITracker data={kpiData || []} loading={isLoading} />;
 }
+
+// Default export for easy importing
+export default KPITracker;

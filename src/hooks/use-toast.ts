@@ -1,8 +1,14 @@
 
 import * as React from 'react';
-import { toast as sonnerToast } from 'sonner';
+import { toast as sonnerToast, ToastT } from 'sonner';
 
-type ToastProps = React.ComponentPropsWithoutRef<typeof sonnerToast>;
+type ToastProps = {
+  title?: string;
+  description?: React.ReactNode | string;
+  variant?: 'default' | 'destructive' | 'success';
+  duration?: number;
+  [key: string]: any;
+};
 
 function sanitizeToastDescription(description: any): string | React.ReactNode {
   if (description === undefined || description === null) {
@@ -31,31 +37,31 @@ export const useToast = () => {
   const toast = React.useMemo(
     () => ({
       toast: ({ title, description, ...props }: ToastProps) => {
-        sonnerToast(title, {
+        sonnerToast(title || "", {
           description: sanitizeToastDescription(description),
           ...props,
         });
       },
       success: ({ title, description, ...props }: ToastProps) => {
-        sonnerToast.success(title, { 
+        sonnerToast.success(title || "", { 
           description: sanitizeToastDescription(description),
           ...props, 
         });
       },
       error: ({ title, description, ...props }: ToastProps) => {
-        sonnerToast.error(title, {
+        sonnerToast.error(title || "", {
           description: sanitizeToastDescription(description),
           ...props,
         });
       },
       warning: ({ title, description, ...props }: ToastProps) => {
-        sonnerToast.warning(title, {
+        sonnerToast.warning(title || "", {
           description: sanitizeToastDescription(description),
           ...props,
         });
       },
       info: ({ title, description, ...props }: ToastProps) => {
-        sonnerToast.info(title, {
+        sonnerToast.info(title || "", {
           description: sanitizeToastDescription(description),
           ...props,
         });

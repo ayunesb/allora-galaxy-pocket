@@ -10,7 +10,7 @@ export function ResponsiveToastProvider({ children }: { children: React.ReactNod
   const [position, setPosition] = useState<'top-right' | 'bottom-center'>('top-right');
   
   // Explicit type assertion to match Sonner's theme types
-  const toasterTheme = theme as 'light' | 'dark' | 'system';
+  const toasterTheme = (theme || 'light') as 'light' | 'dark' | 'system';
   
   // Change toast position based on screen size
   useEffect(() => {
@@ -24,8 +24,8 @@ export function ResponsiveToastProvider({ children }: { children: React.ReactNod
       <Toaster 
         theme={toasterTheme} 
         position={position} 
-        richColors 
-        closeButton 
+        richColors={true}
+        closeButton={true}
         expand={false}
         visibleToasts={isMobile ? 2 : 3}
         toastOptions={{ 

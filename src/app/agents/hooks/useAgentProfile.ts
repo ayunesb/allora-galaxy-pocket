@@ -2,7 +2,20 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
-import { AgentProfile } from "@/types/agent";
+
+export interface AgentProfile {
+  id: string;
+  agent_name: string;
+  description?: string;
+  model?: string;
+  tenant_id: string;
+  created_at?: string;
+  updated_at?: string;
+  avatar_url?: string;
+  personality?: string;
+  specialty?: string;
+  experience_level?: string;
+}
 
 export function useAgentProfile() {
   const { tenant } = useTenant();
