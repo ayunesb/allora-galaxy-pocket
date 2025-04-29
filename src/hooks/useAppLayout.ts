@@ -27,15 +27,14 @@ export function useAppLayout() {
   const { toast } = useToast();
   const { tenant } = useTenant();
 
-  // Mock function to get layouts until we have a proper table
+  // Function to fetch layouts from the system_config table
   const fetchLayouts = useCallback(async () => {
     if (!tenant?.id) return [];
     
     setIsLoading(true);
     
     try {
-      // Since we don't have a 'layouts' table in Supabase,
-      // we'll use system_config to store layouts
+      // Get app_layouts from system_config
       const { data, error } = await supabase
         .from('system_config')
         .select('*')
@@ -44,12 +43,18 @@ export function useAppLayout() {
       if (error) throw error;
       
       // Extract layouts from config
-      const layoutsData = data?.[0]?.config && 
-        typeof data[0].config === 'object' && 
-        Array.isArray((data[0].config as any).layouts) ? 
-        (data[0].config as any).layouts : [];
+      let layoutsData: AppLayout[] = [];
+      
+      if (data && data.length > 0 && data[0].config) {
+        const configObj = typeof data[0].config === 'string' ? 
+          JSON.parse(data[0].config) : data[0].config;
+          
+        if (configObj && typeof configObj === 'object' && Array.isArray(configObj.layouts)) {
+          layoutsData = configObj.layouts;
+        }
+      }
         
-      return layoutsData as AppLayout[];
+      return layoutsData;
     } catch (err) {
       console.error('Error fetching layouts:', err);
       toast({
@@ -86,14 +91,12 @@ export function useAppLayout() {
         updatedLayouts.push(layout);
       }
       
-      // Convert the layouts to JSON
-      const layoutsJson = JSON.stringify({ layouts: updatedLayouts });
-      
+      // Update the app_layouts config in system_config
       const { error } = await supabase
         .from('system_config')
         .upsert({
           key: 'app_layouts',
-          config: layoutsJson
+          config: { layouts: updatedLayouts }
         });
       
       if (error) throw error;

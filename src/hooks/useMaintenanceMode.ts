@@ -1,65 +1,150 @@
 
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from './use-toast';
+import { useUserRole } from '@/hooks/useUserRole';
 
-interface MaintenanceMode {
+interface MaintenanceInfo {
   enabled: boolean;
   message: string;
   allowedRoles: string[];
-  startTime: string;
+  startTime: string | null;
   endTime: string | null;
 }
 
 export function useMaintenanceMode() {
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [tableExists, setTableExists] = useState<boolean>(true);
-  const [maintenanceMode, setMaintenanceMode] = useState<MaintenanceMode>({
+  const [maintenanceInfo, setMaintenanceInfo] = useState<MaintenanceInfo>({
     enabled: false,
-    message: "System is currently undergoing maintenance. Please check back later.",
-    allowedRoles: ["admin"],
-    startTime: new Date().toISOString(),
+    message: '',
+    allowedRoles: [],
+    startTime: null,
     endTime: null
   });
-  
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+  const { role } = useUserRole();
+  const isAdmin = role === 'admin';
+
   useEffect(() => {
-    const checkMaintenanceMode = async () => {
+    const fetchMaintenanceMode = async () => {
+      setIsLoading(true);
       try {
         const { data, error } = await supabase
-          .from("system_config")
-          .select("*")
-          .eq("key", "maintenance_mode")
-          .single();
-        
-        if (error) {
-          if (error.code === "PGRST116") { // Table doesn't exist
-            setTableExists(false);
-          } else if (error.code === "PGRST104") { // No rows returned
-            console.info("No maintenance mode configuration found");
-          } else {
-            console.error("Error checking maintenance mode:", error);
-          }
-          setIsLoading(false);
-          return;
-        }
-        
-        if (data?.config) {
-          setMaintenanceMode({
-            enabled: data.config.enabled || false,
-            message: data.config.message || maintenanceMode.message,
-            allowedRoles: data.config.allowedRoles || ["admin"],
-            startTime: data.config.startTime || new Date().toISOString(),
-            endTime: data.config.endTime || null
+          .from('system_config')
+          .select('config')
+          .eq('key', 'maintenance_mode')
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (data && data.config && typeof data.config === 'object') {
+          const config = data.config as Record<string, any>;
+          setMaintenanceInfo({
+            enabled: Boolean(config.enabled),
+            message: String(config.message || 'System is under maintenance'),
+            allowedRoles: Array.isArray(config.allowedRoles) ? config.allowedRoles : ['admin'],
+            startTime: config.startTime ? String(config.startTime) : null,
+            endTime: config.endTime ? String(config.endTime) : null
+          });
+        } else {
+          // Default values if no config is found
+          setMaintenanceInfo({
+            enabled: false,
+            message: 'System is under maintenance',
+            allowedRoles: ['admin'],
+            startTime: null,
+            endTime: null
           });
         }
       } catch (err) {
-        console.error("Error checking maintenance mode:", err);
+        console.error('Error fetching maintenance mode:', err);
       } finally {
         setIsLoading(false);
       }
     };
-    
-    checkMaintenanceMode();
+
+    fetchMaintenanceMode();
   }, []);
-  
-  return { isLoading, maintenanceMode, tableExists };
+
+  const enableMaintenance = async (message: string, endTime?: string) => {
+    if (!isAdmin) return;
+
+    try {
+      const maintenanceConfig = {
+        enabled: true,
+        message,
+        allowedRoles: ['admin'],
+        startTime: new Date().toISOString(),
+        endTime: endTime || null
+      };
+
+      const { error } = await supabase
+        .from('system_config')
+        .upsert({
+          key: 'maintenance_mode',
+          config: maintenanceConfig
+        });
+
+      if (error) throw error;
+      
+      setMaintenanceInfo(maintenanceConfig);
+      
+      toast({
+        title: 'Maintenance Mode Enabled',
+        description: 'The system is now in maintenance mode.'
+      });
+    } catch (err) {
+      console.error('Error enabling maintenance mode:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to enable maintenance mode.',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const disableMaintenance = async () => {
+    if (!isAdmin) return;
+    
+    try {
+      const maintenanceConfig = {
+        enabled: false,
+        message: '',
+        allowedRoles: ['admin'],
+        startTime: null,
+        endTime: null
+      };
+      
+      const { error } = await supabase
+        .from('system_config')
+        .upsert({
+          key: 'maintenance_mode',
+          config: maintenanceConfig
+        });
+
+      if (error) throw error;
+      
+      setMaintenanceInfo(maintenanceConfig);
+      
+      toast({
+        title: 'Maintenance Mode Disabled',
+        description: 'The system is now accessible to all users.'
+      });
+    } catch (err) {
+      console.error('Error disabling maintenance mode:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to disable maintenance mode.',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  return {
+    maintenanceInfo,
+    isLoading,
+    isAdmin,
+    enableMaintenance,
+    disableMaintenance
+  };
 }

@@ -35,7 +35,7 @@ export function useAppSettings() {
           const configObj = typeof data[0].config === 'string' ? 
             JSON.parse(data[0].config) : data[0].config;
             
-          if (Array.isArray(configObj.settings)) {
+          if (configObj && typeof configObj === 'object' && Array.isArray(configObj.settings)) {
             // Map settings to the expected format
             const formattedSettings = configObj.settings.map((setting: any) => ({
               key: setting.key || '',
@@ -82,7 +82,7 @@ export function useAppSettings() {
         .from('system_config')
         .upsert({
           key: 'app_settings',
-          config: JSON.stringify({ settings: updatedSettings })
+          config: { settings: updatedSettings }
         });
 
       if (error) throw error;

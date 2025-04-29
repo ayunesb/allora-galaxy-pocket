@@ -25,15 +25,20 @@ export function useExportCSV() {
     setIsExporting(true);
 
     try {
-      // Check if the table exists in the schema
+      // Use custom RPC function to check if the table exists
       const { data: tableExists, error: tableError } = await supabase
         .rpc('check_table_exists', { table_name: tableName });
 
-      if (tableError || !tableExists) {
+      if (tableError) {
+        console.error('Error checking table:', tableError);
+        throw new Error(`Could not verify table access: ${tableError.message}`);
+      }
+
+      if (!tableExists) {
         throw new Error(`Table ${tableName} doesn't exist or you don't have access`);
       }
 
-      // Use dynamic querying through RPC function
+      // Use a custom RPC function for export to avoid type errors
       const { data, error } = await supabase
         .rpc('export_table_data', { 
           p_table_name: tableName,
@@ -41,9 +46,12 @@ export function useExportCSV() {
           p_filters: filters
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Export error:', error);
+        throw error;
+      }
 
-      if (!data || data.length === 0) {
+      if (!data || !Array.isArray(data) || data.length === 0) {
         toast({
           title: 'Export Notice',
           description: 'No data available to export',

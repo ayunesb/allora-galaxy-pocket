@@ -1,75 +1,61 @@
 
-import React from "react";
-import { useMaintenanceMode } from "@/hooks/useMaintenanceMode";
-import { useUserRole } from "@/hooks/useUserRole";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import { Settings, AlertTriangle, RefreshCw } from "lucide-react";
+import React from 'react';
+import { useMaintenanceMode } from '@/hooks/useMaintenanceMode';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Settings, AlertCircle } from 'lucide-react';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface MaintenanceModeProps {
   children: React.ReactNode;
 }
 
 export function MaintenanceMode({ children }: MaintenanceModeProps) {
-  const { isLoading, maintenanceMode, tableExists } = useMaintenanceMode();
+  const { maintenanceInfo, isAdmin, disableMaintenance } = useMaintenanceMode();
   const { role } = useUserRole();
   
-  // If still loading the maintenance status
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <LoadingSpinner size="lg" label="Checking system status..." />
-      </div>
-    );
-  }
-
-  // If table doesn't exist, skip maintenance check and render children
-  if (!tableExists) {
+  // If the user's role is in the allowed roles, show the children
+  const isAllowed = maintenanceInfo.allowedRoles?.includes(role);
+  
+  if (isAllowed) {
     return <>{children}</>;
   }
   
-  // If maintenance mode is enabled but user role is in allowed list
-  if (maintenanceMode.enabled && 
-      maintenanceMode.allowedRoles && 
-      role && 
-      maintenanceMode.allowedRoles.includes(role)) {
-    return (
-      <div className="relative">
-        <div className="sticky top-0 z-50 bg-yellow-500 text-black py-1 px-4 text-center text-sm font-medium flex items-center justify-center">
-          <AlertTriangle className="h-4 w-4 mr-2" />
-          System is in maintenance mode. You have access because of your role.
-        </div>
-        {children}
-      </div>
-    );
-  }
-  
-  // If maintenance mode is enabled and user is not allowed
-  if (maintenanceMode.enabled) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <Settings className="h-12 w-12 mx-auto text-amber-500 mb-2" />
-            <CardTitle className="text-2xl">Maintenance in Progress</CardTitle>
-          </CardHeader>
-          <CardContent className="text-center space-y-4">
-            <p className="text-gray-500 dark:text-gray-400">{maintenanceMode.message}</p>
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
+      <Card className="max-w-md shadow-lg">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-yellow-500" />
+            <CardTitle>Maintenance Mode</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="mb-4">{maintenanceInfo.message || "The system is currently under maintenance. Please check back later."}</p>
+          
+          {maintenanceInfo.startTime && maintenanceInfo.endTime && (
+            <div className="mb-4 rounded bg-muted p-3 text-sm">
+              <p>Started: {new Date(maintenanceInfo.startTime).toLocaleString()}</p>
+              <p>Expected completion: {new Date(maintenanceInfo.endTime).toLocaleString()}</p>
+            </div>
+          )}
+        </CardContent>
+        
+        {isAdmin && (
+          <CardFooter>
             <Button 
               variant="outline" 
-              onClick={() => window.location.reload()}
-              className="inline-flex items-center"
+              className="w-full gap-2"
+              onClick={disableMaintenance}
             >
-              <RefreshCw className="h-4 w-4 mr-2" /> 
-              Check Again
+              <Settings className="h-4 w-4" />
+              Disable Maintenance Mode
             </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-  
-  // If system is operational, render children
-  return <>{children}</>;
+          </CardFooter>
+        )}
+      </Card>
+    </div>
+  );
 }
+
+export default MaintenanceMode;

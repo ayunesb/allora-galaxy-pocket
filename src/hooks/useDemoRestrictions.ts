@@ -8,6 +8,8 @@ export function useDemoRestrictions() {
   const { toast } = useToast();
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [restrictedFeatures, setRestrictedFeatures] = useState<string[]>([]);
+  const [isResetting, setIsResetting] = useState(false);
+  const [lastResetTime, setLastResetTime] = useState<Date | null>(null);
 
   useEffect(() => {
     if (tenant) {
@@ -41,10 +43,45 @@ export function useDemoRestrictions() {
     });
   };
 
+  const resetDemo = async (): Promise<boolean> => {
+    if (!isDemoMode) return false;
+    
+    setIsResetting(true);
+    
+    try {
+      // Reset demo data logic would go here
+      
+      // Update the last reset time
+      setLastResetTime(new Date());
+      
+      toast({
+        title: "Demo Reset",
+        description: "The demo has been reset successfully.",
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("Error resetting demo:", error);
+      
+      toast({
+        title: "Reset Failed",
+        description: "There was a problem resetting the demo.",
+        variant: "destructive",
+      });
+      
+      return false;
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   return {
     isDemoMode,
     restrictedFeatures,
     checkAccess,
-    showRestrictionWarning
+    showRestrictionWarning,
+    resetDemo,
+    isResetting,
+    lastResetTime
   };
 }

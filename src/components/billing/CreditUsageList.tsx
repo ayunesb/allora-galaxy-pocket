@@ -1,7 +1,14 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useCreditHistory, CreditHistoryItem } from "@/hooks/useCreditHistory";
+import { useCreditHistory } from "@/hooks/useCreditHistory";
 import { format } from "date-fns";
+
+export interface CreditHistoryItem {
+  id: string;
+  type: string;
+  amount: number;
+  created_at: string;
+}
 
 export function CreditUsageList() {
   const { history, isLoading } = useCreditHistory();

@@ -61,7 +61,6 @@ export default function CampaignDetailPage() {
       setError(null);
       
       try {
-        // Fetch campaign details
         const { data: campaignData, error: campaignError } = await supabase
           .from('campaigns')
           .select('*')
@@ -72,7 +71,6 @@ export default function CampaignDetailPage() {
         if (campaignError) throw campaignError;
         setCampaign(campaignData);
         
-        // If campaign is linked to a strategy, fetch the strategy
         if (campaignData.strategy_id) {
           const { data: strategyData, error: strategyError } = await supabase
             .from('strategies')
@@ -87,7 +85,6 @@ export default function CampaignDetailPage() {
           }
         }
         
-        // Log campaign view
         await logActivity({
           event_type: "CAMPAIGN_VIEW",
           message: `Campaign "${campaignData.name}" viewed`,
@@ -113,7 +110,6 @@ export default function CampaignDetailPage() {
       
       await startCampaignExecution(id);
       
-      // Update local state
       setCampaign(prev => ({
         ...prev,
         execution_status: 'in_progress',
@@ -124,14 +120,12 @@ export default function CampaignDetailPage() {
         description: "Your campaign is now executing"
       });
       
-      // Log execution start
       await logActivity({
         event_type: "CAMPAIGN_EXECUTION_STARTED",
         message: `Campaign "${campaign.name}" execution started`,
         meta: { campaign_id: id }
       });
 
-      // Navigate to the KPI dashboard after execution is initiated
       setTimeout(() => {
         navigate(`/kpi/dashboard`, { 
           state: { 
@@ -156,7 +150,6 @@ export default function CampaignDetailPage() {
       
       await pauseCampaignExecution(id);
       
-      // Update local state
       setCampaign(prev => ({
         ...prev,
         execution_status: 'paused'
@@ -166,7 +159,6 @@ export default function CampaignDetailPage() {
         description: "Your campaign execution has been paused"
       });
       
-      // Log execution pause
       await logActivity({
         event_type: "CAMPAIGN_EXECUTION_PAUSED",
         message: `Campaign "${campaign.name}" execution paused`,
@@ -202,7 +194,6 @@ export default function CampaignDetailPage() {
     );
   }
 
-  // Extract channel information
   const channelsList = campaign.scripts && typeof campaign.scripts === 'object' 
     ? Object.keys(campaign.scripts.channels || {})
     : [];

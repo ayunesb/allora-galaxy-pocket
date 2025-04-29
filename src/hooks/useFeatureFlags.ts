@@ -40,7 +40,7 @@ export function useFeatureFlags() {
           const configObj = typeof data.config === 'string' ? 
             JSON.parse(data.config) : data.config;
             
-          if (Array.isArray(configObj.flags)) {
+          if (configObj && typeof configObj === 'object' && Array.isArray(configObj.flags)) {
             flagsData = configObj.flags;
           }
         }
@@ -94,7 +94,7 @@ export function useFeatureFlags() {
         const configObj = typeof data.config === 'string' ? 
           JSON.parse(data.config) : data.config;
           
-        if (Array.isArray(configObj.flags)) {
+        if (configObj && typeof configObj === 'object' && Array.isArray(configObj.flags)) {
           currentFlags = configObj.flags;
         }
       }
@@ -103,12 +103,14 @@ export function useFeatureFlags() {
       const updatedFlags = [...currentFlags, flag];
       
       // Update flags in system_config
-      await supabase
+      const { error: updateError } = await supabase
         .from('system_config')
         .upsert({
           key: 'feature_flags',
-          config: JSON.stringify({ flags: updatedFlags })
+          config: { flags: updatedFlags }
         });
+        
+      if (updateError) throw updateError;
 
       // Update local state
       setFlags(prev => ({ ...prev, [flag.key]: flag.enabled }));

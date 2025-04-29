@@ -1,58 +1,91 @@
 
-import { Loader2 } from "lucide-react";
-import { useKpiMetrics } from "@/hooks/useKpiMetrics";
-import { QueryErrorBoundary } from "./QueryErrorBoundary";
-import KpiCard from "@/app/insights/kpis/components/KpiCard";
-import type { KpiMetric } from "@/types/kpi";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { useKpiData } from "@/hooks/useKpiData";
+import { useMemo } from "react";
+import { ArrowRight, ArrowUp, ArrowDown } from 'lucide-react';
+import { cn } from "@/lib/utils";
 
 interface KPITrackerProps {
-  kpis: KpiMetric[];
+  title: string;
+  kpiName: string;
+  target?: number;
+  periodDays?: number;
 }
 
-export function KPITracker({ kpis }: KPITrackerProps) {
-  if (!kpis || kpis.length === 0) {
-    return (
-      <div className="p-8 text-center text-muted-foreground">
-        <h2 className="text-lg font-semibold">📉 No KPI Data Yet</h2>
-        <p className="text-sm">Set up your KPIs in the settings page to get started.</p>
-      </div>
-    );
-  }
+export function KPITracker({ 
+  title, 
+  kpiName, 
+  target = 100,
+  periodDays = 7 
+}: KPITrackerProps) {
+  const { kpiData, isLoading } = useKpiData(kpiName, periodDays);
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4">
-      {kpis.map((metric) => (
-        <KpiCard 
-          key={metric.id || `metric-${metric.kpi_name}`} 
-          id={metric.id || `metric-${metric.kpi_name}`}
-          kpi_name={metric.kpi_name || ""}
-          metric={metric.metric || ""}
-          value={typeof metric.value === 'number' ? metric.value : Number(metric.value) || 0}
-          trend={metric.trend || "neutral"}
-          changePercent={metric.changePercent || 0}
-          target={metric.target || 0}
-          unit=""
-          updated_at={metric.updated_at || ""}
-        />
-      ))}
-    </div>
-  );
-}
+  const currentValue = useMemo(() => {
+    if (!kpiData || !kpiData.current) return 0;
+    // Make sure to convert to number
+    return typeof kpiData.current === 'string' ? parseFloat(kpiData.current) : kpiData.current;
+  }, [kpiData]);
 
-export function KPITrackerWithData() {
-  const { data: metrics, isLoading, error, refetch } = useKpiMetrics();
+  const percentComplete = Math.min(100, Math.round((currentValue / target) * 100));
+  
+  const percentChange = useMemo(() => {
+    if (!kpiData || !kpiData.previous || kpiData.previous === 0) return 0;
+    return ((currentValue - kpiData.previous) / kpiData.previous) * 100;
+  }, [kpiData, currentValue]);
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-6 w-6 animate-spin" />
-      </div>
+      <Card className="h-full">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">{title}</CardTitle>
+        </CardHeader>
+        <CardContent className="pb-2">
+          <div className="animate-pulse bg-muted h-6 w-16 rounded-md mb-2" />
+          <div className="animate-pulse bg-muted h-2 rounded-full" />
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <QueryErrorBoundary error={error} resetQuery={refetch}>
-      <KPITracker kpis={metrics || []} />
-    </QueryErrorBoundary>
+    <Card className="h-full">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm">{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="pb-2">
+        <div className="text-2xl font-bold">{currentValue.toLocaleString()}</div>
+        <Progress 
+          value={percentComplete} 
+          className="h-1 mt-2" 
+          indicatorClassName={cn(
+            percentComplete < 30 ? "bg-red-500" : 
+            percentComplete < 70 ? "bg-yellow-500" : 
+            "bg-green-500"
+          )}
+        />
+      </CardContent>
+      <CardFooter className="pt-0">
+        <div className="flex items-center text-sm text-muted-foreground">
+          <div className="flex items-center">
+            {percentChange > 0 ? (
+              <ArrowUp className="mr-1 h-4 w-4 text-green-500" />
+            ) : percentChange < 0 ? (
+              <ArrowDown className="mr-1 h-4 w-4 text-red-500" />
+            ) : (
+              <ArrowRight className="mr-1 h-4 w-4 text-muted-foreground" />
+            )}
+            <span className={cn(
+              percentChange > 0 ? "text-green-500" : 
+              percentChange < 0 ? "text-red-500" : 
+              ""
+            )}>
+              {Math.abs(percentChange).toFixed(1)}%
+            </span>
+          </div>
+          <span className="ml-1">vs previous {periodDays}d</span>
+        </div>
+      </CardFooter>
+    </Card>
   );
 }

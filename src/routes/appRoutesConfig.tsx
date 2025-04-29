@@ -11,7 +11,7 @@ import { workspaceRoutes } from '@/app/workspace/routes';
 import { systemRoutes } from '@/app/system/routes';
 import { systemRepairRoutes } from '@/app/admin/system-repair/routes';
 import ErrorPage from '@/ErrorPage';
-import RequireAuth from '@/guards/RequireAuth';
+import { RequireAuth } from '@/guards/RequireAuth';
 import Layout from '@/components/Layout';
 import NotFound from '@/pages/NotFound';
 import { SecurityProvider } from '@/providers/SecurityProvider';

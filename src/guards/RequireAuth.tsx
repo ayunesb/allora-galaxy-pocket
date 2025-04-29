@@ -50,9 +50,15 @@ export function RequireAuth({ children, allowDemo = false }: RequireAuthProps) {
           .eq('key', 'maintenance_mode')
           .maybeSingle();
 
-        setIsMaintenanceMode(!!data?.config && typeof data.config === 'object' && data.config.enabled === true);
+        if (data?.config && typeof data.config === 'object') {
+          const configObj = data.config as Record<string, any>;
+          setIsMaintenanceMode(configObj.enabled === true);
+        } else {
+          setIsMaintenanceMode(false);
+        }
       } catch (error) {
         console.error('Failed to check maintenance mode:', error);
+        setIsMaintenanceMode(false);
       } finally {
         setIsCheckingMaintenance(false);
       }
@@ -114,3 +120,5 @@ export function RequireAuth({ children, allowDemo = false }: RequireAuthProps) {
   // Show children only when authenticated and with a valid tenant
   return <>{children}</>;
 }
+
+export default RequireAuth;
