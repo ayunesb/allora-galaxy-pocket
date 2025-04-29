@@ -1,25 +1,30 @@
+import SystemHealthPage from "./pages/system/health";
 import "./index.css";
 import React from "react";
-import ReactDOM from "react-dom/client";
+import ReactDOM from "react-dom";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import App from "./App";
-import Login from "./pages/auth/Login";
-import OnboardingPage from "./pages/onboarding";
-import DashboardPage from "./pages/dashboard";
 import KPIPage from "./pages/insights/kpis";
 import AgentPerformancePage from "./pages/agents/performance";
+import PluginMarketplace from "./pages/plugins/marketplace";
+import LeadInboxPage from "./pages/leads/inbox";
+import ExecuteCampaignPage from "./pages/campaigns/execute";
+import StrategyVaultPage from "./pages/vault/index";
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
+ReactDOM.render(
   <React.StrictMode>
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<App />} />
-        <Route path="/auth/login" element={<Login />} />
-        <Route path="/onboarding" element={<OnboardingPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/insights/kpis" element={<KPIPage />} />
         <Route path="/agents/performance" element={<AgentPerformancePage />} />
+        <Route path="/plugins/marketplace" element={<PluginMarketplace />} />
+        <Route path="/leads/inbox" element={<LeadInboxPage />} />
+        <Route path="/campaigns/execute" element={<ExecuteCampaignPage />} />
+        <Route path="/vault" element={<StrategyVaultPage />} />
+        <Route path="/system/health" element={<SystemHealthPage />} />
       </Routes>
     </BrowserRouter>
-  </React.StrictMode>
+  </React.StrictMode>,
+  document.getElementById("root")
 );
