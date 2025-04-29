@@ -91,11 +91,13 @@ export function useStrategyDetail(strategyId: string) {
         : 1;
       
       // Since strategy_versions doesn't exist, we're just updating the strategy
+      const updatePayload = {
+        updated_at: new Date().toISOString()
+      };
+      
       const { error } = await supabase
         .from('strategies')
-        .update({
-          updated_at: new Date().toISOString(),
-        })
+        .update(updatePayload)
         .eq('id', strategy.id);
       
       if (error) throw error;

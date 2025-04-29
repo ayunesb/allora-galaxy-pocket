@@ -61,10 +61,10 @@ export function useKpiMetrics(options: UseKpiMetricsOptions = {}) {
           updated_at: metric.updated_at,
           recorded_at: metric.recorded_at,
           description: '' // Add empty description for compatibility
-        };
+        } as KpiMetric;
       });
       
-      return kpiMetrics as KpiMetric[];
+      return kpiMetrics;
     },
     enabled: !!tenant?.id
   });

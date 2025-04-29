@@ -25,6 +25,11 @@ export const logSystemEvent = async ({
       return null;
     }
     
+    // Ensure severity field is always present
+    if (!severity) {
+      severity = 'info';
+    }
+    
     const { data, error } = await supabase
       .from('system_logs')
       .insert({
@@ -32,7 +37,7 @@ export const logSystemEvent = async ({
         user_id: user_id || null,
         event_type,
         message,
-        severity,
+        severity, // Ensure severity is always included
         meta,
         created_at: new Date().toISOString()
       })
@@ -112,7 +117,7 @@ export const getSystemLogs = async (
     // Transform data to ensure it has the severity field
     return safeData.map(log => ({
       ...log,
-      severity: log.severity || 'low' // Default severity if missing
+      severity: log.severity || 'info' // Default severity if missing
     }));
     
   } catch (err) {

@@ -46,8 +46,7 @@ export function useStrategySystem() {
       
       // Convert strategies to synthetic versions
       // Use type casting to avoid recursion
-      const safeData = data as unknown;
-      const strategies = safeData as any[];
+      const strategies = data as unknown as any[];
       
       // Create synthetic versions from strategies
       const syntheticVersions: StrategyVersion[] = (strategies || []).map((strategy, index) => ({
@@ -208,7 +207,8 @@ export function useStrategySystem() {
     if (error) throw error;
     
     // Filter by strategy if needed
-    return (data as unknown as any[]).filter(feedback => 
+    const feedbackList = data as unknown as any[];
+    return feedbackList.filter(feedback => 
       feedback.strategy_id === strategyId || feedback.action?.includes(strategyId)
     );
   };

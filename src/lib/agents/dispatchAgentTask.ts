@@ -57,7 +57,8 @@ export async function dispatchAgentTask({ user_id, agent, task_type, payload, te
         user_id,
         requested_role: "developer",
         reason: `${agent} requires higher access to complete "${task_type}"`,
-        tenant_id
+        tenant_id,
+        created_at: new Date().toISOString()
       });
     } catch (e) {
       console.warn("Could not create role change request:", e);
@@ -99,7 +100,8 @@ export async function dispatchAgentTask({ user_id, agent, task_type, payload, te
       prompt_version: payload?.prompt_version,
       plugin_id: payload?.plugin_id || null,
       executed_at: new Date().toISOString(),
-      tenant_id
+      tenant_id,
+      created_at: new Date().toISOString()
     });
   }
 

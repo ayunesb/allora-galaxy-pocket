@@ -44,20 +44,16 @@ export default function JourneyVerification() {
   const verifyModule = async (modulePath: string) => {
     try {
       const result = await verifyModuleImplementation(modulePath);
-
-      if (result && result.verified) {
+      
+      // Safely extract verification data from the response structure
+      const verification = result.message as ModuleStatusEntry;
+      
+      if (verification && verification.verified) {
         setModuleStatus(prev => ({
           ...prev,
-          [modulePath]: {
-            verified: result.verified,
-            phase1Complete: result.phase1Complete,
-            phase2Complete: result.phase2Complete,
-            phase3Complete: result.phase3Complete,
-            modulePath: result.modulePath,
-            options: result.options || {}
-          }
+          [modulePath]: verification
         }));
-        toast.success(`${modulePath} verification ${result.verified ? 'passed' : 'failed'}`);
+        toast.success(`${modulePath} verification ${verification.verified ? 'passed' : 'failed'}`);
       } else {
         toast.error(`${modulePath} verification failed`);
       }

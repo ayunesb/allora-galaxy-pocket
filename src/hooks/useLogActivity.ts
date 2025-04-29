@@ -4,7 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/hooks/useTenant';
 import { useAuth } from '@/hooks/useAuth';
 import { SystemLog, LogSeverity } from '@/types/systemLog';
-import { ToastService } from '@/services/ToastService';
 
 interface LogActivityParams {
   event_type: string;
@@ -38,7 +37,8 @@ export function useLogActivity() {
         message,
         meta: { ...meta },
         severity, // Add severity field directly to the payload
-        user_id: user?.id
+        user_id: user?.id,
+        created_at: new Date().toISOString()
       };
       
       const { data, error } = await supabase
@@ -49,7 +49,7 @@ export function useLogActivity() {
         
       if (error) throw error;
       
-      return { success: true, log: data as SystemLog };
+      return { success: true, log: data as unknown as SystemLog };
     } catch (err) {
       console.error("Failed to log activity:", err);
       return { success: false, error: err };

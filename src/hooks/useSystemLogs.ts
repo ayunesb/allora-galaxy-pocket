@@ -102,21 +102,22 @@ export function useSystemLogs() {
       // This would typically call a Supabase function or API
       const result = {
         success: true,
-        message: `Module ${modulePath} verification successful`,
-        verified: true,
-        phase1Complete: true,
-        phase2Complete: true,
-        phase3Complete: modulePath.includes('stripe') ? false : true,
-        modulePath: modulePath,
-        options: { requireAuth: true }
+        message: {
+          verified: true,
+          phase1Complete: true,
+          phase2Complete: true,
+          phase3Complete: modulePath.includes('stripe') ? false : true,
+          modulePath: modulePath,
+          options: { requireAuth: true }
+        }
       };
       
       // Log the verification result
       await logEvent(
         'module_verification_result',
-        `Module ${modulePath} verification ${result.verified ? 'succeeded' : 'failed'}`,
-        result.verified ? 'info' : 'error',
-        result
+        `Module ${modulePath} verification ${result.message.verified ? 'succeeded' : 'failed'}`,
+        result.message.verified ? 'info' : 'error',
+        result.message
       );
       
       return result;
@@ -133,13 +134,14 @@ export function useSystemLogs() {
       
       return { 
         success: false, 
-        message: err.message || "Unknown error during module verification",
-        verified: false,
-        phase1Complete: false,
-        phase2Complete: false,
-        phase3Complete: false,
-        modulePath: modulePath,
-        options: {}
+        message: {
+          verified: false,
+          phase1Complete: false,
+          phase2Complete: false,
+          phase3Complete: false,
+          modulePath: modulePath,
+          options: {}
+        }
       };
     }
   };
@@ -170,6 +172,67 @@ export function useSystemLogs() {
     return true;
   };
 
+  // Log activity (general purpose logging)
+  const logActivity = async (
+    event_type: string,
+    message: string,
+    meta: Record<string, any> = {},
+    severity: LogSeverity = 'info'
+  ) => {
+    return logEvent(event_type, message, severity, meta);
+  };
+
+  // Log specific error
+  const logError = async (
+    message: string,
+    error: Error | any,
+    meta: Record<string, any> = {}
+  ) => {
+    return logEvent(
+      'ERROR',
+      message,
+      'error',
+      {
+        ...meta,
+        errorMessage: error.message,
+        stack: error.stack,
+        code: error.code
+      }
+    );
+  };
+
+  // Log security event
+  const logSecurityEvent = async (
+    message: string,
+    eventType: string,
+    meta: Record<string, any> = {}
+  ) => {
+    return logEvent(
+      `SECURITY_${eventType}`,
+      message,
+      'warning',
+      meta
+    );
+  };
+
+  // Log journey step
+  const logJourneyStep = async (
+    from: string,
+    to: string,
+    details: Record<string, any> = {}
+  ) => {
+    return logEvent(
+      'USER_JOURNEY',
+      `User navigated from ${from} to ${to}`,
+      'info',
+      {
+        from,
+        to,
+        ...details
+      }
+    );
+  };
+
   return {
     logs,
     isLoading,
@@ -178,6 +241,10 @@ export function useSystemLogs() {
     logEvent,
     clearLogs,
     exportLogs,
-    verifyModuleImplementation
+    verifyModuleImplementation,
+    logActivity,
+    logError,
+    logSecurityEvent,
+    logJourneyStep
   };
 }
