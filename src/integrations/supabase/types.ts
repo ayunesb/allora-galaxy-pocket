@@ -3844,6 +3844,13 @@ export type Database = {
         Args: { p_user_id: string; p_amount: number }
         Returns: boolean
       }
+      verify_tenant_isolation: {
+        Args: { tenant_uuid: string }
+        Returns: {
+          success: boolean
+          message: string
+        }[]
+      }
     }
     Enums: {
       plugin_status: "active" | "inactive" | "deprecated"

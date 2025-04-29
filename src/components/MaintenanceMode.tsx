@@ -58,4 +58,5 @@ export function MaintenanceMode({ children }: MaintenanceModeProps) {
   );
 }
 
+// Export both the named function and as default to support different import styles
 export default MaintenanceMode;

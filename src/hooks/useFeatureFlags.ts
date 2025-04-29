@@ -1,129 +1,137 @@
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useTenant } from './useTenant';
-import { useUserRole } from './useUserRole';
+import { useToast } from '@/hooks/use-toast';
+import { useUserRole } from '@/hooks/useUserRole';
 
+// Define proper interfaces
 export interface FeatureFlag {
   key: string;
   enabled: boolean;
-  description?: string;
+  description: string;
   roles_allowed?: string[];
 }
 
 export function useFeatureFlags() {
-  const [flags, setFlags] = useState<Record<string, boolean>>({});
+  const [flags, setFlags] = useState<FeatureFlag[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { tenant } = useTenant();
+  const [error, setError] = useState<Error | null>(null);
+  const { toast } = useToast();
   const { role } = useUserRole();
 
-  useEffect(() => {
-    const fetchFeatureFlags = async () => {
-      if (!tenant?.id) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from('system_config')
-          .select('*')
-          .eq('key', 'feature_flags')
-          .maybeSingle();
-
-        if (error) throw error;
-
-        let flagsData: FeatureFlag[] = [];
-        
-        if (data && data.config) {
-          // Parse flags from config
-          const configObj = typeof data.config === 'string' ? 
-            JSON.parse(data.config) : data.config;
-            
-          if (configObj && typeof configObj === 'object' && Array.isArray(configObj.flags)) {
-            flagsData = configObj.flags;
-          }
-        }
-
-        // Create a map of flag keys to their enabled status
-        const flagMap: Record<string, boolean> = {};
-        
-        flagsData.forEach((flag) => {
-          // If the flag has role restrictions, check if the current user's role is allowed
-          if (flag.roles_allowed && flag.roles_allowed.length > 0) {
-            // Only enable if user has required role
-            flagMap[flag.key] = flag.enabled && flag.roles_allowed.includes(role || '');
-          } else {
-            // No role restrictions, just use the enabled status
-            flagMap[flag.key] = flag.enabled;
-          }
-        });
-
-        setFlags(flagMap);
-      } catch (err) {
-        console.error('Error fetching feature flags:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchFeatureFlags();
-  }, [tenant, role]);
-
-  const isEnabled = (flagKey: string): boolean => {
-    return !!flags[flagKey];
-  };
-
-  // Create new flag (admin function)
-  const createFlag = async (flag: FeatureFlag): Promise<boolean> => {
-    if (!tenant?.id) return false;
+  const fetchFlags = async () => {
+    setIsLoading(true);
+    setError(null);
 
     try {
-      // Get current flags
-      const { data, error } = await supabase
+      // Feature flags come from system_config table
+      const { data, error: fetchError } = await supabase
         .from('system_config')
         .select('*')
         .eq('key', 'feature_flags')
-        .maybeSingle();
+        .single();
 
-      if (error) throw error;
-
-      let currentFlags: FeatureFlag[] = [];
-      
-      if (data && data.config) {
-        const configObj = typeof data.config === 'string' ? 
-          JSON.parse(data.config) : data.config;
-          
-        if (configObj && typeof configObj === 'object' && Array.isArray(configObj.flags)) {
-          currentFlags = configObj.flags;
+      if (fetchError) {
+        if (fetchError.code === 'PGRST116') {
+          // No data found, initialize with default flags
+          const defaultFlags: FeatureFlag[] = [
+            { key: 'beta_features', enabled: false, description: 'Enable beta features', roles_allowed: ['admin'] },
+            { key: 'advanced_analytics', enabled: true, description: 'Enable advanced analytics' },
+          ];
+          setFlags(defaultFlags);
+          return;
         }
+        throw fetchError;
       }
 
-      // Add new flag
-      const updatedFlags = [...currentFlags, flag];
+      // Parse the JSON data safely
+      if (data && data.config) {
+        const configData = typeof data.config === 'string' 
+          ? JSON.parse(data.config) 
+          : data.config;
+          
+        if (configData.flags && Array.isArray(configData.flags)) {
+          setFlags(configData.flags);
+        } else {
+          setFlags([]);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching feature flags:', err);
+      setError(err instanceof Error ? err : new Error('Failed to fetch feature flags'));
+      toast({
+        title: "Failed to load feature flags",
+        description: "There was a problem loading the feature flags.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateFlags = async (newFlags: FeatureFlag[]) => {
+    try {
+      // Convert flags to string for storage as Json
+      const configString = JSON.stringify({ flags: newFlags });
       
-      // Update flags in system_config
       const { error: updateError } = await supabase
         .from('system_config')
-        .upsert({
+        .upsert({ 
           key: 'feature_flags',
-          config: { flags: updatedFlags }
+          config: configString
+        }, {
+          onConflict: 'key'
         });
-        
+
       if (updateError) throw updateError;
 
-      // Update local state
-      setFlags(prev => ({ ...prev, [flag.key]: flag.enabled }));
+      setFlags(newFlags);
+      toast({
+        title: "Feature flags updated",
+        description: "Your feature flag settings have been saved.",
+      });
+      
       return true;
     } catch (err) {
-      console.error('Error creating feature flag:', err);
+      console.error('Error updating feature flags:', err);
+      toast({
+        title: "Failed to save feature flags",
+        description: "There was a problem saving your feature flag settings.",
+        variant: "destructive",
+      });
       return false;
     }
   };
 
+  // Check if a feature is enabled and the user has access
+  const isFeatureEnabled = useCallback((key: string): boolean => {
+    if (!flags || flags.length === 0) return false;
+    
+    const flag = flags.find(f => f.key === key);
+    if (!flag) return false;
+    
+    // If the flag is disabled, return false
+    if (!flag.enabled) return false;
+    
+    // If the flag has role restrictions, check if user's role is allowed
+    if (flag.roles_allowed && flag.roles_allowed.length > 0) {
+      return flag.roles_allowed.includes(role);
+    }
+    
+    // No role restrictions, flag is enabled
+    return true;
+  }, [flags, role]);
+
+  useEffect(() => {
+    fetchFlags();
+  }, []);
+
   return {
-    isEnabled,
+    flags,
     isLoading,
-    createFlag
+    error,
+    refreshFlags: fetchFlags,
+    updateFlags,
+    isFeatureEnabled
   };
 }

@@ -1,105 +1,123 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useTenant } from './useTenant';
+import { useToast } from '@/hooks/use-toast';
 
-interface AppSetting {
+// Define proper interfaces
+export interface AppSetting {
   key: string;
-  value: any;
+  value: string | number | boolean;
   category: string;
-  description: string;
+  description?: string;
 }
 
 export function useAppSettings() {
   const [settings, setSettings] = useState<AppSetting[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const { tenant } = useTenant();
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchSettings = async () => {
-      if (!tenant?.id) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from('system_config')
-          .select('*')
-          .eq('key', 'app_settings');
-        
-        if (error) throw error;
-
-        if (data && data.length > 0 && data[0].config) {
-          // Parse settings from the config field
-          const configObj = typeof data[0].config === 'string' ? 
-            JSON.parse(data[0].config) : data[0].config;
-            
-          if (configObj && typeof configObj === 'object' && Array.isArray(configObj.settings)) {
-            // Map settings to the expected format
-            const formattedSettings = configObj.settings.map((setting: any) => ({
-              key: setting.key || '',
-              value: setting.value || '',
-              category: setting.category || 'general',
-              description: setting.description || ''
-            }));
-            
-            setSettings(formattedSettings);
-          } else {
-            setSettings([]);
-          }
-        } else {
-          setSettings([]);
-        }
-      } catch (err) {
-        console.error('Error fetching app settings:', err);
-        setSettings([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchSettings();
-  }, [tenant]);
-
-  const updateSetting = async (key: string, value: any) => {
-    if (!tenant?.id) return false;
+  const fetchSettings = async () => {
+    setIsLoading(true);
+    setError(null);
 
     try {
-      // Find the setting to update
-      const settingIndex = settings.findIndex(s => s.key === key);
-      if (settingIndex === -1) return false;
-
-      // Create a new settings array with the updated value
-      const updatedSettings = [...settings];
-      updatedSettings[settingIndex] = {
-        ...updatedSettings[settingIndex],
-        value
-      };
-
-      // Update in Supabase
-      const { error } = await supabase
+      const { data, error: fetchError } = await supabase
         .from('system_config')
-        .upsert({
+        .select('*')
+        .eq('key', 'app_settings')
+        .single();
+
+      if (fetchError) {
+        if (fetchError.code === 'PGRST116') {
+          // No data found, initialize with default settings
+          const defaultSettings: AppSetting[] = [
+            { key: 'enable_notifications', value: true, category: 'general', description: 'Enable system notifications' },
+            { key: 'dark_mode', value: false, category: 'appearance', description: 'Use dark mode' },
+          ];
+          setSettings(defaultSettings);
+          return;
+        }
+        throw fetchError;
+      }
+
+      // Parse the JSON data safely
+      if (data && data.config) {
+        const configData = typeof data.config === 'string' 
+          ? JSON.parse(data.config) 
+          : data.config;
+          
+        if (configData.settings && Array.isArray(configData.settings)) {
+          setSettings(configData.settings);
+        } else {
+          // Initialize with defaults if format is unexpected
+          setSettings([
+            { key: 'enable_notifications', value: true, category: 'general', description: 'Enable system notifications' },
+            { key: 'dark_mode', value: false, category: 'appearance', description: 'Use dark mode' },
+          ]);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching app settings:', err);
+      setError(err instanceof Error ? err : new Error('Failed to fetch app settings'));
+      toast({
+        title: "Failed to load settings",
+        description: "There was a problem loading the application settings.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateSettings = async (newSettings: AppSetting[]) => {
+    try {
+      // Convert settings to string for storage as Json
+      const configString = JSON.stringify({ settings: newSettings });
+      
+      const { error: updateError } = await supabase
+        .from('system_config')
+        .upsert({ 
           key: 'app_settings',
-          config: { settings: updatedSettings }
+          config: configString
+        }, {
+          onConflict: 'key'
         });
 
-      if (error) throw error;
+      if (updateError) throw updateError;
 
-      // Update local state
-      setSettings(updatedSettings);
+      setSettings(newSettings);
+      toast({
+        title: "Settings updated",
+        description: "Your settings have been saved.",
+      });
+      
       return true;
     } catch (err) {
-      console.error('Error updating app setting:', err);
+      console.error('Error updating app settings:', err);
+      toast({
+        title: "Failed to save settings",
+        description: "There was a problem saving your settings.",
+        variant: "destructive",
+      });
       return false;
     }
   };
 
+  const getSetting = (key: string) => {
+    return settings.find(setting => setting.key === key)?.value;
+  };
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
   return {
     settings,
+    getSetting,
     isLoading,
-    updateSetting,
-    getSetting: (key: string) => settings.find(s => s.key === key)?.value
+    error,
+    refreshSettings: fetchSettings,
+    updateSettings,
   };
 }

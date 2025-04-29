@@ -1,70 +1,70 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-
-export interface KpiMetric {
-  id: string;
-  metric: string;
-  value: number;
-  created_at: string;
-}
-
-export interface KpiTrend {
-  metric: string;
-  value: number;
-  day: string; 
-}
+import { useTenant } from '@/hooks/useTenant';
+import { KPIData } from '@/components/KPITracker';
 
 export interface KpiDataResult {
-  currentMetrics: KpiMetric[];
-  trends: KpiTrend[];
+  data: KPIData[];
   isLoading: boolean;
   error: Error | null;
+  refetch: () => void;
 }
 
 export function useKpiData(): KpiDataResult {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['kpi-data'],
-    queryFn: async () => {
-      // Get current metrics
-      const { data: metricsData, error: metricsError } = await supabase
+  const { tenant } = useTenant();
+  
+  const query = useQuery({
+    queryKey: ['kpi-metrics', tenant?.id],
+    queryFn: async (): Promise<KPIData[]> => {
+      if (!tenant?.id) return [];
+      
+      const { data: metrics, error } = await supabase
         .from('kpi_metrics')
         .select('*')
-        .order('created_at', { ascending: false })
-        .limit(4);
+        .eq('tenant_id', tenant.id);
+        
+      if (error) throw error;
       
-      if (metricsError) throw metricsError;
-      
-      // Get trend data (last 7 days)
-      const { data: trendData, error: trendError } = await supabase
-        .from('kpi_metrics')
+      // Get historical data to calculate percent changes
+      const { data: historicalData, error: historyError } = await supabase
+        .from('kpi_metrics_history')
         .select('*')
-        .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
-        .order('created_at', { ascending: true });
+        .eq('tenant_id', tenant.id)
+        .order('recorded_at', { ascending: false })
+        .limit(10);
+        
+      if (historyError) console.error('Error fetching historical data:', historyError);
       
-      if (trendError) throw trendError;
+      // Map the data into the required format
+      const formattedData: KPIData[] = (metrics || []).map(metric => {
+        // Find historical data for this metric to calculate percent change
+        const lastRecord = historicalData?.find(h => 
+          h.metric === metric.metric && 
+          h.recorded_at !== metric.recorded_at
+        );
+        
+        const percentChange = lastRecord 
+          ? ((Number(metric.value) - Number(lastRecord.value)) / Number(lastRecord.value)) * 100 
+          : undefined;
+          
+        return {
+          name: metric.metric,
+          value: Number(metric.value),
+          target: 100, // Default target
+          percentChange: percentChange ? Math.round(percentChange * 10) / 10 : undefined
+        };
+      });
       
-      // Process trend data to have day labels
-      const processedTrends = trendData.map(item => ({
-        metric: item.metric,
-        value: parseFloat(item.value),
-        day: new Date(item.created_at).toLocaleDateString('en-US', { weekday: 'short' })
-      }));
-      
-      return {
-        currentMetrics: metricsData.map(m => ({
-          ...m,
-          value: parseFloat(m.value)
-        })),
-        trends: processedTrends
-      };
-    }
+      return formattedData;
+    },
+    enabled: !!tenant?.id,
   });
   
   return {
-    currentMetrics: data?.currentMetrics || [],
-    trends: data?.trends || [],
-    isLoading,
-    error
+    data: query.data || [],
+    isLoading: query.isLoading,
+    error: query.error instanceof Error ? query.error : null,
+    refetch: query.refetch
   };
 }

@@ -1,124 +1,120 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from './use-toast';
-import { useTenant } from './useTenant';
+import { useToast } from '@/hooks/use-toast';
 
+// Define proper interfaces
 export interface AppLayout {
   id: string;
   name: string;
-  config: {
-    sidebar?: boolean;
-    header?: boolean;
-    footer?: boolean;
-    darkMode?: boolean;
-    navigationItems?: {
-      name: string;
-      href: string;
-      icon?: string;
-    }[];
-  };
+  columns: number;
+  enabled: boolean;
+  position?: 'top' | 'middle' | 'bottom';
+  widgets?: string[];
 }
 
 export function useAppLayout() {
   const [layouts, setLayouts] = useState<AppLayout[]>([]);
-  const [currentLayout, setCurrentLayout] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
-  const { tenant } = useTenant();
 
-  // Function to fetch layouts from the system_config table
-  const fetchLayouts = useCallback(async () => {
-    if (!tenant?.id) return [];
-    
+  const fetchLayouts = async () => {
     setIsLoading(true);
-    
+    setError(null);
+
     try {
-      // Get app_layouts from system_config
-      const { data, error } = await supabase
+      const { data, error: fetchError } = await supabase
         .from('system_config')
         .select('*')
-        .eq('key', 'app_layouts');
-      
-      if (error) throw error;
-      
-      // Extract layouts from config
-      let layoutsData: AppLayout[] = [];
-      
-      if (data && data.length > 0 && data[0].config) {
-        const configObj = typeof data[0].config === 'string' ? 
-          JSON.parse(data[0].config) : data[0].config;
+        .eq('key', 'app_layouts')
+        .single();
+
+      if (fetchError) {
+        if (fetchError.code === 'PGRST116') {
+          // No data found, initialize with default layouts
+          const defaultLayouts: AppLayout[] = [
+            { id: 'default-dashboard', name: 'Default Dashboard', columns: 2, enabled: true },
+            { id: 'compact-view', name: 'Compact View', columns: 1, enabled: false },
+          ];
+          setLayouts(defaultLayouts);
+          return;
+        }
+        throw fetchError;
+      }
+
+      // Parse the JSON data safely
+      if (data && data.config) {
+        const configData = typeof data.config === 'string' 
+          ? JSON.parse(data.config) 
+          : data.config;
           
-        if (configObj && typeof configObj === 'object' && Array.isArray(configObj.layouts)) {
-          layoutsData = configObj.layouts;
+        if (configData.layouts && Array.isArray(configData.layouts)) {
+          setLayouts(configData.layouts);
+        } else {
+          // Initialize with defaults if the format is unexpected
+          setLayouts([
+            { id: 'default-dashboard', name: 'Default Dashboard', columns: 2, enabled: true },
+            { id: 'compact-view', name: 'Compact View', columns: 1, enabled: false },
+          ]);
         }
       }
-        
-      return layoutsData;
     } catch (err) {
-      console.error('Error fetching layouts:', err);
+      console.error('Error fetching app layouts:', err);
+      setError(err instanceof Error ? err : new Error('Failed to fetch app layouts'));
       toast({
-        title: 'Error',
-        description: 'Failed to load application layouts',
-        variant: 'destructive',
+        title: "Failed to load layouts",
+        description: "There was a problem loading the application layouts.",
+        variant: "destructive",
       });
-      return [];
     } finally {
       setIsLoading(false);
     }
-  }, [tenant, toast]);
+  };
 
-  useEffect(() => {
-    const loadLayouts = async () => {
-      const data = await fetchLayouts();
-      setLayouts(data);
-    };
-    
-    loadLayouts();
-  }, [fetchLayouts]);
-
-  const saveLayout = useCallback(async (layout: AppLayout) => {
-    if (!tenant?.id) return false;
-    
+  const updateLayouts = async (newLayouts: AppLayout[]) => {
     try {
-      // Update the layouts in the system_config table
-      const updatedLayouts = [...layouts];
-      const existingIndex = updatedLayouts.findIndex(l => l.id === layout.id);
+      // Convert layouts to string for storage as Json
+      const configString = JSON.stringify({ layouts: newLayouts });
       
-      if (existingIndex >= 0) {
-        updatedLayouts[existingIndex] = layout;
-      } else {
-        updatedLayouts.push(layout);
-      }
-      
-      // Update the app_layouts config in system_config
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from('system_config')
-        .upsert({
+        .upsert({ 
           key: 'app_layouts',
-          config: { layouts: updatedLayouts }
+          config: configString
+        }, {
+          onConflict: 'key'
         });
+
+      if (updateError) throw updateError;
+
+      setLayouts(newLayouts);
+      toast({
+        title: "Layouts updated",
+        description: "Your layout preferences have been saved.",
+      });
       
-      if (error) throw error;
-      
-      setLayouts(updatedLayouts);
       return true;
     } catch (err) {
-      console.error('Error saving layout:', err);
+      console.error('Error updating app layouts:', err);
       toast({
-        title: 'Error',
-        description: 'Failed to save layout',
-        variant: 'destructive',
+        title: "Failed to save layouts",
+        description: "There was a problem saving your layout preferences.",
+        variant: "destructive",
       });
       return false;
     }
-  }, [layouts, tenant, toast]);
+  };
+
+  useEffect(() => {
+    fetchLayouts();
+  }, []);
 
   return {
     layouts,
-    currentLayout,
     isLoading,
-    setCurrentLayout,
-    saveLayout
+    error,
+    refreshLayouts: fetchLayouts,
+    updateLayouts,
   };
 }
