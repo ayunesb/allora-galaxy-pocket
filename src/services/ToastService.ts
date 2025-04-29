@@ -1,13 +1,13 @@
 
 import { toast, ToastT } from 'sonner';
 
-interface ToastOptions {
+export type ToastOptions = {
   title?: string;
   description?: React.ReactNode | string;
   duration?: number;
   position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'top-center' | 'bottom-center';
   [key: string]: any;
-}
+};
 
 // Safely convert any description to an acceptable format
 function sanitizeDescription(description: any): string | React.ReactNode {
@@ -27,26 +27,66 @@ function sanitizeDescription(description: any): string | React.ReactNode {
   }
 }
 
-// Helper to adapt to sonner's API
-function createToast(type: 'default' | 'success' | 'error' | 'warning' | 'info', options: ToastOptions | string) {
-  if (typeof options === 'string') {
-    return toast[type](options);
-  }
-  
-  const { title = '', description, ...rest } = options;
-  
-  return toast[type](title, {
-    description: sanitizeDescription(description),
-    ...rest
-  });
-}
-
 export const ToastService = {
-  show: (options: ToastOptions | string) => createToast('default', options),
-  success: (options: ToastOptions | string) => createToast('success', options),
-  error: (options: ToastOptions | string) => createToast('error', options),
-  warning: (options: ToastOptions | string) => createToast('warning', options),
-  info: (options: ToastOptions | string) => createToast('info', options),
+  show: (options: ToastOptions | string) => {
+    if (typeof options === 'string') {
+      return toast(options);
+    }
+    
+    const { title = '', description, ...rest } = options;
+    return toast(title, {
+      description: sanitizeDescription(description),
+      ...rest
+    });
+  },
+  
+  success: (options: ToastOptions | string) => {
+    if (typeof options === 'string') {
+      return toast.success(options);
+    }
+    
+    const { title = '', description, ...rest } = options;
+    return toast.success(title, {
+      description: sanitizeDescription(description),
+      ...rest
+    });
+  },
+  
+  error: (options: ToastOptions | string) => {
+    if (typeof options === 'string') {
+      return toast.error(options);
+    }
+    
+    const { title = '', description, ...rest } = options;
+    return toast.error(title, {
+      description: sanitizeDescription(description),
+      ...rest
+    });
+  },
+  
+  warning: (options: ToastOptions | string) => {
+    if (typeof options === 'string') {
+      return toast.warning(options);
+    }
+    
+    const { title = '', description, ...rest } = options;
+    return toast.warning(title, {
+      description: sanitizeDescription(description),
+      ...rest
+    });
+  },
+  
+  info: (options: ToastOptions | string) => {
+    if (typeof options === 'string') {
+      return toast.info(options);
+    }
+    
+    const { title = '', description, ...rest } = options;
+    return toast.info(title, {
+      description: sanitizeDescription(description),
+      ...rest
+    });
+  },
   
   // Legacy method - directly use the toast function
   message: (message: string) => toast(message)

@@ -2,7 +2,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { toast } from 'sonner';
+import { ToastService } from '@/services/ToastService';
 import { useNavigate } from 'react-router-dom';
 import { Tenant } from '@/types/tenant';
 
@@ -85,16 +85,20 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
 
       if (targetTenant) {
         setTenant(targetTenant);
-        setUserRole(targetTenant.role || 'viewer');
+        // Use the role from the tenant data directly
+        const tenantRole = targetTenant.role as string || 'viewer';
+        setUserRole(tenantRole);
         localStorage.setItem('currentTenantId', targetTenant.id);
       } else if (formattedTenants.length > 0) {
         setTenant(formattedTenants[0]);
-        setUserRole(formattedTenants[0].role || 'viewer');
+        // Use the role from the first tenant
+        const tenantRole = formattedTenants[0].role as string || 'viewer';
+        setUserRole(tenantRole);
         localStorage.setItem('currentTenantId', formattedTenants[0].id);
       }
     } catch (error: any) {
       console.error('Error loading tenants:', error);
-      toast.error("Failed to load workspace data");
+      ToastService.error("Failed to load workspace data");
       setError(error.message || "Failed to load workspaces");
     } finally {
       setIsLoading(false);
@@ -122,7 +126,7 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
     } catch (error: any) {
       console.error('Error refreshing tenant:', error);
       setError(error.message || "Failed to refresh workspace");
-      toast.error("Failed to refresh workspace data");
+      ToastService.error("Failed to refresh workspace data");
     } finally {
       setIsLoading(false);
     }
@@ -132,21 +136,23 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
     const newTenant = tenants.find(t => t.id === tenantId);
     if (newTenant) {
       setTenant(newTenant);
-      setUserRole(newTenant.role || 'viewer');
+      const tenantRole = newTenant.role as string || 'viewer';
+      setUserRole(tenantRole);
       localStorage.setItem('currentTenantId', tenantId);
-      toast.success(`Switched to ${newTenant.name}`);
+      ToastService.success(`Switched to ${newTenant.name}`);
       navigate('/dashboard');
     } else {
-      toast.error("Workspace not found");
+      ToastService.error("Workspace not found");
     }
   };
 
   const selectTenant = (newTenant: Tenant) => {
     if (newTenant?.id) {
       setTenant(newTenant);
-      setUserRole(newTenant.role || 'viewer');
+      const tenantRole = newTenant.role as string || 'viewer'; 
+      setUserRole(tenantRole);
       localStorage.setItem('currentTenantId', newTenant.id);
-      toast.success(`Switched to ${newTenant.name}`);
+      ToastService.success(`Switched to ${newTenant.name}`);
       navigate('/dashboard');
     }
   };
@@ -186,7 +192,7 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
       await loadTenants();
       await switchTenant(newTenant.id);
       
-      toast({
+      ToastService.success({
         title: "Workspace created",
         description: `You're now in ${name}`
       });
@@ -194,7 +200,7 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
     } catch (error: any) {
       console.error('Error creating tenant:', error);
       setError(error.message || "Failed to create workspace");
-      toast({
+      ToastService.error({
         title: "Failed to create workspace",
         description: "Please try again later"
       });
@@ -217,7 +223,7 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
       if (error) throw error;
 
       setTenant(prev => prev ? { ...prev, ...updatedData } : null);
-      toast({
+      ToastService.success({
         title: "Profile updated",
         description: "Workspace profile updated successfully"
       });
@@ -225,7 +231,7 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
     } catch (error: any) {
       console.error('Error updating tenant profile:', error);
       setError(error.message || "Failed to update profile");
-      toast({
+      ToastService.error({
         title: "Update failed",
         description: "Could not update workspace profile"
       });
@@ -247,7 +253,7 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
       if (error) throw error;
 
       setTenant(prev => prev ? { ...prev, [key]: value } : null);
-      toast({
+      ToastService.success({
         title: "Preferences updated",
         description: `Updated ${key.replace('_', ' ')} successfully`
       });
@@ -255,7 +261,7 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
     } catch (error: any) {
       console.error('Error updating tenant preference:', error);
       setError(error.message || "Failed to update preference");
-      toast({
+      ToastService.error({
         title: "Failed to update preference",
         description: "Please try again later"
       });

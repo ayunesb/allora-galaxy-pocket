@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/hooks/useTenant';
 import { useAuth } from '@/hooks/useAuth';
 import { SystemLog, LogSeverity } from '@/types/systemLog';
-import { toast } from 'sonner';
+import { ToastService } from '@/services/ToastService';
 
 interface LogActivityParams {
   event_type: string;

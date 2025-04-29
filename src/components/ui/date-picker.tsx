@@ -17,6 +17,8 @@ export interface DatePickerProps {
   value?: Date | null;
   onChange?: (date: Date | null) => void;
   placeholder?: string;
+  date?: Date | null; // Added for backward compatibility
+  setDate?: (date: Date | null) => void; // Added for backward compatibility
 }
 
 export function DatePicker({ 
@@ -24,11 +26,13 @@ export function DatePicker({
   onSelect,
   value, 
   onChange,
+  date,
+  setDate,
   placeholder = "Pick a date" 
 }: DatePickerProps) {
-  // Support both naming conventions
-  const dateValue = value || selected;
-  const onDateChange = onChange || onSelect;
+  // Support both naming conventions and backward compatibility
+  const dateValue = date || value || selected;
+  const onDateChange = setDate || onChange || onSelect;
   
   return (
     <Popover>

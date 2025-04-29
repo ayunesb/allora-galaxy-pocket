@@ -1,493 +1,248 @@
 
-import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { supabase } from "@/integrations/supabase/client";
-import { useTenant } from "@/hooks/useTenant";
-import { useToast } from "@/hooks/use-toast";
-import { toast } from 'sonner';
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { Loader2, ChevronLeft, ChevronRight, Check, ArrowLeft } from "lucide-react";
-import { CMO_Agent } from '@/lib/agents/CMO_Agent';
-import { LoadingState } from '@/components/ui/loading-state';
-import { useSystemLogs } from "@/hooks/useSystemLogs";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { useForm } from 'react-hook-form';
+import { useTenant } from '@/hooks/useTenant';
+import { useSystemLogs } from '@/hooks/useSystemLogs';
+import { ToastService } from '@/services/ToastService';
+import { Campaign } from '@/types/campaign';
+import { supabase } from '@/integrations/supabase/client';
 
-// Form schema for campaign creation
-const campaignFormSchema = z.object({
-  name: z.string().min(3, "Name must be at least 3 characters"),
-  description: z.string().min(10, "Description must be at least 10 characters"),
-  product: z.string().min(2, "Product must be at least 2 characters"),
-  audience: z.string().min(2, "Audience must be at least 2 characters"),
-});
+interface CampaignWizardProps {
+  strategy?: { id: string; title: string; };
+  defaultName?: string;
+}
 
-type CampaignFormValues = z.infer<typeof campaignFormSchema>;
-
-export default function CampaignWizard() {
-  const [searchParams] = useSearchParams();
-  const { toast } = useToast();
-  const navigate = useNavigate();
+export default function CampaignWizard({ strategy, defaultName = '' }: CampaignWizardProps) {
+  const [currentStep, setCurrentStep] = useState('basics');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { register, handleSubmit, formState: { errors }, watch } = useForm({
+    defaultValues: {
+      name: defaultName,
+      description: '',
+    }
+  });
   const { tenant } = useTenant();
   const { logActivity } = useSystemLogs();
-  const [isLoading, setIsLoading] = useState(false);
-  const [step, setStep] = useState(1);
-  const [generationError, setGenerationError] = useState<string | null>(null);
-  const [generatedContent, setGeneratedContent] = useState<{ 
-    channel: string; 
-    message: string; 
-    offer: string;
-  } | null>(null);
-  
-  const prefillData = searchParams.get('prefill');
-  const returnPath = searchParams.get('returnPath') || "/campaigns";
+  const navigate = useNavigate();
 
-  // Initialize form with default values or prefill data
-  const form = useForm<CampaignFormValues>({
-    resolver: zodResolver(campaignFormSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      product: "",
-      audience: "",
-    },
-  });
+  // Get form values
+  const name = watch('name');
+  const description = watch('description');
 
-  // Load prefill data from URL if available
-  useEffect(() => {
-    if (prefillData) {
-      try {
-        const data = JSON.parse(decodeURIComponent(prefillData));
-        form.reset({
-          name: data.name || "",
-          description: data.description || "",
-          product: data.product || "",
-          audience: data.audience || "",
-        });
-        
-        // Handle insight_id for later linking
-        if (data.insight_id) {
-          // Store for later use when campaign is launched
-          sessionStorage.setItem('campaign_insight_id', data.insight_id);
-        }
-      } catch (error) {
-        console.error("Error parsing prefill data:", error);
-        toast({
-          title: "Error",
-          description: "Could not load prefilled data",
-          variant: "destructive"
-        });
-      }
+  const goToStep = (step: string) => {
+    if (step === 'channels' && !name) {
+      ToastService.error("Please enter a campaign name first");
+      return;
     }
-  }, [prefillData, form, toast]);
-
-  // Generate campaign content using AI
-  const generateCampaignContent = async (values: CampaignFormValues) => {
-    setIsLoading(true);
-    setGenerationError(null);
-    
-    try {
-      // Log activity before generation starts
-      await logActivity({
-        event_type: 'CAMPAIGN_GENERATION_STARTED',
-        message: `Starting AI campaign generation for: ${values.name}`,
-        meta: {
-          product: values.product,
-          audience: values.audience
-        }
-      });
-      
-      const result = await CMO_Agent.run({
-        product: values.product,
-        audience: values.audience
-      });
-      
-      if (!result.message) {
-        throw new Error("AI failed to generate campaign content");
-      }
-      
-      setGeneratedContent(result);
-      setStep(2);
-      
-      // Log successful generation
-      await logActivity({
-        event_type: 'CAMPAIGN_GENERATION_COMPLETED',
-        message: `AI successfully generated campaign: ${values.name}`,
-        meta: {
-          channel: result.channel
-        }
-      });
-    } catch (error: any) {
-      console.error("Error generating campaign:", error);
-      setGenerationError(error.message || "Could not generate campaign content");
-      
-      // Log error
-      await logActivity({
-        event_type: 'CAMPAIGN_GENERATION_FAILED',
-        message: `AI campaign generation failed: ${error.message}`,
-        meta: {
-          product: values.product,
-          audience: values.audience,
-          error: error.message
-        }
-      });
-      
-      toast({
-        title: "Generation failed",
-        description: "Could not generate campaign content. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    setCurrentStep(step);
   };
 
-  // Save campaign to database and link with insight if needed
-  const saveCampaign = async (values: CampaignFormValues) => {
+  const handleSave = async (formData: any) => {
     if (!tenant?.id) {
-      toast({
-        title: "Error",
-        description: "No tenant found. Please try again.",
-        variant: "destructive"
-      });
-      return null;
+      ToastService.error("No tenant selected");
+      return;
     }
 
-    setIsLoading(true);
+    setIsSubmitting(true);
+
     try {
-      // Prepare campaign data with generated content
-      const campaignData = {
-        name: values.name,
-        description: values.description,
+      const campaign: Partial<Campaign> = {
+        name: formData.name,
+        description: formData.description,
         tenant_id: tenant.id,
         status: 'draft',
-        execution_status: 'pending',
-        scripts: {
-          product: values.product,
-          audience: values.audience,
-          channel: generatedContent?.channel || "",
-          message: generatedContent?.message || "",
-          offer: generatedContent?.offer || ""
-        }
+        strategy_id: strategy?.id,
       };
-      
-      // Save to database
-      const { data: campaign, error } = await supabase
+
+      const { data, error } = await supabase
         .from('campaigns')
-        .insert(campaignData)
-        .select()
+        .insert(campaign)
+        .select('id')
         .single();
-        
+
       if (error) throw error;
-      
-      // Link insight if available
-      const insightId = sessionStorage.getItem('campaign_insight_id');
-      if (insightId && campaign) {
-        await supabase
-          .from('kpi_insights')
-          .update({ 
-            campaign_id: campaign.id,
-            outcome: 'pending'
-          })
-          .eq('id', insightId);
-          
-        // Clear from session storage
-        sessionStorage.removeItem('campaign_insight_id');
-      }
-      
-      // Log activity
-      await logActivity({
-        event_type: "CAMPAIGN_CREATED_WITH_AI",
-        message: `AI-generated campaign "${values.name}" created successfully`,
-        meta: {
-          campaign_id: campaign.id,
-          product: values.product,
-          audience: values.audience
+
+      // Log the activity
+      await logActivity(
+        'CAMPAIGN_CREATED',
+        `Campaign "${campaign.name}" created`,
+        {
+          campaignId: data.id,
+          strategyId: strategy?.id
         }
+      );
+
+      ToastService.success({
+        title: "Campaign created",
+        description: "Your campaign has been saved as a draft"
       });
-      
-      return campaign;
-    } catch (error) {
-      console.error("Error saving campaign:", error);
-      throw error;
+
+      // Navigate to the campaign details page
+      navigate(`/campaigns/${data.id}`);
+    } catch (error: any) {
+      console.error('Error creating campaign:', error);
+      ToastService.error({
+        title: "Failed to create campaign",
+        description: error.message
+      });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  // Handle form submission
-  const onSubmit = async (values: CampaignFormValues) => {
-    if (step === 1) {
-      await generateCampaignContent(values);
-    } else {
-      try {
-        const campaign = await saveCampaign(values);
-        if (campaign) {
-          toast({
-            title: "Campaign created",
-            description: "Your AI-powered campaign has been created successfully",
-          });
-          navigate(`/campaigns/${campaign.id}`, {
-            state: { 
-              newlyCreated: true,
-              aiGenerated: true,
-              returnPath
-            }
-          });
-        }
-      } catch (error: any) {
-        toast({
-          title: "Error saving campaign",
-          description: error.message || "Could not save campaign",
-          variant: "destructive"
-        });
-      }
-    }
+  const handleCancel = () => {
+    ToastService.info({
+      title: "Campaign creation cancelled",
+      description: "Your changes have been discarded"
+    });
+    navigate('/campaigns');
   };
 
   return (
-    <div className="container max-w-3xl mx-auto py-6 space-y-6">
-      <div className="flex items-center">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => navigate(returnPath)}
-          className="flex items-center gap-1 mr-4"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            {step === 1 ? "AI Campaign Wizard" : "Review AI Campaign"}
-          </h1>
-          <p className="text-muted-foreground">
-            Create an AI-powered campaign in minutes
-          </p>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-center gap-2 mb-6">
-        <div className={`h-2 w-8 rounded-full ${step >= 1 ? "bg-primary" : "bg-gray-200"}`}></div>
-        <div className={`h-2 w-8 rounded-full ${step >= 2 ? "bg-primary" : "bg-gray-200"}`}></div>
-      </div>
-
-      {generationError && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertTitle>AI Generation Failed</AlertTitle>
-          <AlertDescription>{generationError}</AlertDescription>
-        </Alert>
-      )}
-
-      <Card>
+    <form onSubmit={handleSubmit(handleSave)}>
+      <Card className="mb-8">
         <CardHeader>
-          <CardTitle>{step === 1 ? "Campaign Details" : "AI-Generated Campaign"}</CardTitle>
+          <CardTitle className="text-xl">Create New Campaign</CardTitle>
           <CardDescription>
-            {step === 1 
-              ? "Enter details about your campaign to get AI-powered suggestions." 
-              : "Review the AI-generated content and make any necessary adjustments."}
+            {strategy ? `Based on strategy: ${strategy.title}` : 'Create a new marketing campaign'}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {step === 1 ? (
-                <>
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Campaign Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Summer Sale 2025" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Campaign Description</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Brief description of what this campaign aims to achieve"
-                            className="min-h-24"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField
-                      control={form.control}
-                      name="product"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Product/Service</FormLabel>
-                          <FormControl>
-                            <Input placeholder="What are you promoting?" {...field} />
-                          </FormControl>
-                          <FormDescription>
-                            The product or service this campaign promotes
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="audience"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Target Audience</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Who are you targeting?" {...field} />
-                          </FormControl>
-                          <FormDescription>
-                            Describe your ideal customer for this campaign
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </>
-              ) : (
-                generatedContent && (
-                  <div className="space-y-6">
-                    <div className="rounded-md border p-4">
-                      <h3 className="font-medium mb-2">Campaign Message</h3>
-                      <div className="whitespace-pre-wrap text-sm text-muted-foreground">
-                        {generatedContent.message}
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="rounded-md border p-4">
-                        <h3 className="font-medium mb-2">Channel Strategy</h3>
-                        <p className="text-sm text-muted-foreground">{generatedContent.channel}</p>
-                      </div>
-                      
-                      <div className="rounded-md border p-4">
-                        <h3 className="font-medium mb-2">Offer Structure</h3>
-                        <p className="text-sm text-muted-foreground">{generatedContent.offer}</p>
-                      </div>
-                    </div>
-                    
-                    {/* Hidden fields to preserve form data */}
-                    <input type="hidden" {...form.register("name")} />
-                    <input type="hidden" {...form.register("description")} />
-                    <input type="hidden" {...form.register("product")} />
-                    <input type="hidden" {...form.register("audience")} />
-                  </div>
-                )
-              )}
-              
-              <div className="flex justify-between pt-4">
-                {step === 2 && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={isLoading}
-                    onClick={() => setStep(1)}
-                  >
-                    <ChevronLeft className="mr-2 h-4 w-4" />
-                    Back
-                  </Button>
-                )}
-                
-                {step === 1 && (
-                  <div className="ml-auto">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => navigate('/campaigns/create')}
-                      className="mr-2"
-                    >
-                      Standard Editor
-                    </Button>
-                    <Button 
-                      type="submit"
-                      disabled={isLoading || !form.formState.isValid}
-                    >
-                      {isLoading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Generating...
-                        </>
-                      ) : (
-                        <>
-                          Generate Campaign
-                          <ChevronRight className="ml-2 h-4 w-4" />
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                )}
-                
-                {step === 2 && (
-                  <Button 
-                    type="submit"
-                    disabled={isLoading}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Creating...
-                      </>
-                    ) : (
-                      <>
-                        <Check className="mr-2 h-4 w-4" />
-                        Launch Campaign
-                      </>
-                    )}
-                  </Button>
+          <Tabs value={currentStep} onValueChange={goToStep} className="space-y-6">
+            <TabsList className="grid grid-cols-3 w-full">
+              <TabsTrigger value="basics">1. Basics</TabsTrigger>
+              <TabsTrigger value="channels" disabled={!name}>2. Channels</TabsTrigger>
+              <TabsTrigger value="review" disabled={!name}>3. Review</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="basics" className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="name" className="block text-sm font-medium">
+                  Campaign Name
+                </label>
+                <Input
+                  id="name"
+                  {...register('name', { required: 'Campaign name is required' })}
+                  placeholder="Enter campaign name"
+                />
+                {errors.name && (
+                  <p className="text-red-500 text-sm mt-1">{errors.name.message as string}</p>
                 )}
               </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
 
-      {isLoading && step === 1 && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-background p-6 rounded-lg max-w-md w-full">
-            <LoadingState size="lg" message="Our AI is crafting your campaign..." />
-            <p className="text-center text-sm mt-4 text-muted-foreground">
-              This may take a moment as we analyze your product and audience to create the perfect campaign
-            </p>
+              <div className="space-y-2">
+                <label htmlFor="description" className="block text-sm font-medium">
+                  Description (Optional)
+                </label>
+                <textarea
+                  id="description"
+                  {...register('description')}
+                  className="w-full p-2 border rounded-md min-h-[100px]"
+                  placeholder="Enter campaign description"
+                />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="channels" className="space-y-4">
+              <div className="bg-gray-50 p-4 rounded-md">
+                <h3 className="font-medium text-lg mb-2">Available Channels</h3>
+                <p className="text-muted-foreground mb-4">
+                  Select the channels that will be used in this campaign.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Channel selection will be implemented in the next phase.
+                </p>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="review" className="space-y-4">
+              <div className="space-y-4">
+                <div className="bg-gray-50 p-4 rounded-md">
+                  <h3 className="font-medium mb-2">Campaign Summary</h3>
+                  <div className="space-y-2">
+                    <p>
+                      <span className="font-medium">Name:</span> {name}
+                    </p>
+                    <p>
+                      <span className="font-medium">Description:</span>{' '}
+                      {description || 'No description provided'}
+                    </p>
+                    <p>
+                      <span className="font-medium">Based on Strategy:</span>{' '}
+                      {strategy ? strategy.title : 'None'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 p-4 rounded-md">
+                  <h3 className="font-medium mb-2">Selected Channels</h3>
+                  <p className="text-sm text-muted-foreground">
+                    No channels selected yet.
+                  </p>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+        <CardFooter className="flex justify-between">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleCancel}
+          >
+            Cancel
+          </Button>
+
+          <div className="space-x-2">
+            {currentStep === 'basics' ? (
+              <Button
+                type="button"
+                onClick={() => goToStep('channels')}
+                disabled={!name}
+              >
+                Next: Channels
+              </Button>
+            ) : currentStep === 'channels' ? (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => goToStep('basics')}
+                >
+                  Back
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => goToStep('review')}
+                >
+                  Next: Review
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => goToStep('channels')}
+                >
+                  Back
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Creating...' : 'Create Campaign'}
+                </Button>
+              </>
+            )}
           </div>
-        </div>
-      )}
-    </div>
+        </CardFooter>
+      </Card>
+    </form>
   );
 }
