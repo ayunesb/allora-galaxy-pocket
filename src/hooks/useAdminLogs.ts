@@ -1,95 +1,91 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/sonner';
-import { SystemLog } from '@/types/systemLog';
+import { useTenant } from '@/hooks/useTenant';
+import { SystemLog } from '@/types/agent';
 
-interface AdminLogsFilters {
-  dateRange: number;
-  eventType: string;
-  userId: string;
-  search: string;
+interface UseAdminLogsParams {
+  limit?: number;
+  eventTypes?: string[];
+  startDate?: string;
+  endDate?: string;
+  searchTerm?: string;
 }
 
-export function useAdminLogs(initialFilters: AdminLogsFilters = {
-  dateRange: 7,
-  eventType: 'all',
-  userId: 'all',
-  search: ''
-}) {
+export function useAdminLogs({
+  limit = 50,
+  eventTypes = [],
+  startDate,
+  endDate,
+  searchTerm
+}: UseAdminLogsParams = {}) {
   const [logs, setLogs] = useState<SystemLog[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [filters, setFilters] = useState<AdminLogsFilters>(initialFilters);
-
-  const refreshLogs = async () => {
-    setIsLoading(true);
-    try {
-      let query = supabase.from('system_logs').select('*');
-      
-      // Apply date range filter
-      if (filters.dateRange > 0) {
-        const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - filters.dateRange);
-        query = query.gte('created_at', cutoffDate.toISOString());
-      }
-      
-      // Apply event type filter
-      if (filters.eventType !== 'all') {
-        query = query.ilike('event_type', `%${filters.eventType}%`);
-      }
-      
-      // Apply user ID filter
-      if (filters.userId !== 'all') {
-        query = query.eq('user_id', filters.userId);
-      }
-      
-      // Always order by most recent
-      query = query.order('created_at', { ascending: false });
-      
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      
-      // Apply search filter client-side for more flexibility
-      let filteredData = data || [];
-      if (filters.search) {
-        const searchTerm = filters.search.toLowerCase();
-        filteredData = filteredData.filter(log => 
-          log.message.toLowerCase().includes(searchTerm) || 
-          log.event_type.toLowerCase().includes(searchTerm) ||
-          (log.meta && JSON.stringify(log.meta).toLowerCase().includes(searchTerm))
-        );
-      }
-      
-      setLogs(filteredData);
-    } catch (error: any) {
-      console.error('Error fetching admin logs:', error);
-      toast.error('Failed to fetch system logs', { description: error.message });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Refresh logs when filters change
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const { tenant } = useTenant();
+  
   useEffect(() => {
-    refreshLogs();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.dateRange, filters.eventType, filters.userId]);
+    async function fetchLogs() {
+      if (!tenant?.id) return;
 
-  // Only refresh when search changes and it's more than 3 characters or empty
-  useEffect(() => {
-    if (filters.search.length === 0 || filters.search.length > 2) {
-      const debounceTimer = setTimeout(refreshLogs, 300);
-      return () => clearTimeout(debounceTimer);
+      setIsLoading(true);
+
+      try {
+        let query = supabase
+          .from('system_logs')
+          .select('*')
+          .eq('tenant_id', tenant.id);
+
+        // Apply filters
+        if (eventTypes.length > 0) {
+          query = query.in('event_type', eventTypes);
+        }
+        
+        if (startDate) {
+          query = query.gte('created_at', startDate);
+        }
+        
+        if (endDate) {
+          query = query.lte('created_at', endDate);
+        }
+        
+        if (searchTerm) {
+          query = query.or(`message.ilike.%${searchTerm}%,event_type.ilike.%${searchTerm}%`);
+        }
+        
+        // Order and limit
+        query = query
+          .order('created_at', { ascending: false })
+          .limit(limit);
+        
+        const { data, error: apiError } = await query;
+        
+        if (apiError) throw apiError;
+        
+        // Convert to SystemLog type with required fields
+        const typedLogs: SystemLog[] = data.map(log => ({
+          id: log.id,
+          event_type: log.event_type,
+          message: log.message,
+          meta: log.meta,
+          tenant_id: log.tenant_id,
+          user_id: log.user_id,
+          created_at: log.created_at,
+          severity: 'info' // Default severity if not available
+        }));
+        
+        setLogs(typedLogs);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching admin logs:', err);
+        setError(err instanceof Error ? err : new Error('Failed to fetch logs'));
+      } finally {
+        setIsLoading(false);
+      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.search]);
 
-  return {
-    logs,
-    isLoading,
-    filters,
-    setFilters,
-    refreshLogs
-  };
+    fetchLogs();
+  }, [tenant, limit, eventTypes, startDate, endDate, searchTerm]);
+
+  return { logs, isLoading, error };
 }

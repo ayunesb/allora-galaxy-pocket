@@ -6,13 +6,13 @@ import { ArrowUpIcon, ArrowDownIcon } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 export function KpiOverview() {
-  const { data: kpiData, isLoading } = useKpiData();
+  const { currentMetrics, trends, isLoading } = useKpiData();
 
   if (isLoading) {
     return <div>Loading KPI data...</div>;
   }
 
-  if (!kpiData?.currentMetrics.length) {
+  if (!currentMetrics.length) {
     return (
       <Card>
         <CardHeader>
@@ -27,9 +27,9 @@ export function KpiOverview() {
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      {kpiData.currentMetrics.map((metric) => {
-        const trend = kpiData.trends.filter(t => t.metric === metric.metric);
-        const previousValue = trend[trend.length - 2]?.value || 0;
+      {currentMetrics.map((metric) => {
+        const metricTrends = trends.filter(t => t.metric === metric.metric);
+        const previousValue = metricTrends[metricTrends.length - 2]?.value || 0;
         const percentageChange = previousValue ? 
           ((metric.value - previousValue) / previousValue) * 100 : 0;
 
@@ -53,7 +53,7 @@ export function KpiOverview() {
               <div className="text-2xl font-bold mb-4">{metric.value}</div>
               <div className="h-[80px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={trend}>
+                  <LineChart data={metricTrends}>
                     <Line 
                       type="monotone" 
                       dataKey="value" 

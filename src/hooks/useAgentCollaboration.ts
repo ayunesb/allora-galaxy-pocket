@@ -1,103 +1,95 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useTenant } from './useTenant';
-import { useToast } from './use-toast';
-import { v4 as uuidv4 } from 'uuid';
-import { logAgentCollaboration, getAgentCollaboration } from '@/lib/agents/agentCollaboration';
-import type { AgentCollabMessage } from '@/types/agent';
+import { useTenant } from '@/hooks/useTenant';
+import { AgentCollabMessage } from '@/types/agent';
 
-export function useAgentCollaboration() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [sessionId, setSessionId] = useState<string>('');
+export function useAgentCollaboration(sessionId: string) {
   const [messages, setMessages] = useState<AgentCollabMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const { tenant } = useTenant();
-  const { toast } = useToast();
 
-  const initializeCollaboration = () => {
-    const newSessionId = uuidv4();
-    setSessionId(newSessionId);
-    setMessages([]);
-    return newSessionId;
-  };
-
-  const logMessage = async (agent: string, message: string) => {
-    if (!tenant?.id || !sessionId) {
-      console.error('Missing tenant ID or session ID for agent collaboration');
-      return false;
+  useEffect(() => {
+    async function fetchMessages() {
+      if (!tenant?.id || !sessionId) return;
+      
+      try {
+        setIsLoading(true);
+        
+        const { data, error: apiError } = await supabase
+          .from('agent_collaboration')
+          .select('*')
+          .eq('session_id', sessionId)
+          .eq('tenant_id', tenant.id)
+          .order('created_at', { ascending: true });
+        
+        if (apiError) throw apiError;
+        
+        // Convert to AgentCollabMessage type
+        const typedMessages: AgentCollabMessage[] = data.map(item => ({
+          id: item.id,
+          session_id: item.session_id,
+          agent: item.agent,
+          message: item.message,
+          created_at: item.created_at,
+          tenant_id: item.tenant_id
+        }));
+        
+        setMessages(typedMessages);
+      } catch (err) {
+        console.error('Error fetching collaboration messages:', err);
+        setError(err instanceof Error ? err : new Error('Failed to fetch messages'));
+      } finally {
+        setIsLoading(false);
+      }
     }
+    
+    fetchMessages();
+    
+    // Set up subscription for real-time updates
+    const channel = supabase
+      .channel(`agent-collab-${sessionId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'agent_collaboration',
+        filter: `session_id=eq.${sessionId}`
+      }, (payload) => {
+        const newMessage = payload.new as AgentCollabMessage;
+        setMessages(prev => [...prev, newMessage]);
+      })
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [sessionId, tenant]);
 
-    setIsLoading(true);
+  const sendMessage = async (agent: string, message: string) => {
+    if (!tenant?.id || !sessionId) return null;
+    
     try {
-      await logAgentCollaboration({
-        sessionId,
-        agent,
-        message,
-        tenantId: tenant.id
-      });
-
-      // Add to local state
       const newMessage = {
-        id: uuidv4(),
         session_id: sessionId,
         agent,
         message,
-        created_at: new Date().toISOString()
+        tenant_id: tenant.id
       };
-
-      setMessages(prev => [...prev, newMessage]);
-      return true;
-    } catch (error) {
-      console.error('Error logging agent collaboration:', error);
-      return false;
-    } finally {
-      setIsLoading(false);
+      
+      const { data, error: apiError } = await supabase
+        .from('agent_collaboration')
+        .insert([newMessage])
+        .select();
+      
+      if (apiError) throw apiError;
+      
+      return data?.[0] || null;
+    } catch (err) {
+      console.error('Error sending message:', err);
+      return null;
     }
   };
 
-  const loadCollaborationHistory = async (collabSessionId?: string) => {
-    if (!tenant?.id) {
-      return false;
-    }
-
-    const targetSessionId = collabSessionId || sessionId;
-    if (!targetSessionId) {
-      console.error('No session ID provided for loading collaboration history');
-      return false;
-    }
-
-    setIsLoading(true);
-    try {
-      const collabMessages = await getAgentCollaboration({
-        sessionId: targetSessionId,
-        tenantId: tenant.id
-      });
-
-      setMessages(collabMessages);
-      if (collabSessionId && collabSessionId !== sessionId) {
-        setSessionId(collabSessionId);
-      }
-
-      return true;
-    } catch (error) {
-      console.error('Error loading collaboration history:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load collaboration history',
-        variant: 'destructive'
-      });
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return {
-    sessionId,
-    messages,
-    isLoading,
-    initializeCollaboration,
-    logMessage,
-    loadCollaborationHistory
-  };
+  return { messages, isLoading, error, sendMessage };
 }

@@ -1,126 +1,70 @@
 
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useTenant } from "@/hooks/useTenant";
-import { KpiMetric } from "@/types/kpi";
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
-interface KpiTrendPoint {
+export interface KpiMetric {
+  id: string;
   metric: string;
   value: number;
-  date: string;
-  day: string;
+  created_at: string;
 }
 
-interface KpiDataResult {
+export interface KpiTrend {
+  metric: string;
+  value: number;
+  day: string; 
+}
+
+export interface KpiDataResult {
   currentMetrics: KpiMetric[];
-  trends: KpiTrendPoint[];
+  trends: KpiTrend[];
   isLoading: boolean;
   error: Error | null;
 }
 
-export function useKpiData(timeFrame = 30): KpiDataResult {
-  const { tenant } = useTenant();
-  
+export function useKpiData(): KpiDataResult {
   const { data, isLoading, error } = useQuery({
-    queryKey: ['kpi-data', tenant?.id, timeFrame],
+    queryKey: ['kpi-data'],
     queryFn: async () => {
-      if (!tenant?.id) return { metrics: [], trends: [] };
-      
-      // Get the latest metrics
+      // Get current metrics
       const { data: metricsData, error: metricsError } = await supabase
         .from('kpi_metrics')
         .select('*')
-        .eq('tenant_id', tenant.id)
-        .order('updated_at', { ascending: false });
-        
+        .order('created_at', { ascending: false })
+        .limit(4);
+      
       if (metricsError) throw metricsError;
       
-      // Get historical data for trends
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - timeFrame);
-      
-      const { data: historyData, error: historyError } = await supabase
-        .from('kpi_metrics_history')
+      // Get trend data (last 7 days)
+      const { data: trendData, error: trendError } = await supabase
+        .from('kpi_metrics')
         .select('*')
-        .eq('tenant_id', tenant.id)
-        .gte('recorded_at', startDate.toISOString())
-        .order('recorded_at', { ascending: true });
-        
-      if (historyError) throw historyError;
+        .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+        .order('created_at', { ascending: true });
       
-      // Group metrics by name to get most recent values
-      const metricsByName: Record<string, KpiMetric> = {};
+      if (trendError) throw trendError;
       
-      for (const metric of metricsData || []) {
-        const metricName = metric.metric;
-        if (!metricsByName[metricName] || new Date(metric.updated_at) > new Date(metricsByName[metricName].updated_at || '')) {
-          metricsByName[metricName] = {
-            id: metric.id,
-            tenant_id: metric.tenant_id,
-            kpi_name: metric.metric,
-            metric: metric.metric,
-            value: Number(metric.value),
-            trend: 'neutral',
-            created_at: metric.created_at,
-            updated_at: metric.updated_at,
-            recorded_at: metric.recorded_at
-          };
-        }
-      }
-      
-      // Process historical data for trends
-      const trendPoints: KpiTrendPoint[] = (historyData || []).map(point => ({
-        metric: point.metric,
-        value: Number(point.value),
-        date: new Date(point.recorded_at).toISOString(),
-        day: new Date(point.recorded_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+      // Process trend data to have day labels
+      const processedTrends = trendData.map(item => ({
+        metric: item.metric,
+        value: parseFloat(item.value),
+        day: new Date(item.created_at).toLocaleDateString('en-US', { weekday: 'short' })
       }));
       
-      // Add current metrics to trend data for complete view
-      Object.values(metricsByName).forEach(metric => {
-        if (metric.updated_at) {
-          trendPoints.push({
-            metric: metric.kpi_name || '',
-            value: Number(metric.value),
-            date: new Date(metric.updated_at).toISOString(),
-            day: new Date(metric.updated_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-          });
-        }
-      });
-      
-      // Calculate trends based on historical vs current
-      Object.values(metricsByName).forEach(metric => {
-        const metricHistory = trendPoints.filter(t => t.metric === metric.kpi_name)
-          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-          
-        if (metricHistory.length >= 2) {
-          const oldestValue = metricHistory[0].value;
-          const currentValue = Number(metric.value);
-          
-          if (currentValue > oldestValue) {
-            metricsByName[metric.kpi_name || ''].trend = 'up';
-            metricsByName[metric.kpi_name || ''].changePercent = oldestValue !== 0 ? 
-              ((currentValue - oldestValue) / Math.abs(oldestValue)) * 100 : 100;
-          } else if (currentValue < oldestValue) {
-            metricsByName[metric.kpi_name || ''].trend = 'down';
-            metricsByName[metric.kpi_name || ''].changePercent = oldestValue !== 0 ? 
-              ((currentValue - oldestValue) / Math.abs(oldestValue)) * 100 : -100;
-          }
-        }
-      });
-      
-      return { 
-        metrics: Object.values(metricsByName),
-        trends: trendPoints
+      return {
+        currentMetrics: metricsData.map(m => ({
+          ...m,
+          value: parseFloat(m.value)
+        })),
+        trends: processedTrends
       };
-    },
-    enabled: !!tenant?.id,
+    }
   });
   
   return {
-    currentMetrics: data?.metrics || [],
+    currentMetrics: data?.currentMetrics || [],
     trends: data?.trends || [],
     isLoading,
-    error: error as Error | null
+    error
   };
 }

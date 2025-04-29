@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, ReactNode } from "react";
 import { useAgentContext as useAgentData } from "@/hooks/useAgentContext";
-import { AgentProfile } from "@/app/agents/hooks/useAgentProfile";
+import { AgentProfile } from "@/types/agent";
 
 interface AgentContextType {
   agentProfile: AgentProfile | null;

@@ -1,30 +1,33 @@
 
-import React from 'react';
-import { Loader2 } from 'lucide-react';
-
-type SpinnerSize = 'sm' | 'md' | 'lg';
+import React from "react";
+import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { SpinnerSize } from "@/types/agent";
 
 interface LoadingSpinnerProps {
   size?: SpinnerSize;
-  label?: string;
   className?: string;
+  label?: string;
 }
 
-const sizeMap = {
-  sm: 'h-4 w-4',
-  md: 'h-6 w-6',
-  lg: 'h-8 w-8'
+const sizeClasses = {
+  sm: "h-4 w-4",
+  md: "h-6 w-6",
+  lg: "h-8 w-8",
+  xl: "h-10 w-10"
 };
 
-export default function LoadingSpinner({ 
-  size = 'md', 
-  label,
-  className = '' 
-}: LoadingSpinnerProps) {
+const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ 
+  size = "md", 
+  className, 
+  label 
+}) => {
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
-      <Loader2 className={`animate-spin ${sizeMap[size]}`} />
-      {label && <span className="text-muted-foreground">{label}</span>}
+    <div className="flex flex-col items-center justify-center">
+      <Loader2 className={cn("animate-spin", sizeClasses[size], className)} />
+      {label && <span className="mt-2 text-sm text-muted-foreground">{label}</span>}
     </div>
   );
-}
+};
+
+export default LoadingSpinner;

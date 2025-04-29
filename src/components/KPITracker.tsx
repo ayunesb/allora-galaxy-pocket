@@ -27,11 +27,11 @@ export function KPITracker({ kpis }: KPITrackerProps) {
           id={metric.id || `metric-${metric.kpi_name}`}
           kpi_name={metric.kpi_name || ""}
           metric={metric.metric || ""}
-          value={typeof metric.value === 'string' ? parseFloat(metric.value) : metric.value || 0}
+          value={typeof metric.value === 'number' ? metric.value : 0}
           trend={metric.trend || "neutral"}
           changePercent={metric.changePercent || 0}
           target={metric.target || 0}
-          unit={metric.unit || ""}
+          unit=""
           updated_at={metric.updated_at || ""}
         />
       ))}

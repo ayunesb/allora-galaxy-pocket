@@ -19,7 +19,7 @@ export function MaintenanceMode({ children }: MaintenanceModeProps) {
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <LoadingSpinner size={40} label="Checking system status..." />
+        <LoadingSpinner size="lg" label="Checking system status..." />
       </div>
     );
   }

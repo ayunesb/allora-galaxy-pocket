@@ -17,10 +17,12 @@ export function useAppSettings(category?: string) {
     queryFn: async () => {
       // Check if the settings table exists
       try {
-        const query = supabase.from('settings').select('*');
+        // Use system_config table instead of settings
+        const query = supabase.from('system_config').select('*');
         
         if (category) {
-          query.eq('category', category);
+          // Filter by category stored in config JSON
+          query.filter('config->category', 'eq', category);
         }
 
         const { data, error } = await query;
@@ -30,7 +32,15 @@ export function useAppSettings(category?: string) {
           return [];
         }
 
-        return data as AppSetting[];
+        // Transform the data to match the AppSetting interface
+        const transformedData: AppSetting[] = data.map(item => ({
+          key: item.key,
+          value: item.config.value,
+          category: item.config.category || 'general',
+          description: item.config.description
+        }));
+
+        return transformedData;
       } catch (err) {
         console.error("Error in settings query:", err);
         return [];
