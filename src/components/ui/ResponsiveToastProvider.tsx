@@ -17,6 +17,7 @@ export function ResponsiveToastProvider({ children }: { children: React.ReactNod
     setPosition(isMobile ? 'bottom-center' : 'top-right');
   }, [isMobile]);
 
+  // Make sure to wrap children in a fragment to avoid React rendering issues
   return (
     <>
       {children}

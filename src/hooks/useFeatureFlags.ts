@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -103,7 +103,7 @@ export function useFeatureFlags() {
     }
   };
 
-  // Check if a feature is enabled and the user has access
+  // Add the missing isFeatureEnabled method
   const isFeatureEnabled = useCallback((key: string): boolean => {
     if (!flags || flags.length === 0) return false;
     
@@ -132,6 +132,8 @@ export function useFeatureFlags() {
     error,
     refreshFlags: fetchFlags,
     updateFlags,
-    isFeatureEnabled
+    isFeatureEnabled,
+    // Add isEnabled as an alias for isFeatureEnabled for backward compatibility
+    isEnabled: isFeatureEnabled
   };
 }

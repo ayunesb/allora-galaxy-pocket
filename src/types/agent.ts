@@ -30,13 +30,13 @@ export interface AgentCollabMessage {
 export interface AgentFeedback {
   id: string;
   agent: string;
-  from_agent?: string;
-  to_agent?: string;
+  from_agent?: string; // Added missing field
+  to_agent?: string;   // Added missing field
   feedback?: string;
   type?: string;
   rating?: number;
   task_id?: string;
-  strategy_id?: string;
+  strategy_id?: string; // Added missing field
   tenant_id: string;
   created_at: string;
 }

@@ -36,7 +36,8 @@ export function useLogActivity() {
         tenant_id: tenant.id,
         event_type,
         message,
-        meta: { ...meta, severity },
+        meta: { ...meta },
+        severity, // Add severity field directly to the payload
         user_id: user?.id
       };
       
@@ -48,7 +49,7 @@ export function useLogActivity() {
         
       if (error) throw error;
       
-      return { success: true, log: data };
+      return { success: true, log: data as SystemLog };
     } catch (err) {
       console.error("Failed to log activity:", err);
       return { success: false, error: err };
@@ -100,7 +101,8 @@ export function useLogActivity() {
         from,
         to,
         ...details
-      }
+      },
+      severity: 'info'
     });
   };
 

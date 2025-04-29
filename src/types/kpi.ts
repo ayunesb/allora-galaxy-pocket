@@ -1,5 +1,3 @@
-
-
 export interface KpiMetric {
   id?: string;
   tenant_id?: string;
@@ -12,10 +10,11 @@ export interface KpiMetric {
   trend?: 'up' | 'down' | 'neutral';
   changePercent?: number;
   target?: number | string;
-  label?: string; // Added for compatibility
-  description?: string; // Added for compatibility
-  trend_direction?: 'up' | 'down' | 'neutral'; // Added for compatibility with KpiTracker
-  last_value?: number; // Added for compatibility with KpiTracker
+  unit?: string;
+  label?: string;
+  description?: string;
+  trend_direction?: 'up' | 'down' | 'neutral';
+  last_value?: number;
 }
 
 export interface KpiAlert {
@@ -51,7 +50,6 @@ export interface KpiInsight {
   suggested_action?: string;
 }
 
-// Add KpiAlertRule interface for KpiAlertRuleForm and KpiAlertRules components
 export interface KpiAlertRule {
   id: string;
   tenant_id: string;
@@ -69,7 +67,6 @@ export interface KpiAlertRule {
   compare_period?: string;
 }
 
-// New unified alert interface that can represent data from both sources
 export interface UnifiedAlert {
   id: string;
   kpi_name: string;

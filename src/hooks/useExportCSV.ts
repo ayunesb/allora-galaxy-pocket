@@ -7,16 +7,17 @@ export function useExportCSV() {
   const [isExporting, setIsExporting] = useState(false);
   const { tenant } = useTenant();
 
-  // Check if table exists first (in a type-safe way)
+  // Check if table exists (simpler implementation that doesn't rely on custom DB functions)
   const checkTableExists = async (tableName: string): Promise<boolean> => {
     try {
-      // Query pg_tables using a custom stored procedure
-      const { data, error } = await supabase.rpc('check_table_exists', {
-        table_name: tableName
-      });
+      // Try to select a single row with limit 0 to check if the table exists
+      const { error } = await supabase
+        .from(tableName)
+        .select('*')
+        .limit(0);
       
-      if (error) throw error;
-      return !!data;
+      // If there's no error, the table exists
+      return !error;
     } catch (err) {
       console.error(`Error checking if table ${tableName} exists:`, err);
       return false;
@@ -38,16 +39,29 @@ export function useExportCSV() {
         throw new Error(`Table "${tableName}" does not exist`);
       }
       
-      // Use the export_table_data RPC function
-      const { data, error } = await supabase.rpc('export_table_data', {
-        p_table_name: tableName,
-        p_tenant_id: tenant?.id || null
-      });
+      // Since we can't use the custom RPC function, we'll do a direct query
+      let query = supabase.from(tableName).select('*');
+      
+      // Add tenant filter if applicable
+      if (tenant?.id && tableName !== 'subscription_tiers') {
+        query = query.eq('tenant_id', tenant.id);
+      }
+      
+      // Apply additional filters if provided
+      if (filters) {
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            query = query.eq(key, value);
+          }
+        });
+      }
+      
+      const { data, error } = await query;
       
       if (error) throw error;
 
       // Convert the returned data to CSV
-      if (!data || !Array.isArray(data) || data.length === 0) {
+      if (!data || data.length === 0) {
         return 'No data found';
       }
       

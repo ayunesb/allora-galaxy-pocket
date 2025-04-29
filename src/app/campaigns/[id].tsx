@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -154,7 +153,7 @@ export default function CampaignDetailPage() {
                 Pause
               </Button>
             ) : (
-              <Button variant="default" onClick={handleExecute} disabled={campaign.status === 'failed'}>
+              <Button variant="default" onClick={handleExecute} disabled={campaign.status === 'failed' || campaign.execution_status === 'failed'}>
                 <Play className="h-4 w-4 mr-2" />
                 {campaign.status === 'paused' ? 'Resume' : 'Execute'}
               </Button>

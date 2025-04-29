@@ -11,7 +11,7 @@ export interface NotificationInput {
   description: string;
   priority?: 'low' | 'medium' | 'high';
   link?: string;
-  send_webhook?: boolean; // Add this new property to match the usage
+  send_webhook?: boolean;
 }
 
 export function useNotifications() {
@@ -52,7 +52,7 @@ export function useNotifications() {
           description: notification.description,
           priority: notification.priority || 'medium',
           link: notification.link,
-          read: false
+          is_read: false // Use is_read instead of read
         });
         
       if (error) throw error;
@@ -90,7 +90,7 @@ export function useNotifications() {
     try {
       const { error } = await supabase
         .from('notifications')
-        .update({ read: true })
+        .update({ is_read: true }) // Use is_read instead of read
         .eq('id', notificationId)
         .eq('user_id', user.id);
         
@@ -113,9 +113,9 @@ export function useNotifications() {
     try {
       const { error } = await supabase
         .from('notifications')
-        .update({ read: true })
+        .update({ is_read: true }) // Use is_read instead of read
         .eq('user_id', user.id)
-        .eq('read', false);
+        .eq('is_read', false);
         
       if (error) throw error;
       
@@ -135,6 +135,6 @@ export function useNotifications() {
     sendNotification,
     markAsRead,
     markAllAsRead,
-    unreadCount: notifications?.filter(n => !n.read)?.length || 0
+    unreadCount: notifications?.filter(n => !n.is_read)?.length || 0
   };
 }
