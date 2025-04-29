@@ -1,4 +1,3 @@
-
 import { 
   Card, 
   CardContent, 
@@ -19,12 +18,7 @@ import {
 import { UserRole } from "@/types/invite";
 
 export function TeamMembersList() {
-  const { 
-    teamMembers, 
-    isLoadingMembers, 
-    updateRole, 
-    removeMember 
-  } = useTeamManagement();
+  const { members, isLoading, updateMemberRole, removeMember } = useTeamManagement();
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
@@ -37,7 +31,7 @@ export function TeamMembersList() {
     }
   };
 
-  if (isLoadingMembers) {
+  if (isLoading) {
     return (
       <Card>
         <CardHeader>
@@ -59,7 +53,7 @@ export function TeamMembersList() {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {teamMembers.map((member) => (
+          {members.map((member) => (
             <div 
               key={member.id} 
               className="flex items-center justify-between p-2 border rounded"
@@ -88,19 +82,19 @@ export function TeamMembersList() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem 
-                    onClick={() => updateRole(member.user_id, 'admin' as UserRole)}
+                    onClick={() => updateMemberRole(member.user_id, 'admin' as UserRole)}
                     disabled={member.role === 'admin'}
                   >
                     Make Admin
                   </DropdownMenuItem>
                   <DropdownMenuItem 
-                    onClick={() => updateRole(member.user_id, 'editor' as UserRole)}
+                    onClick={() => updateMemberRole(member.user_id, 'editor' as UserRole)}
                     disabled={member.role === 'editor'}
                   >
                     Make Editor
                   </DropdownMenuItem>
                   <DropdownMenuItem 
-                    onClick={() => updateRole(member.user_id, 'viewer' as UserRole)}
+                    onClick={() => updateMemberRole(member.user_id, 'viewer' as UserRole)}
                     disabled={member.role === 'viewer'}
                   >
                     Make Viewer

@@ -1,58 +1,55 @@
-
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import React, { useState } from 'react';
 import { Input } from "@/components/ui/input";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { useTeamManagement } from "@/hooks/useTeamManagement";
-import { UserRole } from "@/types/invite";
+import { toast } from 'sonner';
 
-export function InviteMemberForm() {
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState<UserRole>("viewer");
+interface InviteMemberFormProps {
+  role: string;
+}
+
+export function InviteMemberForm({ role }: InviteMemberFormProps) {
+  const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { inviteTeamMember } = useTeamManagement();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    inviteTeamMember({ email, role });
-    setEmail("");
+    
+    if (!email) {
+      toast.error("Email is required");
+      return;
+    }
+    
+    setIsSubmitting(true);
+    const result = await inviteTeamMember(email, role);
+    
+    if (result?.error) {
+      toast.error(result.error.message || "Failed to invite member");
+    } else {
+      toast.success("Invitation sent successfully");
+      setEmail('');
+    }
+    setIsSubmitting(false);
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Invite Team Member</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            type="email"
-            placeholder="Email address"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <Select value={role} onValueChange={(value) => setRole(value as UserRole)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select role" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="admin">Admin</SelectItem>
-              <SelectItem value="editor">Editor</SelectItem>
-              <SelectItem value="viewer">Viewer</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button type="submit" className="w-full">
-            Send Invite
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <Label htmlFor="email">Email</Label>
+        <Input
+          type="email"
+          id="email"
+          placeholder="Enter email address"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+      </div>
+      <Button type="submit" disabled={isSubmitting}>
+        {isSubmitting ? "Inviting..." : "Invite Member"}
+      </Button>
+    </form>
   );
 }

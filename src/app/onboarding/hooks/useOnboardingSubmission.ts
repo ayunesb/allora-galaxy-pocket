@@ -1,99 +1,97 @@
+import { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useUser } from '@/hooks/useAuth';
+import { useTenant } from '@/hooks/useTenant';
+import { useSystemLogs } from '@/hooks/useSystemLogs';
+import { Strategy } from '@/types/strategy';
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { OnboardingProfile } from "@/types/onboarding";
-import { ToastService } from "@/services/ToastService";
-import { useTenant } from "@/hooks/useTenant";
-import { useSystemLogs } from "@/hooks/useSystemLogs";
+interface OnboardingData {
+  companyName: string;
+  industry: string;
+  companySize: string;
+  goals: string[];
+  painPoints: string[];
+}
 
-export function useOnboardingSubmission() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+export const useOnboardingSubmission = () => {
+  const { toast } = useToast();
+  const { user } = useUser();
   const { tenant } = useTenant();
-  const navigate = useNavigate();
-  const { logActivity, logJourneyStep } = useSystemLogs();
+  const { logActivity } = useSystemLogs();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const completeOnboarding = async (profile: OnboardingProfile) => {
-    if (!tenant?.id) {
-      console.error("Cannot complete onboarding: No tenant ID available");
-      ToastService.error({
-        title: "Error",
-        description: "Workspace not selected. Please try again."
-      });
-      return {
-        success: false,
-        error: "Workspace not selected. Please try again."
-      };
-    }
-
-    setIsSubmitting(true);
+  const handleSubmit = async (data: OnboardingData): Promise<Strategy | null> => {
+    setIsLoading(true);
     try {
-      // Log journey step - transitioning from Auth to Onboarding completion
-      await logJourneyStep('auth', 'onboarding_completion', { 
-        profile_type: profile.launch_mode,
-        industry: profile.industry
-      });
-      
-      // Save company profile
-      const { error } = await supabase
-        .from("company_profiles")
-        .upsert({
-          tenant_id: tenant.id,
-          name: profile.companyName,
-          industry: profile.industry,
-          team_size: profile.teamSize,
-          revenue_tier: profile.revenue,
-          launch_mode: profile.launch_mode
-        });
+      if (!user?.id || !tenant?.id) {
+        throw new Error("User or Tenant ID not available");
+      }
 
-      if (error) throw error;
-
-      // Log successful completion
-      await logActivity({
-        event_type: "ONBOARDING_COMPLETED",
-        message: `Onboarding completed successfully for ${profile.companyName}`,
-        meta: {
-          profile_type: profile.launch_mode,
-          industry: profile.industry,
-          team_size: profile.teamSize
-        }
-      });
-
-      ToastService.success({
-        title: "Setup complete!",
-        description: "Welcome to Allora OS"
-      });
-
-      return { success: true };
-    } catch (error: any) {
-      console.error("Onboarding submission error:", error);
-      
-      // Log the error
-      await logActivity({
-        event_type: "ONBOARDING_ERROR",
-        message: `Onboarding failed: ${error.message || "Unknown error"}`,
-        meta: {
-          error: error.message,
-          profile: profile
-        }
-      });
-      
-      ToastService.error({
-        title: "Submission failed",
-        description: error.message || "An unexpected error occurred"
-      });
-      
-      return {
-        success: false,
-        error: error.message || "Failed to save onboarding data"
+      const initialData = {
+        company_name: data.companyName,
+        industry: data.industry,
+        company_size: data.companySize,
+        goals: data.goals,
+        pain_points: data.painPoints
       };
+
+      await logActivity(
+        'ONBOARDING_STARTED',
+        'User started onboarding process',
+        { step: 1, data: initialData }
+      );
+
+      const { data: strategy, error } = await supabase
+        .from('strategies')
+        .insert({
+          tenant_id: tenant.id,
+          created_by: user.id,
+          title: `AI Strategy for ${data.companyName}`,
+          description: `AI-generated strategy for ${data.companyName} in the ${data.industry} industry.`,
+          tags: [data.industry, ...data.goals, ...data.painPoints],
+          status: 'pending',
+          strategy_data: initialData
+        })
+        .select()
+        .single();
+
+      if (error) {
+        throw new Error(`Failed to create strategy: ${error.message}`);
+      }
+
+      await logActivity(
+        'ONBOARDING_COMPLETED', 
+        'User completed onboarding process',
+        { 
+          strategy_id: strategy?.id,
+          user_id: user?.id,
+          company_info: data
+        }
+      );
+
+      toast({
+        title: "Onboarding Complete",
+        description: "Your AI strategy is being generated. Check back soon!",
+      });
+
+      return strategy as Strategy;
+    } catch (err: any) {
+      console.error("Onboarding submission error:", err);
+      toast({
+        variant: "destructive",
+        title: "Onboarding Failed",
+        description: err.message || "Failed to submit onboarding data.",
+      });
+      return null;
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
   return {
-    isSubmitting,
-    completeOnboarding
+    handleSubmit,
+    isLoading,
   };
-}
+};

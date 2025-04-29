@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
@@ -85,14 +84,14 @@ export function usePluginInstallation() {
 
       // Log plugin installation - use correct structure for system_logs
       try {
-        await logActivity({
-          event_type: "PLUGIN_INSTALLED",
-          message: `Plugin ${pluginKey} was installed`,
-          meta: {
+        await logActivity(
+          "PLUGIN_INSTALLED",
+          `Plugin ${pluginKey} was installed`,
+          {
             plugin_key: pluginKey
           },
-          severity: "info"
-        });
+          "info"
+        );
       } catch (logError) {
         console.error("Failed to log plugin installation:", logError);
         // Non-critical, continue despite error
@@ -146,14 +145,14 @@ export function usePluginInstallation() {
 
       // Log plugin uninstallation - using correct structure
       try {
-        await logActivity({
-          event_type: "PLUGIN_DISABLED",
-          message: `Plugin ${pluginKey} was disabled`,
-          meta: {
+        await logActivity(
+          "PLUGIN_DISABLED",
+          `Plugin ${pluginKey} was disabled`,
+          {
             plugin_key: pluginKey
           },
-          severity: "info"
-        });
+          "info"
+        );
       } catch (logError) {
         console.error("Failed to log plugin disabling:", logError);
       }

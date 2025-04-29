@@ -122,7 +122,7 @@ export default function CampaignCreatePage() {
         { timestamp: new Date().toISOString() }
       );
     }
-  }, [tenant?.id]);
+  }, [tenant?.id, logActivity]);
 
   const handleStrategySelect = (id: string) => {
     setStrategyId(id);

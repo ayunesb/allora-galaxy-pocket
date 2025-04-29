@@ -1,3 +1,4 @@
+
 export interface KpiMetric {
   id: string;
   kpi_name?: string;
@@ -23,6 +24,26 @@ export interface KpiAlert {
   message?: string;
   created_at: string;
   tenant_id: string;
+  status?: string;
+  triggered_at?: string;
+}
+
+// Add this type for alert rules
+export interface KpiAlertRule {
+  id: string;
+  name: string;
+  kpi_name: string;
+  condition: string;
+  threshold: number;
+  severity: string;
+  message: string;
+  status: string;
+  active: boolean;
+  tenant_id: string;
+  created_at?: string;
+  updated_at?: string;
+  last_triggered?: string;
+  compare_period?: string;
 }
 
 // Add this type if it doesn't exist already

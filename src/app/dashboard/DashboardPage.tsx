@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect } from 'react';
@@ -5,8 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTenant } from "@/hooks/useTenant";
 import { useSystemLogs } from "@/hooks/useSystemLogs";
 import SystemHealthMetrics from "@/components/SystemHealthMetrics";
-import { KpiDashboard } from "@/app/insights/kpis/KpiDashboard";
-import { GrowthPanel } from "@/app/notifications/GrowthPanel";
+// Import as default exports instead of named exports
+import KpiDashboard from "@/app/insights/kpis/KpiDashboard";
+import GrowthPanel from "@/app/notifications/GrowthPanel";
 
 export default function DashboardPage() {
   const { tenant } = useTenant();
@@ -19,7 +21,7 @@ export default function DashboardPage() {
         'Dashboard page accessed'
       );
     }
-  }, [tenant?.id]);
+  }, [tenant?.id, logActivity]);
 
   return (
     <div className="container mx-auto py-6 space-y-4">

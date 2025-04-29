@@ -1,11 +1,11 @@
 
 import * as React from "react";
-import { CEO_Agent } from "@/lib/agents/CEO_Agent";
+import { CEOAgent } from "@/lib/agents/CEO_Agent";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { Label } from "@/components/ui/label"; // Import Label component
+import { Label } from "@/components/ui/label";
 
 export default function PromptTuner() {
   const [promptInputs, setPromptInputs] = React.useState({
@@ -28,15 +28,15 @@ export default function PromptTuner() {
     setLoading(true);
     setPreview("");
     try {
-      const result = await CEO_Agent.run({
-        founderProfile: promptInputs.profile,
-        market: promptInputs.market,
-        notifySlack: true, // send Slack webhook
-        notifyEmail: !!user?.email, // send email if logged in
-        userEmail: user?.email || undefined,
-        kpiInsert: true
-      });
-      setPreview(result.strategy);
+      // Create an instance of CEOAgent and call its methods
+      const ceoAgent = new CEOAgent(user?.id || "anonymous");
+      const result = await ceoAgent.generateStrategy(
+        "Technology",
+        [promptInputs.profile],
+        [promptInputs.market]
+      );
+      
+      setPreview(result.strategy || "Strategy generated successfully");
       toast({
         title: "Test Complete",
         description: "Strategy generated and notifications sent (if set up)."

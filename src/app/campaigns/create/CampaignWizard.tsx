@@ -1,7 +1,8 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -14,8 +15,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/components/ui/sonner";
 import { useTenant } from "@/hooks/useTenant";
 import { useSystemLogs } from "@/hooks/useSystemLogs";
-import { CampaignStatus } from "@/types/campaign";
 import { supabase } from '@/integrations/supabase/client';
+
+// Define campaign status as a const object instead of using enum references
+const CampaignStatus = {
+  ACTIVE: 'active',
+  INACTIVE: 'inactive',
+  DRAFT: 'draft',
+} as const;
+
+type CampaignStatusType = typeof CampaignStatus[keyof typeof CampaignStatus];
 
 const campaignSchema = z.object({
   name: z.string().min(3, {
@@ -31,7 +40,7 @@ const campaignSchema = z.object({
 type CampaignValues = z.infer<typeof campaignSchema>;
 
 export default function CampaignWizard() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const { tenant } = useTenant();
   const { logActivity } = useSystemLogs();
   const [submitting, setSubmitting] = useState(false);
@@ -55,7 +64,7 @@ export default function CampaignWizard() {
         { timestamp: new Date().toISOString() }
       );
     }
-  }, [tenant?.id]);
+  }, [tenant?.id, logActivity]);
 
   const onSubmit = async (data: CampaignValues) => {
     setSubmitting(true);
@@ -92,7 +101,7 @@ export default function CampaignWizard() {
       }
 
       toast.success("Campaign created successfully!");
-      router.push('/campaigns');
+      navigate('/campaigns');
     } catch (error) {
       toast.error("An unexpected error occurred");
       console.error("Error:", error);

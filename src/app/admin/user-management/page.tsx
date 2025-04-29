@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import AdminOnly from '@/guards/AdminOnly';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,8 +21,10 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { UserRole } from '@/types/invite';
 import { toast } from 'sonner';
+
+// Define valid user roles (removing 'manager')
+type UserRole = 'admin' | 'editor' | 'viewer';
 
 export default function UserManagementPage() {
   const { 
@@ -31,26 +33,26 @@ export default function UserManagementPage() {
     updateMemberRole 
   } = useTeamManagement();
   
-  const [searchQuery, setSearchQuery] = React.useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   
   const filteredMembers = React.useMemo(() => {
     if (!members) return [];
     
-    return members.filter(member => 
-      member?.profiles?.email?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    return members.filter(member => {
+      // Safely access email with optional chaining
+      const email = member?.profiles?.email || '';
+      return email.toLowerCase().includes(searchQuery.toLowerCase());
+    });
   }, [members, searchQuery]);
 
-  const handleRoleChange = (userId: string, newRole: UserRole) => {
-    updateMemberRole(userId, newRole);
+  const handleRoleChange = (userId: string, newRole: string) => {
+    updateMemberRole(userId, newRole as UserRole);
   };
   
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
       case 'admin':
         return 'destructive';
-      case 'manager':
-        return 'warning';
       case 'editor':
         return 'secondary';
       case 'viewer':
@@ -95,26 +97,25 @@ export default function UserManagementPage() {
               <TableBody>
                 {filteredMembers.map((member) => (
                   <TableRow key={member.id}>
-                    <TableCell>{member.profiles?.email}</TableCell>
+                    <TableCell>{member.profiles?.email || 'N/A'}</TableCell>
                     <TableCell>
                       <Badge variant={getRoleBadgeVariant(member.role)}>
                         {member.role}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {new Date(member.created_at).toLocaleDateString()}
+                      {member.created_at ? new Date(member.created_at).toLocaleDateString() : 'N/A'}
                     </TableCell>
                     <TableCell className="text-right">
                       <Select
                         defaultValue={member.role}
-                        onValueChange={(value) => handleRoleChange(member.user_id, value as UserRole)}
+                        onValueChange={(value) => handleRoleChange(member.user_id, value)}
                       >
                         <SelectTrigger className="w-32">
                           <SelectValue placeholder="Change role" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="manager">Manager</SelectItem>
                           <SelectItem value="editor">Editor</SelectItem>
                           <SelectItem value="viewer">Viewer</SelectItem>
                         </SelectContent>
