@@ -1,7 +1,7 @@
-import SystemHealthPage from "./pages/system/health";
+
 import "./index.css";
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import App from "./App";
 import KPIPage from "./pages/insights/kpis";
@@ -10,11 +10,15 @@ import PluginMarketplace from "./pages/plugins/marketplace";
 import LeadInboxPage from "./pages/leads/inbox";
 import ExecuteCampaignPage from "./pages/campaigns/execute";
 import StrategyVaultPage from "./pages/vault/index";
+import SystemHealthPage from "./pages/system/health";
 import AgentMemoryPage from "./pages/agents/memory";
 import FeedbackEnginePage from "./pages/feedback/index";
 import StrategyRecommenderPage from "./pages/recommender/index";
 
-ReactDOM.render(
+const container = document.getElementById('root');
+const root = createRoot(container!);
+
+root.render(
   <React.StrictMode>
     <BrowserRouter>
       <Routes>
@@ -31,6 +35,5 @@ ReactDOM.render(
         <Route path="/recommender" element={<StrategyRecommenderPage />} />
       </Routes>
     </BrowserRouter>
-  </React.StrictMode>,
-  document.getElementById("root")
+  </React.StrictMode>
 );
