@@ -34,7 +34,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setIsLoading(true);
       setError(null);
       
-      // Get all tenants for user safely using our new security definer function
+      // Get all tenants for user safely using our security definer function
       const { data: tenantIds, error: tenantIdsError } = await supabase.rpc('get_user_tenant_ids_safe');
 
       if (tenantIdsError) {
@@ -45,6 +45,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       // If no tenants, set to null
       if (!tenantIds?.length) {
         setTenant(null);
+        setIsLoading(false);
         return;
       }
 
@@ -96,8 +97,20 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (error) throw error;
       
       setTenant(prev => prev ? { ...prev, ...updatedTenant } : null);
+      
+      toast({
+        title: "Workspace updated",
+        description: "Workspace settings have been updated successfully."
+      });
     } catch (error: any) {
       console.error('Error updating tenant:', error);
+      
+      toast({
+        title: "Update failed",
+        description: error.message || "Failed to update workspace settings.",
+        variant: "destructive"
+      });
+      
       throw error;
     }
   };

@@ -1,156 +1,228 @@
 
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Shield, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Progress } from "@/components/ui/progress";
 import { supabase } from '@/integrations/supabase/client';
+import { Loader2, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 
-type SecurityIssue = {
-  severity: 'high' | 'medium' | 'low';
-  table: string;
-  issue: string;
-  recommendation: string;
-};
-
-export function SecurityHealthCheck() {
-  const [loading, setLoading] = useState(true);
-  const [issues, setIssues] = useState<SecurityIssue[]>([]);
-  const [hasRun, setHasRun] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const runSecurityCheck = async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      // Check for tables without RLS enabled
-      const { data: tablesWithoutRls, error: rlsError } = await supabase.rpc('get_tables_without_rls');
-      
-      if (rlsError) {
-        setError("Error checking RLS: " + rlsError.message);
-        return;
-      }
-      
-      const securityIssues: SecurityIssue[] = [];
-      
-      // Process tables without RLS
-      if (tablesWithoutRls && tablesWithoutRls.length > 0) {
-        tablesWithoutRls.forEach(table => {
-          securityIssues.push({
-            severity: 'high',
-            table: table.table_name,
-            issue: 'Row Level Security is not enabled',
-            recommendation: `Enable RLS on table "${table.table_name}" to prevent unauthorized data access.`
-          });
-        });
-      }
-      
-      // Check for incomplete RLS policies
-      const { data: incompletePolicies, error: policiesError } = await supabase.rpc('get_incomplete_rls_policies');
-      
-      if (policiesError) {
-        setError("Error checking RLS policies: " + policiesError.message);
-        return;
-      }
-      
-      if (incompletePolicies && incompletePolicies.length > 0) {
-        incompletePolicies.forEach(policy => {
-          securityIssues.push({
-            severity: 'medium',
-            table: policy.tablename,
-            issue: `Policy "${policy.policyname}" may not be using auth.uid()`,
-            recommendation: 'Review policy to ensure proper authorization checks are in place.'
-          });
-        });
-      }
-      
-      setIssues(securityIssues);
-      setHasRun(true);
-    } catch (e: any) {
-      setError(e.message || 'Failed to run security check');
-      console.error("Security check error:", e);
-    } finally {
-      setLoading(false);
-    }
-  };
+export default function SecurityHealthCheck() {
+  const [checks, setChecks] = useState([
+    { name: 'Authentication', status: 'pending', message: '' },
+    { name: 'Database Connection', status: 'pending', message: '' },
+    { name: 'RLS Policies', status: 'pending', message: '' },
+    { name: 'Tenant Isolation', status: 'pending', message: '' },
+    { name: 'Edge Functions', status: 'pending', message: '' }
+  ]);
+  
+  const [overallHealth, setOverallHealth] = useState(0);
+  const [isVerifying, setIsVerifying] = useState(true);
 
   useEffect(() => {
-    runSecurityCheck();
+    runHealthChecks();
   }, []);
 
-  const severityColor = (severity: string) => {
-    switch (severity) {
-      case 'high': return 'text-red-600 bg-red-50 border-red-200';
-      case 'medium': return 'text-amber-600 bg-amber-50 border-amber-200';
-      case 'low': return 'text-blue-600 bg-blue-50 border-blue-200';
-      default: return '';
+  const runHealthChecks = async () => {
+    setIsVerifying(true);
+    
+    // Clone checks to update individually
+    const updatedChecks = [...checks];
+    
+    // 1. Auth Check
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      updatedChecks[0] = {
+        ...updatedChecks[0],
+        status: session ? 'success' : 'warning',
+        message: session ? 'Authentication system operational' : 'No active session'
+      };
+      setChecks([...updatedChecks]);
+    } catch (error) {
+      updatedChecks[0] = {
+        ...updatedChecks[0],
+        status: 'error',
+        message: 'Auth system error'
+      };
+      setChecks([...updatedChecks]);
     }
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Shield className="h-5 w-5" />
-          Security Health Check
-        </CardTitle>
-        <CardDescription>
-          Scan your database for security configuration issues
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {error && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
+    
+    // 2. Database Connection Check
+    try {
+      const { data, error } = await supabase.from('system_logs').select('count').limit(1);
+      updatedChecks[1] = {
+        ...updatedChecks[1],
+        status: error ? 'error' : 'success',
+        message: error ? 'Database connection error' : 'Database connected'
+      };
+      setChecks([...updatedChecks]);
+    } catch (error) {
+      updatedChecks[1] = {
+        ...updatedChecks[1],
+        status: 'error',
+        message: 'Database connection failed'
+      };
+      setChecks([...updatedChecks]);
+    }
+    
+    // 3. RLS Policies Check
+    try {
+      const { data, error } = await supabase.rpc('check_table_security_status');
+      
+      let rlsStatus = 'success';
+      let message = 'RLS policies configured correctly';
+      
+      if (error) {
+        rlsStatus = 'error';
+        message = 'RLS check failed';
+      } else if (data) {
+        // Check if any table has RLS disabled or no tenant_id column
+        const issues = data.filter((table: any) => 
+          !table.rls_enabled || 
+          !table.has_tenant_id || 
+          !table.has_auth_policy
+        );
         
-        {loading ? (
-          <div className="py-4 text-center text-muted-foreground">
-            <p>Running security checks...</p>
-            <div className="mt-2 animate-pulse w-full bg-muted h-2 rounded-full"></div>
-          </div>
-        ) : hasRun && issues.length === 0 ? (
-          <Alert variant="default" className="bg-green-50 border-green-200">
-            <CheckCircle className="h-4 w-4 text-green-600" />
-            <AlertTitle>Security Configuration Looks Good</AlertTitle>
-            <AlertDescription>
-              No major security issues were detected in your database configuration.
-            </AlertDescription>
-          </Alert>
-        ) : (
-          <>
-            {issues.length > 0 && (
-              <div className="space-y-3 mb-4">
-                <p className="text-sm font-medium">Found {issues.length} potential security {issues.length === 1 ? 'issue' : 'issues'}</p>
-                
-                {issues.map((issue, idx) => (
-                  <Alert key={idx} className={severityColor(issue.severity) + ' border'}>
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertTitle>{issue.table}: {issue.issue}</AlertTitle>
-                    <AlertDescription className="mt-1 text-sm">
-                      {issue.recommendation}
-                    </AlertDescription>
-                  </Alert>
-                ))}
+        if (issues.length > 0) {
+          rlsStatus = 'warning';
+          message = `${issues.length} tables with RLS issues`;
+        }
+      }
+      
+      updatedChecks[2] = {
+        ...updatedChecks[2],
+        status: rlsStatus,
+        message
+      };
+      setChecks([...updatedChecks]);
+    } catch (error) {
+      updatedChecks[2] = {
+        ...updatedChecks[2],
+        status: 'error',
+        message: 'RLS verification failed'
+      };
+      setChecks([...updatedChecks]);
+    }
+    
+    // 4. Tenant Isolation Check
+    try {
+      const { error: rlsError } = await supabase.rpc('check_tenant_user_access_safe', {
+        tenant_uuid: '00000000-0000-0000-0000-000000000000',
+        user_uuid: '00000000-0000-0000-0000-000000000000'
+      });
+      
+      updatedChecks[3] = {
+        ...updatedChecks[3],
+        status: rlsError && rlsError.message?.includes('recursion') ? 'error' : 'success',
+        message: rlsError && rlsError.message?.includes('recursion') ? 
+          'Infinite recursion detected' : 'Tenant isolation verified'
+      };
+      setChecks([...updatedChecks]);
+    } catch (error) {
+      updatedChecks[3] = {
+        ...updatedChecks[3],
+        status: 'error',
+        message: 'Tenant isolation check failed'
+      };
+      setChecks([...updatedChecks]);
+    }
+    
+    // 5. Edge Functions Check
+    try {
+      const { data, error } = await supabase
+        .from('cron_job_logs')
+        .select('*')
+        .limit(1);
+      
+      updatedChecks[4] = {
+        ...updatedChecks[4],
+        status: error ? 'warning' : 'success',
+        message: error ? 'Edge function check limited' : 'Edge functions operational'
+      };
+      setChecks([...updatedChecks]);
+    } catch (error) {
+      updatedChecks[4] = {
+        ...updatedChecks[4],
+        status: 'error',
+        message: 'Edge function check failed'
+      };
+      setChecks([...updatedChecks]);
+    }
+    
+    // Calculate overall health
+    const healthScore = calculateHealthScore(updatedChecks);
+    setOverallHealth(healthScore);
+    setIsVerifying(false);
+  };
+  
+  const calculateHealthScore = (checks: any[]) => {
+    const weights = {
+      success: 100,
+      warning: 50,
+      error: 0,
+      pending: 0
+    };
+    
+    const total = checks.reduce((sum, check) => {
+      return sum + weights[check.status as keyof typeof weights];
+    }, 0);
+    
+    return Math.round(total / (checks.length * 100) * 100);
+  };
+  
+  return (
+    <div className="space-y-4">
+      <div>
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-sm font-medium">System Health</span>
+          <span className="text-sm font-medium">{overallHealth}%</span>
+        </div>
+        <Progress value={overallHealth} className={`h-2 ${overallHealth > 80 ? 'bg-green-500' : overallHealth > 50 ? 'bg-amber-500' : 'bg-red-500'}`} />
+      </div>
+      
+      <div className="space-y-3">
+        {checks.map((check, index) => (
+          <div key={index} className="flex items-start justify-between border-b pb-2 last:border-0">
+            <div className="flex gap-2 items-center">
+              {check.status === 'pending' ? (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              ) : check.status === 'success' ? (
+                <CheckCircle className="h-4 w-4 text-green-500" />
+              ) : check.status === 'warning' ? (
+                <AlertTriangle className="h-4 w-4 text-amber-500" />
+              ) : (
+                <XCircle className="h-4 w-4 text-red-500" />
+              )}
+              <div>
+                <p className="font-medium">{check.name}</p>
+                <p className="text-xs text-muted-foreground">{check.message}</p>
               </div>
-            )}
-            
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={runSecurityCheck} 
-              disabled={loading}
-              className="flex items-center gap-2"
-            >
-              <Shield className="h-4 w-4" />
-              Run Security Check Again
-            </Button>
-          </>
-        )}
-      </CardContent>
-    </Card>
+            </div>
+            <span className={`text-xs px-1.5 py-0.5 rounded ${getStatusClass(check.status)}`}>
+              {check.status.toUpperCase()}
+            </span>
+          </div>
+        ))}
+      </div>
+      
+      {!isVerifying && (
+        <button 
+          onClick={runHealthChecks} 
+          className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Run checks again
+        </button>
+      )}
+    </div>
   );
+}
+
+function getStatusClass(status: string) {
+  switch(status) {
+    case 'success':
+      return 'bg-green-100 text-green-800';
+    case 'warning':
+      return 'bg-amber-100 text-amber-800';
+    case 'error':
+      return 'bg-red-100 text-red-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
 }

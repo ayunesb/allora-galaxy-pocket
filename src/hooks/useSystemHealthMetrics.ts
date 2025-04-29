@@ -1,112 +1,102 @@
 
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useTenant } from '@/hooks/useTenant';
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useTenant } from "./useTenant";
 
-export interface SystemHealthMetric {
+export interface SystemMetric {
   id: string;
   metric_name: string;
   value: number;
   recorded_at: string;
-  metadata?: Record<string, any>;
 }
 
 export interface CronJobMetric {
   id: string;
   function_name: string;
+  execution_time_ms: number;
   success_rate: number;
   error_count: number;
   total_executions: number;
   last_execution_at: string;
 }
 
-export interface SystemHealthAlert {
+export interface SystemAlert {
   id: string;
   alert_type: string;
   message: string;
   severity: 'low' | 'medium' | 'high' | 'critical';
   created_at: string;
-  status: 'active' | 'resolved';
 }
 
 export function useSystemHealthMetrics() {
   const { tenant } = useTenant();
-
-  const { 
-    data: metrics = [],
-    isLoading: metricsLoading,
-    error: metricsError,
-    refetch: refetchMetrics
-  } = useQuery({
-    queryKey: ['system-health-metrics', tenant?.id],
+  
+  const { data: metrics = [], isLoading: isLoadingMetrics, error: metricsError, refetch: refetchMetrics } = useQuery({
+    queryKey: ['system-metrics', tenant?.id],
     queryFn: async () => {
+      if (!tenant) return [];
+      
       const { data, error } = await supabase
         .from('system_metrics')
         .select('*')
-        .order('recorded_at', { ascending: false });
-
+        .eq('tenant_id', tenant.id)
+        .order('recorded_at', { ascending: false })
+        .limit(10);
+        
       if (error) throw error;
-      return data as SystemHealthMetric[];
+      return data;
     },
-    enabled: true,
+    enabled: !!tenant
   });
-
-  const {
-    data: cronJobMetrics = [],
-    isLoading: cronJobsLoading,
-    error: cronJobsError,
-    refetch: refetchCronJobs
-  } = useQuery({
+  
+  const { data: cronJobMetrics = [], isLoading: isLoadingCronJobs, error: cronJobsError } = useQuery({
     queryKey: ['cron-job-metrics', tenant?.id],
     queryFn: async () => {
+      if (!tenant) return [];
+      
       const { data, error } = await supabase
         .from('cron_job_metrics')
         .select('*')
+        .eq('tenant_id', tenant.id)
         .order('last_execution_at', { ascending: false });
-
+        
       if (error) throw error;
-      return data as CronJobMetric[];
+      return data;
     },
-    enabled: true,
+    enabled: !!tenant
   });
-
-  const {
-    data: systemHealthAlerts = [],
-    isLoading: alertsLoading,
-    error: alertsError,
-    refetch: refetchAlerts
-  } = useQuery({
-    queryKey: ['system-health-alerts', tenant?.id],
+  
+  const { data: systemHealthAlerts = [], isLoading: isLoadingAlerts, error: alertsError } = useQuery({
+    queryKey: ['system-alerts', tenant?.id],
     queryFn: async () => {
+      if (!tenant) return [];
+      
       const { data, error } = await supabase
-        .from('system_health_alerts')
+        .from('system_alerts')
         .select('*')
+        .eq('tenant_id', tenant.id)
         .eq('status', 'active')
-        .order('severity', { ascending: false });
-
+        .order('created_at', { ascending: false });
+        
       if (error) throw error;
-      return data as SystemHealthAlert[];
+      return data;
     },
-    enabled: true,
+    enabled: !!tenant
   });
-
-  const isLoading = metricsLoading || cronJobsLoading || alertsLoading;
+  
+  const isLoading = isLoadingMetrics || isLoadingCronJobs || isLoadingAlerts;
   const error = metricsError || cronJobsError || alertsError;
-
-  const refetchAll = async () => {
-    await Promise.all([
-      refetchMetrics(),
-      refetchCronJobs(),
-      refetchAlerts()
-    ]);
+  
+  const refetch = () => {
+    refetchMetrics();
   };
-
+  
   return {
     metrics,
     cronJobMetrics,
     systemHealthAlerts,
     isLoading,
     error,
-    refetch: refetchAll
+    refetch
   };
 }
