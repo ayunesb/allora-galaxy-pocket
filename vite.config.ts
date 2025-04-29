@@ -13,10 +13,11 @@ export default defineConfig(({ mode }) => ({
       strict: true, // Forces allowed directories ONLY
     },
     hmr: {
-      // Add explicit HMR configuration
+      // Configure explicit HMR settings to prevent unexpected identifiers
       protocol: 'ws',
+      clientPort: 24678, // Default HMR port for Vite
       host: 'localhost',
-      port: 24678, // Default HMR port for Vite
+      overlay: false, // Disable the error overlay that could cause issues
     },
     allowedHosts: [
       "localhost",
