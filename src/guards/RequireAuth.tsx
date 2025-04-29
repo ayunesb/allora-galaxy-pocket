@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useTenant } from '@/hooks/useTenant';
 import { Loader2 } from 'lucide-react';
-import MaintenanceMode from '@/components/MaintenanceMode';
+import { MaintenanceMode } from '@/components/MaintenanceMode';
 import { supabase } from '@/integrations/supabase/client';
 
 const LoadingScreen = () => (
@@ -50,7 +50,7 @@ export function RequireAuth({ children, allowDemo = false }: RequireAuthProps) {
           .eq('key', 'maintenance_mode')
           .maybeSingle();
 
-        setIsMaintenanceMode(!!data?.config?.enabled);
+        setIsMaintenanceMode(!!data?.config && typeof data.config === 'object' && data.config.enabled === true);
       } catch (error) {
         console.error('Failed to check maintenance mode:', error);
       } finally {
@@ -66,16 +66,20 @@ export function RequireAuth({ children, allowDemo = false }: RequireAuthProps) {
     const checkSystemAlerts = async () => {
       if (!user?.id) return;
 
-      // Check for unresolved system alerts
-      const { data } = await supabase
-        .from('system_alerts')
-        .select('*')
-        .is('resolved_at', null)
-        .eq('status', 'active')
-        .limit(1);
+      try {
+        // Check for unresolved system alerts
+        const { data } = await supabase
+          .from('system_alerts')
+          .select('*')
+          .is('resolved_at', null)
+          .eq('status', 'active')
+          .limit(1);
 
-      if (data && data.length > 0) {
-        console.warn('Active system alert:', data[0].message);
+        if (data && data.length > 0) {
+          console.warn('Active system alert:', data[0].message);
+        }
+      } catch (error) {
+        console.error('Failed to check system alerts:', error);
       }
     };
 
@@ -104,7 +108,7 @@ export function RequireAuth({ children, allowDemo = false }: RequireAuthProps) {
 
   // Maintenance mode
   if (isMaintenanceMode) {
-    return <MaintenanceMode />;
+    return <MaintenanceMode>{children}</MaintenanceMode>;
   }
 
   // Show children only when authenticated and with a valid tenant

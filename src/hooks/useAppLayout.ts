@@ -44,7 +44,11 @@ export function useAppLayout() {
       if (error) throw error;
       
       // Extract layouts from config
-      const layoutsData = data?.[0]?.config?.layouts || [];
+      const layoutsData = data?.[0]?.config && 
+        typeof data[0].config === 'object' && 
+        Array.isArray((data[0].config as any).layouts) ? 
+        (data[0].config as any).layouts : [];
+        
       return layoutsData as AppLayout[];
     } catch (err) {
       console.error('Error fetching layouts:', err);
@@ -82,11 +86,14 @@ export function useAppLayout() {
         updatedLayouts.push(layout);
       }
       
+      // Convert the layouts to JSON
+      const layoutsJson = JSON.stringify({ layouts: updatedLayouts });
+      
       const { error } = await supabase
         .from('system_config')
         .upsert({
           key: 'app_layouts',
-          config: { layouts: updatedLayouts }
+          config: layoutsJson
         });
       
       if (error) throw error;

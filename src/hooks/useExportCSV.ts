@@ -1,87 +1,111 @@
 
-import { useTenant } from "./useTenant";
-import { useAuth } from "./useAuth";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { useExportLogger } from "./useExportLogger";
+import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from './useTenant';
+import { useToast } from './use-toast';
 
 export function useExportCSV() {
+  const [isExporting, setIsExporting] = useState(false);
   const { tenant } = useTenant();
-  const { user } = useAuth();
-  const { logExport } = useExportLogger();
+  const { toast } = useToast();
 
-  const downloadCSV = async (type: 'strategies' | 'campaigns' | 'kpis' | 'system_logs', filters: any = {}) => {
-    if (!tenant?.id) return;
+  const exportTable = async (
+    tableName: string,
+    filters: Record<string, any> = {}
+  ): Promise<string | null> => {
+    if (!tenant?.id) {
+      toast({
+        title: 'Export Failed',
+        description: 'No active workspace found',
+        variant: 'destructive',
+      });
+      return null;
+    }
+
+    setIsExporting(true);
+
     try {
-      let tableName =
-        type === 'strategies' ? 'vault_strategies' :
-        type === 'campaigns' ? 'campaigns' :
-        type === 'kpis' ? 'kpi_metrics' : 'system_logs';
-      
-      let query = supabase.from(tableName).select('*').eq('tenant_id', tenant.id);
-      if (filters.dateRange) {
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - filters.dateRange);
-        query = query.gte('created_at', startDate.toISOString());
-      }
-      if (filters.userId) {
-        query = query.eq('user_id', filters.userId);
-      }
-      if (filters.search) {
-        switch (type) {
-          case 'strategies':
-            query = query.ilike('title', `%${filters.search}%`);
-            break;
-          case 'campaigns':
-            query = query.ilike('name', `%${filters.search}%`);
-            break;
-          case 'system_logs':
-            query = query.ilike('message', `%${filters.search}%`);
-            break;
-        }
-      }
-      const { data, error } = await query;
-      if (error) throw error;
-      if (!data?.length) {
-        toast.warning("No data to export", {
-          description: "There are no records matching your criteria"
-        });
-        return;
+      // Check if the table exists in the schema
+      const { data: tableExists, error: tableError } = await supabase
+        .rpc('check_table_exists', { table_name: tableName });
+
+      if (tableError || !tableExists) {
+        throw new Error(`Table ${tableName} doesn't exist or you don't have access`);
       }
 
-      const headers = Object.keys(data[0]);
-      const csvRows = data.map(row => 
-        headers.map(header => {
-          const value = row[header];
-          const cell = typeof value === 'object' ? 
-            JSON.stringify(value).replace(/"/g, '""') : 
-            String(value || '').replace(/"/g, '""');
-          return `"${cell}"`;
-        }).join(',')
-      );
-      const csvContent = [headers.join(','), ...csvRows].join('\n');
+      // Use dynamic querying through RPC function
+      const { data, error } = await supabase
+        .rpc('export_table_data', { 
+          p_table_name: tableName,
+          p_tenant_id: tenant.id,
+          p_filters: filters
+        });
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        toast({
+          title: 'Export Notice',
+          description: 'No data available to export',
+        });
+        return null;
+      }
+
+      // Convert data to CSV
+      const csvContent = convertToCSV(data);
+      
+      // Create a Blob and download link
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.setAttribute('href', url);
-      link.setAttribute('download', `${type}_export_${new Date().toISOString().split('T')[0]}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      
+      // Log the export
+      await supabase
+        .from('export_logs')
+        .insert({
+          export_type: tableName,
+          delivery_method: 'download',
+          status: 'completed',
+          tenant_id: tenant.id,
+          user_id: (await supabase.auth.getUser()).data.user?.id || '',
+        });
 
-      await logExport(type, 'csv', data.length);
-
-      toast.success("Export successful", {
-        description: `${data.length} records exported as CSV`
+      return url;
+    } catch (err: any) {
+      console.error('Export error:', err);
+      toast({
+        title: 'Export Failed',
+        description: err.message || 'Failed to export data',
+        variant: 'destructive',
       });
-    } catch (error) {
-      console.error('Export failed:', error);
-      toast.error("Export failed", {
-        description: error instanceof Error ? error.message : "Unknown error occurred"
-      });
+      return null;
+    } finally {
+      setIsExporting(false);
     }
   };
 
-  return { downloadCSV };
+  // Helper function to convert data to CSV format
+  const convertToCSV = (data: any[]): string => {
+    if (data.length === 0) return '';
+    
+    const headers = Object.keys(data[0]);
+    const csv = [
+      headers.join(','),
+      ...data.map(row => 
+        headers.map(header => {
+          const value = row[header];
+          // Handle special cases (commas, quotes, nulls)
+          if (value === null || value === undefined) return '';
+          if (typeof value === 'object') return JSON.stringify(value).replace(/"/g, '""');
+          return `"${String(value).replace(/"/g, '""')}"`;
+        }).join(',')
+      )
+    ].join('\n');
+    
+    return csv;
+  };
+
+  return {
+    exportTable,
+    isExporting,
+  };
 }

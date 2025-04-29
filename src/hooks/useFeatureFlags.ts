@@ -1,120 +1,127 @@
 
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { useTenant } from "@/hooks/useTenant";
-import { useUserRole } from "@/hooks/useUserRole";
+import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from './useTenant';
+import { useUserRole } from './useUserRole';
 
-export type FeatureFlags = Record<string, boolean>;
-
-interface FeatureFlagsOptions {
-  defaultFlags?: FeatureFlags;
+export interface FeatureFlag {
+  key: string;
+  enabled: boolean;
+  description?: string;
+  roles_allowed?: string[];
 }
 
-/**
- * Hook to manage feature flags
- * Loads flags from Supabase and applies role/tenant based rules
- */
-export function useFeatureFlags(options: FeatureFlagsOptions = {}) {
-  const { defaultFlags = {} } = options;
-  const [flags, setFlags] = useState<FeatureFlags>(defaultFlags);
+export function useFeatureFlags() {
+  const [flags, setFlags] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
   const { tenant } = useTenant();
   const { role } = useUserRole();
 
   useEffect(() => {
-    const loadFeatureFlags = async () => {
-      try {
-        setIsLoading(true);
-        
-        // Get global feature flags
-        const { data: globalFlags, error: globalError } = await supabase
-          .from("feature_flags")
-          .select("key, enabled, roles_allowed, tenants_allowed")
-          .eq("scope", "global");
-          
-        if (globalError) throw globalError;
+    const fetchFeatureFlags = async () => {
+      if (!tenant?.id) {
+        setIsLoading(false);
+        return;
+      }
 
-        // Get tenant-specific feature flags if tenant exists
-        let tenantFlags: any[] = [];
-        if (tenant?.id) {
-          const { data, error } = await supabase
-            .from("feature_flags")
-            .select("key, enabled, roles_allowed")
-            .eq("scope", "tenant")
-            .eq("tenant_id", tenant.id);
+      try {
+        const { data, error } = await supabase
+          .from('system_config')
+          .select('*')
+          .eq('key', 'feature_flags')
+          .maybeSingle();
+
+        if (error) throw error;
+
+        let flagsData: FeatureFlag[] = [];
+        
+        if (data && data.config) {
+          // Parse flags from config
+          const configObj = typeof data.config === 'string' ? 
+            JSON.parse(data.config) : data.config;
             
-          if (!error && data) {
-            tenantFlags = data;
+          if (Array.isArray(configObj.flags)) {
+            flagsData = configObj.flags;
           }
         }
+
+        // Create a map of flag keys to their enabled status
+        const flagMap: Record<string, boolean> = {};
         
-        // Combine and process flags
-        const combinedFlags: FeatureFlags = {};
-        
-        // Process global flags
-        if (globalFlags) {
-          globalFlags.forEach(flag => {
-            // Check role restrictions if they exist
-            if (flag.roles_allowed && flag.roles_allowed.length > 0) {
-              if (!role || !flag.roles_allowed.includes(role)) {
-                combinedFlags[flag.key] = false;
-                return;
-              }
-            }
-            
-            // Check tenant restrictions if they exist
-            if (flag.tenants_allowed && flag.tenants_allowed.length > 0) {
-              if (!tenant?.id || !flag.tenants_allowed.includes(tenant.id)) {
-                combinedFlags[flag.key] = false;
-                return;
-              }
-            }
-            
-            combinedFlags[flag.key] = flag.enabled;
-          });
-        }
-        
-        // Tenant flags override global flags
-        if (tenantFlags.length > 0) {
-          tenantFlags.forEach(flag => {
-            // Check role restrictions
-            if (flag.roles_allowed && flag.roles_allowed.length > 0) {
-              if (!role || !flag.roles_allowed.includes(role)) {
-                combinedFlags[flag.key] = false;
-                return;
-              }
-            }
-            
-            combinedFlags[flag.key] = flag.enabled;
-          });
-        }
-        
-        setFlags({
-          ...defaultFlags,
-          ...combinedFlags
+        flagsData.forEach((flag) => {
+          // If the flag has role restrictions, check if the current user's role is allowed
+          if (flag.roles_allowed && flag.roles_allowed.length > 0) {
+            // Only enable if user has required role
+            flagMap[flag.key] = flag.enabled && flag.roles_allowed.includes(role || '');
+          } else {
+            // No role restrictions, just use the enabled status
+            flagMap[flag.key] = flag.enabled;
+          }
         });
+
+        setFlags(flagMap);
       } catch (err) {
-        console.error("Error loading feature flags:", err);
+        console.error('Error fetching feature flags:', err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadFeatureFlags();
-  }, [user, tenant, role, defaultFlags]);
+    fetchFeatureFlags();
+  }, [tenant, role]);
 
-  /**
-   * Check if a feature flag is enabled
-   */
   const isEnabled = (flagKey: string): boolean => {
-    return flags[flagKey] === true;
+    return !!flags[flagKey];
   };
 
-  return { 
-    flags, 
-    isEnabled, 
-    isLoading 
+  // Create new flag (admin function)
+  const createFlag = async (flag: FeatureFlag): Promise<boolean> => {
+    if (!tenant?.id) return false;
+
+    try {
+      // Get current flags
+      const { data, error } = await supabase
+        .from('system_config')
+        .select('*')
+        .eq('key', 'feature_flags')
+        .maybeSingle();
+
+      if (error) throw error;
+
+      let currentFlags: FeatureFlag[] = [];
+      
+      if (data && data.config) {
+        const configObj = typeof data.config === 'string' ? 
+          JSON.parse(data.config) : data.config;
+          
+        if (Array.isArray(configObj.flags)) {
+          currentFlags = configObj.flags;
+        }
+      }
+
+      // Add new flag
+      const updatedFlags = [...currentFlags, flag];
+      
+      // Update flags in system_config
+      await supabase
+        .from('system_config')
+        .upsert({
+          key: 'feature_flags',
+          config: JSON.stringify({ flags: updatedFlags })
+        });
+
+      // Update local state
+      setFlags(prev => ({ ...prev, [flag.key]: flag.enabled }));
+      return true;
+    } catch (err) {
+      console.error('Error creating feature flag:', err);
+      return false;
+    }
+  };
+
+  return {
+    isEnabled,
+    isLoading,
+    createFlag
   };
 }

@@ -105,7 +105,7 @@ export default function CampaignDetailPage() {
     };
     
     fetchCampaignAndStrategy();
-  }, [id, tenant?.id]);
+  }, [id, tenant?.id, logActivity]);
 
   const handleStartExecution = async () => {
     try {
