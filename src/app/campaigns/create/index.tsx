@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
@@ -114,6 +113,16 @@ export default function CampaignCreatePage() {
     
     fetchStrategies();
   }, [tenant?.id, initialStrategyId]);
+
+  useEffect(() => {
+    if (tenant?.id) {
+      logActivity(
+        'CAMPAIGN_CREATE_VIEW',
+        'Campaign creation page accessed',
+        { timestamp: new Date().toISOString() }
+      );
+    }
+  }, [tenant?.id]);
 
   const handleStrategySelect = (id: string) => {
     setStrategyId(id);

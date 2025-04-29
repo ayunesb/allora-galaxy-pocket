@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -8,7 +7,7 @@ import { ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export function KpiAlerts() {
-  const { alerts } = useUnifiedKpiAlerts({ activeOnly: true });
+  const { data: alerts, isLoading } = useUnifiedKpiAlerts({ activeOnly: true });
   const navigate = useNavigate();
 
   if (!alerts?.length) return null;

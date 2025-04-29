@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useUnifiedKpiAlerts } from '@/hooks/useUnifiedKpiAlerts';
 import { useTenant } from '@/hooks/useTenant';
@@ -8,20 +7,20 @@ import { Button } from '@/components/ui/button';
 import { AlertTriangle, ChartLine, Activity, RefreshCw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
-export function GrowthPanel() {
+export default function GrowthPanel() {
   const { tenant } = useTenant();
   const { 
-    alerts = [],
-    refreshAlerts, 
-    triggerKpiCheck, 
-    isLoading 
-  } = useUnifiedKpiAlerts({ activeOnly: true, days: 7 });
-
+    alerts, 
+    isLoading,
+    fetchAlerts,
+    triggerKpiCheck 
+  } = useUnifiedKpiAlerts();
+  
   useEffect(() => {
     const refreshData = async () => {
       try {
         if (tenant?.id) {
-          await refreshAlerts();
+          await fetchAlerts();
         }
       } catch (error) {
         console.error('Failed to refresh alerts:', error);
@@ -29,7 +28,7 @@ export function GrowthPanel() {
     };
 
     refreshData();
-  }, [refreshAlerts, tenant?.id]);
+  }, [fetchAlerts, tenant?.id]);
 
   const handleRunAnalysis = async () => {
     if (tenant?.id) {

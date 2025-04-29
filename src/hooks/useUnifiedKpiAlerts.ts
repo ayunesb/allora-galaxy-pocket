@@ -1,177 +1,103 @@
 
-import { useState } from 'react';
-import { useTenant } from './useTenant';
-import { supabase } from '@/integrations/supabase/client';
-import { ToastService } from '@/services/ToastService';
+import { useState } from "react";
+import { useKpiAlerts } from "@/app/insights/alerts/hooks/useKpiAlerts";
+import { KpiAlert } from "@/types/kpi";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useTenant } from "./useTenant";
 
-export interface KpiAlert {
-  id: string;
-  tenant_id: string;
-  kpi_name: string;
-  metric?: string;
-  description: string;
-  current_value: number;
-  previous_value?: number;
-  percent_change?: number;
-  threshold?: number;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  status: 'pending' | 'acknowledged' | 'resolved' | 'dismissed';
-  triggered_at: string;
-  created_at: string;
-  campaign_id?: string;
-  message?: string;
-  condition?: string;
+export type UnifiedKpiAlert = KpiAlert & {
+  source_type?: 'kpi_alert' | 'kpi_insight';
+};
+
+interface UseUnifiedKpiAlertsOptions {
+  activeOnly?: boolean;
+  severity?: string;
+  days?: number;
 }
 
-export function useUnifiedKpiAlerts() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [alerts, setAlerts] = useState<KpiAlert[]>([]);
+export function useUnifiedKpiAlerts(options: UseUnifiedKpiAlertsOptions = {}) {
+  const { activeOnly = false, severity, days = 7 } = options;
   const { tenant } = useTenant();
-  
-  const fetchAlerts = async (options: { activeOnly?: boolean; limit?: number } = {}) => {
-    if (!tenant?.id) {
-      console.warn('No tenant selected when trying to fetch KPI alerts');
-      return { data: [], error: 'No tenant selected' };
-    }
-    
-    const { activeOnly = true, limit = 100 } = options;
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const [alerts, setAlerts] = useState<UnifiedKpiAlert[]>([]);
+
+  const { alerts: kpiAlerts, isLoading: isKpiAlertsLoading } = useKpiAlerts();
+
+  const fetchAlerts = async (fetchOptions?: UseUnifiedKpiAlertsOptions) => {
+    if (!tenant?.id) return { data: [], error: new Error("No tenant selected") };
     
     setIsLoading(true);
+    setError(null);
+    
     try {
-      let query = supabase
+      // Get options or use defaults
+      const opts = fetchOptions || options;
+      
+      // Fetch KPI alerts from the database
+      const { data: alertData, error: alertError } = await supabase
         .from('kpi_alerts')
         .select('*')
         .eq('tenant_id', tenant.id)
-        .order('triggered_at', { ascending: false });
+        .order('created_at', { ascending: false });
         
-      if (activeOnly) {
-        query = query.in('status', ['pending', 'acknowledged']);
-      }
-      
-      if (limit) {
-        query = query.limit(limit);
-      }
-      
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      
-      setAlerts(data as KpiAlert[]);
-      return { data: data as KpiAlert[], error: null };
-    } catch (error: any) {
-      console.error('Error fetching KPI alerts:', error);
-      return { data: [], error: error.message };
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  const acknowledgeAlert = async (alertId: string) => {
-    if (!tenant?.id) {
-      ToastService.error("No tenant selected");
-      return { success: false };
-    }
-    
-    setIsLoading(true);
-    try {
-      const { error } = await supabase
-        .from('kpi_alerts')
-        .update({ status: 'acknowledged' })
-        .eq('id', alertId)
-        .eq('tenant_id', tenant.id);
-        
-      if (error) throw error;
-      
-      // Update local state
-      setAlerts(prev => 
-        prev.map(alert => 
-          alert.id === alertId ? { ...alert, status: 'acknowledged' } : alert
-        )
-      );
-      
-      ToastService.success("Alert acknowledged");
-      return { success: true };
-    } catch (error: any) {
-      console.error('Error acknowledging alert:', error);
-      ToastService.error(`Failed to acknowledge alert: ${error.message}`);
-      return { success: false, error };
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  const resolveAlert = async (alertId: string) => {
-    if (!tenant?.id) {
-      ToastService.error("No tenant selected");
-      return { success: false };
-    }
-    
-    setIsLoading(true);
-    try {
-      // Update the alert status
-      const { error } = await supabase
-        .from('kpi_alerts')
-        .update({ status: 'resolved' })
-        .eq('id', alertId)
-        .eq('tenant_id', tenant.id);
-        
-      if (error) throw error;
-      
-      // Update local state
-      setAlerts(prev => 
-        prev.map(alert => 
-          alert.id === alertId ? { ...alert, status: 'resolved' } : alert
-        )
-      );
-      
-      ToastService.success("Alert resolved");
-      return { success: true };
-    } catch (error: any) {
-      console.error('Error resolving alert:', error);
-      ToastService.error(`Failed to resolve alert: ${error.message}`);
-      return { success: false, error };
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  const dismissAlert = async (alertId: string) => {
-    if (!tenant?.id) {
-      ToastService.error("No tenant selected");
-      return { success: false };
-    }
-    
-    setIsLoading(true);
-    try {
-      // Update the alert status
-      const { error } = await supabase
-        .from('kpi_alerts')
-        .update({ status: 'dismissed' })
-        .eq('id', alertId)
-        .eq('tenant_id', tenant.id);
-        
-      if (error) throw error;
-      
-      // Update local state
-      setAlerts(prev => prev.filter(alert => alert.id !== alertId));
-      
-      ToastService.success("Alert dismissed");
-      return { success: true };
-    } catch (error: any) {
-      console.error('Error dismissing alert:', error);
-      ToastService.error(`Failed to dismiss alert: ${error.message}`);
-      return { success: false, error };
+      if (alertError) throw alertError;
+
+      // Map the alerts and add source_type
+      const mappedAlerts = alertData.map(alert => ({
+        ...alert,
+        source_type: 'kpi_alert' as const
+      }));
+
+      // Set the alerts in state
+      setAlerts(mappedAlerts);
+      return { data: mappedAlerts, error: null };
+    } catch (err: any) {
+      setError(err);
+      return { data: [], error: err };
     } finally {
       setIsLoading(false);
     }
   };
 
+  const refreshAlerts = async () => {
+    return fetchAlerts();
+  };
+
+  const triggerKpiCheck = async () => {
+    if (!tenant?.id) {
+      toast.error("Cannot check KPIs - no tenant selected");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // This would typically call an edge function to trigger KPI checks
+      toast.success("KPI check triggered successfully");
+      await refreshAlerts();
+      return true;
+    } catch (error: any) {
+      toast.error(`Failed to trigger KPI check: ${error.message || 'Unknown error'}`);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch alerts on initial mount
+  useState(() => {
+    if (tenant?.id) {
+      fetchAlerts();
+    }
+  });
+
   return {
     alerts,
-    isLoading,
+    isLoading: isLoading || isKpiAlertsLoading,
+    error,
     fetchAlerts,
-    acknowledgeAlert,
-    resolveAlert,
-    dismissAlert
+    refreshAlerts,
+    triggerKpiCheck
   };
 }

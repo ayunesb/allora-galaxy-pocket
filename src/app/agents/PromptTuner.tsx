@@ -1,6 +1,5 @@
-
-import React, { useState } from "react";
-import { CEO_Agent } from "@/lib/agents/CEO_Agent";
+import React from 'react';
+import { CEOAgent } from '@/lib/agents/CEO_Agent';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -43,7 +42,7 @@ export default function PromptTuner() {
             setLoading(true);
             setPreview("");
             try {
-              const res = await CEO_Agent.run({
+              const res = await CEOAgent.run({
                 founderProfile: inputs.profile,
                 market: inputs.market,
                 notifySlack: true,

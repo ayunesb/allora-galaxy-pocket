@@ -26,23 +26,23 @@ import { toast } from 'sonner';
 
 export default function UserManagementPage() {
   const { 
-    teamMembers, 
-    isLoadingMembers, 
-    updateRole 
+    members, 
+    isLoading, 
+    updateMemberRole 
   } = useTeamManagement();
   
   const [searchQuery, setSearchQuery] = React.useState('');
   
   const filteredMembers = React.useMemo(() => {
-    if (!teamMembers) return [];
+    if (!members) return [];
     
-    return teamMembers.filter(member => 
+    return members.filter(member => 
       member?.profiles?.email?.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [teamMembers, searchQuery]);
+  }, [members, searchQuery]);
 
   const handleRoleChange = (userId: string, newRole: UserRole) => {
-    updateRole(userId, newRole);
+    updateMemberRole(userId, newRole);
   };
   
   const getRoleBadgeVariant = (role: string) => {
@@ -78,7 +78,7 @@ export default function UserManagementPage() {
             </div>
           </div>
 
-          {isLoadingMembers ? (
+          {isLoading ? (
             <div className="flex justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
             </div>

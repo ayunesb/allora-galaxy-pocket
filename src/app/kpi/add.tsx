@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -37,6 +36,16 @@ export default function AddKpiPage() {
   const [metricName, setMetricName] = useState("");
   const [metricValue, setMetricValue] = useState("");
   const [metricType, setMetricType] = useState<string>("numeric");
+  
+  useEffect(() => {
+    if (tenant?.id) {
+      logActivity(
+        'KPI_ADD_VIEW',
+        'KPI add page accessed',
+        { timestamp: new Date().toISOString() }
+      );
+    }
+  }, [tenant?.id, logActivity]);
   
   const handleAddMetric = async (e: React.FormEvent) => {
     e.preventDefault();

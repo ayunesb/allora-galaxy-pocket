@@ -1,60 +1,53 @@
+'use client';
 
-import React from 'react';
-import { KpiSection } from './components/KpiSection';
-import { StrategySection } from './components/StrategySection';
-import { CampaignSection } from './components/CampaignSection';
-import { useStrategyAndCampaigns } from './hooks/useStrategyAndCampaigns';
-import { useQuery } from '@tanstack/react-query';
-import { useTenantValidation } from '@/hooks/useTenantValidation';
-import { Navigate } from 'react-router-dom';
-import { KpiAlertsPanel } from '@/app/insights/kpis/components/KpiAlertsPanel';
-import { useUnifiedKpiAlerts } from '@/hooks/useUnifiedKpiAlerts';
-import { supabase } from '@/integrations/supabase/client';
-import { Strategy } from '@/types/strategy';
-import { Campaign } from '@/types/campaign';
+import React, { useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useTenant } from "@/hooks/useTenant";
+import { useSystemLogs } from "@/hooks/useSystemLogs";
+import SystemHealthMetrics from "@/components/SystemHealthMetrics";
+import { KpiDashboard } from "@/app/insights/kpis/KpiDashboard";
+import { GrowthPanel } from "@/app/notifications/GrowthPanel";
 
-const DashboardPage: React.FC = () => {
-  const { strategies, campaigns } = useStrategyAndCampaigns();
-  const { isValidating, isValid } = useTenantValidation();
-  const { alerts } = useUnifiedKpiAlerts({ activeOnly: true, days: 7 });
-  
-  // Fetch KPI metrics directly since useKpiTracking hook doesn't exist
-  const { data: kpiMetrics = [] } = useQuery({
-    queryKey: ['kpi-metrics'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('kpi_metrics')
-        .select('*')
-        .order('created_at', { ascending: false });
-        
-      if (error) {
-        console.error('Error fetching KPI metrics:', error);
-        throw error;
-      }
-      
-      return data || [];
+export default function DashboardPage() {
+  const { tenant } = useTenant();
+  const { logActivity } = useSystemLogs();
+
+  useEffect(() => {
+    if (tenant?.id) {
+      logActivity(
+        'DASHBOARD_VIEW', 
+        'Dashboard page accessed'
+      );
     }
-  });
-
-  if (isValidating) {
-    return <div>Validating workspace...</div>;
-  }
-
-  if (!isValid) {
-    return <Navigate to="/workspace" replace />;
-  }
-
-  // The strategies are already properly typed from useStrategyAndCampaigns
-  const typedCampaigns = (campaigns || []) as Campaign[];
+  }, [tenant?.id]);
 
   return (
-    <div className="container mx-auto p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <KpiSection kpiMetrics={kpiMetrics} />
-      <StrategySection strategies={strategies} />
-      <CampaignSection campaigns={typedCampaigns} />
-      <KpiAlertsPanel alerts={alerts} />
+    <div className="container mx-auto py-6 space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Workspace</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {tenant ? (
+              <>
+                <h2 className="text-2xl font-bold">{tenant.name}</h2>
+                <p className="text-muted-foreground">
+                  {tenant.is_demo ? 'Demo Workspace' : 'Active Workspace'}
+                </p>
+              </>
+            ) : (
+              <p className="text-muted-foreground">No workspace selected</p>
+            )}
+          </CardContent>
+        </Card>
+        
+        <SystemHealthMetrics />
+      </div>
+      
+      <KpiDashboard />
+      
+      <GrowthPanel />
     </div>
   );
-};
-
-export default DashboardPage;
+}

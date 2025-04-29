@@ -1,248 +1,168 @@
+'use client';
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { useForm } from 'react-hook-form';
-import { useTenant } from '@/hooks/useTenant';
-import { useSystemLogs } from '@/hooks/useSystemLogs';
-import { ToastService } from '@/services/ToastService';
-import { Campaign } from '@/types/campaign';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "@/components/ui/sonner";
+import { useTenant } from "@/hooks/useTenant";
+import { useSystemLogs } from "@/hooks/useSystemLogs";
+import { CampaignStatus } from "@/types/campaign";
 import { supabase } from '@/integrations/supabase/client';
 
-interface CampaignWizardProps {
-  strategy?: { id: string; title: string; };
-  defaultName?: string;
-}
+const campaignSchema = z.object({
+  name: z.string().min(3, {
+    message: "Campaign name must be at least 3 characters.",
+  }),
+  description: z.string().optional(),
+  status: z.enum([CampaignStatus.ACTIVE, CampaignStatus.INACTIVE, CampaignStatus.DRAFT]),
+  strategy_id: z.string().uuid().optional(),
+  scripts: z.record(z.string(), z.any()).optional(),
+  metrics: z.record(z.string(), z.any()).optional()
+});
 
-export default function CampaignWizard({ strategy, defaultName = '' }: CampaignWizardProps) {
-  const [currentStep, setCurrentStep] = useState('basics');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { register, handleSubmit, formState: { errors }, watch } = useForm({
-    defaultValues: {
-      name: defaultName,
-      description: '',
-    }
-  });
+type CampaignValues = z.infer<typeof campaignSchema>;
+
+export default function CampaignWizard() {
+  const router = useRouter();
   const { tenant } = useTenant();
   const { logActivity } = useSystemLogs();
-  const navigate = useNavigate();
+  const [submitting, setSubmitting] = useState(false);
 
-  // Get form values
-  const name = watch('name');
-  const description = watch('description');
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<CampaignValues>({
+    resolver: zodResolver(campaignSchema),
+    defaultValues: {
+      status: CampaignStatus.DRAFT,
+    },
+  });
 
-  const goToStep = (step: string) => {
-    if (step === 'channels' && !name) {
-      ToastService.error("Please enter a campaign name first");
-      return;
+  useEffect(() => {
+    if (tenant?.id) {
+      logActivity(
+        'CAMPAIGN_CREATE_VIEW',
+        'Campaign creation page accessed',
+        { timestamp: new Date().toISOString() }
+      );
     }
-    setCurrentStep(step);
-  };
+  }, [tenant?.id]);
 
-  const handleSave = async (formData: any) => {
-    if (!tenant?.id) {
-      ToastService.error("No tenant selected");
-      return;
-    }
-
-    setIsSubmitting(true);
-
+  const onSubmit = async (data: CampaignValues) => {
+    setSubmitting(true);
+    
     try {
-      const campaign: Partial<Campaign> = {
-        name: formData.name,
-        description: formData.description,
-        tenant_id: tenant.id,
-        status: 'draft',
-        strategy_id: strategy?.id,
-      };
-
-      const { data, error } = await supabase
+      // Ensure required fields are present
+      if (!data.name || !data.status) {
+        toast.error("Campaign name and status are required");
+        setSubmitting(false);
+        return;
+      }
+    
+      // Create campaign with required fields
+      const { data: campaignData, error } = await supabase
         .from('campaigns')
-        .insert(campaign)
-        .select('id')
+        .insert({
+          name: data.name,
+          description: data.description,
+          status: data.status,
+          tenant_id: tenant?.id,
+          strategy_id: data.strategy_id,
+          execution_status: 'pending',
+          scripts: data.scripts || {},
+          metrics: data.metrics || {}
+        })
+        .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        toast.error(`Failed to create campaign: ${error.message}`);
+        console.error("Supabase error:", error);
+        setSubmitting(false);
+        return;
+      }
 
-      // Log the activity
-      await logActivity(
-        'CAMPAIGN_CREATED',
-        `Campaign "${campaign.name}" created`,
-        {
-          campaignId: data.id,
-          strategyId: strategy?.id
-        }
-      );
-
-      ToastService.success({
-        title: "Campaign created",
-        description: "Your campaign has been saved as a draft"
-      });
-
-      // Navigate to the campaign details page
-      navigate(`/campaigns/${data.id}`);
-    } catch (error: any) {
-      console.error('Error creating campaign:', error);
-      ToastService.error({
-        title: "Failed to create campaign",
-        description: error.message
-      });
+      toast.success("Campaign created successfully!");
+      router.push('/campaigns');
+    } catch (error) {
+      toast.error("An unexpected error occurred");
+      console.error("Error:", error);
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
-  };
-
-  const handleCancel = () => {
-    ToastService.info({
-      title: "Campaign creation cancelled",
-      description: "Your changes have been discarded"
-    });
-    navigate('/campaigns');
   };
 
   return (
-    <form onSubmit={handleSubmit(handleSave)}>
-      <Card className="mb-8">
+    <div className="container mx-auto py-8">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-xl">Create New Campaign</CardTitle>
-          <CardDescription>
-            {strategy ? `Based on strategy: ${strategy.title}` : 'Create a new marketing campaign'}
-          </CardDescription>
+          <CardTitle>Create New Campaign</CardTitle>
         </CardHeader>
-        <CardContent>
-          <Tabs value={currentStep} onValueChange={goToStep} className="space-y-6">
-            <TabsList className="grid grid-cols-3 w-full">
-              <TabsTrigger value="basics">1. Basics</TabsTrigger>
-              <TabsTrigger value="channels" disabled={!name}>2. Channels</TabsTrigger>
-              <TabsTrigger value="review" disabled={!name}>3. Review</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="basics" className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="name" className="block text-sm font-medium">
-                  Campaign Name
-                </label>
-                <Input
-                  id="name"
-                  {...register('name', { required: 'Campaign name is required' })}
-                  placeholder="Enter campaign name"
-                />
-                {errors.name && (
-                  <p className="text-red-500 text-sm mt-1">{errors.name.message as string}</p>
+        <CardContent className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div>
+              <Label htmlFor="name">Campaign Name</Label>
+              <Controller
+                control={control}
+                name="name"
+                render={({ field }) => (
+                  <Input id="name" placeholder="My Awesome Campaign" {...field} />
                 )}
-              </div>
+              />
+              {errors.name && (
+                <p className="text-sm text-red-500">{errors.name.message}</p>
+              )}
+            </div>
 
-              <div className="space-y-2">
-                <label htmlFor="description" className="block text-sm font-medium">
-                  Description (Optional)
-                </label>
-                <textarea
-                  id="description"
-                  {...register('description')}
-                  className="w-full p-2 border rounded-md min-h-[100px]"
-                  placeholder="Enter campaign description"
-                />
-              </div>
-            </TabsContent>
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Controller
+                control={control}
+                name="description"
+                render={({ field }) => (
+                  <Textarea id="description" placeholder="Details about the campaign" {...field} />
+                )}
+              />
+            </div>
 
-            <TabsContent value="channels" className="space-y-4">
-              <div className="bg-gray-50 p-4 rounded-md">
-                <h3 className="font-medium text-lg mb-2">Available Channels</h3>
-                <p className="text-muted-foreground mb-4">
-                  Select the channels that will be used in this campaign.
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Channel selection will be implemented in the next phase.
-                </p>
-              </div>
-            </TabsContent>
+            <div>
+              <Label htmlFor="status">Status</Label>
+              <Controller
+                control={control}
+                name="status"
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={CampaignStatus.DRAFT}>{CampaignStatus.DRAFT}</SelectItem>
+                      <SelectItem value={CampaignStatus.ACTIVE}>{CampaignStatus.ACTIVE}</SelectItem>
+                      <SelectItem value={CampaignStatus.INACTIVE}>{CampaignStatus.INACTIVE}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.status && (
+                <p className="text-sm text-red-500">{errors.status.message}</p>
+              )}
+            </div>
 
-            <TabsContent value="review" className="space-y-4">
-              <div className="space-y-4">
-                <div className="bg-gray-50 p-4 rounded-md">
-                  <h3 className="font-medium mb-2">Campaign Summary</h3>
-                  <div className="space-y-2">
-                    <p>
-                      <span className="font-medium">Name:</span> {name}
-                    </p>
-                    <p>
-                      <span className="font-medium">Description:</span>{' '}
-                      {description || 'No description provided'}
-                    </p>
-                    <p>
-                      <span className="font-medium">Based on Strategy:</span>{' '}
-                      {strategy ? strategy.title : 'None'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="bg-gray-50 p-4 rounded-md">
-                  <h3 className="font-medium mb-2">Selected Channels</h3>
-                  <p className="text-sm text-muted-foreground">
-                    No channels selected yet.
-                  </p>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? "Creating..." : "Create Campaign"}
+            </Button>
+          </form>
         </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleCancel}
-          >
-            Cancel
-          </Button>
-
-          <div className="space-x-2">
-            {currentStep === 'basics' ? (
-              <Button
-                type="button"
-                onClick={() => goToStep('channels')}
-                disabled={!name}
-              >
-                Next: Channels
-              </Button>
-            ) : currentStep === 'channels' ? (
-              <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => goToStep('basics')}
-                >
-                  Back
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => goToStep('review')}
-                >
-                  Next: Review
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => goToStep('channels')}
-                >
-                  Back
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Creating...' : 'Create Campaign'}
-                </Button>
-              </>
-            )}
-          </div>
-        </CardFooter>
       </Card>
-    </form>
+    </div>
   );
 }
