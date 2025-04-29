@@ -24,14 +24,16 @@ export function useRouteLogger() {
           
         const role = userRoleData?.role || 'unknown';
         
-        // Log the route with tenant_id if available
+        // Log the route with tenant_id if available, or use a placeholder UUID
+        const placeholderUuid = '00000000-0000-0000-0000-000000000000';
+        
         await supabase
           .from('route_logs')
           .insert({
             user_id: user.id,
             role: role,
             route: location.pathname,
-            tenant_id: tenant?.id || '00000000-0000-0000-0000-000000000000' // Default UUID if tenant not available
+            tenant_id: tenant?.id || placeholderUuid
           });
       } catch (error) {
         console.error('Error logging route:', error);

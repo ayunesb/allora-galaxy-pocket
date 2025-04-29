@@ -17,18 +17,28 @@ export function usePersona(userId: string) {
   const { data: persona, isLoading } = useQuery({
     queryKey: ['persona', userId],
     queryFn: async (): Promise<PersonaPreferences> => {
-      const { data, error } = await supabase
-        .from('user_personas')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
+      // Instead of querying a non-existent user_personas table,
+      // we'll use profiles table or simply use localStorage data
+      try {
+        // Try to get from profiles if it has persona fields
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('industry, avatar_url')
+          .eq('id', userId)
+          .single();
 
-      if (error) {
+        if (error) throw error;
+
+        // Combine with local storage data for other fields
+        return {
+          ...localPersona,
+          industry: data.industry || localPersona.industry,
+          // Use other fields from local storage
+        } as unknown as PersonaPreferences;
+      } catch (err) {
         // Fallback to local storage if Supabase fetch fails
         return localPersona;
       }
-
-      return data as PersonaPreferences;
     }
   });
 
@@ -40,18 +50,21 @@ export function usePersona(userId: string) {
         updatedAt: new Date().toISOString()
       };
 
-      // Update Supabase
-      const { error } = await supabase
-        .from('user_personas')
-        .upsert({
-          user_id: userId,
-          ...updatedPersona
-        });
-
-      if (error) throw error;
-
-      // Update local storage as backup
+      // Store in localStorage as our primary storage
       localStorage.setItem(`persona-${userId}`, JSON.stringify(updatedPersona));
+
+      // Try to update profile if it makes sense
+      if (updates.industry) {
+        try {
+          await supabase
+            .from('profiles')
+            .update({ industry: updates.industry })
+            .eq('id', userId);
+        } catch (error) {
+          console.error("Failed to update profile:", error);
+          // Non-critical error, continue
+        }
+      }
 
       return updatedPersona;
     },
@@ -60,7 +73,7 @@ export function usePersona(userId: string) {
     }
   });
 
-  // Keep local storage in sync with Supabase data
+  // Keep local storage in sync with data
   useEffect(() => {
     if (persona) {
       localStorage.setItem(`persona-${userId}`, JSON.stringify(persona));

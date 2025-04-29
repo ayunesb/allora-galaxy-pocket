@@ -83,7 +83,7 @@ export function usePluginInstallation() {
           });
       }
 
-      // Log plugin installation
+      // Log plugin installation - use correct structure for system_logs
       try {
         await logActivity({
           event_type: "PLUGIN_INSTALLED",
@@ -91,8 +91,7 @@ export function usePluginInstallation() {
           meta: {
             plugin_key: pluginKey
           },
-          severity: "info",
-          tenant_id: tenant.id
+          severity: "info"
         });
       } catch (logError) {
         console.error("Failed to log plugin installation:", logError);
@@ -145,7 +144,7 @@ export function usePluginInstallation() {
 
       if (error) throw error;
 
-      // Log plugin uninstallation
+      // Log plugin uninstallation - using correct structure
       try {
         await logActivity({
           event_type: "PLUGIN_DISABLED",
@@ -153,8 +152,7 @@ export function usePluginInstallation() {
           meta: {
             plugin_key: pluginKey
           },
-          severity: "info",
-          tenant_id: tenant.id
+          severity: "info"
         });
       } catch (logError) {
         console.error("Failed to log plugin disabling:", logError);

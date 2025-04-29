@@ -26,7 +26,7 @@ interface FullKpiData {
 export function KpiOverview() {
   const { data, isLoading } = useKpiData();
   
-  // Safely extract metrics or use defaults
+  // Safely cast data and extract metrics with fallback to empty arrays
   const kpiData = data as unknown as FullKpiData | undefined;
   const currentMetrics: KpiMetric[] = kpiData?.currentMetrics || [];
   const trends: KpiTrend[] = kpiData?.trends || [];

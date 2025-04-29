@@ -7,14 +7,15 @@ export function useExportCSV() {
   const [isExporting, setIsExporting] = useState(false);
   const { tenant } = useTenant();
 
-  // Check if table exists (simpler implementation that doesn't rely on custom DB functions)
+  // Check if table exists without using custom DB functions
   const checkTableExists = async (tableName: string): Promise<boolean> => {
     try {
-      // Try to select a single row with limit 0 to check if the table exists
-      const { error } = await supabase
-        .from(tableName)
-        .select('*')
-        .limit(0);
+      // Use a type assertion to avoid the TypeScript error
+      const query = supabase
+        .from(tableName as any)
+        .select('*', { count: 'exact', head: true });
+      
+      const { error } = await query;
       
       // If there's no error, the table exists
       return !error;
@@ -39,8 +40,8 @@ export function useExportCSV() {
         throw new Error(`Table "${tableName}" does not exist`);
       }
       
-      // Since we can't use the custom RPC function, we'll do a direct query
-      let query = supabase.from(tableName).select('*');
+      // Use type assertion to avoid TypeScript errors
+      let query = supabase.from(tableName as any).select('*');
       
       // Add tenant filter if applicable
       if (tenant?.id && tableName !== 'subscription_tiers') {
@@ -56,6 +57,7 @@ export function useExportCSV() {
         });
       }
       
+      // Use a type assertion to avoid TypeScript errors with the query
       const { data, error } = await query;
       
       if (error) throw error;
