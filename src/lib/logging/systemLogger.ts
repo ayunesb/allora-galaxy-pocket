@@ -107,13 +107,13 @@ export const getSystemLogs = async (
     }
     
     // Cast safely to avoid deep recursion
-    const safeData = data as unknown;
+    const safeData = data as unknown as SystemLog[];
     
     // Transform data to ensure it has the severity field
-    return (safeData as any[]).map(log => ({
+    return safeData.map(log => ({
       ...log,
       severity: log.severity || 'low' // Default severity if missing
-    })) as SystemLog[];
+    }));
     
   } catch (err) {
     console.error("Failed to fetch system logs:", err);

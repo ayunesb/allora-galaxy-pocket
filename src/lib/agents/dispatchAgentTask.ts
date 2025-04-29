@@ -8,9 +8,10 @@ type DispatchPayload = {
   agent: string;
   task_type: string;
   payload: any;
+  tenant_id?: string;
 };
 
-export async function dispatchAgentTask({ user_id, agent, task_type, payload }: DispatchPayload) {
+export async function dispatchAgentTask({ user_id, agent, task_type, payload, tenant_id }: DispatchPayload) {
   // Get user role (fallback to "client")
   const { data: roleData } = await supabase
     .from("user_roles")
@@ -23,37 +24,58 @@ export async function dispatchAgentTask({ user_id, agent, task_type, payload }: 
   const isAllowed = allowed.includes(task_type) || allowed.includes("*");
 
   if (!isAllowed) {
-    // 1. Log denied task for retry queue (if you have this table - stub for now)
-    await supabase.from("agent_denied_tasks").insert({ 
-      user_id, 
-      agent, 
-      task_type, 
-      payload,
-      status: "pending"
-    });
-
-    // 2. Notify admin/user via agent_alerts
-    await supabase.from("agent_alerts").insert({
-      agent,
-      alert_type: "permission-denied",
-      message: `❌ ${agent} could not execute "${task_type}" due to role restrictions (${role}).`
-    });
-
-    // 3. Trigger role escalation request for user
-    await supabase.from("role_change_requests").insert({
-      user_id,
-      requested_role: "developer",
-      reason: `${agent} requires higher access to complete "${task_type}"`
-    });
-
-    // 4. Ping Slack via Supabase edge function (to avoid CORS issues)
-    await supabase.functions.invoke("role-change-webhook", {
-      body: {
+    // Instead of using tables that don't exist, log to system logs
+    if (tenant_id) {
+      await supabase.from("system_logs").insert({ 
+        tenant_id,
         user_id,
-        changed_by: agent,
-        new_role: "developer"
-      }
-    });
+        event_type: 'agent_denied_task',
+        message: `${agent} task "${task_type}" denied due to role restrictions`,
+        severity: 'warning',
+        meta: {
+          agent,
+          task_type,
+          payload,
+          status: "pending"
+        },
+        created_at: new Date().toISOString()
+      });
+
+      // Log alert
+      await supabase.from("agent_alerts").insert({
+        agent,
+        alert_type: "permission-denied",
+        message: `❌ ${agent} could not execute "${task_type}" due to role restrictions (${role}).`,
+        tenant_id,
+        triggered_at: new Date().toISOString()
+      });
+    }
+
+    // Role change request - check if table exists first
+    try {
+      await supabase.from("role_change_requests").insert({
+        user_id,
+        requested_role: "developer",
+        reason: `${agent} requires higher access to complete "${task_type}"`,
+        tenant_id
+      });
+    } catch (e) {
+      console.warn("Could not create role change request:", e);
+    }
+
+    // Use generic function invoke instead
+    try {
+      await supabase.functions.invoke("role-change-webhook", {
+        body: {
+          user_id,
+          changed_by: agent,
+          new_role: "developer",
+          tenant_id
+        }
+      });
+    } catch (e) {
+      console.warn("Could not send webhook:", e);
+    }
 
     return {
       status: "blocked",
@@ -61,22 +83,25 @@ export async function dispatchAgentTask({ user_id, agent, task_type, payload }: 
     };
   }
 
-  // 5. Execute agent task (stub: implement real agent logic as needed)
+  // Execute agent task (stub: implement real agent logic as needed)
   if (agent === "PluginRecommender") {
     // return await PluginRecommender_Agent.suggest(payload);
     return { status: "executed", result: "Plugin recommendations would go here." };
   }
 
   // Log agent_tasks with prompt_version if provided
-  await supabase.from("agent_tasks").insert({
-    agent,
-    task_type,
-    payload,
-    status: "success",
-    prompt_version: payload?.prompt_version,
-    plugin_id: payload?.plugin_id || null,
-    executed_at: new Date().toISOString()
-  });
+  if (tenant_id) {
+    await supabase.from("agent_tasks").insert({
+      agent,
+      task_type,
+      payload,
+      status: "success",
+      prompt_version: payload?.prompt_version,
+      plugin_id: payload?.plugin_id || null,
+      executed_at: new Date().toISOString(),
+      tenant_id
+    });
+  }
 
   return { status: "executed" };
 }

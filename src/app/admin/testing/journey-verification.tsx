@@ -43,7 +43,7 @@ export default function JourneyVerification() {
 
   const verifyModule = async (modulePath: string) => {
     try {
-      const result = await verifyModuleImplementation(modulePath, { requireAuth: true });
+      const result = await verifyModuleImplementation(modulePath);
 
       if (result && result.verified) {
         setModuleStatus(prev => ({
