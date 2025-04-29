@@ -17,33 +17,30 @@ export interface Strategy {
   status: StrategyStatus;
   tenant_id: string;
   user_id: string;
-  tags?: string[];
+  tags: string[];
   created_at: string;
-  updated_at?: string;
-  generated_by?: string;
-  assigned_agent?: string;
-  auto_approved?: boolean;
+  updated_at: string;
+  generated_by: string;
+  assigned_agent: string;
+  auto_approved: boolean;
+  health_score: number;
   approved_at?: string | null;
   failure_reason?: string | null;
-  impact_score?: number | null;
-  health_score?: number | null;
-  is_public?: boolean;
-  diagnosis?: Record<string, any>;
-  metrics_baseline?: Record<string, any>;
-  metrics_target?: Record<string, any>;
-  version?: string | number;
-  reason_for_recommendation?: string;
-  target_audience?: string;
-  goals?: any[];
-  channels?: string[];
-  kpis?: any[];
+  diagnosis: Record<string, any>;
   
-  // Optional fields that might be used in some components but not required everywhere
-  industry?: string;
-  goal?: string;
+  // Essential fields used throughout the application
+  metrics_target: Record<string, any>;
+  metrics_baseline: Record<string, any>;
+  version: string | number;
+  reason_for_recommendation: string;
+  target_audience: string;
+  goals: string[];
+  channels: string[];
+  kpis: string[];
+  industry: string;
   confidence?: number;
-  retry_prompt?: string;
-  onboarding_data?: Record<string, any>;
+  impact_score?: number;
+  is_public?: boolean;
 }
 
 export interface StrategyFormData {

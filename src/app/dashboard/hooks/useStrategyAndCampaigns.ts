@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { Strategy } from "@/types/strategy";
 import { Campaign } from "@/types/campaign";
+import { mapJsonToStrategy } from "@/types/strategy.d";
 
 export function useStrategyAndCampaigns() {
   const { tenant } = useTenant();
@@ -21,23 +22,8 @@ export function useStrategyAndCampaigns() {
         
       if (error) throw error;
       
-      // Transform to match Strategy interface with all required fields
-      return (data || []).map(item => ({
-        ...item,
-        metrics_target: item.metrics_target || {},
-        metrics_baseline: item.metrics_baseline || {},
-        tags: item.tags || [],
-        goals: item.goals || [],
-        channels: item.channels || [],
-        kpis: item.kpis || [],
-        updated_at: item.updated_at || item.created_at,
-        version: item.version || '1',
-        reason_for_recommendation: item.reason_for_recommendation || '',
-        target_audience: item.target_audience || '',
-        generated_by: item.generated_by || 'CEO Agent',
-        assigned_agent: item.assigned_agent || '',
-        industry: item.industry || '',
-      }) as Strategy);
+      // Use the mapJsonToStrategy helper to ensure all fields are properly set
+      return (data || []).map(item => mapJsonToStrategy(item));
     },
     enabled: !!tenant?.id,
   });
