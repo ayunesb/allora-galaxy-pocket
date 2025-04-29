@@ -26,7 +26,11 @@ const InsertMissingBlueprints: React.FC = () => {
       const result = await ceoAgent.generateStrategy(industry, goals, painPoints);
 
       if (result.success) {
-        const strategyText = result.strategy || "Strategy generated successfully";
+        // Convert the strategy object to a string for preview
+        const strategyText = typeof result.strategy === 'string' 
+          ? result.strategy 
+          : JSON.stringify(result.strategy, null, 2);
+        
         console.log('Strategy generated successfully:', strategyText);
         setPreview(strategyText);
       } else {

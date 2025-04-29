@@ -8,11 +8,11 @@ export interface AgentTask {
   agent_name: string;
   task_type: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
-  payload: Record<string, any>;
+  payload: any; // Using any to avoid excessive type recursion
   created_at?: string;
   completed_at?: string;
   error_message?: string;
-  result?: Record<string, any> | null;
+  result?: any; // Using any to avoid excessive type recursion
 }
 
 export async function dispatchAgentTask(task: Omit<AgentTask, 'id' | 'created_at' | 'status'>) {

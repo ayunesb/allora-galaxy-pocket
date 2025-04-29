@@ -1,8 +1,9 @@
+
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { useTenant } from '@/hooks/useTenant';
 import { useSystemLogs } from '@/hooks/useSystemLogs';
 import { Strategy } from '@/types/strategy';
@@ -17,7 +18,7 @@ interface OnboardingData {
 
 export const useOnboardingSubmission = () => {
   const { toast } = useToast();
-  const { user } = useUser();
+  const { user } = useAuth();
   const { tenant } = useTenant();
   const { logActivity } = useSystemLogs();
   const [isLoading, setIsLoading] = useState(false);
@@ -76,7 +77,8 @@ export const useOnboardingSubmission = () => {
         description: "Your AI strategy is being generated. Check back soon!",
       });
 
-      return strategy as Strategy;
+      // Cast to Strategy type with unknown as intermediate step
+      return strategy as unknown as Strategy;
     } catch (err: any) {
       console.error("Onboarding submission error:", err);
       toast({
@@ -92,6 +94,8 @@ export const useOnboardingSubmission = () => {
 
   return {
     handleSubmit,
-    isLoading,
+    isSubmitting: isLoading,
+    // For compatibility with components that expect completeOnboarding
+    completeOnboarding: handleSubmit
   };
 };

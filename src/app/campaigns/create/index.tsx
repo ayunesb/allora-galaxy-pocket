@@ -1,419 +1,268 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle, 
-  CardFooter 
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { 
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { useTenant } from "@/hooks/useTenant";
-import { supabase } from "@/integrations/supabase/client"; 
-import { useAuth } from "@/hooks/useAuth";
-import { Strategy, mapJsonToStrategy, mapStrategyArray } from "@/types/strategy";
-import { AlertCircle, Check, ArrowLeft, Sparkles } from "lucide-react";
-import { useSystemLogs } from "@/hooks/useSystemLogs";
-import LoadingOverlay from "@/components/ui/LoadingOverlay";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ToastService } from "@/services/ToastService";
-
-const availableChannels = [
-  { id: "email", label: "Email" },
-  { id: "social", label: "Social Media" },
-  { id: "landing_page", label: "Landing Page" },
-  { id: "ads", label: "Paid Ads" },
-  { id: "content", label: "Content Marketing" },
-  { id: "sms", label: "SMS" }
-];
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useTenant } from '@/hooks/useTenant';
+import { useAuth } from '@/hooks/useAuth';
+import { useSystemLogs } from '@/hooks/useSystemLogs';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { Loader2 } from 'lucide-react';
 
 export default function CampaignCreatePage() {
-  const navigate = useNavigate();
-  const location = useLocation();
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    type: 'email',
+    goal: '',
+    target_audience: '',
+    budget: '',
+    duration: '30',
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { tenant } = useTenant();
   const { user } = useAuth();
   const { logActivity } = useSystemLogs();
-  
-  const initialStrategyId = location.state?.strategyId;
-  const returnPath = location.state?.returnPath || "/campaigns";
-  
-  const [loading, setLoading] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [strategies, setStrategies] = useState<Strategy[]>([]);
-  
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [strategyId, setStrategyId] = useState<string | null>(initialStrategyId || null);
-  const [selectedStrategy, setSelectedStrategy] = useState<Strategy | null>(null);
-  const [channels, setChannels] = useState<string[]>([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    if (!tenant?.id) return;
-    
-    const fetchStrategies = async () => {
-      setLoading(true);
-      setError(null);
-      
-      try {
-        const { data, error } = await supabase
-          .from('strategies')
-          .select('*')
-          .eq('tenant_id', tenant.id)
-          .eq('status', 'approved')
-          .order('created_at', { ascending: false });
-          
-        if (error) throw error;
-        
-        // Use the mapStrategyArray utility function to transform the data
-        const strategiesData = mapStrategyArray(data || []);
-        setStrategies(strategiesData);
-        
-        if (initialStrategyId) {
-          const selectedStrategy = data?.find(s => s.id === initialStrategyId) || null;
-          
-          if (selectedStrategy) {
-            // Use mapJsonToStrategy to ensure proper type transformation
-            const mappedStrategy = mapJsonToStrategy(selectedStrategy);
-            setSelectedStrategy(mappedStrategy);
-            
-            setName(`${mappedStrategy.title} Campaign`);
-            setDescription(`Campaign based on: ${mappedStrategy.title}`);
-          }
-        }
-      } catch (err: any) {
-        console.error("Error fetching strategies:", err);
-        setError(err.message || "Failed to load strategies");
-        ToastService.error({
-          title: "Error loading strategies", 
-          description: err.message || "Please try again"
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchStrategies();
-  }, [tenant?.id, initialStrategyId]);
-
-  useEffect(() => {
+    // Log page view
     if (tenant?.id) {
       logActivity(
         'CAMPAIGN_CREATE_VIEW',
-        'Campaign creation page accessed',
-        { timestamp: new Date().toISOString() }
+        'Campaign creation page viewed',
+        { tenant_id: tenant.id }
       );
     }
-  }, [tenant?.id, logActivity]);
+  }, [tenant?.id]);
 
-  const handleStrategySelect = (id: string) => {
-    setStrategyId(id);
-    const selected = strategies.find(s => s.id === id) || null;
-    setSelectedStrategy(selected);
-    
-    if (selected) {
-      setName(`${selected.title} Campaign`);
-      setDescription(`Campaign based on: ${selected.title}`);
-    }
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const toggleChannel = (channelId: string) => {
-    setChannels(current => 
-      current.includes(channelId)
-        ? current.filter(c => c !== channelId)
-        : [...current, channelId]
-    );
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!tenant?.id) {
-      ToastService.error({ 
-        title: "Missing workspace", 
-        description: "Please select a workspace first" 
+    if (!tenant?.id || !user?.id) {
+      toast.error('Authentication error', {
+        description: 'Please ensure you are logged in and have selected a workspace'
       });
       return;
     }
     
-    if (!name.trim()) {
-      ToastService.error({
-        title: "Campaign name required", 
-        description: "Please provide a name for your campaign"
-      });
-      return;
-    }
-    
-    if (channels.length === 0) {
-      ToastService.error({
-        title: "Please select channels", 
-        description: "Select at least one channel for your campaign"
-      });
-      return;
-    }
-    
-    setSubmitting(true);
-    setError(null);
+    setIsSubmitting(true);
     
     try {
-      const { data: campaign, error: campaignError } = await supabase
+      // Log the start of campaign creation
+      await logActivity(
+        'CAMPAIGN_CREATE_START',
+        'Campaign creation started',
+        { 
+          campaign_name: formData.name,
+          campaign_type: formData.type
+        }
+      );
+      
+      // Create the campaign in the database
+      const { data, error } = await supabase
         .from('campaigns')
         .insert({
           tenant_id: tenant.id,
-          name,
-          description,
-          strategy_id: strategyId,
-          status: 'draft',
-          execution_status: 'pending',
-          scripts: { channels: channels.reduce((obj, ch) => ({ ...obj, [ch]: { content: "" } }), {}) }
+          created_by: user.id,
+          name: formData.name,
+          description: formData.description,
+          type: formData.type,
+          goal: formData.goal,
+          target_audience: formData.target_audience,
+          budget: formData.budget ? parseFloat(formData.budget) : null,
+          duration_days: parseInt(formData.duration),
+          status: 'draft'
         })
         .select()
         .single();
       
-      if (campaignError) throw campaignError;
+      if (error) throw error;
       
-      await logActivity({
-        event_type: "CAMPAIGN_CREATED",
-        message: `Campaign "${name}" created successfully`,
-        meta: {
-          campaign_id: campaign.id,
-          strategy_id: strategyId,
-          channels
+      // Log successful campaign creation
+      await logActivity(
+        'CAMPAIGN_CREATED',
+        'New campaign created successfully',
+        {
+          campaign_id: data.id,
+          campaign_name: data.name,
+          campaign_type: data.type
         }
+      );
+      
+      toast.success('Campaign created', {
+        description: 'Your campaign has been created successfully'
       });
       
-      ToastService.success({
-        title: "Campaign created",
-        description: "Your campaign has been created successfully"
-      });
+      // Navigate to the campaign details page
+      navigate(`/campaigns/${data.id}`);
+    } catch (error: any) {
+      console.error('Error creating campaign:', error);
       
-      setTimeout(() => {
-        navigate(`/campaigns/${campaign.id}`, { 
-          replace: true,
-          state: { 
-            newlyCreated: true,
-            returnPath
-          }
-        });
-      }, 500);
+      // Log the error
+      await logActivity(
+        'CAMPAIGN_CREATE_ERROR',
+        'Campaign creation failed',
+        {
+          error: error.message,
+          form_data: formData
+        },
+        'error'
+      );
       
-    } catch (err: any) {
-      console.error("Error creating campaign:", err);
-      setError(err.message || "Failed to create campaign");
-      ToastService.error({
-        title: "Campaign creation failed",
-        description: err.message || "Please try again"
+      toast.error('Failed to create campaign', {
+        description: error.message || 'An unexpected error occurred'
       });
     } finally {
-      setSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 
-  if (loading) {
-    return <LoadingOverlay show={true} label="Loading..." />;
-  }
-
   return (
-    <div className="container mx-auto p-6 max-w-3xl space-y-8">
-      <div className="flex items-center">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => navigate(returnPath)}
-          className="flex items-center gap-1 mr-4"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Create Campaign</h1>
-          <p className="text-muted-foreground">Set up a new marketing campaign</p>
-        </div>
-      </div>
-
-      <div className="flex justify-end">
-        <Button 
-          variant="outline"
-          onClick={() => navigate('/campaigns/wizard')}
-          className="flex items-center gap-2"
-        >
-          <Sparkles className="h-4 w-4" />
-          Use AI Wizard
-        </Button>
-      </div>
+    <div className="container mx-auto py-8">
+      <h1 className="text-3xl font-bold mb-6">Create New Campaign</h1>
       
-      <LoadingOverlay show={submitting} label="Creating campaign..." />
-      
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-      
-      <form onSubmit={handleSubmit}>
-        <Card>
-          <CardHeader>
-            <CardTitle>Campaign Details</CardTitle>
-            <CardDescription>
-              Define your campaign's basic information
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Campaign Details</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="campaign-name">Campaign Name</Label>
+              <Label htmlFor="name">Campaign Name</Label>
               <Input
-                id="campaign-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
                 placeholder="Enter campaign name"
                 required
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="campaign-desc">Description</Label>
+              <Label htmlFor="description">Description</Label>
               <Textarea
-                id="campaign-desc"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Briefly describe your campaign's objectives"
-                rows={3}
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                placeholder="Describe your campaign"
+                rows={4}
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="strategy-select">Based on Strategy</Label>
-              {strategies.length === 0 ? (
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>No approved strategies</AlertTitle>
-                  <AlertDescription>
-                    You need to create and approve a strategy before creating campaigns.
-                    <Button 
-                      variant="link" 
-                      onClick={() => navigate("/strategy")}
-                      className="p-0 h-auto mt-1"
-                    >
-                      Go to Strategies
-                    </Button>
-                  </AlertDescription>
-                </Alert>
-              ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="type">Campaign Type</Label>
                 <Select
-                  value={strategyId || undefined}
-                  onValueChange={handleStrategySelect}
+                  value={formData.type}
+                  onValueChange={(value) => handleSelectChange('type', value)}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a strategy" />
+                    <SelectValue placeholder="Select campaign type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {strategies.map((strategy) => (
-                      <SelectItem key={strategy.id} value={strategy.id}>
-                        {strategy.title}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="email">Email</SelectItem>
+                    <SelectItem value="social">Social Media</SelectItem>
+                    <SelectItem value="content">Content Marketing</SelectItem>
+                    <SelectItem value="ppc">Pay-per-Click</SelectItem>
+                    <SelectItem value="seo">SEO</SelectItem>
                   </SelectContent>
                 </Select>
-              )}
-            </div>
-            
-            <div className="space-y-3">
-              <Label>Marketing Channels</Label>
-              <div className="grid grid-cols-2 gap-3">
-                {availableChannels.map((channel) => (
-                  <div key={channel.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`channel-${channel.id}`}
-                      checked={channels.includes(channel.id)}
-                      onCheckedChange={() => toggleChannel(channel.id)}
-                    />
-                    <Label
-                      htmlFor={`channel-${channel.id}`}
-                      className="cursor-pointer"
-                    >
-                      {channel.label}
-                    </Label>
-                  </div>
-                ))}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="goal">Campaign Goal</Label>
+                <Input
+                  id="goal"
+                  name="goal"
+                  value={formData.goal}
+                  onChange={handleChange}
+                  placeholder="e.g., Increase website traffic by 20%"
+                />
               </div>
             </div>
             
-            {selectedStrategy && (
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="strategy-details">
-                  <AccordionTrigger>Strategy Details</AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-4 p-4 bg-muted/50 rounded-md">
-                      <div>
-                        <h4 className="font-medium">Strategy</h4>
-                        <p className="text-sm text-muted-foreground">{selectedStrategy.title}</p>
-                      </div>
-                      
-                      <div>
-                        <h4 className="font-medium">Description</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {selectedStrategy.description || "No description available"}
-                        </p>
-                      </div>
-                      
-                      {selectedStrategy.tags && selectedStrategy.tags.length > 0 && (
-                        <div>
-                          <h4 className="font-medium">Tags</h4>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {selectedStrategy.tags.map((tag, i) => (
-                              <span 
-                                key={i} 
-                                className="px-2 py-0.5 bg-secondary text-secondary-foreground rounded-md text-xs"
-                              >
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            )}
-          </CardContent>
-          <CardFooter className="flex justify-between border-t p-6">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => navigate(returnPath)}
-            >
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              disabled={!name.trim() || channels.length === 0 || submitting}
-              className="flex items-center gap-2"
-            >
-              <Check className="h-4 w-4" /> Create Campaign
-            </Button>
-          </CardFooter>
-        </Card>
-      </form>
+            <div className="space-y-2">
+              <Label htmlFor="target_audience">Target Audience</Label>
+              <Input
+                id="target_audience"
+                name="target_audience"
+                value={formData.target_audience}
+                onChange={handleChange}
+                placeholder="Describe your target audience"
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="budget">Budget (USD)</Label>
+                <Input
+                  id="budget"
+                  name="budget"
+                  type="number"
+                  value={formData.budget}
+                  onChange={handleChange}
+                  placeholder="Enter budget amount"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="duration">Duration (Days)</Label>
+                <Select
+                  value={formData.duration}
+                  onValueChange={(value) => handleSelectChange('duration', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select duration" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="7">7 days</SelectItem>
+                    <SelectItem value="14">14 days</SelectItem>
+                    <SelectItem value="30">30 days</SelectItem>
+                    <SelectItem value="60">60 days</SelectItem>
+                    <SelectItem value="90">90 days</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate('/campaigns')}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  'Create Campaign'
+                )}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

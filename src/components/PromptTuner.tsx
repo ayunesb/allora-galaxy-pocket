@@ -36,11 +36,25 @@ export default function PromptTuner() {
         [promptInputs.market]
       );
       
-      setPreview(result.strategy || "Strategy generated successfully");
-      toast({
-        title: "Test Complete",
-        description: "Strategy generated and notifications sent (if set up)."
-      });
+      if (result.success) {
+        // Convert the strategy to a string for preview display
+        const strategyText = typeof result.strategy === 'string'
+          ? result.strategy
+          : JSON.stringify(result.strategy, null, 2);
+          
+        setPreview(strategyText);
+        toast({
+          title: "Test Complete",
+          description: "Strategy generated and notifications sent (if set up)."
+        });
+      } else {
+        setPreview("Error: " + (result.error || "Unknown error"));
+        toast({
+          title: "Error",
+          description: result.error || "Failed to run CEO_Agent",
+          variant: "destructive"
+        });
+      }
     } catch (err: any) {
       setPreview("Error: " + (err?.message || "Unknown error"));
       toast({

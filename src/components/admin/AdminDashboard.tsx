@@ -6,11 +6,7 @@ import { useSystemLogs } from '@/hooks/useSystemLogs';
 import { useTenant } from '@/hooks/useTenant';
 import { KpiMetric } from '@/types/metrics';
 
-interface AdminDashboardProps {
-  // Add props as needed
-}
-
-export default function AdminDashboard({ ...props }: AdminDashboardProps) {
+const AdminDashboard = ({ ...props }: any) => {
   const { tenant } = useTenant();
   const { metrics, isLoading } = useKpiMetrics();
   const { logActivity } = useSystemLogs();
@@ -82,4 +78,6 @@ export default function AdminDashboard({ ...props }: AdminDashboardProps) {
       </Card>
     </div>
   );
-}
+};
+
+export default AdminDashboard;

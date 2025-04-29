@@ -10,7 +10,7 @@ export default function TeamManagementPage() {
       
       <div className="grid gap-8 md:grid-cols-2">
         <div>
-          <InviteMemberForm />
+          <InviteMemberForm role="editor" />
           <div className="mt-8">
             <PendingInvites />
           </div>

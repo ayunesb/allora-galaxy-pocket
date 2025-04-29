@@ -10,10 +10,13 @@ const roleColors: Record<string, { bg: string; text: string }> = {
 
 export function RoleLabel({ role }: { role: UserRole }) {
   const colors = roleColors[role as string];
+  const displayedRole = typeof role === 'string' 
+    ? role.charAt(0).toUpperCase() + role.slice(1) 
+    : String(role);
   
   return (
     <Badge variant="secondary" className={`${colors.bg} ${colors.text}`}>
-      {typeof role === 'string' ? role.charAt(0).toUpperCase() + role.slice(1) : role}
+      {displayedRole}
     </Badge>
   );
 }

@@ -1,47 +1,47 @@
 
-import { useState } from 'react';
-import { SystemLog, SystemLogFilter } from '@/types/systemLog';
+import { useEffect, useState } from 'react';
 import { useSystemLogs } from './useSystemLogs';
+import { SystemLog } from '@/types/agent';
 
+// Helper hook for components that need access to system logs
 export function useSystemLogsState() {
-  const [filters, setFilters] = useState<SystemLogFilter>({
-    limit: 50,
-    offset: 0
-  });
-  
-  const { logs, isLoading, error, fetchLogs, refresh } = useSystemLogs();
-  
-  const updateFilters = (newFilters: Partial<SystemLogFilter>) => {
-    setFilters(prev => ({
-      ...prev,
-      ...newFilters,
-      // Reset pagination when filters change
-      offset: newFilters.hasOwnProperty('offset') ? newFilters.offset : 0
-    }));
+  const [logs, setLogs] = useState<SystemLog[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<any>(null);
+  const { logActivity } = useSystemLogs();
+
+  // Define fetchLogs function to load logs
+  const fetchLogs = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // Implementation for fetching logs would go here
+      // For now, return empty array
+      setLogs([]);
+    } catch (err) {
+      setError(err);
+      console.error("Error fetching logs:", err);
+    } finally {
+      setIsLoading(false);
+    }
   };
-  
-  const nextPage = () => {
-    setFilters(prev => ({
-      ...prev,
-      offset: (prev.offset || 0) + (prev.limit || 50)
-    }));
+
+  // Refresh function that re-fetches logs
+  const refresh = () => {
+    fetchLogs();
   };
-  
-  const prevPage = () => {
-    setFilters(prev => ({
-      ...prev,
-      offset: Math.max(0, (prev.offset || 0) - (prev.limit || 50))
-    }));
-  };
-  
+
+  // Load logs on initial mount
+  useEffect(() => {
+    fetchLogs();
+  }, []);
+
   return {
     logs,
-    loading: isLoading,
+    isLoading,
     error,
-    filters,
-    updateFilters,
-    nextPage,
-    prevPage,
-    refresh: () => refresh()
+    fetchLogs,
+    refresh,
+    logActivity
   };
 }

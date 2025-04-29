@@ -1,24 +1,11 @@
 
-export interface SystemMetric {
+// Add missing KpiMetric type
+export interface KpiMetric {
   id: string;
-  metric_name: string;
+  metric: string;
   value: number;
-  recorded_at?: string;
   tenant_id?: string;
-  metadata?: Record<string, any>;
-}
-
-export interface HealthMetric {
-  name: string;
-  value: number;
-  status: 'healthy' | 'warning' | 'critical' | 'unknown';
-  trend?: 'up' | 'down' | 'stable';
-}
-
-export interface PerformanceMetric {
-  component: string;
-  operation: string;
-  duration_ms: number;
-  success: boolean;
-  timestamp: string;
+  created_at?: string;
+  updated_at?: string;
+  recorded_at?: string;
 }

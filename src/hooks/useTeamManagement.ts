@@ -4,12 +4,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from './useTenant';
 import { ToastService } from '@/services/ToastService'; 
 import { useQuery } from '@tanstack/react-query';
+import { UserRole } from '@/types/invite';
 
+// Updated TeamMember interface to match what's being used in components
 export interface TeamMember {
   id: string;
-  email: string;
+  user_id: string;
   role: string;
-  avatar_url?: string | null;
+  created_at?: string;
+  profiles: {
+    id: string;
+    email: string;
+    avatar_url?: string | null;
+  };
 }
 
 export function useTeamManagement() {
@@ -24,8 +31,10 @@ export function useTeamManagement() {
       const { data, error } = await supabase
         .from('tenant_user_roles')
         .select(`
+          id,
           user_id,
           role,
+          created_at,
           profiles:user_id (
             id,
             email,
@@ -39,7 +48,7 @@ export function useTeamManagement() {
         throw error;
       }
       
-      // Safely map the results to our expected format
+      // Safely map the results to our expected TeamMember format
       const teamMembers: TeamMember[] = data
         .filter(item => item.profiles) // Ensure the profile exists
         .map(item => {
@@ -56,10 +65,11 @@ export function useTeamManagement() {
           }
           
           return {
-            id: profile.id,
-            email: profile.email,
-            avatar_url: profile.avatar_url,
-            role: item.role
+            id: item.id,
+            user_id: item.user_id,
+            role: item.role,
+            created_at: item.created_at,
+            profiles: profile
           };
         })
         .filter(Boolean) as TeamMember[]; // Filter out any null values
@@ -82,8 +92,8 @@ export function useTeamManagement() {
         .insert({
           tenant_id: tenant.id,
           email: email.toLowerCase(),
-          role,
-          created_by: supabase.auth.getUser().then(res => res.data.user?.id)
+          role: role as UserRole,
+          created_by: (await supabase.auth.getUser()).data.user?.id
         });
       
       if (error) throw error;
@@ -99,7 +109,7 @@ export function useTeamManagement() {
     }
   };
   
-  const updateMemberRole = async (userId: string, newRole: string) => {
+  const updateMemberRole = async (userId: string, newRole: UserRole) => {
     if (!tenant?.id) {
       ToastService.error('No workspace selected');
       return { success: false };

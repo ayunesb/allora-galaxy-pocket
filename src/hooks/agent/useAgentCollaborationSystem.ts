@@ -1,188 +1,187 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useTenant } from '@/hooks/useTenant';
-import { toast } from "sonner";
-import { useSystemLogs } from '@/hooks/useSystemLogs';
+import { useTenant } from '../useTenant';
+import { useSystemLogs } from '../useSystemLogs';
+import { AgentCollabMessage } from '@/types/agent';
 import { v4 as uuidv4 } from 'uuid';
-import { useAgentCollaboration } from '@/hooks/useAgentCollaboration';
-
-export interface AgentTask {
-  taskId: string;
-  taskType: string;
-  description: string;
-  assignedTo: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'failed';
-  result?: any;
-}
 
 export function useAgentCollaborationSystem() {
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const { tenant } = useTenant();
   const { logActivity } = useSystemLogs();
-  const { sessionId, logMessage, initializeCollaboration } = useAgentCollaboration();
-  const [tasks, setTasks] = useState<AgentTask[]>([]);
-  
-  const startCollaboration = async (agents: string[], initialPrompt?: string) => {
+
+  const initSession = async () => {
     if (!tenant?.id) {
-      toast(`No active workspace`);
+      setError('No tenant ID available');
       return null;
     }
-    
+
     setIsLoading(true);
+    setError(null);
+
     try {
-      const newSessionId = initializeCollaboration();
-      
-      await logActivity({
-        event_type: 'AGENT_COLLABORATION_STARTED',
-        message: `Agent collaboration session started with ${agents.join(', ')}`,
-        meta: {
+      const newSessionId = uuidv4();
+      setSessionId(newSessionId);
+
+      // Log the session initialization
+      await logActivity(
+        'AGENT_COLLAB_SESSION_INIT',
+        'Agent collaboration session initialized',
+        { 
           session_id: newSessionId,
-          agents
+          tenant_id: tenant.id
         }
-      });
-      
-      if (initialPrompt && agents.length > 0 && newSessionId) {
-        await logMessage(agents[0], initialPrompt);
-      }
-      
-      await supabase.rpc('log_automation_metric', {
-        p_tenant_id: tenant.id,
-        p_metric_name: 'agent_collaboration_session',
-        p_is_ai: true
-      });
-      
+      );
+
       return newSessionId;
-    } catch (error) {
-      console.error('Error starting collaboration session:', error);
-      toast(`Failed to start agent collaboration`);
+    } catch (err: any) {
+      setError(err.message || 'Failed to initialize session');
       return null;
     } finally {
       setIsLoading(false);
     }
   };
-  
-  const addTask = async (
+
+  const sendMessage = async (
     agentName: string,
-    taskType: string,
-    description: string
+    message: string,
+    currentSessionId?: string
   ) => {
-    if (!tenant?.id) return false;
-    
-    const taskId = uuidv4();
-    const newTask: AgentTask = {
-      taskId,
-      taskType,
-      description,
-      assignedTo: agentName,
-      status: 'pending'
-    };
-    
-    setTasks(prev => [...prev, newTask]);
-    
+    if (!tenant?.id) {
+      setError('No tenant ID available');
+      return null;
+    }
+
+    const activeSessionId = currentSessionId || sessionId;
+    if (!activeSessionId) {
+      setError('No active session');
+      return null;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
     try {
-      await logActivity({
-        event_type: 'AGENT_TASK_CREATED',
-        message: `Task assigned to ${agentName}: ${taskType}`,
-        meta: {
-          task_id: taskId,
+      const { data, error: insertError } = await supabase
+        .from('agent_collab_messages')
+        .insert({
           agent: agentName,
-          task_type: taskType,
-          description
+          message,
+          session_id: activeSessionId,
+          tenant_id: tenant.id
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      // Log the message sending
+      await logActivity(
+        'AGENT_COLLAB_MESSAGE_SENT',
+        `Agent ${agentName} sent a message`,
+        {
+          session_id: activeSessionId,
+          message_length: message.length,
+          agent: agentName
         }
-      });
-      
-      if (sessionId && logMessage) {
-        await logMessage('System', `Task assigned to ${agentName}: ${description}`);
-      }
-      
-      return taskId;
-    } catch (error) {
-      console.error('Error adding task:', error);
-      return false;
+      );
+
+      return data;
+    } catch (err: any) {
+      setError(err.message || 'Failed to send message');
+      return null;
+    } finally {
+      setIsLoading(false);
     }
   };
-  
-  const updateTaskStatus = async (
-    taskId: string,
-    status: 'pending' | 'in_progress' | 'completed' | 'failed',
-    result?: any
-  ) => {
-    setTasks(prev => prev.map(task => 
-      task.taskId === taskId 
-        ? { ...task, status, result } 
-        : task
-    ));
-    
+
+  const getSessionMessages = async (currentSessionId?: string) => {
+    if (!tenant?.id) {
+      setError('No tenant ID available');
+      return [];
+    }
+
+    const activeSessionId = currentSessionId || sessionId;
+    if (!activeSessionId) {
+      setError('No active session');
+      return [];
+    }
+
+    setIsLoading(true);
+    setError(null);
+
     try {
-      const task = tasks.find(t => t.taskId === taskId);
-      if (!task) return false;
-      
-      await logActivity({
-        event_type: 'AGENT_TASK_UPDATED',
-        message: `Task ${taskId} status updated to ${status}`,
-        meta: {
-          task_id: taskId,
-          agent: task.assignedTo,
-          task_type: task.taskType,
-          previous_status: task.status,
-          new_status: status,
-          result
+      const { data, error: fetchError } = await supabase
+        .from('agent_collab_messages')
+        .select('*')
+        .eq('session_id', activeSessionId)
+        .eq('tenant_id', tenant.id)
+        .order('created_at', { ascending: true });
+
+      if (fetchError) throw fetchError;
+
+      // Log the message retrieval
+      await logActivity(
+        'AGENT_COLLAB_MESSAGES_FETCHED',
+        'Session messages retrieved',
+        {
+          session_id: activeSessionId,
+          message_count: data?.length || 0
         }
-      });
-      
-      if (sessionId && logMessage) {
-        const message = status === 'completed'
-          ? `Task completed by ${task.assignedTo}: ${task.description}`
-          : status === 'failed'
-            ? `Task failed by ${task.assignedTo}: ${task.description}`
-            : `Task status updated to ${status} for ${task.assignedTo}`;
-            
-        await logMessage('System', message);
-      }
-      
-      return true;
-    } catch (error) {
-      console.error('Error updating task status:', error);
-      return false;
+      );
+
+      return data as AgentCollabMessage[];
+    } catch (err: any) {
+      setError(err.message || 'Failed to retrieve messages');
+      return [];
+    } finally {
+      setIsLoading(false);
     }
   };
-  
-  const endCollaboration = async (summary?: string) => {
-    if (!tenant?.id || !sessionId || !logMessage) return false;
-    
+
+  const endSession = async (currentSessionId?: string) => {
+    if (!tenant?.id) {
+      return false;
+    }
+
+    const activeSessionId = currentSessionId || sessionId;
+    if (!activeSessionId) {
+      return false;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
     try {
-      if (summary) {
-        await logMessage('System', `Collaboration summary: ${summary}`);
-      }
-      
-      await logActivity({
-        event_type: 'AGENT_COLLABORATION_ENDED',
-        message: 'Agent collaboration session ended',
-        meta: {
-          session_id: sessionId,
-          tasks_count: tasks.length,
-          completed_tasks: tasks.filter(t => t.status === 'completed').length,
-          failed_tasks: tasks.filter(t => t.status === 'failed').length
+      // Log the session ending
+      await logActivity(
+        'AGENT_COLLAB_SESSION_ENDED',
+        'Agent collaboration session ended',
+        {
+          session_id: activeSessionId,
+          tenant_id: tenant.id
         }
-      });
-      
-      setTasks([]);
-      
+      );
+
+      setSessionId(null);
       return true;
-    } catch (error) {
-      console.error('Error ending collaboration session:', error);
+    } catch (err: any) {
+      setError(err.message || 'Failed to end session');
       return false;
+    } finally {
+      setIsLoading(false);
     }
   };
-  
+
   return {
-    isLoading,
+    initSession,
+    sendMessage,
+    getSessionMessages,
+    endSession,
     sessionId,
-    tasks,
-    startCollaboration,
-    addTask,
-    updateTaskStatus,
-    endCollaboration
+    isLoading,
+    error
   };
 }

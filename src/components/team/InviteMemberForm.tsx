@@ -1,12 +1,14 @@
+
 import React, { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useTeamManagement } from "@/hooks/useTeamManagement";
 import { toast } from 'sonner';
+import { UserRole } from '@/types/invite';
 
-interface InviteMemberFormProps {
-  role: string;
+export interface InviteMemberFormProps {
+  role: UserRole;
 }
 
 export function InviteMemberForm({ role }: InviteMemberFormProps) {
