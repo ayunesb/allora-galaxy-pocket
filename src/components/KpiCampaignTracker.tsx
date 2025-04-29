@@ -51,9 +51,7 @@ export function KpiCampaignTracker({
         if (onUpdate) onUpdate();
         
         if (showNotifications) {
-          ToastService.success({
-            title: "KPI check completed successfully"
-          });
+          ToastService.success("KPI check completed successfully");
         }
       } else {
         throw new Error("KPI check failed");

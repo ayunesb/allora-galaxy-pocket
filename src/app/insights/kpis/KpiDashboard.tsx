@@ -13,7 +13,7 @@ import { KpiAlertsPanel } from "./components/KpiAlertsPanel";
 
 export default function KpiDashboard() {
   const [timeframe, setTimeframe] = useState<number>(7);
-  const { metrics, isLoading, refresh } = useKpiMetrics({ dateRange: timeframe });
+  const { metrics, isLoading, refresh } = useKpiMetrics(); // Remove the argument
   const { alerts, isLoading: isLoadingAlerts } = useKpiAlerts({ activeOnly: true });
 
   const handleTimeframeChange = (days: number) => {

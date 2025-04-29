@@ -127,8 +127,8 @@ export function AdminLogsFilterPanel({
                 From
               </Label>
               <DatePicker
-                date={filters.dateFrom ? new Date(filters.dateFrom) : null}
-                setDate={(date) => onFilterChange({ dateFrom: date || undefined, dateRange: 0 })}
+                value={filters.dateFrom ? new Date(filters.dateFrom) : null}
+                onChange={(date) => onFilterChange({ dateFrom: date || undefined, dateRange: 0 })}
               />
             </div>
             <div className="w-full sm:w-auto">
@@ -136,8 +136,8 @@ export function AdminLogsFilterPanel({
                 To
               </Label>
               <DatePicker
-                date={filters.dateTo ? new Date(filters.dateTo) : null}
-                setDate={(date) => onFilterChange({ dateTo: date || undefined, dateRange: 0 })}
+                value={filters.dateTo ? new Date(filters.dateTo) : null}
+                onChange={(date) => onFilterChange({ dateTo: date || undefined, dateRange: 0 })}
               />
             </div>
           </>
