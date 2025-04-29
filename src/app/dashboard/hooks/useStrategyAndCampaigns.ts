@@ -2,7 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
-import { Strategy, mapJsonToStrategy } from "@/types/strategy";
+import { Strategy, mapStrategyArray } from "@/types/strategy";
 import { Campaign } from "@/types/campaign";
 
 export function useStrategyAndCampaigns() {
@@ -21,8 +21,8 @@ export function useStrategyAndCampaigns() {
         
       if (error) throw error;
       
-      // Use the mapJsonToStrategy helper to ensure all fields are properly set
-      return (data || []).map(item => mapJsonToStrategy(item));
+      // Use the mapStrategyArray helper to ensure all fields are properly set
+      return mapStrategyArray(data || []);
     },
     enabled: !!tenant?.id,
   });

@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { DecisionFilters } from "./components/DecisionFilters";
 import { DecisionList } from "./components/DecisionList";
 import { ApprovalStatsTable } from "./components/ApprovalStatsTable";
-import { Strategy, mapJsonToStrategy } from "@/types/strategy";
+import { Strategy, mapStrategyArray } from "@/types/strategy";
 
 const AIDecisionsPage: React.FC = () => {
   const [decisions, setDecisions] = useState<Strategy[]>([]);
@@ -30,7 +30,7 @@ const AIDecisionsPage: React.FC = () => {
     }
     
     // Transform database results using the mapper function
-    return (data || []).map(mapJsonToStrategy);
+    return mapStrategyArray(data || []);
   };
 
   const handleFilterChange = (newFilters: any) => {

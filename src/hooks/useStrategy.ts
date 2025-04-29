@@ -1,8 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Strategy } from '@/types/strategy';
-import { transformStrategyData, transformStrategyArray } from '@/utils/dataTransformers';
+import { Strategy, mapJsonToStrategy, mapStrategyArray } from '@/types/strategy';
 
 export function useStrategy(strategyId?: string) {
   const [strategy, setStrategy] = useState<Strategy | null>(null);
@@ -26,7 +25,7 @@ export function useStrategy(strategyId?: string) {
         if (error) throw error;
         
         if (data) {
-          setStrategy(transformStrategyData(data));
+          setStrategy(mapJsonToStrategy(data));
         }
       } catch (err: any) {
         setError(err);
@@ -60,7 +59,7 @@ export function useStrategies() {
       if (error) throw error;
       
       if (data) {
-        setStrategies(transformStrategyArray(data));
+        setStrategies(mapStrategyArray(data));
       }
     } catch (err: any) {
       setError(err);

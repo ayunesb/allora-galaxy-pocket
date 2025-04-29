@@ -34,14 +34,24 @@ export function useSwipeGestures() {
       // Handle different card types
       switch (card.type) {
         case 'strategy':
-          handleStrategySwipe(direction, card.id, navigate, logActivity);
+          // Convert logActivity to async function call
+          handleStrategySwipe(direction, card.id, navigate, async (params) => {
+            await logActivity(params);
+            return Promise.resolve();
+          });
           break;
         case 'campaign':
-          handleCampaignSwipe(direction, card.id, navigate, logActivity);
+          handleCampaignSwipe(direction, card.id, navigate, async (params) => {
+            await logActivity(params);
+            return Promise.resolve();
+          });
           break;
         case 'pricing_decision':
         case 'hire_decision':
-          handleDecisionSwipe(direction, card.id, card.type, logActivity);
+          handleDecisionSwipe(direction, card.id, card.type, async (params) => {
+            await logActivity(params);
+            return Promise.resolve();
+          });
           break;
         default:
           console.warn('Unknown card type:', card.type);

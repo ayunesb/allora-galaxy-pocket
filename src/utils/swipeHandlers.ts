@@ -1,91 +1,90 @@
 
-import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { NavigateFunction } from 'react-router-dom';
 
-export type ContentCard = {
+export interface ContentCard {
   id: string;
   type: string;
   title?: string;
   name?: string;
-  description: string;
-  created_at: string;
-  [key: string]: any; // For additional properties
-};
-
-export async function logSwipeActivity(
-  contentId: string,
-  contentType: string,
-  action: 'approved' | 'dismissed',
-  logActivity: (params: any) => Promise<void>
-) {
-  try {
-    await logActivity({
-      event_type: 'POCKET_SWIPE',
-      message: `User ${action} a ${contentType}`,
-      meta: { content_id: contentId, content_type: contentType, action }
-    });
-  } catch (error) {
-    console.error('Error logging swipe:', error);
-  }
+  description?: string;
+  created_at?: string;
+  industry?: string;
+  budget?: number;
+  suggested_price?: string;
+  current_price?: string;
+  salary_range?: string;
 }
 
+// Type for logActivity function
+export type LogActivityFunction = (params: any) => Promise<void>;
+
 export function handleStrategySwipe(
-  direction: 'left' | 'right',
-  cardId: string,
-  navigate: ReturnType<typeof useNavigate>,
-  logActivity: (params: any) => Promise<void>
+  direction: 'left' | 'right', 
+  strategyId: string, 
+  navigate: NavigateFunction,
+  logActivity: LogActivityFunction
 ) {
-  const action = direction === 'right' ? 'approved' : 'dismissed';
-  
-  logSwipeActivity(cardId, 'strategy', action, logActivity);
-  
   if (direction === 'right') {
-    toast.success('Strategy approved!', {
-      description: 'Creating campaign based on this strategy...'
+    // Accept strategy
+    navigate(`/strategy/${strategyId}`);
+    logActivity({
+      event_type: 'STRATEGY_SWIPED',
+      message: `Strategy ${strategyId} approved by swipe`,
+      meta: { strategy_id: strategyId, action: 'approve' }
     });
-    
-    setTimeout(() => {
-      navigate(`/campaigns/create?strategy=${cardId}`);
-    }, 1000);
+  } else {
+    // Reject strategy
+    logActivity({
+      event_type: 'STRATEGY_SWIPED',
+      message: `Strategy ${strategyId} rejected by swipe`,
+      meta: { strategy_id: strategyId, action: 'reject' }
+    });
   }
 }
 
 export function handleCampaignSwipe(
-  direction: 'left' | 'right',
-  cardId: string,
-  navigate: ReturnType<typeof useNavigate>,
-  logActivity: (params: any) => Promise<void>
+  direction: 'left' | 'right', 
+  campaignId: string, 
+  navigate: NavigateFunction,
+  logActivity: LogActivityFunction
 ) {
-  const action = direction === 'right' ? 'approved' : 'dismissed';
-  
-  logSwipeActivity(cardId, 'campaign', action, logActivity);
-  
   if (direction === 'right') {
-    toast.success('Campaign liked!', {
-      description: 'Viewed in campaigns dashboard'
+    // View campaign
+    navigate(`/campaigns/${campaignId}`);
+    logActivity({
+      event_type: 'CAMPAIGN_SWIPED',
+      message: `Campaign ${campaignId} viewed by swipe`,
+      meta: { campaign_id: campaignId, action: 'view' }
     });
-    
-    setTimeout(() => {
-      navigate(`/campaigns/${cardId}`);
-    }, 1000);
+  } else {
+    // Skip campaign
+    logActivity({
+      event_type: 'CAMPAIGN_SWIPED',
+      message: `Campaign ${campaignId} skipped by swipe`,
+      meta: { campaign_id: campaignId, action: 'skip' }
+    });
   }
 }
 
 export function handleDecisionSwipe(
-  direction: 'left' | 'right',
-  cardId: string,
-  decisionType: 'pricing_decision' | 'hire_decision',
-  logActivity: (params: any) => Promise<void>
+  direction: 'left' | 'right', 
+  decisionId: string, 
+  decisionType: string,
+  logActivity: LogActivityFunction
 ) {
-  const action = direction === 'right' ? 'approved' : 'dismissed';
-  
-  logSwipeActivity(cardId, decisionType, action, logActivity);
-  
   if (direction === 'right') {
-    toast.success('Decision approved!', {
-      description: 'Added to your action items'
+    // Accept decision
+    logActivity({
+      event_type: 'DECISION_SWIPED',
+      message: `${decisionType} decision ${decisionId} approved by swipe`,
+      meta: { decision_id: decisionId, decision_type: decisionType, action: 'approve' }
     });
-    // In a real app, you'd add this to an action items table
+  } else {
+    // Reject decision
+    logActivity({
+      event_type: 'DECISION_SWIPED',
+      message: `${decisionType} decision ${decisionId} rejected by swipe`,
+      meta: { decision_id: decisionId, decision_type: decisionType, action: 'reject' }
+    });
   }
 }

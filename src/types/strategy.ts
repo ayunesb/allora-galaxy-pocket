@@ -38,9 +38,12 @@ export interface Strategy {
   channels: string[];
   kpis: string[];
   industry: string;
-  confidence?: number;
+  confidence?: number | null;
   impact_score?: number;
   is_public?: boolean;
+  
+  // For backward compatibility
+  goal?: string; // Legacy field still used in some components
 }
 
 export interface StrategyFormData {
@@ -59,4 +62,62 @@ export interface StrategyFeedback {
   user_id?: string;
   tenant_id?: string;
   created_at: string;
+}
+
+// Helper functions to map raw data to Strategy type
+export function mapJsonToStrategy(data: any): Strategy {
+  return {
+    id: data.id || '',
+    title: data.title || '',
+    description: data.description || '',
+    status: (data.status as StrategyStatus) || 'draft',
+    tenant_id: data.tenant_id || '',
+    user_id: data.user_id || '',
+    tags: Array.isArray(data.tags) ? data.tags : [],
+    created_at: data.created_at || '',
+    updated_at: data.updated_at || data.created_at || '',
+    generated_by: data.generated_by || 'CEO Agent',
+    assigned_agent: data.assigned_agent || '',
+    auto_approved: !!data.auto_approved,
+    health_score: data.health_score || 0,
+    approved_at: data.approved_at || null,
+    failure_reason: data.failure_reason || null,
+    diagnosis: typeof data.diagnosis === 'object' ? data.diagnosis : {},
+    metrics_target: data.metrics_target || {},
+    metrics_baseline: data.metrics_baseline || {},
+    version: data.version || '1',
+    reason_for_recommendation: data.reason_for_recommendation || '',
+    target_audience: data.target_audience || '',
+    goals: Array.isArray(data.goals) ? data.goals : [],
+    channels: Array.isArray(data.channels) ? data.channels : [],
+    kpis: Array.isArray(data.kpis) ? data.kpis : [],
+    industry: data.industry || '',
+    confidence: data.confidence || null,
+    impact_score: data.impact_score || 0,
+    is_public: !!data.is_public,
+    goal: data.goal || '' // For backward compatibility
+  };
+}
+
+export function mapStrategyArray(data: any[]): Strategy[] {
+  return (data || []).map(mapJsonToStrategy);
+}
+
+// Strategy version type
+export interface StrategyVersion {
+  id: string;
+  strategy_id: string;
+  version: number;
+  data: Strategy;
+  created_by: string;
+  created_at: string;
+  comment?: string;
+}
+
+// CheckResult interface for launch readiness
+export interface CheckResult {
+  name: string;
+  description: string;
+  passed: boolean;
+  details?: string;
 }

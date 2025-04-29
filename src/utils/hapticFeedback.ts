@@ -1,47 +1,47 @@
 
 /**
- * Utility functions for providing haptic feedback in the application
- */
-
-/**
- * Triggers a light/subtle haptic feedback if the device supports it
- */
-export function lightHapticFeedback() {
-  if (navigator.vibrate) {
-    navigator.vibrate(10); // 10ms vibration for subtle feedback
-  }
-}
-
-/**
- * Triggers a medium haptic feedback if the device supports it
- */
-export function mediumHapticFeedback() {
-  if (navigator.vibrate) {
-    navigator.vibrate(20); // 20ms vibration for medium feedback
-  }
-}
-
-/**
- * Triggers a strong haptic feedback if the device supports it
- */
-export function strongHapticFeedback() {
-  if (navigator.vibrate) {
-    navigator.vibrate([40, 30, 40]); // Pattern for stronger feedback
-  }
-}
-
-/**
- * Triggers haptic feedback for swipe actions based on direction
+ * Provides haptic feedback for swipe gestures using the Vibration API if available
  */
 export function swipeHapticFeedback(direction: 'left' | 'right') {
-  switch(direction) {
-    case 'left':
-      mediumHapticFeedback(); // Rejection gets medium feedback
-      break;
-    case 'right':
-      strongHapticFeedback(); // Approval gets stronger feedback
-      break;
-    default:
-      lightHapticFeedback();
+  if (!window.navigator.vibrate) {
+    return; // Vibration API not supported
+  }
+
+  try {
+    // Different vibration patterns based on swipe direction
+    if (direction === 'right') {
+      // Success/approval vibration: one short pulse
+      window.navigator.vibrate(40);
+    } else if (direction === 'left') {
+      // Rejection vibration: two quick pulses
+      window.navigator.vibrate([20, 30, 20]);
+    }
+  } catch (error) {
+    console.warn('Haptic feedback error:', error);
+    // Fail silently - haptic feedback is non-critical
+  }
+}
+
+/**
+ * Vibration patterns for different feedback types
+ */
+export const hapticPatterns = {
+  success: 80,
+  error: [30, 20, 30, 20, 30],
+  warning: [20, 40, 60],
+  notification: [10, 20, 10],
+  buttonPress: 30
+};
+
+/**
+ * General haptic feedback function
+ */
+export function triggerHapticFeedback(pattern: number | number[]) {
+  if (window.navigator.vibrate) {
+    try {
+      window.navigator.vibrate(pattern);
+    } catch (error) {
+      console.warn('Haptic feedback error:', error);
+    }
   }
 }
