@@ -20,13 +20,14 @@ type TaskExecutionResult = {
 
 export const executeAgentTask = async (task: AgentTask): Promise<TaskExecutionResult> => {
   try {
-    // Log task to agent_tasks table
-    const { data: taskRecord, error: logError } = await supabase.from("agent_tasks").insert({
-      agent: task.agent,
-      task_type: task.task_type,
-      payload: task.payload,
-      status: "pending",
+    // Instead of using agent_tasks table which doesn't exist
+    // Log task to agent_memory table which we know exists
+    const { data: taskRecord, error: logError } = await supabase.from("agent_memory").insert({
+      agent_name: task.agent,
+      context: `Task execution: ${task.task_type}`,
+      type: "task",
       tenant_id: task.tenant_id,
+      metadata: task.payload,
       created_at: new Date().toISOString()
     }).select().single();
     
@@ -37,7 +38,7 @@ export const executeAgentTask = async (task: AgentTask): Promise<TaskExecutionRe
     // Call the dispatch-agent-task edge function
     const { data, error } = await supabase.functions.invoke("dispatch-agent-task", {
       body: {
-        user_id: (await supabase.auth.getUser()).data.user?.id,
+        user_id: (await supabase.auth.getUser()).data?.user?.id,
         agent: task.agent,
         task_type: task.task_type,
         payload: task.payload,
@@ -60,25 +61,20 @@ export const executeAgentTask = async (task: AgentTask): Promise<TaskExecutionRe
     // Calculate XP based on task complexity and outcome
     const xp_delta = calculateTaskXP(task.task_type, data?.complexity || 'normal', true);
     
-    // Update task with result and XP
-    await supabase.from("agent_tasks").update({
-      status: "success",
-      result: data,
-      xp_delta,
-      executed_at: new Date().toISOString()
-    }).eq("id", taskRecord?.id);
-    
-    // Log to agent memory for learning
+    // Log task completion to agent_memory
     if (task.tenant_id) {
+      await supabase.from("agent_memory").update({
+        context: `Successfully executed ${task.task_type} task`,
+        metadata: { ...task.payload, result: data }
+      }).eq("id", taskRecord?.id);
+    
+      // Log to agent memory for learning
       await logAgentMemory({
         tenantId: task.tenant_id,
         agentName: task.agent,
         context: `Successfully executed ${task.task_type} task: ${JSON.stringify(task.payload).substring(0, 200)}...`,
         type: 'history'
       });
-      
-      // Update agent memory scores - this helps optimize future responses
-      await supabase.rpc('update_agent_memory_score', { p_agent_id: data?.agent_id });
     }
     
     return {

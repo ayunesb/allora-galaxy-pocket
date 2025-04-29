@@ -1,59 +1,47 @@
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useTenant } from '@/hooks/useTenant';
-import { SystemLog } from '@/types/systemLog';
-import { ToastService } from '@/services/ToastService';
+import { useState } from 'react';
+import { SystemLog, SystemLogFilter } from '@/types/systemLog';
+import { useSystemLogs } from './useSystemLogs';
 
 export function useSystemLogsState() {
-  const { tenant } = useTenant();
-  const [logs, setLogs] = useState<SystemLog[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<any>(null);
-
-  const getRecentLogs = async (limit = 50): Promise<void> => {
-    if (!tenant?.id) {
-      console.warn("Can't fetch logs: No tenant ID available");
-      return;
-    }
-    
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const { data, error: fetchError } = await supabase
-        .from('system_logs')
-        .select('*')
-        .eq('tenant_id', tenant.id)
-        .order('created_at', { ascending: false })
-        .limit(limit);
-        
-      if (fetchError) throw fetchError;
-      
-      setLogs(data || []);
-    } catch (err) {
-      console.error("Failed to fetch logs:", err);
-      setError(err);
-      ToastService.error({
-        title: "Failed to retrieve system logs",
-        description: err instanceof Error ? err.message : "Unknown error occurred"
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  const [filters, setFilters] = useState<SystemLogFilter>({
+    limit: 50,
+    offset: 0
+  });
+  
+  const { logs, loading, error, refresh } = useSystemLogs(filters);
+  
+  const updateFilters = (newFilters: Partial<SystemLogFilter>) => {
+    setFilters(prev => ({
+      ...prev,
+      ...newFilters,
+      // Reset pagination when filters change
+      offset: newFilters.hasOwnProperty('offset') ? newFilters.offset : 0
+    }));
   };
   
-  // Fetch logs on component mount
-  useEffect(() => {
-    if (tenant?.id) {
-      getRecentLogs();
-    }
-  }, [tenant?.id]);
-
+  const nextPage = () => {
+    setFilters(prev => ({
+      ...prev,
+      offset: (prev.offset || 0) + (prev.limit || 50)
+    }));
+  };
+  
+  const prevPage = () => {
+    setFilters(prev => ({
+      ...prev,
+      offset: Math.max(0, (prev.offset || 0) - (prev.limit || 50))
+    }));
+  };
+  
   return {
     logs,
-    isLoading,
+    loading,
     error,
-    getRecentLogs
+    filters,
+    updateFilters,
+    nextPage,
+    prevPage,
+    refresh
   };
 }
