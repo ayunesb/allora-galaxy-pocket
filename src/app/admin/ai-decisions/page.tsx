@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { DecisionFilters } from "./components/DecisionFilters";
 import { DecisionList } from "./components/DecisionList";
 import { ApprovalStatsTable } from "./components/ApprovalStatsTable";
-import { Strategy } from "@/types/strategy";
+import { Strategy, mapJsonToStrategy } from "@/types/strategy";
 
 const AIDecisionsPage: React.FC = () => {
   const [decisions, setDecisions] = useState<Strategy[]>([]);
@@ -29,37 +29,8 @@ const AIDecisionsPage: React.FC = () => {
       return [];
     }
     
-    // Transform database results to match Strategy interface with all required fields
-    return (data || []).map(item => ({
-      id: item.id,
-      title: item.title || "",
-      description: item.description || "",
-      status: item.status || "draft",
-      tenant_id: item.tenant_id,
-      user_id: item.user_id || "",
-      tags: item.tags || [],
-      created_at: item.created_at,
-      updated_at: item.updated_at || item.created_at,
-      generated_by: item.generated_by || 'CEO Agent',
-      assigned_agent: item.assigned_agent || '',
-      auto_approved: item.auto_approved || false,
-      approved_at: item.approved_at || null,
-      failure_reason: item.failure_reason || null,
-      impact_score: item.impact_score || 0,
-      health_score: item.health_score || 0,
-      is_public: item.is_public || false,
-      diagnosis: item.diagnosis || {},
-      metrics_target: item.metrics_target || {},
-      metrics_baseline: item.metrics_baseline || {},
-      version: item.version || 1,
-      reason_for_recommendation: item.reason_for_recommendation || '',
-      target_audience: item.target_audience || '',
-      goals: item.goals || [],
-      channels: item.channels || [],
-      kpis: item.kpis || [],
-      industry: item.industry || '',
-      confidence: item.confidence || null,
-    } as Strategy));
+    // Transform database results using the mapper function
+    return (data || []).map(mapJsonToStrategy);
   };
 
   const handleFilterChange = (newFilters: any) => {

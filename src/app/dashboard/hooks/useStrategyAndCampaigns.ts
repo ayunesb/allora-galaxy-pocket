@@ -2,9 +2,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
-import { Strategy } from "@/types/strategy";
+import { Strategy, mapJsonToStrategy } from "@/types/strategy";
 import { Campaign } from "@/types/campaign";
-import { mapJsonToStrategy } from "@/types/strategy.d";
 
 export function useStrategyAndCampaigns() {
   const { tenant } = useTenant();

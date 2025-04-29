@@ -1,6 +1,6 @@
 
 import { Json } from '@/integrations/supabase/types';
-import { Strategy, mapJsonToStrategy, mapStrategyArray } from '@/types/strategy.d';
+import { Strategy, mapJsonToStrategy, mapStrategyArray } from '@/types/strategy';
 
 /**
  * Safely transforms data from API responses with proper typing

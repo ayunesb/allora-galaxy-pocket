@@ -6,11 +6,10 @@ import { ThemeProvider } from "@/components/ui/theme-provider";
 import { AuthProvider } from "@/hooks/useAuth";
 import { TenantProvider } from "@/hooks/useTenant";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
-import { Toaster } from "sonner";
 import { baseRoutes } from "./routes/appRoutesConfig";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import { ToastProvider } from "@/components/ui/toast-provider";
+import ResponsiveToastProvider from "@/components/ui/ResponsiveToastProvider";
 
 // Create router outside of component to avoid re-creation on renders
 const router = createBrowserRouter(baseRoutes);
@@ -45,7 +44,7 @@ function App() {
         <AuthProvider>
           <TenantProvider>
             <ThemeProvider defaultTheme="light" storageKey="allora-theme-preference">
-              <ToastProvider>
+              <ResponsiveToastProvider>
                 <Suspense fallback={
                   <div className="flex items-center justify-center h-screen">
                     <LoadingSpinner size="lg" label="Loading application..." />
@@ -54,7 +53,7 @@ function App() {
                   {/* The RouterProvider must be the outermost router component */}
                   <RouterProvider router={router} />
                 </Suspense>
-              </ToastProvider>
+              </ResponsiveToastProvider>
             </ThemeProvider>
           </TenantProvider>
         </AuthProvider>
