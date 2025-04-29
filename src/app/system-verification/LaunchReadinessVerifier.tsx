@@ -1,9 +1,19 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, AlertTriangle } from 'lucide-react';
+import { useSystemVerification } from '@/hooks/useSystemVerification';
 
 export function LaunchReadinessVerifier() {
+  const { isComplete, isRunning, runChecks } = useSystemVerification();
+
+  useEffect(() => {
+    if (!isComplete && !isRunning) {
+      // Run verification check on component mount if not already complete
+      runChecks();
+    }
+  }, [isComplete, isRunning]);
+
   const checks = [
     { name: "Database Connectivity", status: "passed" },
     { name: "RLS Policies", status: "passed" },

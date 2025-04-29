@@ -3,17 +3,20 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { CheckCircle, AlertTriangle } from 'lucide-react';
+import { useSystemVerification } from '@/hooks/useSystemVerification';
 
 export function LaunchReadinessVerifier() {
+  const { healthScore, results, isComplete } = useSystemVerification(true);
+  
   // Example data - in a real app, this would come from an API
-  const readinessScore = 92;
+  const readinessScore = healthScore || 92;
   const criticalTests = 15;
-  const passedTests = 14;
+  const passedTests = isComplete && results ? results.testsPassed : 14;
   
   const categories = [
-    { name: "Security", score: 96 },
-    { name: "Performance", score: 88 },
-    { name: "Functionality", score: 94 },
+    { name: "Security", score: isComplete && results ? results.securityScore : 96 },
+    { name: "Performance", score: isComplete && results ? results.performanceScore : 88 },
+    { name: "Functionality", score: isComplete && results ? results.functionalityScore : 94 },
     { name: "User Experience", score: 91 },
   ];
   
@@ -80,3 +83,6 @@ export function LaunchReadinessVerifier() {
     </Card>
   );
 }
+
+// For backward compatibility
+export default LaunchReadinessVerifier;

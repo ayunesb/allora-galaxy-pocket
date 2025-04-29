@@ -45,3 +45,6 @@ export function SecurityHealthCheck() {
     </Card>
   );
 }
+
+// For backward compatibility
+export default SecurityHealthCheck;
