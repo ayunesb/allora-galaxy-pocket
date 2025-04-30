@@ -1,4 +1,3 @@
-
 import { Routes, Route } from "react-router-dom";
 import App from "../App";
 import LoginPage from "../pages/auth/login";
@@ -11,7 +10,7 @@ import CompanyInfo from "../pages/onboarding/CompanyInfo";
 import CompanyGoals from "../pages/onboarding/Goals";
 import SidebarShell from "../layout/SidebarShell";
 import KPIPage from "../pages/insights/kpis";
-import StrategyVaultPage from "../pages/vault/index";
+import StrategyVaultPage from "../pages/vault";
 
 export default function AppRoutes() {
   return (
@@ -19,64 +18,60 @@ export default function AppRoutes() {
       <Route path="/" element={<App />} />
       <Route path="/auth/login" element={<LoginPage />} />
       <Route path="/auth/signup" element={<SignupPage />} />
-      
-      {/* Routes with SidebarShell */}
+
+      {/* Protected routes with sidebar layout */}
       <Route 
         path="/dashboard" 
         element={
-          <RequireAuth children={undefined}>
-            <SidebarShell children={undefined}>
+          <RequireAuth>
+            <SidebarShell>
               <DashboardPage />
             </SidebarShell>
           </RequireAuth>
         } 
       />
-      
       <Route 
         path="/vault" 
         element={
-          <RequireAuth children={undefined}>
-            <SidebarShell children={undefined}>
+          <RequireAuth>
+            <SidebarShell>
               <StrategyVaultPage />
             </SidebarShell>
           </RequireAuth>
         } 
       />
-      
       <Route 
         path="/admin" 
         element={
-          <RequireAuth children={undefined}>
-            <SidebarShell children={undefined}>
+          <RequireAuth>
+            <SidebarShell>
               <AdminDashboard />
             </SidebarShell>
           </RequireAuth>
         } 
       />
-      
       <Route 
         path="/plugins/center" 
         element={
-          <RequireAuth children={undefined}>
-            <SidebarShell children={undefined}>
+          <RequireAuth>
+            <SidebarShell>
               <PluginCenter />
             </SidebarShell>
           </RequireAuth>
         } 
       />
-      
       <Route 
         path="/insights/kpis" 
         element={
-          <RequireAuth children={undefined}>
-            <SidebarShell children={undefined}>
+          <RequireAuth>
+            <SidebarShell>
               <KPIPage />
             </SidebarShell>
           </RequireAuth>
         } 
       />
-      
-      {/* Onboarding routes */}
+
+      {/* Public onboarding routes */}
       <Route path="/onboarding/company" element={<CompanyInfo />} />
       <Route path="/onboarding/goals" element={<CompanyGoals />} />
     </Routes>
