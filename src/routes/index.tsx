@@ -1,6 +1,7 @@
+
 import { Routes, Route } from "react-router-dom";
 import App from "../App";
-import LoginPage from "../pages/auth/login";
+import LoginPage from "../pages/auth/Login";
 import SignupPage from "../pages/auth/signup";
 import DashboardPage from "../pages/dashboard";
 import RequireAuth from "../components/RequireAuth";
