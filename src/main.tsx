@@ -1,20 +1,22 @@
-import SystemHealthPage from "./pages/system/health";
+import React from "react"; // ✅ Required for JSX rendering
+import ReactDOM from "react-dom/client";
 import "./index.css";
-import React from "react";
-import ReactDOM from "react-dom";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import App from "./App";
-import KPIPage from "./pages/insights/kpis";
+import KPIPage from "./pages/insights/kpis"; // ✅ Import added
 import AgentPerformancePage from "./pages/agents/performance";
 import PluginMarketplace from "./pages/plugins/marketplace";
 import LeadInboxPage from "./pages/leads/inbox";
 import ExecuteCampaignPage from "./pages/campaigns/execute";
 import StrategyVaultPage from "./pages/vault/index";
+import SystemHealthPage from "./pages/system/health";
 import AgentMemoryPage from "./pages/agents/memory";
 import FeedbackEnginePage from "./pages/feedback/index";
 import StrategyRecommenderPage from "./pages/recommender/index";
+import BillingPage from "./pages/billing/index";
 
-ReactDOM.render(
+// Create root instead of using render (React 18+)
+ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <BrowserRouter>
       <Routes>
@@ -29,8 +31,8 @@ ReactDOM.render(
         <Route path="/agents/memory" element={<AgentMemoryPage />} />
         <Route path="/feedback" element={<FeedbackEnginePage />} />
         <Route path="/recommender" element={<StrategyRecommenderPage />} />
+        <Route path="/billing" element={<BillingPage />} />
       </Routes>
     </BrowserRouter>
-  </React.StrictMode>,
-  document.getElementById("root")
+  </React.StrictMode>
 );
