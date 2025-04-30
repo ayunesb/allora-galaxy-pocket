@@ -12,7 +12,7 @@ export default function AppRoutes() {
       <Route path="/auth/login" element={<LoginPage />} />
       <Route path="/auth/signup" element={<SignupPage />} />
       <Route path="/dashboard" element={
-        <RequireAuth>
+        <RequireAuth children={undefined}>
           <DashboardPage />
         </RequireAuth>
       } />

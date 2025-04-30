@@ -2,25 +2,32 @@ import { useEffect, useState, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 
-export default function RequireAuth({ children }: { children: ReactNode }) {
+type RequireAuthProps = {
+  children: ReactNode;
+};
+
+export default function RequireAuth({ children }: RequireAuthProps) {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<any>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const check = async () => {
+    const checkSession = async () => {
       const { data } = await supabase.auth.getSession();
       if (!data.session) {
         navigate("/auth/login");
       } else {
         setSession(data.session);
-        setLoading(false);
       }
+      setLoading(false);
     };
-    check();
+
+    checkSession();
   }, [navigate]);
 
-  if (loading) return <div className="p-6 text-gray-600">Loading...</div>;
+  if (loading) {
+    return <div className="p-6 text-gray-600">Checking authentication...</div>;
+  }
 
   return <>{children}</>;
 }
