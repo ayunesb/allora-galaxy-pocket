@@ -1,16 +1,22 @@
 import { Routes, Route } from "react-router-dom";
 import App from "../App";
-import AdminDashboard from "../pages/admin/AdminDashboard";
-import OnboardingWelcome from "../pages/onboarding/Welcome";
-import OnboardingCompany from "../pages/onboarding/Company";
+import LoginPage from "../pages/auth/login";
+import SignupPage from "../pages/auth/signup";
+import DashboardPage from "../pages/dashboard";
+import RequireAuth from "../components/RequireAuth";
 
 export default function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<App />} />
-      <Route path="/admin" element={<AdminDashboard />} />
-      <Route path="/onboarding/welcome" element={<OnboardingWelcome />} />
-      <Route path="/onboarding/company" element={<OnboardingCompany />} />
+      <Route path="/auth/login" element={<LoginPage />} />
+      <Route path="/auth/signup" element={<SignupPage />} />
+      <Route path="/dashboard" element={
+        <RequireAuth>
+          <DashboardPage />
+        </RequireAuth>
+      } />
+      {/* Add the rest here, cleanly scoped */}
     </Routes>
   );
 }
