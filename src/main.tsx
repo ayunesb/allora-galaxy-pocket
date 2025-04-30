@@ -1,6 +1,7 @@
-import React from "react"; // ✅ Required for JSX rendering
-import ReactDOM from "react-dom/client";
+import SystemHealthPage from "./pages/system/health";
 import "./index.css";
+import React from "react";
+import ReactDOM from "react-dom";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import App from "./App";
 import KPIPage from "./pages/insights/kpis"; // ✅ Import added
@@ -15,8 +16,7 @@ import FeedbackEnginePage from "./pages/feedback/index";
 import StrategyRecommenderPage from "./pages/recommender/index";
 import BillingPage from "./pages/billing/index";
 
-// Create root instead of using render (React 18+)
-ReactDOM.createRoot(document.getElementById("root")!).render(
+ReactDOM.render(
   <React.StrictMode>
     <BrowserRouter>
       <Routes>
