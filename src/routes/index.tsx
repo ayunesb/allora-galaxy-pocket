@@ -1,7 +1,7 @@
 
 import { Routes, Route } from "react-router-dom";
 import App from "../App";
-import LoginPage from "../pages/auth/Login";
+import LoginPage from "../pages/auth/login";
 import SignupPage from "../pages/auth/signup";
 import DashboardPage from "../pages/dashboard";
 import RequireAuth from "../components/RequireAuth";
@@ -13,7 +13,7 @@ export default function AppRoutes() {
       <Route path="/auth/login" element={<LoginPage />} />
       <Route path="/auth/signup" element={<SignupPage />} />
       <Route path="/dashboard" element={
-        <RequireAuth>
+        <RequireAuth children={undefined}>
           <DashboardPage />
         </RequireAuth>
       } />
