@@ -1,11 +1,24 @@
 
-import { useState } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuthSession } from "../../hooks/useAuthSession";
 
+// Predefined list of business goals
+const COMMON_GOALS = [
+  "Increase revenue",
+  "Automate lead gen",
+  "Launch marketing campaigns",
+  "Improve retention",
+  "Enhance customer experience",
+  "Expand to new markets",
+  "Reduce operational costs",
+  "Build brand awareness"
+];
+
 export default function CompanyGoals() {
-  const [goals, setGoals] = useState<string[]>(["", ""]);
+  const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
+  const [customGoal, setCustomGoal] = useState("");
   const [revenueTier, setRevenueTier] = useState("");
   const [launchMode, setLaunchMode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -13,25 +26,66 @@ export default function CompanyGoals() {
   const navigate = useNavigate();
   const session = useAuthSession();
 
-  const addGoal = () => {
-    setGoals([...goals, ""]);
+  // Load existing goals if any
+  useEffect(() => {
+    async function fetchCompanyGoals() {
+      if (!session?.user?.id) return;
+      
+      try {
+        // Get the user's tenant ID
+        const { data: tenantData, error: tenantError } = await supabase
+          .from("tenant_user_roles")
+          .select("tenant_id")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+
+        if (tenantError || !tenantData?.tenant_id) {
+          console.error("Error fetching tenant:", tenantError);
+          return;
+        }
+
+        // Fetch company profile data including goals
+        const { data: profileData, error: profileError } = await supabase
+          .from("company_profiles")
+          .select("goals, revenue_tier, launch_mode")
+          .eq("tenant_id", tenantData.tenant_id)
+          .maybeSingle();
+
+        if (profileError) {
+          console.error("Error fetching company goals:", profileError);
+          return;
+        }
+
+        if (profileData) {
+          // Pre-fill form with existing data
+          setSelectedGoals(profileData.goals || []);
+          setRevenueTier(profileData.revenue_tier || "");
+          setLaunchMode(profileData.launch_mode || "");
+        }
+      } catch (err) {
+        console.error("Error loading company goals:", err);
+      }
+    }
+
+    fetchCompanyGoals();
+  }, [session]);
+
+  const toggleGoal = (goal: string) => {
+    setSelectedGoals(prev => 
+      prev.includes(goal) 
+        ? prev.filter(g => g !== goal) 
+        : [...prev, goal]
+    );
   };
 
-  const updateGoal = (index: number, value: string) => {
-    const newGoals = [...goals];
-    newGoals[index] = value;
-    setGoals(newGoals);
-  };
-
-  const removeGoal = (index: number) => {
-    if (goals.length > 1) {
-      const newGoals = [...goals];
-      newGoals.splice(index, 1);
-      setGoals(newGoals);
+  const addCustomGoal = () => {
+    if (customGoal.trim() && !selectedGoals.includes(customGoal.trim())) {
+      setSelectedGoals(prev => [...prev, customGoal.trim()]);
+      setCustomGoal("");
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
@@ -54,23 +108,7 @@ export default function CompanyGoals() {
 
       const tenantId = tenantData.tenant_id;
 
-      // Filter out empty goals
-      const filteredGoals = goals.filter(goal => goal.trim() !== "");
-
-      // Save goals to persona_profiles table
-      const { error: personaError } = await supabase
-        .from("persona_profiles")
-        .upsert({
-          tenant_id: tenantId,
-          user_id: session.user.id,
-          goal: filteredGoals.join(", ")
-        }, { onConflict: "tenant_id, user_id" });
-
-      if (personaError) {
-        throw personaError;
-      }
-
-      // Update company_profiles with revenue tier and launch mode
+      // Update company_profiles with revenue tier, launch mode and goals
       const { data: existingProfile, error: checkError } = await supabase
         .from("company_profiles")
         .select("id")
@@ -88,6 +126,7 @@ export default function CompanyGoals() {
           .update({
             revenue_tier: revenueTier,
             launch_mode: launchMode,
+            goals: selectedGoals,
             updated_at: new Date().toISOString(),
           })
           .eq("id", existingProfile.id);
@@ -95,6 +134,22 @@ export default function CompanyGoals() {
         if (updateError) {
           throw updateError;
         }
+      }
+
+      // Save persona profile with goals
+      const personaGoalsText = selectedGoals.join(", ");
+      
+      // Save goals to persona_profiles table
+      const { error: personaError } = await supabase
+        .from("persona_profiles")
+        .upsert({
+          tenant_id: tenantId,
+          user_id: session.user.id,
+          goal: personaGoalsText
+        }, { onConflict: "tenant_id, user_id" });
+
+      if (personaError) {
+        throw personaError;
       }
 
       // Navigate to dashboard after successful submission
@@ -123,33 +178,61 @@ export default function CompanyGoals() {
             What are your main business goals?
           </label>
           
-          {goals.map((goal, index) => (
-            <div key={index} className="flex items-center mb-2">
-              <input
-                type="text"
-                value={goal}
-                onChange={(e) => updateGoal(index, e.target.value)}
-                placeholder={`Goal ${index + 1}`}
-                className="border p-2 flex-1 rounded mr-2"
-              />
-              <button
-                type="button"
-                onClick={() => removeGoal(index)}
-                className="text-red-500 hover:text-red-700"
-                disabled={goals.length === 1}
-              >
-                Remove
-              </button>
-            </div>
-          ))}
+          <div className="space-y-2 mb-4">
+            {COMMON_GOALS.map((goal) => (
+              <div key={goal} className="flex items-center">
+                <input
+                  type="checkbox"
+                  id={`goal-${goal}`}
+                  checked={selectedGoals.includes(goal)}
+                  onChange={() => toggleGoal(goal)}
+                  className="h-4 w-4 text-blue-600 border-gray-300 rounded mr-2"
+                />
+                <label htmlFor={`goal-${goal}`}>{goal}</label>
+              </div>
+            ))}
+          </div>
           
-          <button
-            type="button"
-            onClick={addGoal}
-            className="text-blue-500 hover:text-blue-700 text-sm mt-1"
-          >
-            + Add another goal
-          </button>
+          <div className="flex mt-2">
+            <input
+              type="text"
+              value={customGoal}
+              onChange={(e) => setCustomGoal(e.target.value)}
+              placeholder="Add your own goal"
+              className="border p-2 flex-1 rounded-l"
+            />
+            <button
+              type="button"
+              onClick={addCustomGoal}
+              className="bg-blue-500 text-white px-4 py-2 rounded-r hover:bg-blue-600"
+              disabled={!customGoal.trim()}
+            >
+              Add
+            </button>
+          </div>
+          
+          {selectedGoals.length > 0 && (
+            <div className="mt-4">
+              <h3 className="font-medium text-sm text-gray-700 mb-2">Your selected goals:</h3>
+              <div className="flex flex-wrap gap-2">
+                {selectedGoals.map((goal) => (
+                  <div 
+                    key={goal} 
+                    className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center"
+                  >
+                    {goal}
+                    <button
+                      type="button"
+                      onClick={() => toggleGoal(goal)}
+                      className="ml-2 text-blue-600 hover:text-blue-800"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
         
         <div className="mb-4">
@@ -192,7 +275,7 @@ export default function CompanyGoals() {
         <button
           type="submit"
           className="bg-green-600 text-white px-4 py-2 rounded w-full"
-          disabled={isLoading}
+          disabled={isLoading || selectedGoals.length === 0}
         >
           {isLoading ? "Saving..." : "Finish"}
         </button>

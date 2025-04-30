@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuthSession } from "../../hooks/useAuthSession";
@@ -13,7 +13,53 @@ export default function CompanyInfo() {
   const navigate = useNavigate();
   const session = useAuthSession();
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  // Fetch existing company profile data on component load
+  useEffect(() => {
+    async function fetchCompanyProfile() {
+      if (!session?.user?.id) return;
+      
+      try {
+        // Get the user's tenant ID
+        const { data: tenantData, error: tenantError } = await supabase
+          .from("tenant_user_roles")
+          .select("tenant_id")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+
+        if (tenantError) {
+          console.error("Error fetching tenant:", tenantError);
+          return;
+        }
+
+        if (!tenantData?.tenant_id) return;
+
+        // Fetch company profile data
+        const { data: profileData, error: profileError } = await supabase
+          .from("company_profiles")
+          .select("name, industry, team_size")
+          .eq("tenant_id", tenantData.tenant_id)
+          .maybeSingle();
+
+        if (profileError) {
+          console.error("Error fetching company profile:", profileError);
+          return;
+        }
+
+        if (profileData) {
+          // Pre-fill the form with existing data
+          setCompanyName(profileData.name || "");
+          setIndustry(profileData.industry || "");
+          setTeamSize(profileData.team_size || "");
+        }
+      } catch (err) {
+        console.error("Error loading company data:", err);
+      }
+    }
+
+    fetchCompanyProfile();
+  }, [session]);
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
@@ -23,18 +69,51 @@ export default function CompanyInfo() {
         throw new Error("User not authenticated");
       }
 
-      // Get the user's tenant ID
+      // First, create or get tenant profile
       const { data: tenantData, error: tenantError } = await supabase
         .from("tenant_user_roles")
         .select("tenant_id")
         .eq("user_id", session.user.id)
-        .single();
+        .maybeSingle();
+
+      let tenantId;
 
       if (tenantError) {
-        throw new Error("Failed to get tenant information");
+        console.error("Error checking tenant:", tenantError);
       }
 
-      const tenantId = tenantData.tenant_id;
+      if (!tenantData?.tenant_id) {
+        // Create new tenant profile
+        const { data: newTenant, error: createTenantError } = await supabase
+          .from("tenant_profiles")
+          .insert({
+            name: companyName,
+            // Using tenant_id as the id column seems to be the existing pattern
+          })
+          .select("id")
+          .single();
+
+        if (createTenantError) {
+          throw new Error("Failed to create tenant profile");
+        }
+
+        tenantId = newTenant.id;
+
+        // Create tenant user role linking user as owner
+        const { error: roleError } = await supabase
+          .from("tenant_user_roles")
+          .insert({
+            user_id: session.user.id,
+            tenant_id: tenantId,
+            role: "owner"
+          });
+
+        if (roleError) {
+          throw new Error("Failed to set user role");
+        }
+      } else {
+        tenantId = tenantData.tenant_id;
+      }
 
       // Check if company profile already exists for this tenant
       const { data: existingProfile, error: checkError } = await supabase

@@ -25,7 +25,7 @@ export default function OnboardingWelcome() {
           </li>
           <li className="flex items-center">
             <span className="bg-gray-300 text-gray-600 rounded-full w-5 h-5 flex items-center justify-center mr-2">3</span>
-            Set your goals
+            Business goals & strategy
           </li>
         </ul>
       </div>
