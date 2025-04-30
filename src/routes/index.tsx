@@ -12,6 +12,7 @@ import CompanyGoals from "../pages/onboarding/Goals";
 import SidebarShell from "../layout/SidebarShell";
 import KPIPage from "../pages/insights/kpis";
 import StrategyVaultPage from "../pages/vault";
+import OnboardingWelcome from "../pages/onboarding/Welcome";
 
 export default function AppRoutes() {
   return (
@@ -72,7 +73,8 @@ export default function AppRoutes() {
         } 
       />
 
-      {/* Public onboarding routes */}
+      {/* Onboarding routes */}
+      <Route path="/onboarding/welcome" element={<OnboardingWelcome />} />
       <Route path="/onboarding/company" element={<CompanyInfo />} />
       <Route path="/onboarding/goals" element={<CompanyGoals />} />
     </Routes>
