@@ -13,7 +13,7 @@ export default function CompanyInfo() {
   const navigate = useNavigate();
   const session = useAuthSession();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
