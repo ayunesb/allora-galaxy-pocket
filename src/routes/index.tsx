@@ -1,7 +1,7 @@
 
 import { Routes, Route } from "react-router-dom";
 import App from "../App";
-import LoginPage from "../pages/auth/Login";
+import LoginPage from "../pages/auth/login";
 import SignupPage from "../pages/auth/signup";
 import DashboardPage from "../pages/dashboard";
 import RequireAuth from "../components/RequireAuth";
@@ -24,8 +24,8 @@ export default function AppRoutes() {
       <Route 
         path="/dashboard" 
         element={
-          <RequireAuth>
-            <SidebarShell>
+          <RequireAuth children={undefined}>
+            <SidebarShell children={undefined}>
               <DashboardPage />
             </SidebarShell>
           </RequireAuth>
@@ -35,8 +35,8 @@ export default function AppRoutes() {
       <Route 
         path="/vault" 
         element={
-          <RequireAuth>
-            <SidebarShell>
+          <RequireAuth children={undefined}>
+            <SidebarShell children={undefined}>
               <StrategyVaultPage />
             </SidebarShell>
           </RequireAuth>
@@ -46,8 +46,8 @@ export default function AppRoutes() {
       <Route 
         path="/admin" 
         element={
-          <RequireAuth>
-            <SidebarShell>
+          <RequireAuth children={undefined}>
+            <SidebarShell children={undefined}>
               <AdminDashboard />
             </SidebarShell>
           </RequireAuth>
@@ -57,8 +57,8 @@ export default function AppRoutes() {
       <Route 
         path="/plugins/center" 
         element={
-          <RequireAuth>
-            <SidebarShell>
+          <RequireAuth children={undefined}>
+            <SidebarShell children={undefined}>
               <PluginCenter />
             </SidebarShell>
           </RequireAuth>
@@ -68,8 +68,8 @@ export default function AppRoutes() {
       <Route 
         path="/insights/kpis" 
         element={
-          <RequireAuth>
-            <SidebarShell>
+          <RequireAuth children={undefined}>
+            <SidebarShell children={undefined}>
               <KPIPage />
             </SidebarShell>
           </RequireAuth>
